@@ -1,201 +1,489 @@
 # ĐẶC TẢ YÊU CẦU CHỨC NĂNG
 
-## 1. Tổng quan
+Tài liệu này chuyển PRD thành các yêu cầu chức năng có thể dùng để thiết kế API, lập kế hoạch phát triển và kiểm thử. Nội dung chi tiết và lý do nghiệp vụ được mô tả tại:
 
-Hệ thống là webapp hỗ trợ vận hành một cửa hàng vật lý chuyên bán sách cũ và cho thuê truyện tranh. Hệ thống quản lý tập trung đầu sách, từng bản sách vật lý, tồn kho, giao dịch bán/thuê, khách hàng, nhân viên, thanh toán, thông báo và báo cáo.
+- [PRD – Nghiệp vụ cốt lõi](./prd-nghiep-vu-cot-loi.md)
+- [PRD – Vận hành nội bộ và quy tắc hệ thống](./prd-van-hanh-va-he-thong.md)
+- [PRD tổng hợp](./prd.md)
 
-Mọi giao dịch bán và cho thuê được nhân viên thực hiện tại cửa hàng. Hệ thống không cung cấp mua hàng, đặt trước hoặc giao hàng trực tuyến.
+Nếu có khác biệt, quyết định đã xác nhận và hai PRD chi tiết được ưu tiên hơn tài liệu này. Nội dung chưa chốt được ghi **[TBD - Unconfirmed]**.
 
-## 2. Phạm vi và đối tượng sử dụng
+## 1. Phạm vi
 
-### 2.1. Đối tượng sử dụng
+### 1.1. Phạm vi MVP
 
-| Đối tượng | Phạm vi sử dụng |
+Hệ thống là web app nội bộ phục vụ một cửa hàng vật lý, bao gồm:
+
+- POS và trang quản trị cho nhân viên.
+- Bán sách cũ và cho thuê sách/truyện tranh tại quầy.
+- Thu mua sách cũ từ khách và nhập sách từ nhà cung cấp.
+- Quản lý từng bản sách vật lý bằng barcode.
+- Thanh toán tiền mặt và VietQR có xác nhận bằng API/webhook ngân hàng.
+- Hồ sơ khách hàng, hạng thành viên, nhân viên, ca làm, chấm công và lương.
+- Ca thu ngân, két tiền, thông báo, báo cáo và dữ liệu phục vụ kê khai thuế.
+
+### 1.2. Ngoài phạm vi MVP
+
+- Trang thương mại điện tử hoặc ứng dụng dành cho khách.
+- Khách hàng tự đăng ký, đăng nhập hoặc thao tác trực tiếp.
+- Đặt trước hoặc giữ chỗ sách.
+- Giao nhận sách tận nơi.
+- Quản lý nhiều chi nhánh.
+- Vận hành chương trình điểm tích lũy.
+- Firebase Cloud Messaging.
+- Tự động chuyển tiền ra từ tài khoản ngân hàng.
+- Tự động nộp hồ sơ thuế.
+- Đổi trả sách đã bán theo chính sách thông thường.
+
+## 2. Đối tượng sử dụng
+
+| Đối tượng | Phạm vi chính |
 | --- | --- |
-| **Admin** | Có toàn quyền ngay từ khi khởi tạo hệ thống; quản lý tài khoản, vai trò, quyền hạn, cấu hình và nhật ký thao tác. Quyền của Admin không thể bị nhân viên thay đổi. |
-| **Quản lý** | Quản lý nhân viên, ca làm, chấm công, bảng lương và các nghiệp vụ được Admin cấp quyền. |
-| **Thu ngân** | Thực hiện nghiệp vụ bán sách, cho thuê, nhận trả sách và thanh toán theo quyền được cấp. |
-| **Nhân viên kho** | Quản lý nhập kho, xuất kho, kiểm kê và điều chỉnh tồn kho theo quyền được cấp. |
-| **Nhân viên** | Vai trò mặc định của tài khoản nhân viên mới; được xem hồ sơ cá nhân, ca làm, chấm công và thực hiện nghiệp vụ bán/thuê cơ bản. |
-| **Khách hàng** | Có hồ sơ khách hàng trong hệ thống. Tài khoản đăng nhập là tùy chọn và chỉ được Admin hoặc nhân viên có quyền tạo. |
+| Admin gốc | Tài khoản seed có toàn quyền, không thể bị hạ quyền hoặc xóa bằng luồng thông thường. |
+| Admin | Được cấp quyền qua RBAC; quản lý tài khoản, vai trò, cấu hình và chức năng được cấp. |
+| Quản lý | Phê duyệt ngoại lệ, quản lý kho, nhân sự, ca, lương và báo cáo theo quyền. |
+| Thu ngân | Bán, thuê, trả, thu mua, thanh toán và quản lý két trong ca. |
+| Nhân viên kho | Nhập/xuất kho, in barcode, kiểm kê và xử lý tồn kho theo quyền. |
+| Nhân viên | Vai trò mặc định với quyền tối thiểu; được cấp thêm quyền khi cần. |
+| Khách hàng | Chỉ có hồ sơ nghiệp vụ; không có tài khoản đăng nhập trong MVP. |
 
-Các vai trò Quản lý, Thu ngân và Nhân viên kho là vai trò gợi ý ban đầu. Admin có thể tạo vai trò mới hoặc thay đổi quyền theo nhu cầu vận hành.
+## 3. Nguyên tắc nghiệp vụ chung
 
-### 2.2. Nguyên tắc nghiệp vụ chung
+- Chỉ vận hành một cửa hàng vật lý.
+- Mọi giao dịch mua, bán, thuê, trả và thu mua diễn ra tại quầy.
+- Mỗi bản sách vật lý có barcode duy nhất.
+- Chỉ bản Khả dụng được bán hoặc cho thuê.
+- Một bản sách không thể thuộc hai giao dịch đang có hiệu lực cùng lúc.
+- Mọi khoản thu/chi phải liên kết với chứng từ nguồn.
+- Dữ liệu tài chính đã hoàn tất không được sửa hoặc xóa trực tiếp.
+- Sửa sai dùng giao dịch đảo/điều chỉnh có phê duyệt và nhật ký.
+- Giá trị dùng để tính cọc và trần phạt là giá bán thực tế của từng bản vật lý.
+- Các giá trị chưa chốt phải là cấu hình hoặc mang nhãn **[TBD - Unconfirmed]**.
 
-- Hệ thống chỉ quản lý một cửa hàng vật lý.
-- Thông tin sách được quản lý theo hai tầng: **đầu sách** và **bản sách vật lý**.
-- Mỗi bản sách vật lý có mã riêng và có thể được bán hoặc cho thuê khi đang khả dụng.
-- Bản sách đang được thuê bị khóa khỏi các giao dịch khác. Bản sách đã bán được ghi nhận là đã rời kho vĩnh viễn.
-- Các nghiệp vụ nhạy cảm phải kiểm tra quyền trước khi thực hiện và lưu nhật ký thao tác.
-- Các giao dịch bị hủy hoặc hoàn tiền không được tính vào tổng chi tiêu hợp lệ của khách hàng và doanh thu thuần.
+## 4. Tài khoản và xác thực
 
-## 3. Nhóm chức năng
+| Mã | Yêu cầu |
+| --- | --- |
+| AUTH-01 | Hệ thống phải seed một tài khoản Admin gốc khi triển khai. |
+| AUTH-02 | Admin gốc phải có toàn quyền và không thể bị hạ quyền, khóa hoặc xóa qua API quản trị thông thường. |
+| AUTH-03 | Admin phải có API thêm, xem, cập nhật và thu hồi email nhân viên trong danh sách được phép đăng ký. |
+| AUTH-04 | Mỗi email được cho phép chỉ được dùng để đăng ký một tài khoản. |
+| AUTH-05 | Nhân viên được tự đăng ký khi email đã được Admin khai báo trước và chưa được sử dụng. |
+| AUTH-06 | Hệ thống phải gửi OTP tới email nhân viên và chỉ kích hoạt tài khoản sau khi OTP hợp lệ. |
+| AUTH-07 | Tài khoản mới nhận vai trò mặc định Nhân viên, trừ khi có cấu hình khác. |
+| AUTH-08 | Hệ thống hỗ trợ đăng nhập, đăng xuất, đổi mật khẩu và đặt lại mật khẩu qua email. |
+| AUTH-09 | Admin được khóa, mở khóa hoặc vô hiệu hóa tài khoản không được bảo vệ. |
+| AUTH-10 | Khách hàng không được tạo tài khoản hoặc đăng nhập trong MVP. |
 
-### 3.1. Tài khoản và xác thực
+**[TBD - Unconfirmed]**: Thời hạn OTP, số lần nhập sai, thời gian chờ gửi lại, chính sách mật khẩu và thời gian phiên.
 
-| Mã | Chức năng | Mô tả về chức năng |
-| --- | --- | --- |
-| AUTH-01 | Khởi tạo tài khoản Admin | Hệ thống có sẵn tài khoản Admin đầu tiên khi được khởi tạo. Tài khoản này có toàn quyền và không thể bị người dùng thông thường hạ quyền. |
-| AUTH-02 | Đăng ký tài khoản nhân viên | Nhân viên được tự đăng ký bằng email thuộc domain nhân viên đã cấu hình. Hệ thống từ chối email không đúng domain. |
-| AUTH-03 | Xác thực email nhân viên | Hệ thống gửi liên kết hoặc mã xác thực đến email đăng ký. Sau khi xác thực thành công, tài khoản được kích hoạt ngay và nhận vai trò mặc định đã cấu hình, không cần Admin phê duyệt. |
-| AUTH-04 | Tạo tài khoản khách hàng | Khách hàng không được tự đăng ký. Admin hoặc nhân viên có quyền tạo tài khoản và liên kết tài khoản đó với một hồ sơ khách hàng hiện có. |
-| AUTH-05 | Đăng nhập và đăng xuất | Người dùng đăng nhập bằng thông tin hợp lệ, sử dụng các chức năng theo quyền được cấp và có thể chủ động kết thúc phiên đăng nhập. Tài khoản bị khóa hoặc vô hiệu hóa không được đăng nhập. |
-| AUTH-06 | Quản lý thông tin đăng nhập | Người dùng được đổi mật khẩu và cập nhật thông tin đăng nhập được phép. Hệ thống hỗ trợ quên/đặt lại mật khẩu qua email; Admin chỉ có thể yêu cầu đặt lại mật khẩu, không được xem mật khẩu của người dùng. |
-| AUTH-07 | Quản lý trạng thái tài khoản | Admin được khóa, mở khóa hoặc vô hiệu hóa tài khoản. Việc thay đổi trạng thái tài khoản phải được lưu vào nhật ký thao tác. |
+## 5. Phân quyền và nhật ký
 
-### 3.2. Phân quyền và quản trị hệ thống
+| Mã | Yêu cầu |
+| --- | --- |
+| RBAC-01 | Hệ thống phải quản lý quyền theo vai trò. |
+| RBAC-02 | Admin có quyền được tạo, cập nhật và ngừng sử dụng vai trò. |
+| RBAC-03 | Hệ thống phải hỗ trợ gán vai trò và quyền riêng cho nhân viên. |
+| RBAC-04 | Backend phải kiểm tra quyền tại mọi API được bảo vệ. |
+| RBAC-05 | Các vai trò mẫu gồm Admin, Quản lý, Thu ngân, Nhân viên kho và Nhân viên. |
+| AUD-01 | Nhật ký phải lưu người thực hiện, hành động, đối tượng, thời gian và lý do khi cần. |
+| AUD-02 | Thay đổi quyền, giá, kho, trạng thái tài khoản, tiền phạt và giao dịch phải được ghi nhật ký. |
+| AUD-03 | Với điều chỉnh nhạy cảm, nhật ký phải lưu giá trị trước và sau. |
+| AUD-04 | Người có quyền phải tra cứu được nhật ký theo thời gian, người dùng và loại hành động. |
 
-| Mã | Chức năng | Mô tả về chức năng |
-| --- | --- | --- |
-| ADM-01 | Quản lý vai trò | Admin được tạo, cập nhật và ngừng sử dụng vai trò; đồng thời có thể sử dụng các vai trò mẫu như Quản lý, Thu ngân và Nhân viên kho. |
-| ADM-02 | Quản lý quyền hạn | Admin gán quyền chi tiết theo từng nhóm chức năng cho vai trò hoặc bổ sung quyền cho nhân viên cụ thể. Nhân viên chỉ được truy cập và thao tác trong phạm vi quyền đã cấp. |
-| ADM-03 | Vai trò mặc định | Hệ thống cho phép cấu hình vai trò tự động gán cho nhân viên sau khi đăng ký. Vai trò mặc định ban đầu là Nhân viên và không có quyền quản lý phân quyền, lương, cấu hình, nhập/xuất kho, hoàn tiền hoặc báo cáo tài chính. |
-| ADM-04 | Nhật ký thao tác | Hệ thống ghi nhận người thực hiện, hành động, đối tượng bị tác động, thời điểm và nội dung thay đổi đối với các thao tác quan trọng như thêm/sửa/xóa dữ liệu, nhập/xuất kho, thanh toán, hoàn tiền và thay đổi quyền. Người có quyền được tra cứu nhật ký theo thời gian, nhân viên và loại thao tác. |
+## 6. Danh mục, bộ sách và bản sách
 
-### 3.3. Danh mục và sản phẩm sách
+| Mã | Yêu cầu |
+| --- | --- |
+| CAT-01 | Hệ thống cho phép tạo, cập nhật, ngừng sử dụng và tra cứu danh mục/thể loại. |
+| CAT-02 | Hệ thống phải quản lý bộ sách có nhiều tập và sách độc lập không thuộc bộ. |
+| CAT-03 | Đầu sách/tập lưu tên, ISBN nếu có, tác giả, nhà xuất bản, năm xuất bản, giá bìa, ảnh và mô tả. |
+| CAT-04 | Một đầu sách có thể có nhiều bản vật lý. |
+| CAT-05 | Mỗi bản vật lý phải có barcode nội bộ duy nhất. |
+| CAT-06 | Bản sách lưu nguồn nhập, Grade, mô tả tình trạng, giá vốn, giá bán, đơn giá thuê và trạng thái. |
+| CAT-07 | Giá bán thực tế phải được xác nhận trước khi bản chuyển sang Khả dụng. |
+| CAT-08 | Hệ thống hỗ trợ tra cứu metadata bằng ISBN qua Google Books hoặc Open Library. |
+| CAT-09 | Nhân viên phải xác nhận/chỉnh sửa dữ liệu API và luôn xác nhận giá bìa. |
+| CAT-10 | Khi API lỗi hoặc sách không có ISBN, hệ thống cho phép nhập thủ công. |
+| CAT-11 | Dữ liệu thủ công tối thiểu gồm tên sách/tập, tác giả và giá bìa ước tính. |
+| CAT-12 | Hệ thống cho phép tìm kiếm theo mã, barcode, tên, bộ, tập, ISBN, tác giả, danh mục, Grade và trạng thái. |
 
-| Mã | Chức năng | Mô tả về chức năng |
-| --- | --- | --- |
-| CAT-01 | Quản lý danh mục | Người có quyền được thêm, cập nhật, ngừng sử dụng hoặc xóa danh mục khi không phát sinh ràng buộc dữ liệu. Đầu sách có thể được gắn vào danh mục phù hợp để phục vụ tra cứu và báo cáo. |
-| CAT-02 | Quản lý đầu sách | Hệ thống lưu thông tin chung của đầu sách như tên, mã/ISBN, tác giả, nhà xuất bản, năm xuất bản, mô tả và hình ảnh. Người có quyền được thêm, sửa, ngừng kinh doanh và tra cứu đầu sách. |
-| CAT-03 | Cấu hình chính sách thuê theo đầu sách | Mỗi đầu sách có giá thuê theo ngày và thời hạn thuê mặc định. Các giá trị này được dùng khi lập phiếu thuê và có thể được điều chỉnh theo quyền hạn. |
-| CAT-04 | Quản lý bản sách vật lý | Mỗi bản sách có mã hoặc barcode riêng, liên kết với một đầu sách và lưu tình trạng, giá nhập, giá bán cùng trạng thái hiện tại. Giá và mức độ hao mòn có thể khác nhau giữa các bản của cùng một đầu sách. |
-| CAT-05 | Trạng thái bản sách | Hệ thống theo dõi tối thiểu các trạng thái: khả dụng, đang cho thuê, đã bán, hư hỏng, thất lạc, thanh lý và ngừng kinh doanh. Chỉ bản sách khả dụng mới được chọn để bán hoặc cho thuê. |
-| CAT-06 | Tra cứu sản phẩm | Người dùng được tìm kiếm và lọc đầu sách/bản sách theo mã, tên, danh mục, tác giả, tình trạng, trạng thái và khả năng sẵn có. |
+## 7. Nhà cung cấp và kho
 
-### 3.4. Nhà cung cấp và quản lý tồn kho
+| Mã | Yêu cầu |
+| --- | --- |
+| INV-01 | Người có quyền được tạo, cập nhật, ngừng hợp tác và tra cứu nhà cung cấp. |
+| INV-02 | Phiếu nhập phải lưu nhà cung cấp, ngày nhập, người lập, chi tiết sách, số lượng, đơn giá và tổng chi phí. |
+| INV-03 | Khi xác nhận phiếu nhập, hệ thống phải tạo riêng từng bản vật lý và barcode. |
+| INV-04 | Phiếu xuất ngoài bán hàng phải ghi từng bản sách và lý do như hỏng, mất hoặc thanh lý. |
+| INV-05 | Hệ thống phải lưu lịch sử nhập, xuất, bán, thuê, trả, kiểm kê và thay đổi trạng thái từng bản. |
+| INV-06 | Người có quyền được tạo phiếu kiểm kê theo phạm vi. |
+| INV-07 | Bản sách trong phạm vi kiểm kê phải bị khóa khỏi giao dịch xuất kho. |
+| INV-08 | Chênh lệch kiểm kê chỉ cập nhật tồn kho sau khi được phê duyệt. |
+| INV-09 | Ngưỡng tồn tối thiểu mặc định là một bản khả dụng/đầu sách và có thể cấu hình. |
+| INV-10 | Khi tồn khả dụng chạm hoặc thấp hơn ngưỡng, hệ thống phải tạo cảnh báo nội bộ. |
+| INV-11 | Hệ thống phải hỗ trợ giới hạn số lượng nhập tối thiểu/tối đa bằng cấu hình. |
 
-| Mã | Chức năng | Mô tả về chức năng |
-| --- | --- | --- |
-| INV-01 | Quản lý nhà cung cấp | Người có quyền được thêm, cập nhật, ngừng hợp tác và tra cứu thông tin nhà cung cấp phục vụ nhập sách. |
-| INV-02 | Lập phiếu nhập kho | Phiếu nhập lưu ngày nhập, nhà cung cấp, người lập, danh sách đầu sách/bản sách, số lượng, đơn giá và tổng chi phí. Khi phiếu được xác nhận, hệ thống tạo hoặc cập nhật các bản sách tương ứng trong kho. |
-| INV-03 | Lập phiếu xuất kho | Việc đưa sách ra khỏi kho ngoài nghiệp vụ bán phải có phiếu xuất và lý do cụ thể như hư hỏng, thất lạc hoặc thanh lý. Phiếu xuất làm thay đổi trạng thái của từng bản sách liên quan. |
-| INV-04 | Điều chỉnh và kiểm kê tồn kho | Người có quyền được ghi nhận kết quả kiểm kê và đề nghị điều chỉnh chênh lệch. Điều chỉnh phải có lý do, được người có quyền phê duyệt và lưu nhật ký trước khi cập nhật tồn kho. |
-| INV-05 | Theo dõi biến động kho | Hệ thống lưu lịch sử nhập, xuất, bán, cho thuê, trả, điều chỉnh và thay đổi trạng thái của từng bản sách để có thể truy vết. |
-| INV-06 | Kiểm soát ngưỡng tồn kho | Hệ thống so sánh số lượng khả dụng với ngưỡng tối thiểu/tối đa đã cấu hình. Khi tồn kho chạm hoặc thấp hơn mức tối thiểu, hệ thống tạo cảnh báo để người phụ trách xem xét nhập thêm. |
+## 8. Thu mua sách cũ từ khách hàng
 
-### 3.5. Bán sách và hoàn trả
+| Mã | Yêu cầu |
+| --- | --- |
+| PUR-01 | Người bán phải có hồ sơ gồm tối thiểu họ tên và số điện thoại. |
+| PUR-02 | Nhân viên được quét ISBN, chọn đầu sách có sẵn hoặc nhập thủ công. |
+| PUR-03 | Mỗi cuốn phải được thẩm định Grade A, B, C hoặc D. |
+| PUR-04 | Hệ thống phải gợi ý khoảng giá mua theo Grade và giá bìa. |
+| PUR-05 | Giá thỏa thuận cuối cùng phải được nhân viên nhập và khách đồng ý. |
+| PUR-06 | Đơn giá hoặc tổng phiếu vượt hạn mức phải chuyển sang Chờ duyệt. |
+| PUR-07 | Phiếu thu mua phải lưu người bán, người tiếp nhận, từng cuốn, Grade, giá và tổng tiền. |
+| PUR-08 | Cửa hàng được chi tiền mặt hoặc chuyển khoản cho người bán. |
+| PUR-09 | Chuyển khoản chi được thực hiện bên ngoài; nhân viên nhập mã giao dịch để đối soát. |
+| PUR-10 | Sau khi hoàn tất, hệ thống tạo riêng bản vật lý và barcode cho từng cuốn. |
+| PUR-11 | Khoản chi phải được ghi vào chi phí thu mua và liên kết chứng từ nguồn. |
+| PUR-12 | Phiếu đã chi tiền không được xóa/hủy trực tiếp. |
 
-| Mã | Chức năng | Mô tả về chức năng |
-| --- | --- | --- |
-| SAL-01 | Lập hóa đơn bán sách | Nhân viên chọn khách hàng (nếu có) và một hoặc nhiều bản sách đang khả dụng để lập hóa đơn. Hệ thống lấy giá bán của từng bản sách, áp dụng quyền lợi hạng thành viên và tính tổng tiền. |
-| SAL-02 | Hoàn tất bán sách | Hóa đơn chỉ hoàn tất sau khi thanh toán thành công. Các bản sách trên hóa đơn được chuyển sang trạng thái đã bán và rời khỏi tồn kho khả dụng vĩnh viễn. |
-| SAL-03 | Hủy hóa đơn | Nhân viên có quyền được hủy hóa đơn trước khi hoàn tất thanh toán. Hóa đơn đã hoàn tất không được hủy trực tiếp mà phải đi qua quy trình trả hàng và hoàn tiền. |
-| SAL-04 | Trả sách sau bán | Nhân viên lập yêu cầu trả hàng, ghi nhận lý do và tình trạng bản sách. Admin phê duyệt hoặc từ chối yêu cầu; bản sách được đưa lại kho chỉ khi còn đủ điều kiện kinh doanh. |
-| SAL-05 | Hoàn tiền | Sau khi yêu cầu trả hàng được Admin duyệt, hệ thống ghi nhận giao dịch hoàn tiền theo phương thức phù hợp, điều chỉnh doanh thu và tổng chi tiêu của khách hàng. |
-| SAL-06 | Tra cứu hóa đơn | Người có quyền được tìm kiếm hóa đơn theo mã, khách hàng, nhân viên, thời gian, trạng thái và phương thức thanh toán; đồng thời xem chi tiết lịch sử hủy, trả hàng hoặc hoàn tiền. |
+Khung gợi ý hiện tại:
 
-### 3.6. Cho thuê, gia hạn và trả sách
+- Grade A: 35%–45% giá bìa.
+- Grade B: 20%–30% giá bìa.
+- Grade C: 10%–15% giá bìa.
+- Grade D: cảnh báo từ chối hoặc xử lý theo giá thanh lý.
 
-| Mã | Chức năng | Mô tả về chức năng |
-| --- | --- | --- |
-| REN-01 | Lập phiếu thuê | Nhân viên chọn khách hàng và một hoặc nhiều bản sách khả dụng. Phiếu thuê lưu ngày thuê, hạn trả, giá thuê theo ngày, tiền đặt cọc, ưu đãi thành viên và người lập phiếu. |
-| REN-02 | Tính tiền thuê | Hệ thống tính tiền thuê dựa trên giá thuê theo ngày, thời gian thuê và ưu đãi của hạng thành viên. Mỗi đầu sách sử dụng thời hạn thuê mặc định trừ khi người có quyền điều chỉnh. |
-| REN-03 | Khóa bản sách đang thuê | Khi phiếu thuê có hiệu lực, các bản sách được chuyển sang trạng thái đang cho thuê và không thể được bán, cho người khác thuê hoặc xuất kho cho đến khi được trả hoặc xử lý là mất. |
-| REN-04 | Gia hạn thuê | Nhân viên được gia hạn phiếu thuê khi phiếu còn hiệu lực, bản sách không thuộc trường hợp bị khóa gia hạn và khách hàng đáp ứng điều kiện. Hệ thống cập nhật hạn trả và tiền thuê phát sinh. |
-| REN-05 | Nhận trả sách | Nhân viên ghi nhận thời điểm trả và tình trạng thực tế của từng bản sách. Hệ thống cho phép xử lý toàn bộ hoặc từng phần phiếu thuê khi các bản được trả ở thời điểm khác nhau. |
-| REN-06 | Tính và thu tiền phạt | Hệ thống tính phạt quá hạn theo số ngày trễ; nhân viên được ghi nhận khoản phạt do hư hỏng hoặc mất sách kèm lý do. Tiền đặt cọc được hoàn lại hoặc khấu trừ vào các khoản còn phải trả. |
-| REN-07 | Hoàn tất phiếu thuê | Phiếu thuê được hoàn tất khi mọi bản sách và nghĩa vụ thanh toán đã được xử lý. Bản còn đủ điều kiện được chuyển về khả dụng; bản hư hỏng hoặc mất được chuyển sang trạng thái tương ứng. |
-| REN-08 | Quản lý danh sách phiếu thuê | Người có quyền được tra cứu phiếu theo khách hàng, bản sách, nhân viên, thời gian và trạng thái như đang thuê, sắp đến hạn, quá hạn, trả một phần hoặc đã hoàn tất. |
+**[TBD - Unconfirmed]**: Hạn mức từng vai trò, quy tắc làm tròn và xử lý phiếu chỉ chấp nhận một phần.
 
-### 3.7. Khách hàng và hạng thành viên
+## 9. Bán sách tại quầy
 
-| Mã | Chức năng | Mô tả về chức năng |
-| --- | --- | --- |
-| CUS-01 | Quản lý hồ sơ khách hàng | Nhân viên có quyền được thêm, cập nhật và tra cứu hồ sơ gồm thông tin nhận diện, liên hệ, trạng thái và tài khoản liên kết nếu có. Hệ thống hạn chế tạo hồ sơ trùng dựa trên thông tin liên hệ hoặc mã khách hàng. |
-| CUS-02 | Tra cứu lịch sử khách hàng | Hệ thống tổng hợp lịch sử mua, thuê, trả, quá hạn, tiền phạt, hoàn tiền và yêu cầu hỗ trợ để nhân viên phục vụ khách hàng. |
-| CUS-03 | Quản lý hạng thành viên | Admin cấu hình các hạng cùng ngưỡng chi tiêu và quyền lợi như giảm giá bán/thuê, số bản được thuê tối đa hoặc số ngày thuê thêm. Hạng được Admin/nhân viên có quyền gán thủ công, không tự động thay đổi. |
-| CUS-04 | Theo dõi tổng chi tiêu | Hệ thống tính tổng số tiền hợp lệ khách đã thanh toán từ giao dịch hoàn tất, sau khi loại trừ giao dịch bị hủy hoặc số tiền đã hoàn. Giá trị này hỗ trợ người dùng quyết định gán hạng thành viên. |
-| CUS-05 | Không sử dụng điểm tích lũy | Hệ thống không phát hành, cộng, trừ hoặc quy đổi điểm. Mọi quyền lợi thành viên dựa trên hạng được gán và ngưỡng chi tiêu. |
+| Mã | Yêu cầu |
+| --- | --- |
+| SAL-01 | Thu ngân phải quét barcode từng bản khi lập hóa đơn. |
+| SAL-02 | Chỉ bản Khả dụng, đã có giá bán và không bị khóa mới được thêm vào hóa đơn. |
+| SAL-03 | Hồ sơ khách là tùy chọn đối với giao dịch bán. |
+| SAL-04 | Hệ thống phải lấy giá từng bản và áp dụng ưu đãi thành viên nếu có. |
+| SAL-05 | Hóa đơn chỉ chuyển sang Đã thanh toán sau khi thanh toán thành công. |
+| SAL-06 | Sau thanh toán, bản sách chuyển sang Đã bán và rời tồn kho khả dụng. |
+| SAL-07 | Doanh thu và tổng chi tiêu hợp lệ của khách phải được cập nhật sau hoàn tất. |
+| SAL-08 | Hóa đơn chưa thanh toán được hủy và phải giải phóng khóa bản sách. |
+| SAL-09 | Sách đã bán không được đổi trả/hoàn tiền thông thường. |
+| SAL-10 | Ngoại lệ quét nhầm barcode chỉ được yêu cầu trong vòng 24 giờ. |
+| SAL-11 | Ngoại lệ phải được Quản lý duyệt, dùng giao dịch đảo và lưu nhật ký. |
+| SAL-12 | Giao dịch đảo phải điều chỉnh doanh thu, tổng chi tiêu và trạng thái bản sách. |
 
-### 3.8. Dịch vụ và hỗ trợ khách hàng
+**[TBD - Unconfirmed]**: Xác nhận cuối cùng tỷ lệ giảm giá bán 5% cho Bạc và 10% cho Vàng.
 
-| Mã | Chức năng | Mô tả về chức năng |
-| --- | --- | --- |
-| SUP-01 | Tạo yêu cầu hỗ trợ | Nhân viên được tạo yêu cầu thay khách hàng; khách có tài khoản được gửi yêu cầu của chính mình. Yêu cầu phải liên kết với hồ sơ khách hàng và có loại, nội dung, thời điểm cùng mức ưu tiên. |
-| SUP-02 | Phân loại yêu cầu | Hệ thống hỗ trợ tối thiểu các loại: khiếu nại, đổi/trả sách, báo mất/hỏng và yêu cầu tìm sách. Yêu cầu gia hạn thuê được xử lý tại phiếu thuê, không thuộc module hỗ trợ. |
-| SUP-03 | Phân công và xử lý | Người có quyền phân công nhân viên phụ trách, cập nhật trao đổi, kết quả và trạng thái như mới, đang xử lý, chờ khách hàng, đã giải quyết hoặc đã đóng. |
-| SUP-04 | Theo dõi lịch sử hỗ trợ | Hệ thống lưu toàn bộ quá trình xử lý, người thực hiện và thời điểm thay đổi để phục vụ tra cứu và giải quyết khiếu nại. |
+## 10. Cho thuê sách
 
-### 3.9. Nhân viên, ca làm và chấm công
+| Mã | Yêu cầu |
+| --- | --- |
+| REN-01 | Khách thuê bắt buộc có hồ sơ với họ tên và số điện thoại. |
+| REN-02 | Phiếu có tổng giá trị sách trên 1.000.000 VNĐ yêu cầu thêm CCCD và địa chỉ. |
+| REN-03 | Hệ thống phải chặn khách có phiếu quá hạn hoặc nghĩa vụ thuê chưa thanh toán. |
+| REN-04 | Hệ thống phải kiểm tra số bản thuê tối đa theo hạng. |
+| REN-05 | Thu ngân phải quét barcode từng bản khi lập phiếu. |
+| REN-06 | Chỉ bản Khả dụng được đưa vào phiếu thuê. |
+| REN-07 | Tiền cọc mỗi bản bằng 100% giá bán thực tế của bản đó. |
+| REN-08 | Mọi hạng thành viên áp dụng tỷ lệ cọc 100%; ưu đãi không làm giảm cọc. |
+| REN-09 | Khách phải thanh toán đủ cọc trước khi nhận sách. |
+| REN-10 | Sau xác nhận cọc, phiếu chuyển Đang thuê và bản sách chuyển Đang cho thuê. |
+| REN-11 | Phí thuê chưa thu khi giao sách; được quyết toán lúc trả. |
+| REN-12 | Hệ thống phải lưu hạng áp dụng, hạn trả, đơn giá và lịch sử thay đổi phiếu. |
 
-| Mã | Chức năng | Mô tả về chức năng |
-| --- | --- | --- |
-| EMP-01 | Quản lý hồ sơ nhân viên | Người có quyền được thêm, cập nhật, tra cứu và thay đổi trạng thái làm việc của nhân viên. Hồ sơ nhân viên được liên kết với tài khoản đăng nhập tương ứng. |
-| EMP-02 | Quản lý ca làm | Quản lý được tạo ca, quy định thời gian bắt đầu/kết thúc và phân công nhân viên; đồng thời tra cứu lịch làm theo ngày, tuần hoặc nhân viên. |
-| EMP-03 | Chấm công vào/ra | Nhân viên ghi nhận thời điểm bắt đầu và kết thúc ca trên hệ thống. Hệ thống đối chiếu với lịch làm để xác định giờ làm thực tế, đi muộn, về sớm và tăng ca. |
-| EMP-04 | Hiệu chỉnh chấm công | Người có quyền được sửa dữ liệu chấm công khi có sai sót nhưng phải ghi lý do. Dữ liệu trước và sau hiệu chỉnh cùng người thực hiện được lưu trong nhật ký. |
-| EMP-05 | Tổng hợp công | Hệ thống tổng hợp số ca, tổng giờ làm, giờ tăng ca, thời gian đi muộn và về sớm theo kỳ lương để làm đầu vào tính lương. |
+Hạn mức mặc định:
 
-### 3.10. Quản lý lương
+| Hạng | Tổng chi tiêu hợp lệ | Số bản tối đa | Thời hạn tối đa |
+| --- | ---: | ---: | ---: |
+| Thường | Dưới 1.000.000 VNĐ | 3 | 14 ngày |
+| Bạc | Từ 1.000.000 đến dưới 3.000.000 VNĐ | 5 | 21 ngày |
+| Vàng | Từ 3.000.000 VNĐ | 8 | 30 ngày |
 
-| Mã | Chức năng | Mô tả về chức năng |
-| --- | --- | --- |
-| PAYR-01 | Cấu hình hình thức lương | Mỗi nhân viên được áp dụng lương tháng cố định hoặc lương theo giờ. Hồ sơ lương lưu mức lương cơ bản và các quy tắc liên quan trong phạm vi quyền hạn. |
-| PAYR-02 | Tính bảng lương | Hệ thống lập bảng lương theo kỳ dựa trên hình thức lương, dữ liệu chấm công, tăng ca, phụ cấp và khấu trừ. Người có quyền có thể bổ sung điều chỉnh kèm lý do. |
-| PAYR-03 | Duyệt và chốt lương | Admin hoặc Quản lý có quyền được kiểm tra, duyệt và chốt bảng lương. Bảng lương đã chốt không được sửa trực tiếp nếu chưa mở lại theo đúng quyền hạn và lưu nhật ký. |
-| PAYR-04 | Ghi nhận thanh toán lương | Hệ thống chỉ ghi nhận trạng thái chưa thanh toán/đã thanh toán và ngày thanh toán; không thực hiện chuyển tiền lương thực tế. |
+### 10.1. Công thức phí thuê
 
-### 3.11. Thanh toán
+`Phí thuê = Tổng (đơn giá thuê/ngày của từng bản × số ngày thuê thực tế) × (1 − tỷ lệ giảm theo hạng)`
 
-| Mã | Chức năng | Mô tả về chức năng |
-| --- | --- | --- |
-| PMT-01 | Thanh toán tiền mặt | Nhân viên ghi nhận số tiền khách đưa, số tiền phải trả và tiền thừa đối với hóa đơn bán, phiếu thuê, tiền cọc hoặc tiền phạt. |
-| PMT-02 | Thanh toán ngân hàng | Hệ thống hỗ trợ ghi nhận thanh toán chuyển khoản ở mức mô phỏng, gồm số tiền, mã tham chiếu và trạng thái giao dịch; không yêu cầu tích hợp ngân hàng hoặc xử lý tiền thật. |
-| PMT-03 | Quản lý giao dịch thanh toán | Mỗi khoản thu/hoàn tiền phải liên kết với chứng từ nghiệp vụ tương ứng, lưu phương thức, số tiền, người thực hiện, thời điểm và trạng thái để đối soát. |
-| PMT-04 | Xác nhận kết quả thanh toán | Chứng từ chỉ được đánh dấu đã thanh toán khi giao dịch thành công. Thanh toán thất bại hoặc bị hủy không làm thay đổi trạng thái cuối của sách và không được tính vào doanh thu. |
+- Tính theo chu kỳ 24 giờ.
+- Tối thiểu một ngày.
+- Đơn giá và tỷ lệ giảm phải cấu hình được.
 
-### 3.12. Thông báo
+**[TBD - Unconfirmed]**: Đơn giá, tỷ lệ giảm, quy tắc phần ngày lẻ, làm tròn tiền và thời điểm xác định hạng áp dụng.
 
-| Mã | Chức năng | Mô tả về chức năng |
-| --- | --- | --- |
-| NOT-01 | Kênh thông báo | Hệ thống gửi thông báo qua email và Firebase Cloud Messaging đến trình duyệt hoặc thiết bị đã đăng ký của người nhận. |
-| NOT-02 | Cảnh báo tồn kho | Hệ thống gửi cảnh báo cho người phụ trách khi số lượng khả dụng chạm hoặc thấp hơn ngưỡng tồn kho tối thiểu, hoặc khi phát hiện chênh lệch/hao hụt qua kiểm kê. |
-| NOT-03 | Xác nhận thanh toán | Sau khi thanh toán thành công, hệ thống gửi thông báo xác nhận đến khách hàng có thông tin liên hệ phù hợp. |
-| NOT-04 | Nhắc hạn và quá hạn | Hệ thống gửi thông báo khi phiếu thuê sắp đến hạn hoặc đã quá hạn; đồng thời thông báo cho nhân viên phụ trách để theo dõi. |
-| NOT-05 | Theo dõi trạng thái thông báo | Hệ thống lưu người nhận, nội dung, kênh, thời điểm, trạng thái gửi và trạng thái đọc (khi kênh hỗ trợ) để tra cứu và gửi lại khi cần. |
+## 11. Gia hạn thuê
 
-### 3.13. Báo cáo và thống kê
+| Mã | Yêu cầu |
+| --- | --- |
+| EXT-01 | Một phiếu được gia hạn tối đa hai lần. |
+| EXT-02 | Mỗi lần gia hạn không quá bảy ngày. |
+| EXT-03 | Hệ thống không kiểm tra giữ chỗ vì MVP không có giữ chỗ. |
+| EXT-04 | Hệ thống phải lưu hạn cũ, hạn mới, số ngày, thời điểm và người thực hiện. |
+| EXT-05 | Phí gia hạn là phí thuê phát sinh và được cộng vào quyết toán lúc trả. |
+| EXT-06 | Sau gia hạn, hệ thống gửi thông báo hạn mới qua Zalo. |
 
-| Mã | Chức năng | Mô tả về chức năng |
-| --- | --- | --- |
-| RPT-01 | Báo cáo bán sách | Thống kê số lượng và doanh thu bán theo đầu sách, danh mục và khoảng thời gian; xác định sách bán chạy và sách ít phát sinh giao dịch. |
-| RPT-02 | Báo cáo cho thuê | Thống kê lượt thuê, doanh thu thuê, tình trạng trả và quá hạn; xác định sách được thuê nhiều/ít nhất theo kỳ. |
-| RPT-03 | Báo cáo tồn kho | Thống kê số lượng theo trạng thái, sách tồn lâu, tồn dưới ngưỡng, hư hỏng, thất lạc và chênh lệch kiểm kê. |
-| RPT-04 | Báo cáo doanh thu | Tổng hợp doanh thu bán sách, tiền thuê, tiền phạt và các khoản thu khác; khấu trừ khoản hoàn tiền để thể hiện doanh thu thuần theo kỳ. |
-| RPT-05 | Báo cáo chi phí | Tổng hợp chi phí nhập sách và chi phí nhân sự theo khoảng thời gian, phục vụ so sánh với doanh thu. |
-| RPT-06 | Lọc và tra cứu báo cáo | Người có quyền được lọc báo cáo theo khoảng thời gian và các tiêu chí nghiệp vụ liên quan. Quyền xem dữ liệu tài chính được kiểm soát riêng. |
-| RPT-07 | Xuất báo cáo Excel | Hệ thống cho phép xuất dữ liệu báo cáo đã lọc sang tệp Excel, kèm tên báo cáo, khoảng thời gian và thời điểm xuất. |
+**[TBD - Unconfirmed]**: Có cho phép gia hạn phiếu đã quá hạn sau khi xử lý phạt tạm tính hay không.
 
-### 3.14. Cấu hình hệ thống
+## 12. Trả sách và quyết toán
 
-| Mã | Chức năng | Mô tả về chức năng |
-| --- | --- | --- |
-| CFG-01 | Cấu hình tiền tệ | Admin chọn đơn vị tiền tệ dùng thống nhất khi hiển thị giá, thanh toán, lương và báo cáo. |
-| CFG-02 | Cấu hình domain nhân viên | Admin thiết lập domain email được phép dùng để tự đăng ký tài khoản nhân viên. Thay đổi cấu hình chỉ áp dụng cho các lần đăng ký mới và phải được ghi nhật ký. |
-| CFG-03 | Cấu hình vai trò mặc định | Admin chọn vai trò được tự động gán cho tài khoản nhân viên mới sau khi xác thực email. |
-| CFG-04 | Cấu hình số lượng nhập | Admin thiết lập số lượng nhập tối thiểu và tối đa dùng để kiểm tra, cảnh báo khi lập phiếu nhập. |
-| CFG-05 | Cấu hình ngưỡng tồn kho | Admin thiết lập ngưỡng tồn tối thiểu áp dụng mặc định và có thể điều chỉnh cho từng đầu sách. Ngưỡng này là cơ sở tạo cảnh báo nhập hàng. |
-| CFG-06 | Cấu hình chính sách thành viên | Admin quản lý tên hạng, ngưỡng chi tiêu và quyền lợi của từng hạng. Việc thay đổi chính sách không tự động đổi hạng đã gán cho khách hàng. |
+| Mã | Yêu cầu |
+| --- | --- |
+| RET-01 | Khách phải trả toàn bộ bản sách trên cùng phiếu trong một lần. |
+| RET-02 | Hệ thống không hỗ trợ trả từng phần trong MVP. |
+| RET-03 | Nhân viên phải quét đủ barcode; barcode không thuộc phiếu phải bị từ chối. |
+| RET-04 | Nhân viên phải ghi nhận tình trạng thực tế của từng bản. |
+| RET-05 | Hệ thống tính phí thuê, gia hạn, quá hạn và hư hỏng trước khi quyết toán. |
+| RET-06 | Tiền phải thu được khấu trừ vào cọc trước khi hoàn phần còn lại. |
+| RET-07 | Nếu cọc không đủ, phiếu chuyển Chờ thanh toán bổ sung. |
+| RET-08 | Phiếu chỉ hoàn tất sau khi mọi khoản thu/hoàn đã được xác nhận. |
+| RET-09 | Bản nguyên vẹn về Khả dụng; bản hỏng/mất chuyển trạng thái tương ứng. |
+| RET-10 | Phí thuê và gia hạn được cộng vào tổng chi tiêu; cọc và tiền phạt không được cộng. |
 
-## 4. Quy tắc trạng thái chính
+### 12.1. Quá hạn
 
-### 4.1. Vòng đời bản sách
+| Mã | Yêu cầu |
+| --- | --- |
+| LATE-01 | Có thời gian miễn phạt hai giờ sau hạn trả. |
+| LATE-02 | Sau thời gian miễn phạt, số ngày trễ được làm tròn lên. |
+| LATE-03 | Phạt mỗi ngày bằng 150% đơn giá thuê/ngày của bản. |
+| LATE-04 | Tổng phạt quá hạn một bản không vượt 100% giá bán thực tế của bản đó. |
+| LATE-05 | Phạt quá hạn được khấu trừ vào tiền cọc. |
 
-`Khả dụng` → `Đang cho thuê` → `Khả dụng/Hư hỏng/Thất lạc`
+### 12.2. Hư hỏng và mất sách
 
-`Khả dụng` → `Đã bán`
+| Mã | Yêu cầu |
+| --- | --- |
+| DMG-01 | Mức hư hỏng được cấu hình theo tỷ lệ phần trăm giá trị bản sách. |
+| DMG-02 | Nhân viên chọn mức; hệ thống tự tính tiền phạt. |
+| DMG-03 | Điều chỉnh ngoài khung phải được Quản lý duyệt và lưu nhật ký. |
+| LOST-01 | Với bản bị mất, cửa hàng giữ toàn bộ tiền cọc của bản đó. |
+| LOST-02 | Không thu thêm bồi thường giá trị sách cho bản mất vì cọc đã bằng 100% giá trị. |
+| LOST-03 | Cọc của các bản khác trên phiếu vẫn được quyết toán riêng. |
 
-`Khả dụng/Hư hỏng` → `Thanh lý/Ngừng kinh doanh`
+**[TBD - Unconfirmed]**: Các mức hư hỏng, tỷ lệ và trạng thái bản sách sau xử lý.
 
-- Bản sách đã bán, thanh lý hoặc thất lạc không được dùng cho giao dịch mới.
-- Việc đưa bản sách đã trả lại vào kho phụ thuộc vào kết quả kiểm tra tình trạng.
-- Mọi thay đổi trạng thái ngoài quy trình bán/thuê thông thường phải có lý do và quyền phù hợp.
+## 13. Khách hàng và hạng thành viên
 
-### 4.2. Vòng đời giao dịch
+| Mã | Yêu cầu |
+| --- | --- |
+| CUS-01 | Nhân viên được tạo, cập nhật, tra cứu và thay đổi trạng thái hồ sơ khách. |
+| CUS-02 | Hệ thống phải phát hiện hồ sơ có khả năng trùng theo số điện thoại/định danh. |
+| CUS-03 | Hồ sơ phải hiển thị lịch sử mua, thuê, trả, phạt, thu mua và yêu cầu hỗ trợ. |
+| CUS-04 | Tổng chi tiêu chỉ gồm tiền mua sách, phí thuê và phí gia hạn đã thanh toán. |
+| CUS-05 | Không tính cọc, tiền phạt, bồi thường hoặc tiền cửa hàng chi thu mua. |
+| CUS-06 | Giao dịch đảo phải làm giảm tổng chi tiêu tương ứng. |
+| CUS-07 | Hệ thống tự động tính lại và nâng/hạ hạng theo tổng chi tiêu. |
+| CUS-08 | Mọi thay đổi hạng phải lưu hạng cũ, hạng mới, tổng chi tiêu, thời gian và nguyên nhân. |
+| CUS-09 | MVP không cộng, trừ, đổi hoặc hiển thị số dư điểm tích lũy. |
 
-- Hóa đơn bán: `Nháp/Chờ thanh toán` → `Đã thanh toán` hoặc `Đã hủy`; hóa đơn đã thanh toán có thể phát sinh `Yêu cầu trả hàng` → `Đã hoàn tiền/Từ chối`.
-- Phiếu thuê: `Đang thuê` → `Trả một phần/Sắp đến hạn/Quá hạn` → `Đã hoàn tất`.
-- Phiếu hỗ trợ: `Mới` → `Đang xử lý/Chờ khách hàng` → `Đã giải quyết` → `Đã đóng`.
-- Bảng lương: `Nháp` → `Chờ duyệt` → `Đã chốt` → `Đã thanh toán`.
+## 14. Thanh toán và đối soát
+
+| Mã | Yêu cầu |
+| --- | --- |
+| PMT-01 | Hệ thống hỗ trợ thanh toán tiền mặt và VietQR. |
+| PMT-02 | Tiền mặt phải ghi số phải thu, số nhận và tiền thừa. |
+| PMT-03 | Giao dịch tiền mặt phải liên kết với ca thu ngân đang mở. |
+| PMT-04 | Mỗi yêu cầu chuyển khoản phải sinh VietQR có mã tham chiếu và số tiền chính xác. |
+| PMT-05 | Mã QR hết hạn sau 15 phút. |
+| PMT-06 | Backend phải nhận và xác thực webhook ngân hàng. |
+| PMT-07 | Chỉ webhook hợp lệ, đúng tham chiếu và đủ số tiền mới xác nhận thanh toán. |
+| PMT-08 | Webhook trùng không được tạo thanh toán trùng. |
+| PMT-09 | Webhook đến muộn, tiền thiếu/thừa hoặc sai nội dung phải chuyển Cần đối soát. |
+| PMT-10 | Thanh toán Thành công bị đóng băng; sửa sai dùng giao dịch đảo. |
+| PMT-11 | API ngân hàng chỉ xác nhận tiền vào, không tự động chuyển tiền ra. |
+| PMT-12 | Khoản chuyển ra được thực hiện bên ngoài và ghi mã giao dịch/chứng từ trong hệ thống. |
+
+**[TBD - Unconfirmed]**: Ngân hàng/nhà cung cấp, chuẩn ký webhook, retry và quy trình đối soát sai lệch.
+
+## 15. Hoàn tiền cọc và các khoản chi
+
+| Mã | Yêu cầu |
+| --- | --- |
+| OUT-01 | Hoàn cọc tiền mặt phải tạo khoản chi trong ca thu ngân. |
+| OUT-02 | Hoàn cọc chuyển khoản được thực hiện ngoài hệ thống và lưu mã giao dịch. |
+| OUT-03 | Khoản hoàn phải liên kết với phiếu thuê. |
+| OUT-04 | Chi thu mua phải liên kết với phiếu thu mua. |
+| OUT-05 | Chi lương phải liên kết với bảng lương. |
+
+**[TBD - Unconfirmed]**: Có bắt buộc hoàn cọc theo phương thức nộp ban đầu hay không.
+
+## 16. Ca thu ngân và két tiền
+
+| Mã | Yêu cầu |
+| --- | --- |
+| CASH-01 | Nhân viên có quyền được mở ca và nhập tiền đầu ca. |
+| CASH-02 | Hệ thống phải chặn ca mở trùng của cùng nhân viên/két. |
+| CASH-03 | Mọi khoản thu/chi tiền mặt phải cập nhật số dư lý thuyết của ca. |
+| CASH-04 | Tiền chuyển khoản không được tính vào số dư tiền mặt. |
+| CASH-05 | Khi đóng ca, nhân viên nhập tiền kiểm đếm thực tế. |
+| CASH-06 | Hệ thống tính chênh lệch giữa tiền thực tế và lý thuyết. |
+| CASH-07 | Chênh lệch bắt buộc có giải trình; vượt ngưỡng phải được phê duyệt. |
+| CASH-08 | Ca đã đóng không nhận thêm giao dịch và không được sửa trực tiếp. |
+| CASH-09 | Hệ thống phải hỗ trợ dữ liệu bàn giao giữa hai ca. |
+
+**[TBD - Unconfirmed]**: Một hay nhiều két vật lý, ngưỡng chênh lệch cần duyệt và quy tắc chi khi két không đủ.
+
+## 17. Nhân viên, ca làm và chấm công
+
+| Mã | Yêu cầu |
+| --- | --- |
+| EMP-01 | Người có quyền được tạo, cập nhật, tra cứu và ngừng làm việc hồ sơ nhân viên. |
+| EMP-02 | Hồ sơ nhân viên phải liên kết với tài khoản đăng nhập. |
+| EMP-03 | Quản lý được cấu hình mẫu ca và số nhân viên tối thiểu. |
+| EMP-04 | Hệ thống hỗ trợ lập lịch theo tuần/tháng và gán nhân viên. |
+| EMP-05 | Hệ thống chặn ca trùng và lịch vượt 12 giờ/ngày hoặc 48 giờ/tuần. |
+| EMP-06 | Hệ thống cảnh báo ca thiếu người và chỉ công bố khi không còn lỗi chặn. |
+| EMP-07 | Nhân viên được gửi yêu cầu nghỉ/đổi ca; Quản lý duyệt hoặc từ chối. |
+| EMP-08 | Nhân viên phải check-in và check-out. |
+| EMP-09 | Thiếu một đầu chấm công phải đánh dấu Thiếu chấm công và không tự tính giờ hợp lệ. |
+| EMP-10 | Điều chỉnh chấm công phải có lý do, phê duyệt và lịch sử cũ/mới. |
+| EMP-11 | Bảng công đã chốt bị khóa; mở lại cần quyền Admin và nhật ký. |
+
+**[TBD - Unconfirmed]**: Ca qua ngày, thời gian nghỉ, xác thực check-in/out và quy trình xác nhận đổi ca.
+
+## 18. Quản lý lương
+
+| Mã | Yêu cầu |
+| --- | --- |
+| PAYR-01 | Hệ thống hỗ trợ lương theo giờ, theo ca hoặc theo tháng. |
+| PAYR-02 | Bảng lương lấy dữ liệu từ bảng công đã chốt. |
+| PAYR-03 | Hệ thống tính lương cơ bản, tăng ca, phụ cấp, thưởng, khấu trừ và tạm ứng. |
+| PAYR-04 | Điều chỉnh thủ công phải có lý do. |
+| PAYR-05 | Admin/Quản lý có quyền được duyệt và chốt bảng lương. |
+| PAYR-06 | Bảng lương đã chốt bị khóa; mở lại phải có quyền và nhật ký. |
+| PAYR-07 | Hệ thống ghi nhận chi trả tiền mặt hoặc chuyển khoản. |
+| PAYR-08 | Hệ thống không tự động chuyển lương qua API ngân hàng. |
+| PAYR-09 | Hệ thống xuất bảng công và bảng lương Excel/PDF. |
+
+**[TBD - Unconfirmed]**: Hình thức lương chính thức, hệ số tăng ca, xử lý thiếu công và thanh toán lương nhiều lần.
+
+## 19. Yêu cầu/báo cáo của khách hàng
+
+| Mã | Yêu cầu |
+| --- | --- |
+| SUP-01 | MVP sử dụng một bảng dữ liệu chính cho yêu cầu/báo cáo của khách. |
+| SUP-02 | Hệ thống cung cấp API CRUD cơ bản. |
+| SUP-03 | Bản ghi có thể liên kết với khách hàng và giao dịch nếu có. |
+| SUP-04 | Hệ thống không lưu nguồn tiếp nhận. |
+| SUP-05 | MVP không có workflow ticket nhiều bước hoặc cổng tự phục vụ của khách. |
+| SUP-06 | Quyền tạo, xem, sửa và xóa phải được quản lý riêng trong RBAC. |
+
+**[TBD - Unconfirmed]**: Trường dữ liệu cuối cùng, loại, trạng thái và chính sách xóa mềm/xóa cứng.
+
+## 20. Thông báo
+
+| Mã | Yêu cầu |
+| --- | --- |
+| NOT-01 | Khách hàng nhận thông báo qua Zalo. |
+| NOT-02 | Nhân viên nhận thông báo nội bộ và email. |
+| NOT-03 | Hệ thống không sử dụng Firebase Cloud Messaging. |
+| NOT-04 | Sự kiện khách gồm nhận sách, thanh toán, gia hạn, sắp đến hạn, quá hạn, trả sách và thu mua. |
+| NOT-05 | Sự kiện nhân viên gồm lịch làm, phê duyệt, tồn kho, kiểm kê, két, lương và đối soát. |
+| NOT-06 | Hệ thống lưu người nhận, kênh, nội dung/mẫu, thời điểm, trạng thái và lỗi gửi. |
+| NOT-07 | Thông báo thất bại phải có khả năng gửi lại. |
+| NOT-08 | Không gửi mật khẩu, OTP đọc được, CCCD hoặc dữ liệu nhạy cảm không cần thiết. |
+
+**[TBD - Unconfirmed]**: Zalo OA trực tiếp hay trung gian, mẫu tin, lịch nhắc hạn và retry.
+
+## 21. Báo cáo và dữ liệu thuế
+
+| Mã | Yêu cầu |
+| --- | --- |
+| RPT-01 | Báo cáo bán theo đầu sách, danh mục, nhân viên và thời gian. |
+| RPT-02 | Báo cáo thuê gồm lượt thuê, phí thuê, gia hạn, quá hạn, phạt và sách mất. |
+| RPT-03 | Báo cáo thu mua/nhập hàng theo nguồn, Grade, số lượng và chi phí. |
+| RPT-04 | Báo cáo tồn kho theo trạng thái, ngưỡng, tuổi tồn và chênh lệch kiểm kê. |
+| RPT-05 | Báo cáo doanh thu tách bán, thuê, gia hạn và tiền phạt. |
+| RPT-06 | Tiền cọc không được tính là doanh thu. |
+| RPT-07 | Báo cáo chi phí gồm nhập hàng, thu mua và nhân sự. |
+| RPT-08 | Báo cáo nhân sự gồm giờ công, tăng ca, vi phạm và lương. |
+| RPT-09 | Báo cáo ca thu ngân gồm đầu ca, thu/chi, lý thuyết, thực tế và chênh lệch. |
+| RPT-10 | Hệ thống tổng hợp dữ liệu phục vụ kê khai thuế theo tháng/quý. |
+| RPT-11 | Hệ thống chỉ tổng hợp/xuất dữ liệu, không tự nộp hồ sơ thuế. |
+| RPT-12 | Báo cáo phải xuất được Excel và PDF. |
+| RPT-13 | Báo cáo chỉ tính giao dịch hợp lệ; giao dịch đảo phải giảm số liệu. |
+
+**[TBD - Unconfirmed]**: Cách phân loại cọc bị giữ/tiền phạt cho thuế và mẫu Excel/PDF cuối cùng.
+
+## 22. Cấu hình hệ thống
+
+| Mã | Yêu cầu |
+| --- | --- |
+| CFG-01 | Hệ thống dùng VNĐ và có quy tắc hiển thị tiền thống nhất. |
+| CFG-02 | Đơn giá thuê, tỷ lệ giảm, ngưỡng hạng và hạn mức thuê phải cấu hình được. |
+| CFG-03 | Số lần gia hạn, số ngày gia hạn, miễn phạt, hệ số và trần phạt phải cấu hình được. |
+| CFG-04 | Các mức hư hỏng và tỷ lệ phạt phải cấu hình được. |
+| CFG-05 | Hạn mức thu mua và vai trò phê duyệt phải cấu hình được. |
+| CFG-06 | Ngưỡng tồn và giới hạn số lượng nhập phải cấu hình được. |
+| CFG-07 | Mẫu ca, giới hạn giờ làm và tham số lương phải cấu hình được. |
+| CFG-08 | Tích hợp ngân hàng, email, Zalo và API sách phải có cấu hình riêng. |
+| CFG-09 | Mọi thay đổi cấu hình phải lưu giá trị cũ/mới, người thực hiện và thời gian. |
+| CFG-10 | Cấu hình mới không tự động viết lại giao dịch lịch sử. |
+
+## 23. Vòng đời dữ liệu chính
+
+### 23.1. Bản sách
+
+`Chờ hoàn tất nhập → Khả dụng → Đang cho thuê → Khả dụng/Hư hỏng/Thất lạc`
+
+`Khả dụng → Đã bán`
+
+`Khả dụng/Hư hỏng → Thanh lý/Ngừng kinh doanh`
+
+`Khả dụng → Đang khóa kiểm kê → Khả dụng/Trạng thái điều chỉnh`
+
+### 23.2. Hóa đơn bán
+
+`Nháp → Chờ thanh toán → Đã thanh toán/Đã hủy`
+
+Ngoại lệ: `Đã thanh toán → Đang yêu cầu đảo → Đã đảo/Từ chối`.
+
+### 23.3. Phiếu thuê
+
+`Nháp → Chờ thanh toán cọc → Đang thuê → Sắp đến hạn/Quá hạn → Đang quyết toán → Đã hoàn tất`
+
+Không có trạng thái Trả một phần trong MVP.
+
+### 23.4. Phiếu thu mua
+
+`Nháp → Chờ khách đồng ý/Chờ duyệt → Đã duyệt → Chờ chi tiền → Đã hoàn tất`
+
+Nhánh khác: `Từ chối/Đã hủy`.
+
+### 23.5. Thanh toán
+
+`Khởi tạo → Chờ thanh toán → Thành công/Thất bại/Hết hạn/Cần đối soát`
+
+### 23.6. Ca thu ngân
+
+`Đang mở → Đang kiểm đếm → Chờ duyệt chênh lệch/Đã đóng`
+
+### 23.7. Bảng công và bảng lương
+
+- Bảng công: `Nháp → Chờ kiểm tra → Đã chốt → Mở lại có kiểm soát`.
+- Bảng lương: `Nháp → Chờ duyệt → Đã chốt → Đã thanh toán`.
+
+## 24. Ngoại lệ bắt buộc xử lý
+
+Hệ thống phải có hành vi rõ ràng cho các trường hợp:
+
+- Sách không có ISBN hoặc API thư mục sách lỗi.
+- Barcode không tồn tại, bị quét trùng hoặc không thuộc phiếu trả.
+- Hai nhân viên thao tác đồng thời trên cùng bản sách.
+- Webhook sai chữ ký, trùng, đến muộn hoặc không khớp số tiền.
+- Mất kết nối khi đang thanh toán.
+- Tiền cọc không đủ để quyết toán.
+- Chênh lệch kiểm kê hoặc chênh lệch két.
+- Dịch vụ Zalo/email thất bại.
+
+Backend phải dùng mã yêu cầu/định danh giao dịch để chống xử lý lặp đối với các thao tác tài chính.
+
+## 25. Danh sách quyết định còn mở
+
+- **[TBD - Unconfirmed]** Chính sách OTP, mật khẩu và phiên.
+- **[TBD - Unconfirmed]** Đơn giá thuê và tỷ lệ giảm theo hạng.
+- **[TBD - Unconfirmed]** Giảm giá bán theo hạng.
+- **[TBD - Unconfirmed]** Quy tắc làm tròn phí và thời gian.
+- **[TBD - Unconfirmed]** Gia hạn phiếu quá hạn.
+- **[TBD - Unconfirmed]** Phương thức hoàn cọc.
+- **[TBD - Unconfirmed]** Mức phạt hư hỏng.
+- **[TBD - Unconfirmed]** Hạn mức thu mua.
+- **[TBD - Unconfirmed]** Cấu hình két, chấm công và lương.
+- **[TBD - Unconfirmed]** Nhà cung cấp VietQR và xác thực webhook.
+- **[TBD - Unconfirmed]** Cách tích hợp Zalo và mẫu thông báo.
+- **[TBD - Unconfirmed]** Cách phân loại cọc bị giữ/tiền phạt trong báo cáo thuế.
+- **[TBD - Unconfirmed]** Mẫu xuất Excel/PDF.
+- **[TBD - Unconfirmed]** Trường dữ liệu cuối cùng của module yêu cầu khách hàng.
