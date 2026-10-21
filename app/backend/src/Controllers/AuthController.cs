@@ -8,7 +8,6 @@ namespace backend.src.Controllers;
 [Route("api/auth")]
 public class AuthController(AuthService authService) : ControllerBase
 {
-    //Truong role dung de authorization, authentication dung JwtToken
     [HttpPost("login")]
     public async Task<IActionResult> Login(
         [FromBody] LoginRequest request
@@ -24,5 +23,12 @@ public class AuthController(AuthService authService) : ControllerBase
     {
         var response = await authService.Register(request);
         return Created(string.Empty , response);
+    }
+
+    [HttpPost("verify")]
+    public async Task<IActionResult> Verify([FromBody] VerifyRequest request)
+    {
+        await authService.Verify(request.Token);
+        return NoContent();
     }
 }

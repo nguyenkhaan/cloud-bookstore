@@ -48,4 +48,33 @@ public class TokenService(IConfiguration configuration)
         return new JwtSecurityTokenHandler().WriteToken(token);
 
     }
+
+    public ClaimsPrincipal ValidateRegisterVerificationToken(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            throw new SecurityTokenException("Token is required");
+
+        var secret = GetSecretKey(TokenType.VERIFY_REGISTER);
+        if (string.IsNullOrWhiteSpace(secret))
+            throw new InvalidOperationException("Register verification token secret is not configured");
+
+        var tokenHandler = new JwtSecurityTokenHandler
+        {
+            MapInboundClaims = false
+        };
+        var validationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            RequireExpirationTime = true,
+            RequireSignedTokens = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),
+            ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
+            ClockSkew = TimeSpan.Zero
+        };
+
+        return tokenHandler.ValidateToken(token, validationParameters, out _);
+    }
 }

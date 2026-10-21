@@ -1,10 +1,12 @@
 using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 using backend.src.Bases.Enums;
 using backend.src.Data;
 using backend.src.Dto.AuthDto;
 using backend.src.Exceptions;
 using backend.src.Models.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using BCryptHasher = BCrypt.Net.BCrypt;
 using backend.src.Models;
 namespace backend.src.Services;
@@ -74,7 +76,6 @@ public class AuthService(AppDbContext dbContext , TokenService tokenService , Se
             await dbContext.Employees.AddAsync(newEmployee);
             await dbContext.SaveChangesAsync();
 
-            // Generate verify token
             var newClaims = new List<Claim>
             {
                 new("email" , request.Email)
@@ -90,5 +91,34 @@ public class AuthService(AppDbContext dbContext , TokenService tokenService , Se
             throw;
         }
     }
-    //employee.Password = BCrypt.Net.BCrypt.HashPassword(plainPassword, workFactor: 12); -> Thuc hien hash password
+
+    public async Task Verify(string token)
+    {
+        ClaimsPrincipal principal;
+        try
+        {
+            principal = tokenService.ValidateRegisterVerificationToken(token);
+        }
+        catch (Exception exception) when (exception is SecurityTokenException or ArgumentException)
+        {
+            throw new UnauthorizedException("Invalid or expired verification token");
+        }
+
+        var subject = principal.FindFirstValue(JwtRegisteredClaimNames.Sub);
+        var email = principal.FindFirstValue("email");
+        if (!Guid.TryParse(subject, out var employeeId) || string.IsNullOrWhiteSpace(email))
+            throw new UnauthorizedException("Invalid or expired verification token");
+
+        var employee = await dbContext.Employees.FindAsync(employeeId);
+        if (employee is null || !string.Equals(employee.Email, email, StringComparison.OrdinalIgnoreCase))
+            throw new UnauthorizedException("Invalid or expired verification token");
+
+        if (employee.Status == EmployeeStatus.ACTIVE)
+            return;
+        if (employee.Status != EmployeeStatus.PENDING_OTP)
+            throw new ForbiddenException("Account cannot be verified");
+
+        employee.Status = EmployeeStatus.ACTIVE;
+        await dbContext.SaveChangesAsync();
+    }
 }
