@@ -9,6 +9,7 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 //System Configuration: Controller, Database, Exception...
 builder.Services.AddControllers();
+builder.Services.AddOpenApi();
 string connectionString = builder.Configuration["ConnectionStrings:DefaultConnection"] 
     ?? throw new InvalidDataException("Cannot connect to database. Please check your connection string");
 Console.WriteLine("Database connection configured.");
@@ -51,7 +52,15 @@ builder.Services.AddScoped<TokenService>();
 
 //Dependency Injection -> builder.Services.AddScoped<AuthService>();
 var app = builder.Build();
-
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "Cloud Bookstore API v1");
+        options.RoutePrefix = "docs";
+    });
+}
 if (args.Contains("--seed", StringComparer.OrdinalIgnoreCase))
 {
     await Seed.RunAsync(app.Services, app.Environment.ContentRootPath);
