@@ -15,6 +15,8 @@ public class TokenService(IConfiguration configuration)
             return configuration["Jwt:AccessSecret:Key"];
         if (type == TokenType.REFRESH)
             return configuration["Jwt:RefreshSecret:Key"];
+        if (type == TokenType.VERIFY_REGISTER)
+            return configuration["Jwt:VerifyRegisterSecret:Key"];
         return null;
     }
     public string GenerateToken(Guid userId , TokenType type, IEnumerable<Claim>? additionalClaims = null)
@@ -33,6 +35,7 @@ public class TokenService(IConfiguration configuration)
         {
             TokenType.ACCESS => DateTime.UtcNow.AddMinutes(15),
             TokenType.REFRESH => DateTime.UtcNow.AddDays(7),
+            TokenType.VERIFY_REGISTER => DateTime.UtcNow.AddMinutes(1024),
             _ => throw new ArgumentOutOfRangeException(nameof(type))
         };
         var key = new SymmetricSecurityKey(keyByte);

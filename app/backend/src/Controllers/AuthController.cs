@@ -10,11 +10,19 @@ public class AuthController(AuthService authService) : ControllerBase
 {
     //Truong role dung de authorization, authentication dung JwtToken
     [HttpPost("login")]
-    public IActionResult Login(
+    public async Task<IActionResult> Login(
         [FromBody] LoginRequest request
     )
     {
-        var response = authService.Login(request);
+        var response = await authService.Login(request);
         return Ok(response);
+    }
+    [HttpPost("register")]
+    public async Task<IActionResult> Register(
+        [FromBody] RegisterRequest request 
+    )
+    {
+        var response = await authService.Register(request);
+        return Created(string.Empty , response);
     }
 }

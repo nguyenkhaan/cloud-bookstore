@@ -7,6 +7,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "app", "app", "{F95F473B-E98
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "backend", "app\backend\backend.csproj", "{ACA76A7D-49DA-4E0A-827B-13D380AFE683}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "backend.Tests", "app\backend.Tests\backend.Tests.csproj", "{754D6ECA-E63A-4A36-9DFA-8F7F093780D0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,11 +31,24 @@ Global
 		{ACA76A7D-49DA-4E0A-827B-13D380AFE683}.Release|x64.Build.0 = Release|Any CPU
 		{ACA76A7D-49DA-4E0A-827B-13D380AFE683}.Release|x86.ActiveCfg = Release|Any CPU
 		{ACA76A7D-49DA-4E0A-827B-13D380AFE683}.Release|x86.Build.0 = Release|Any CPU
+		{754D6ECA-E63A-4A36-9DFA-8F7F093780D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{754D6ECA-E63A-4A36-9DFA-8F7F093780D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{754D6ECA-E63A-4A36-9DFA-8F7F093780D0}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{754D6ECA-E63A-4A36-9DFA-8F7F093780D0}.Debug|x64.Build.0 = Debug|Any CPU
+		{754D6ECA-E63A-4A36-9DFA-8F7F093780D0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{754D6ECA-E63A-4A36-9DFA-8F7F093780D0}.Debug|x86.Build.0 = Debug|Any CPU
+		{754D6ECA-E63A-4A36-9DFA-8F7F093780D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{754D6ECA-E63A-4A36-9DFA-8F7F093780D0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{754D6ECA-E63A-4A36-9DFA-8F7F093780D0}.Release|x64.ActiveCfg = Release|Any CPU
+		{754D6ECA-E63A-4A36-9DFA-8F7F093780D0}.Release|x64.Build.0 = Release|Any CPU
+		{754D6ECA-E63A-4A36-9DFA-8F7F093780D0}.Release|x86.ActiveCfg = Release|Any CPU
+		{754D6ECA-E63A-4A36-9DFA-8F7F093780D0}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{ACA76A7D-49DA-4E0A-827B-13D380AFE683} = {F95F473B-E98A-ACD6-1986-755F447BE36F}
+		{754D6ECA-E63A-4A36-9DFA-8F7F093780D0} = {F95F473B-E98A-ACD6-1986-755F447BE36F}
 	EndGlobalSection
 EndGlobal

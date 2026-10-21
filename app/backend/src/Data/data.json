@@ -19,7 +19,7 @@
   "employee": [
     {
       "Id": "00000000-0000-0000-0000-000000000010",
-      "Email": "admin@oldbookstore.local",
+      "Email": "admin@cloud.io",
       "Password": "$2a$11$3S5BEER66j0uU6Pb.t101OZJs.2cQKvQvInpGbH9pQaitjQfK2oBe",
       "FullName": "Quản trị viên",
       "Phone": "0900000001",
@@ -29,7 +29,7 @@
     },
     {
       "Id": "00000000-0000-0000-0000-000000000011",
-      "Email": "cashier@oldbookstore.local",
+      "Email": "cashier@cloud.io",
       "Password": "$2a$11$LZSt9QF7SSCto5moAvU8M.tXkeDPPNE8aWsN1/xzljZI8fjUQWB9y",
       "FullName": "Thu ngân mẫu",
       "Phone": "0900000003",
@@ -39,7 +39,7 @@
     },
     {
       "Id": "00000000-0000-0000-0000-000000000012",
-      "Email": "inventory@oldbookstore.local",
+      "Email": "inventory@cloud.io",
       "Password": "$2a$11$hXbk7XuOSQdSYiWC2GJGzuAcEvjRI9.QAL05a/uAvolIOrBYZ8oqq",
       "FullName": "Quản lý kho mẫu",
       "Phone": "0900000004",
