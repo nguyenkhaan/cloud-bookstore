@@ -1,5 +1,6 @@
 //dotnet ef migrations add DatabaseSchemaPhase0
 //dotnet ef database update
+// Run: dotnet watch run 
 using backend.src.Data;
 using backend.src.Exceptions;
 using backend.src.Scripts;
@@ -10,6 +11,30 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 //System Configuration: Controller, Database, Exception...
 builder.Services.AddControllers();
+//CORS configuration
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy
+            .WithOrigins(
+                "https://cloudbook.cloudian.io.vn",
+                "http://localhost:5173"
+            )
+            .WithHeaders(
+                "Content-Type",
+                "Authorization",
+                "Accept"
+            )
+            .WithMethods(
+                "GET",
+                "POST",
+                "PUT",
+                "DELETE",
+                "OPTIONS"
+            );
+    });
+});
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiHandlerException>();
 builder.Services.AddOpenApi();
