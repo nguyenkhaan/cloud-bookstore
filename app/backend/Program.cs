@@ -52,7 +52,7 @@ builder.Services.AddAuthorization();
 
 //Dependency Injection
 builder.Services.AddScoped<TokenService>();
-
+builder.Services.AddScoped<AuthService>();
 
 //Dependency Injection -> builder.Services.AddScoped<AuthService>();
 var app = builder.Build();
