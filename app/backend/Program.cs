@@ -1,6 +1,7 @@
 //dotnet ef migrations add DatabaseSchemaPhase0
 //dotnet ef database update
 using backend.src.Data;
+using backend.src.Exceptions;
 using backend.src.Scripts;
 using backend.src.Services;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +10,10 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 //System Configuration: Controller, Database, Exception...
 builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<ApiHandlerException>();
 builder.Services.AddOpenApi();
+
 string connectionString = builder.Configuration["ConnectionStrings:DefaultConnection"] 
     ?? throw new InvalidDataException("Cannot connect to database. Please check your connection string");
 Console.WriteLine("Database connection configured.");
@@ -52,6 +56,13 @@ builder.Services.AddScoped<TokenService>();
 
 //Dependency Injection -> builder.Services.AddScoped<AuthService>();
 var app = builder.Build();
+
+app.UseExceptionHandler(new ExceptionHandlerOptions
+{
+    AllowStatusCode404Response = true
+});
+
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();

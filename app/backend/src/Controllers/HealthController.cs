@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http.HttpResults;
+using backend.src.Exceptions;
 
 namespace backend.src.Controllers;
 
@@ -19,5 +20,10 @@ public class HealthController : ControllerBase
         {
             message = "Build with Cloudian 💙 Cloud"
         });
+    }
+    [HttpGet("exception")]
+    public string GetHealthError()
+    {
+        throw new BadRequestException("This is an exception for testing");
     }
 }
