@@ -14,6 +14,9 @@ public class EmployeeModel
     [EmailAddress]
     public string Email { get; set; } = string.Empty;
     [Required]
+    [MaxLength(200)]
+    public string FullName { get; set; } = string.Empty;
+    [Required]
     public string Password { get; set; } = string.Empty;
     [Required]
     [MaxLength(12)]
@@ -21,7 +24,7 @@ public class EmployeeModel
     public string? AvatarUrl { get; set; } = null;
     public Guid RoleId { get; set; }
     [ForeignKey(nameof(RoleId))]
-    public RoleModel Role { get; set; }
+    public RoleModel Role { get; set; } = null!;
     public EmployeeStatus Status { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

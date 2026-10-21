@@ -1,6 +1,10 @@
+using Microsoft.AspNetCore.Mvc;
+
 namespace backend.src.Controllers;
 
-public class AuthController
+[ApiController]
+[Route("api/auth")]
+public class AuthController : ControllerBase
 {
-    
+    //Truong role dung de authorization, authentication dung JwtToken
 }

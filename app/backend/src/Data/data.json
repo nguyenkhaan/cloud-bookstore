@@ -1,0 +1,913 @@
+{
+  "roles": [
+    {
+      "Id": "00000000-0000-0000-0000-000000000001",
+      "RoleName": "ADMIN",
+      "IsActive": true
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000002",
+      "RoleName": "CASHIER",
+      "IsActive": true
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000003",
+      "RoleName": "INVENTORY_MANAGER",
+      "IsActive": true
+    }
+  ],
+  "employee": [
+    {
+      "Id": "00000000-0000-0000-0000-000000000010",
+      "Email": "admin@oldbookstore.local",
+      "Password": "$2a$11$seeded.password.hash",
+      "FullName": "Quản trị viên",
+      "Phone": "0900000001",
+      "RoleId": "00000000-0000-0000-0000-000000000001",
+      "Status": "ACTIVE",
+      "CreatedAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000011",
+      "Email": "cashier@oldbookstore.local",
+      "Password": "$2a$11$seeded.password.hash",
+      "FullName": "Thu ngân mẫu",
+      "Phone": "0900000003",
+      "RoleId": "00000000-0000-0000-0000-000000000002",
+      "Status": "ACTIVE",
+      "CreatedAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000012",
+      "Email": "inventory@oldbookstore.local",
+      "Password": "$2a$11$seeded.password.hash",
+      "FullName": "Quản lý kho mẫu",
+      "Phone": "0900000004",
+      "RoleId": "00000000-0000-0000-0000-000000000003",
+      "Status": "ACTIVE",
+      "CreatedAt": "2026-01-01T00:00:00Z"
+    }
+  ],
+  "membership_tiers": [
+    {
+      "Id": "00000000-0000-0000-0000-000000000101",
+      "Name": "REGULAR",
+      "RankOrder": 1,
+      "MinSpend": 0,
+      "MaxBooks": 2,
+      "MaxRentalDays": 7,
+      "RentDiscountPct": 0,
+      "SaleDiscountPct": 0
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000102",
+      "Name": "SILVER",
+      "RankOrder": 2,
+      "MinSpend": 1000000,
+      "MaxBooks": 4,
+      "MaxRentalDays": 10,
+      "RentDiscountPct": 5,
+      "SaleDiscountPct": 3
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000103",
+      "Name": "GOLD",
+      "RankOrder": 3,
+      "MinSpend": 3000000,
+      "MaxBooks": 6,
+      "MaxRentalDays": 14,
+      "RentDiscountPct": 10,
+      "SaleDiscountPct": 5
+    }
+  ],
+  "customers": [
+    {
+      "Id": "00000000-0000-0000-0000-000000000201",
+      "Phone": "0900000002",
+      "FullName": "Nguyễn An",
+      "Email": "nguyen.an@example.com",
+      "NationalId": "001234567890",
+      "Address": "Quận 1, TP. Hồ Chí Minh",
+      "TierId": "00000000-0000-0000-0000-000000000101",
+      "EligibleSpend": 250000,
+      "IsFlagged": false,
+      "FlagReason": "",
+      "CreatedAt": "2026-01-02T00:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000202",
+      "Phone": "0900000005",
+      "FullName": "Trần Minh Anh",
+      "Email": "tran.minh.anh@example.com",
+      "NationalId": "001234567891",
+      "Address": "Quận 3, TP. Hồ Chí Minh",
+      "TierId": "00000000-0000-0000-0000-000000000102",
+      "EligibleSpend": 1500000,
+      "IsFlagged": false,
+      "FlagReason": "",
+      "CreatedAt": "2026-01-07T00:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000203",
+      "Phone": "0900000006",
+      "FullName": "Lê Quốc Bảo",
+      "Email": "le.quoc.bao@example.com",
+      "NationalId": "001234567892",
+      "Address": "Thủ Đức, TP. Hồ Chí Minh",
+      "TierId": "00000000-0000-0000-0000-000000000101",
+      "EligibleSpend": 400000,
+      "IsFlagged": false,
+      "FlagReason": "",
+      "CreatedAt": "2026-01-08T00:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000204",
+      "Phone": "0900000007",
+      "FullName": "Phạm Gia Hân",
+      "Email": "pham.gia.han@example.com",
+      "NationalId": "001234567893",
+      "Address": "Quận Bình Thạnh, TP. Hồ Chí Minh",
+      "TierId": "00000000-0000-0000-0000-000000000103",
+      "EligibleSpend": 3500000,
+      "IsFlagged": false,
+      "FlagReason": "",
+      "CreatedAt": "2026-01-09T00:00:00Z"
+    }
+  ],
+  "system_settings": [
+    {
+      "Id": "00000000-0000-0000-0000-000000000301",
+      "Key": "rental.max_extensions",
+      "Value": 2,
+      "Unit": "times",
+      "Description": "Số lần gia hạn tối đa",
+      "UpdatedBy": "00000000-0000-0000-0000-000000000010",
+      "UpdatedAt": "2026-01-01T00:00:00Z"
+    }
+  ],
+  "damage_levels": [
+    {
+      "Id": "00000000-0000-0000-0000-000000000401",
+      "Level": "LIGHT",
+      "PenaltyPct": 20,
+      "CopyStatusAfter": "DAMAGED"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000402",
+      "Level": "HEAVY",
+      "PenaltyPct": 50,
+      "CopyStatusAfter": "DAMAGED"
+    }
+  ],
+  "categories": [
+    {
+      "Id": "00000000-0000-0000-0000-000000000501",
+      "Name": "Văn học",
+      "IsActive": true
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000502",
+      "Name": "Kinh điển",
+      "IsActive": true
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000503",
+      "Name": "Thiếu nhi",
+      "IsActive": true
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000504",
+      "Name": "Kỹ năng sống",
+      "IsActive": true
+    }
+  ],
+  "titles": [
+    {
+      "Id": "00000000-0000-0000-0000-000000000601",
+      "Name": "Dế Mèn Phiêu Lưu Ký",
+      "Author": "Tô Hoài",
+      "OriginalPublishYear": 1941,
+      "CategoryId": "00000000-0000-0000-0000-000000000501",
+      "CreatedAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000602",
+      "Name": "Tắt Đèn",
+      "Author": "Ngô Tất Tố",
+      "OriginalPublishYear": 1939,
+      "CategoryId": "00000000-0000-0000-0000-000000000502",
+      "CreatedAt": "2026-01-07T00:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000603",
+      "Name": "Cho Tôi Xin Một Vé Đi Tuổi Thơ",
+      "Author": "Nguyễn Nhật Ánh",
+      "OriginalPublishYear": 2008,
+      "CategoryId": "00000000-0000-0000-0000-000000000503",
+      "CreatedAt": "2026-01-08T00:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000604",
+      "Name": "Đắc Nhân Tâm",
+      "Author": "Dale Carnegie",
+      "OriginalPublishYear": 1936,
+      "CategoryId": "00000000-0000-0000-0000-000000000504",
+      "CreatedAt": "2026-01-09T00:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000605",
+      "Name": "Nhà Giả Kim",
+      "Author": "Paulo Coelho",
+      "OriginalPublishYear": 1988,
+      "CategoryId": "00000000-0000-0000-0000-000000000502",
+      "CreatedAt": "2026-01-10T00:00:00Z"
+    }
+  ],
+  "edition": [
+    {
+      "Id": "00000000-0000-0000-0000-000000000701",
+      "Isbn": "9786041234567",
+      "TitleId": "00000000-0000-0000-0000-000000000601",
+      "Publisher": "Kim Đồng",
+      "PublishYear": 2025,
+      "CoverPrice": 65000,
+      "DefaultRentPrice": 5000,
+      "MinStockSale": 2,
+      "MinStockRental": 1,
+      "MetadataSource": "MANUAL",
+      "IsActive": true
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000702",
+      "Isbn": "9786049876543",
+      "TitleId": "00000000-0000-0000-0000-000000000602",
+      "Publisher": "Văn Học",
+      "PublishYear": 2023,
+      "CoverPrice": 78000,
+      "DefaultRentPrice": 6000,
+      "MinStockSale": 2,
+      "MinStockRental": 1,
+      "MetadataSource": "MANUAL",
+      "IsActive": true
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000703",
+      "Isbn": "9786049876544",
+      "TitleId": "00000000-0000-0000-0000-000000000603",
+      "Publisher": "Trẻ",
+      "PublishYear": 2024,
+      "CoverPrice": 92000,
+      "DefaultRentPrice": 7000,
+      "MinStockSale": 2,
+      "MinStockRental": 2,
+      "MetadataSource": "MANUAL",
+      "IsActive": true
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000704",
+      "Isbn": "9786049876545",
+      "TitleId": "00000000-0000-0000-0000-000000000604",
+      "Publisher": "Tổng Hợp TP. Hồ Chí Minh",
+      "PublishYear": 2022,
+      "CoverPrice": 86000,
+      "DefaultRentPrice": 7000,
+      "MinStockSale": 2,
+      "MinStockRental": 1,
+      "MetadataSource": "MANUAL",
+      "IsActive": true
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000705",
+      "Isbn": "9786049876546",
+      "TitleId": "00000000-0000-0000-0000-000000000605",
+      "Publisher": "Nhã Nam",
+      "PublishYear": 2025,
+      "CoverPrice": 99000,
+      "DefaultRentPrice": 8000,
+      "MinStockSale": 2,
+      "MinStockRental": 2,
+      "MetadataSource": "MANUAL",
+      "IsActive": true
+    }
+  ],
+  "suppliers": [
+    {
+      "Id": "00000000-0000-0000-0000-000000000801",
+      "Name": "Nhà xuất bản Kim Đồng",
+      "Phone": "02838228658",
+      "IsActive": true
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000802",
+      "Name": "Công ty Văn hóa Phương Nam",
+      "Phone": "02838222222",
+      "IsActive": true
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000803",
+      "Name": "Nhã Nam",
+      "Phone": "02435146875",
+      "IsActive": true
+    }
+  ],
+  "stock_receipts": [
+    {
+      "Id": "00000000-0000-0000-0000-000000000901",
+      "Code": "PN-000001",
+      "SourceType": "SUPPLIER",
+      "SupplierId": "00000000-0000-0000-0000-000000000801",
+      "Status": "COMPLETED",
+      "TotalAmount": 45000,
+      "NeedsApproval": false,
+      "CreatedBy": "00000000-0000-0000-0000-000000000010",
+      "CreatedAt": "2026-01-03T00:00:00Z",
+      "CompletedAt": "2026-01-03T01:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000902",
+      "Code": "PN-000002",
+      "SourceType": "SUPPLIER",
+      "SupplierId": "00000000-0000-0000-0000-000000000802",
+      "Status": "COMPLETED",
+      "TotalAmount": 226000,
+      "NeedsApproval": false,
+      "CreatedBy": "00000000-0000-0000-0000-000000000012",
+      "CreatedAt": "2026-01-07T08:00:00Z",
+      "CompletedAt": "2026-01-07T09:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000903",
+      "Code": "PN-000003",
+      "SourceType": "SUPPLIER",
+      "SupplierId": "00000000-0000-0000-0000-000000000803",
+      "Status": "COMPLETED",
+      "TotalAmount": 141000,
+      "NeedsApproval": false,
+      "CreatedBy": "00000000-0000-0000-0000-000000000012",
+      "CreatedAt": "2026-01-08T08:00:00Z",
+      "CompletedAt": "2026-01-08T09:00:00Z"
+    }
+  ],
+  "stock_receipt_lines": [
+    {
+      "Id": "00000000-0000-0000-0000-000000001001",
+      "ReceiptId": "00000000-0000-0000-0000-000000000901",
+      "EditionId": "00000000-0000-0000-0000-000000000701",
+      "Availability": "BOTH",
+      "ConditionGrade": "A",
+      "Quantity": 1,
+      "UnitCost": 45000
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000001002",
+      "ReceiptId": "00000000-0000-0000-0000-000000000902",
+      "EditionId": "00000000-0000-0000-0000-000000000702",
+      "Availability": "BOTH",
+      "ConditionGrade": "A",
+      "Quantity": 2,
+      "UnitCost": 55000
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000001003",
+      "ReceiptId": "00000000-0000-0000-0000-000000000902",
+      "EditionId": "00000000-0000-0000-0000-000000000703",
+      "Availability": "BOTH",
+      "ConditionGrade": "A",
+      "Quantity": 2,
+      "UnitCost": 58000
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000001004",
+      "ReceiptId": "00000000-0000-0000-0000-000000000903",
+      "EditionId": "00000000-0000-0000-0000-000000000704",
+      "Availability": "SALE_ONLY",
+      "ConditionGrade": "A",
+      "Quantity": 1,
+      "UnitCost": 62000
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000001005",
+      "ReceiptId": "00000000-0000-0000-0000-000000000903",
+      "EditionId": "00000000-0000-0000-0000-000000000705",
+      "Availability": "BOTH",
+      "ConditionGrade": "A",
+      "Quantity": 1,
+      "UnitCost": 79000
+    }
+  ],
+  "book_copies": [
+    {
+      "Id": "00000000-0000-0000-0000-000000001101",
+      "CopyBarcode": "BC-000001",
+      "EditionId": "00000000-0000-0000-0000-000000000701",
+      "Availability": "BOTH",
+      "Status": "AVAILABLE",
+      "ConditionGrade": "A",
+      "CostPrice": 45000,
+      "SellingPrice": 65000,
+      "ReceiptLineId": "00000000-0000-0000-0000-000000001001",
+      "CreatedAt": "2026-01-03T01:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000001102",
+      "CopyBarcode": "BC-000002",
+      "EditionId": "00000000-0000-0000-0000-000000000702",
+      "Availability": "BOTH",
+      "Status": "SOLD",
+      "ConditionGrade": "A",
+      "CostPrice": 55000,
+      "SellingPrice": 78000,
+      "ReceiptLineId": "00000000-0000-0000-0000-000000001002",
+      "CreatedAt": "2026-01-07T09:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000001103",
+      "CopyBarcode": "BC-000003",
+      "EditionId": "00000000-0000-0000-0000-000000000702",
+      "Availability": "BOTH",
+      "Status": "AVAILABLE",
+      "ConditionGrade": "A",
+      "CostPrice": 55000,
+      "SellingPrice": 78000,
+      "ReceiptLineId": "00000000-0000-0000-0000-000000001002",
+      "CreatedAt": "2026-01-07T09:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000001104",
+      "CopyBarcode": "BC-000004",
+      "EditionId": "00000000-0000-0000-0000-000000000703",
+      "Availability": "BOTH",
+      "Status": "SOLD",
+      "ConditionGrade": "A",
+      "CostPrice": 58000,
+      "SellingPrice": 92000,
+      "ReceiptLineId": "00000000-0000-0000-0000-000000001003",
+      "CreatedAt": "2026-01-07T09:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000001105",
+      "CopyBarcode": "BC-000005",
+      "EditionId": "00000000-0000-0000-0000-000000000703",
+      "Availability": "BOTH",
+      "Status": "RENTED",
+      "ConditionGrade": "A",
+      "CostPrice": 58000,
+      "SellingPrice": 92000,
+      "ReceiptLineId": "00000000-0000-0000-0000-000000001003",
+      "CreatedAt": "2026-01-07T09:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000001106",
+      "CopyBarcode": "BC-000006",
+      "EditionId": "00000000-0000-0000-0000-000000000704",
+      "Availability": "SALE_ONLY",
+      "Status": "AVAILABLE",
+      "ConditionGrade": "A",
+      "CostPrice": 62000,
+      "SellingPrice": 86000,
+      "ReceiptLineId": "00000000-0000-0000-0000-000000001004",
+      "CreatedAt": "2026-01-08T09:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000001107",
+      "CopyBarcode": "BC-000007",
+      "EditionId": "00000000-0000-0000-0000-000000000705",
+      "Availability": "BOTH",
+      "Status": "AVAILABLE",
+      "ConditionGrade": "A",
+      "CostPrice": 79000,
+      "SellingPrice": 99000,
+      "ReceiptLineId": "00000000-0000-0000-0000-000000001005",
+      "CreatedAt": "2026-01-08T09:00:00Z"
+    }
+  ],
+  "inventory_checks": [
+    {
+      "Id": "00000000-0000-0000-0000-000000001201",
+      "CheckCode": "KK-000001",
+      "CopyId": "00000000-0000-0000-0000-000000001101",
+      "ExpectedStatus": "AVAILABLE",
+      "ObservedStatus": "AVAILABLE",
+      "IsFound": true,
+      "VarianceType": "NONE",
+      "CheckedBy": "00000000-0000-0000-0000-000000000010",
+      "CheckedAt": "2026-01-04T00:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000001202",
+      "CheckCode": "KK-000002",
+      "CopyId": "00000000-0000-0000-0000-000000001103",
+      "ExpectedStatus": "AVAILABLE",
+      "ObservedStatus": "AVAILABLE",
+      "IsFound": true,
+      "VarianceType": "NONE",
+      "CheckedBy": "00000000-0000-0000-0000-000000000012",
+      "CheckedAt": "2026-01-09T08:30:00Z"
+    }
+  ],
+  "inventory_adjustment_requests": [
+    {
+      "Id": "00000000-0000-0000-0000-000000001301",
+      "InventoryCheckId": "00000000-0000-0000-0000-000000001201",
+      "RequestedStatus": "AVAILABLE",
+      "Reason": "Xác nhận kiểm kê mẫu",
+      "Status": "APPLIED",
+      "RequestedBy": "00000000-0000-0000-0000-000000000010",
+      "RequestedAt": "2026-01-04T00:00:00Z",
+      "AppliedAt": "2026-01-04T01:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000001302",
+      "InventoryCheckId": "00000000-0000-0000-0000-000000001202",
+      "RequestedStatus": "AVAILABLE",
+      "Reason": "Đối chiếu tồn kho đầu ngày",
+      "Status": "APPLIED",
+      "RequestedBy": "00000000-0000-0000-0000-000000000012",
+      "RequestedAt": "2026-01-09T08:35:00Z",
+      "AppliedAt": "2026-01-09T08:40:00Z"
+    }
+  ],
+  "cash_sessions": [
+    {
+      "Id": "00000000-0000-0000-0000-000000001401",
+      "OpenedBy": "00000000-0000-0000-0000-000000000010",
+      "OpenedAt": "2026-01-05T00:00:00Z",
+      "OpeningBalance": 500000,
+      "Status": "OPEN"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000001402",
+      "OpenedBy": "00000000-0000-0000-0000-000000000011",
+      "OpenedAt": "2026-01-09T00:00:00Z",
+      "OpeningBalance": 300000,
+      "Status": "OPEN"
+    }
+  ],
+  "sale_invoices": [
+    {
+      "Id": "00000000-0000-0000-0000-000000001501",
+      "InvoiceNo": "HD-000001",
+      "CustomerId": "00000000-0000-0000-0000-000000000201",
+      "CashSessionId": "00000000-0000-0000-0000-000000001401",
+      "Status": "PAID",
+      "Subtotal": 65000,
+      "DiscountTotal": 0,
+      "TotalPayable": 65000,
+      "CreatedBy": "00000000-0000-0000-0000-000000000010",
+      "CreatedAt": "2026-01-05T01:00:00Z",
+      "PaidAt": "2026-01-05T01:05:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000001502",
+      "InvoiceNo": "HD-000002",
+      "CustomerId": "00000000-0000-0000-0000-000000000202",
+      "CashSessionId": "00000000-0000-0000-0000-000000001402",
+      "Status": "PAID",
+      "Subtotal": 78000,
+      "DiscountTotal": 2340,
+      "TotalPayable": 75660,
+      "CreatedBy": "00000000-0000-0000-0000-000000000011",
+      "CreatedAt": "2026-01-09T09:00:00Z",
+      "PaidAt": "2026-01-09T09:02:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000001503",
+      "InvoiceNo": "HD-000003",
+      "CustomerId": "00000000-0000-0000-0000-000000000203",
+      "CashSessionId": "00000000-0000-0000-0000-000000001402",
+      "Status": "PAID",
+      "Subtotal": 92000,
+      "DiscountTotal": 0,
+      "TotalPayable": 92000,
+      "CreatedBy": "00000000-0000-0000-0000-000000000011",
+      "CreatedAt": "2026-01-09T09:15:00Z",
+      "PaidAt": "2026-01-09T09:16:00Z"
+    }
+  ],
+  "sale_invoice_lines": [
+    {
+      "Id": "00000000-0000-0000-0000-000000001601",
+      "InvoiceId": "00000000-0000-0000-0000-000000001501",
+      "CopyId": "00000000-0000-0000-0000-000000001101",
+      "ListPrice": 65000,
+      "DiscountPct": 0,
+      "DiscountAmount": 0,
+      "FinalPrice": 65000,
+      "Status": "ACTIVE"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000001602",
+      "InvoiceId": "00000000-0000-0000-0000-000000001502",
+      "CopyId": "00000000-0000-0000-0000-000000001102",
+      "ListPrice": 78000,
+      "DiscountPct": 3,
+      "DiscountAmount": 2340,
+      "FinalPrice": 75660,
+      "Status": "ACTIVE"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000001603",
+      "InvoiceId": "00000000-0000-0000-0000-000000001503",
+      "CopyId": "00000000-0000-0000-0000-000000001104",
+      "ListPrice": 92000,
+      "DiscountPct": 0,
+      "DiscountAmount": 0,
+      "FinalPrice": 92000,
+      "Status": "ACTIVE"
+    }
+  ],
+  "rental_slips": [
+    {
+      "Id": "00000000-0000-0000-0000-000000001701",
+      "SlipNo": "PT-000001",
+      "CustomerId": "00000000-0000-0000-0000-000000000201",
+      "TierId": "00000000-0000-0000-0000-000000000101",
+      "RentDate": "2026-01-06",
+      "Status": "DRAFT",
+      "CreatedBy": "00000000-0000-0000-0000-000000000010",
+      "CreatedAt": "2026-01-06T00:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000001702",
+      "SlipNo": "PT-000002",
+      "CustomerId": "00000000-0000-0000-0000-000000000204",
+      "TierId": "00000000-0000-0000-0000-000000000103",
+      "RentDate": "2026-01-10",
+      "Status": "ACTIVE",
+      "CreatedBy": "00000000-0000-0000-0000-000000000011",
+      "CreatedAt": "2026-01-10T08:00:00Z",
+      "ActivatedAt": "2026-01-10T08:05:00Z"
+    }
+  ],
+  "returns": [
+    {
+      "Id": "00000000-0000-0000-0000-000000001801",
+      "ReturnNo": "TR-000001",
+      "SlipId": "00000000-0000-0000-0000-000000001701",
+      "Status": "DRAFT",
+      "ReturnedAt": "2026-01-06T00:00:00Z",
+      "CreatedBy": "00000000-0000-0000-0000-000000000010"
+    }
+  ],
+  "rental_lines": [
+    {
+      "Id": "00000000-0000-0000-0000-000000001901",
+      "SlipId": "00000000-0000-0000-0000-000000001701",
+      "CopyId": "00000000-0000-0000-0000-000000001101",
+      "DailyRate": 5000,
+      "BookPriceSnapshot": 65000,
+      "DepositAmount": 65000,
+      "RentDiscountPct": 0,
+      "InitialDays": 7,
+      "TotalDays": 7,
+      "DueAt": "2026-01-13T16:59:59Z",
+      "ExtensionCount": 0,
+      "BaseRentFee": 35000,
+      "ExtensionFeeTotal": 0,
+      "LockedLatePenalty": 0,
+      "Status": "PENDING_DEPOSIT",
+      "DamageNeedsApproval": false,
+      "LateDays": 0,
+      "ChargedRentFee": 0,
+      "ChargedExtensionFee": 0,
+      "ChargedLatePenalty": 0,
+      "ChargedDamagePenalty": 0,
+      "LostRetainedAmount": 0,
+      "RefundAmount": 0,
+      "AdditionalAmountDue": 0,
+      "AdditionalAmountPaid": 0
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000001902",
+      "SlipId": "00000000-0000-0000-0000-000000001702",
+      "CopyId": "00000000-0000-0000-0000-000000001105",
+      "DailyRate": 7000,
+      "BookPriceSnapshot": 92000,
+      "DepositAmount": 92000,
+      "RentDiscountPct": 10,
+      "InitialDays": 10,
+      "TotalDays": 13,
+      "DueAt": "2026-01-23T16:59:59Z",
+      "ExtensionCount": 1,
+      "BaseRentFee": 63000,
+      "ExtensionFeeTotal": 18900,
+      "LockedLatePenalty": 0,
+      "Status": "RENTING",
+      "DamageNeedsApproval": false,
+      "LateDays": 0,
+      "ChargedRentFee": 0,
+      "ChargedExtensionFee": 0,
+      "ChargedLatePenalty": 0,
+      "ChargedDamagePenalty": 0,
+      "LostRetainedAmount": 0,
+      "RefundAmount": 0,
+      "AdditionalAmountDue": 0,
+      "AdditionalAmountPaid": 0
+    }
+  ],
+  "rental_extensions": [
+    {
+      "Id": "00000000-0000-0000-0000-000000002001",
+      "RentalLineId": "00000000-0000-0000-0000-000000001901",
+      "Seq": 1,
+      "ExtendedAt": "2026-01-10T00:00:00Z",
+      "DaysAdded": 3,
+      "ExtensionFee": 15000,
+      "LatePenaltyLocked": 0,
+      "OldDueAt": "2026-01-13T16:59:59Z",
+      "NewDueAt": "2026-01-16T16:59:59Z",
+      "PerformedBy": "00000000-0000-0000-0000-000000000010"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000002002",
+      "RentalLineId": "00000000-0000-0000-0000-000000001902",
+      "Seq": 1,
+      "ExtendedAt": "2026-01-19T08:00:00Z",
+      "DaysAdded": 3,
+      "ExtensionFee": 18900,
+      "LatePenaltyLocked": 0,
+      "OldDueAt": "2026-01-20T16:59:59Z",
+      "NewDueAt": "2026-01-23T16:59:59Z",
+      "PerformedBy": "00000000-0000-0000-0000-000000000011"
+    }
+  ],
+  "payments": [
+    {
+      "Id": "00000000-0000-0000-0000-000000002101",
+      "PaymentNo": "TT-000001",
+      "IdempotencyKey": "seed-sale-payment-000001",
+      "Direction": "IN",
+      "PaymentType": "SALE",
+      "Method": "CASH",
+      "Amount": 65000,
+      "Status": "SUCCEEDED",
+      "CashSessionId": "00000000-0000-0000-0000-000000001401",
+      "SaleInvoiceId": "00000000-0000-0000-0000-000000001501",
+      "CashReceived": 100000,
+      "CreatedBy": "00000000-0000-0000-0000-000000000010",
+      "CreatedAt": "2026-01-05T01:00:00Z",
+      "PaidAt": "2026-01-05T01:05:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000002102",
+      "PaymentNo": "TT-000002",
+      "IdempotencyKey": "seed-sale-payment-000002",
+      "Direction": "IN",
+      "PaymentType": "SALE",
+      "Method": "CASH",
+      "Amount": 75660,
+      "Status": "SUCCEEDED",
+      "CashSessionId": "00000000-0000-0000-0000-000000001402",
+      "SaleInvoiceId": "00000000-0000-0000-0000-000000001502",
+      "CashReceived": 100000,
+      "CreatedBy": "00000000-0000-0000-0000-000000000011",
+      "CreatedAt": "2026-01-09T09:00:00Z",
+      "PaidAt": "2026-01-09T09:02:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000002103",
+      "PaymentNo": "TT-000003",
+      "IdempotencyKey": "seed-rental-deposit-000002",
+      "Direction": "IN",
+      "PaymentType": "RENTAL_DEPOSIT",
+      "Method": "CASH",
+      "Amount": 92000,
+      "Status": "SUCCEEDED",
+      "CashSessionId": "00000000-0000-0000-0000-000000001402",
+      "RentalSlipId": "00000000-0000-0000-0000-000000001702",
+      "CashReceived": 100000,
+      "CreatedBy": "00000000-0000-0000-0000-000000000011",
+      "CreatedAt": "2026-01-10T08:05:00Z",
+      "PaidAt": "2026-01-10T08:05:00Z"
+    }
+  ],
+  "employee_work_records": [
+    {
+      "Id": "00000000-0000-0000-0000-000000002201",
+      "EmployeeId": "00000000-0000-0000-0000-000000000010",
+      "WorkDate": "2026-01-05",
+      "ShiftNo": 1,
+      "AttendanceStatus": "PRESENT",
+      "WorkedMinutes": 480,
+      "OvertimeMinutes": 0,
+      "ShiftSalary": 250000,
+      "PaymentStatus": "UNPAID",
+      "CreatedAt": "2026-01-05T00:00:00Z",
+      "UpdatedAt": "2026-01-05T00:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000002202",
+      "EmployeeId": "00000000-0000-0000-0000-000000000011",
+      "WorkDate": "2026-01-09",
+      "ShiftNo": 1,
+      "AttendanceStatus": "PRESENT",
+      "WorkedMinutes": 480,
+      "OvertimeMinutes": 30,
+      "ShiftSalary": 280000,
+      "PaymentStatus": "UNPAID",
+      "CreatedAt": "2026-01-09T00:00:00Z",
+      "UpdatedAt": "2026-01-09T00:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000002203",
+      "EmployeeId": "00000000-0000-0000-0000-000000000012",
+      "WorkDate": "2026-01-10",
+      "ShiftNo": 2,
+      "AttendanceStatus": "PRESENT",
+      "WorkedMinutes": 480,
+      "OvertimeMinutes": 0,
+      "ShiftSalary": 250000,
+      "PaymentStatus": "UNPAID",
+      "CreatedAt": "2026-01-10T00:00:00Z",
+      "UpdatedAt": "2026-01-10T00:00:00Z"
+    }
+  ],
+  "notification_outbox": [
+    {
+      "Id": "00000000-0000-0000-0000-000000002301",
+      "Channel": "EMAIL",
+      "RecipientType": "CUSTOMER",
+      "RecipientAddress": "nguyen.an@example.com",
+      "TemplateCode": "SALE_RECEIPT",
+      "Content": {
+        "invoice_no": "HD-000001"
+      },
+      "SourceEntityType": "sale_invoice",
+      "SourceEntityId": "00000000-0000-0000-0000-000000001501",
+      "Status": "PENDING",
+      "AttemptCount": 0,
+      "CreatedAt": "2026-01-05T01:05:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000002302",
+      "Channel": "EMAIL",
+      "RecipientType": "CUSTOMER",
+      "RecipientAddress": "tran.minh.anh@example.com",
+      "TemplateCode": "SALE_RECEIPT",
+      "Content": {
+        "invoice_no": "HD-000002"
+      },
+      "SourceEntityType": "sale_invoice",
+      "SourceEntityId": "00000000-0000-0000-0000-000000001502",
+      "Status": "PENDING",
+      "AttemptCount": 0,
+      "CreatedAt": "2026-01-09T09:02:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000002303",
+      "Channel": "EMAIL",
+      "RecipientType": "CUSTOMER",
+      "RecipientAddress": "pham.gia.han@example.com",
+      "TemplateCode": "RENTAL_RECEIPT",
+      "Content": {
+        "slip_no": "PT-000002"
+      },
+      "SourceEntityType": "rental_slip",
+      "SourceEntityId": "00000000-0000-0000-0000-000000001702",
+      "Status": "PENDING",
+      "AttemptCount": 0,
+      "CreatedAt": "2026-01-10T08:05:00Z"
+    }
+  ],
+  "audit_logs": [
+    {
+      "Id": "00000000-0000-0000-0000-000000002401",
+      "OccurredAt": "2026-01-05T01:05:00Z",
+      "ActorId": "00000000-0000-0000-0000-000000000010",
+      "IpAddress": "127.0.0.1",
+      "Action": "CREATE",
+      "EntityType": "sale_invoice",
+      "EntityId": "00000000-0000-0000-0000-000000001501",
+      "AfterData": {
+        "status": "PAID"
+      },
+      "Reason": "Seed data"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000002402",
+      "OccurredAt": "2026-01-09T09:02:00Z",
+      "ActorId": "00000000-0000-0000-0000-000000000011",
+      "IpAddress": "127.0.0.1",
+      "Action": "CREATE",
+      "EntityType": "sale_invoice",
+      "EntityId": "00000000-0000-0000-0000-000000001502",
+      "AfterData": {
+        "status": "PAID"
+      },
+      "Reason": "Seed sale invoice"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000002403",
+      "OccurredAt": "2026-01-10T08:05:00Z",
+      "ActorId": "00000000-0000-0000-0000-000000000011",
+      "IpAddress": "127.0.0.1",
+      "Action": "CREATE",
+      "EntityType": "rental_slip",
+      "EntityId": "00000000-0000-0000-0000-000000001702",
+      "AfterData": {
+        "status": "ACTIVE"
+      },
+      "Reason": "Seed rental slip"
+    }
+  ]
+}
