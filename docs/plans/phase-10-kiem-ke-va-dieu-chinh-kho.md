@@ -4,59 +4,117 @@
 
 Kiểm kê theo CopyBarcode mà không gây bán/thuê trùng, xử lý chênh lệch qua phê duyệt và cảnh báo tồn đúng kênh.
 
-## Step 1 — Phiếu xuất và điều chỉnh thông thường
+## Step P10-S01 — Điều chỉnh tồn thông thường
 
-**Feature:** `INV-003`.
+**Mô tả ngắn:** BE hỗ trợ hỏng, mất, thanh lý, ngừng kinh doanh với state transition và audit.
 
+**Tham chiếu:** Feature/OQ `INV-003`; Rule `BR-INV-002`–`BR-INV-007`, `BR-GEN-005`, `BR-GEN-007`; Workflow `WF-06`.
+
+**Công việc:**
 - [ ] BE hỗ trợ hỏng, mất, thanh lý, ngừng kinh doanh với state transition và audit.
 - [ ] FE có form chọn lý do, xem tác động và xác nhận thao tác nhạy cảm.
 - [ ] Test bản đang giao dịch, trạng thái kết thúc và quyền kho.
 
-**Chấp nhận:** Không thể xuất/điều chỉnh bản đang bị khóa bởi giao dịch khác.
+**Acceptance:**
+- [ ] Không thể xuất/điều chỉnh bản đang bị khóa bởi giao dịch khác.
 
-**Kiểm chứng:** State transition integration test + E2E.
+**Verification:**
+- [ ] State transition integration test + E2E.
+- [ ] Các lệnh áp dụng trong bảng `Lệnh chuẩn` pass.
 
-**Phạm vi:** M.
+**Dependencies:** `CP03-B`, `CP05-A`
 
-## Step 2 — Mở đợt và quét kiểm kê
+**Files:** `app/backend/src/{Controllers,Dto,Models,Services,Data}/**`, `app/backend.Tests/**`, `app/frontend/src/**`, `docs/specs/**`
 
-**Feature:** `INV-004`.
+**Quy mô:** M
 
+## Step P10-S02 — Quét kiểm kê
+
+**Mô tả ngắn:** BE xác định phạm vi, khóa bản, lưu expected/observed và ngăn giao dịch xuất kho.
+
+**Tham chiếu:** Feature/OQ `INV-004`; Rule `BR-INV-002`–`BR-INV-007`, `BR-GEN-005`, `BR-GEN-007`; Workflow `WF-06`.
+
+**Công việc:**
 - [ ] BE xác định phạm vi, khóa bản, lưu expected/observed và ngăn giao dịch xuất kho.
 - [ ] FE hỗ trợ quét liên tục, đếm tiến độ và báo mã ngoài phạm vi/trùng.
 - [ ] Test giao dịch đồng thời trong lúc kiểm kê và khôi phục khóa khi hủy hợp lệ.
 
-**Chấp nhận:** Bản thuộc phạm vi không bán/thuê được cho tới khi đóng kiểm kê.
+**Acceptance:**
+- [ ] Bản thuộc phạm vi không bán/thuê được cho tới khi đóng kiểm kê.
 
-**Kiểm chứng:** Concurrency test + E2E quét kiểm kê.
+**Verification:**
+- [ ] Concurrency test + E2E quét kiểm kê.
+- [ ] Các lệnh áp dụng trong bảng `Lệnh chuẩn` pass.
 
-## Step 3 — Chênh lệch và phê duyệt
+**Dependencies:** `P10-S01`
 
-**Feature:** `INV-005`.
+**Files:** `app/backend/src/{Controllers,Dto,Models,Services,Data}/**`, `app/backend.Tests/**`, `app/frontend/src/**`, `docs/specs/**`
 
+**Quy mô:** M
+
+## Checkpoint CP10-A — Sau P10-S02
+
+- [ ] Backend test pass bằng lệnh chuẩn.
+- [ ] Frontend test/lint/build pass bằng lệnh chuẩn.
+- [ ] Lát cắt hiện tại chạy end-to-end.
+- [ ] Evidence được gắn trong `todo.md`.
+- [ ] Người phụ trách kỹ thuật review.
+- [ ] Người phụ trách sản phẩm review nếu hành vi nghiệp vụ thay đổi.
+
+
+## Step P10-S03 — Duyệt chênh lệch
+
+**Mô tả ngắn:** BE tạo đề nghị theo từng chênh lệch; chỉ áp dụng sau Admin duyệt.
+
+**Tham chiếu:** Feature/OQ `INV-005`; Rule `BR-INV-002`–`BR-INV-007`, `BR-GEN-005`, `BR-GEN-007`; Workflow `WF-06`.
+
+**Công việc:**
 - [ ] BE tạo đề nghị theo từng chênh lệch; chỉ áp dụng sau Admin duyệt.
 - [ ] FE cho Quản lý kho giải trình và Admin duyệt/từ chối.
 - [ ] Test người đề nghị không tự duyệt, áp dụng lặp và giải phóng khóa.
 
-**Chấp nhận:** Chênh lệch chưa duyệt không làm đổi trạng thái tồn.
+**Acceptance:**
+- [ ] Chênh lệch chưa duyệt không làm đổi trạng thái tồn.
 
-**Kiểm chứng:** RBAC/idempotency integration + E2E WF-06.
+**Verification:**
+- [ ] RBAC/idempotency integration + E2E WF-06.
+- [ ] Các lệnh áp dụng trong bảng `Lệnh chuẩn` pass.
 
-## Step 4 — Cảnh báo tồn và lịch sử
+**Dependencies:** `P10-S02`
 
-**Feature:** `INV-006`, `INV-007`.
+**Files:** `app/backend/src/{Controllers,Dto,Models,Services,Data}/**`, `app/backend.Tests/**`, `app/frontend/src/**`, `docs/specs/**`
 
+**Quy mô:** M
+
+## Step P10-S04 — Theo dõi cảnh báo tồn
+
+**Mô tả ngắn:** BE tính theo ấn bản và kênh; bản `BOTH` được tính cho cả hai nhóm trước khi so ngưỡng.
+
+**Tham chiếu:** Feature/OQ `INV-006`, `INV-007`; Rule `BR-INV-002`–`BR-INV-007`, `BR-GEN-005`, `BR-GEN-007`; Workflow `WF-06`.
+
+**Công việc:**
 - [ ] BE tính theo ấn bản và kênh; bản `BOTH` được tính cho cả hai nhóm trước khi so ngưỡng.
 - [ ] FE có dashboard cảnh báo và drill-down tới từng bản/lịch sử.
 - [ ] Test `BOTH`, `SALE_ONLY`, `RENTAL_ONLY` và các trạng thái không khả dụng.
 
-**Chấp nhận:** Cảnh báo khớp rule `BR-INV-006` và không dùng bảng tổng tồn dễ lệch.
+**Acceptance:**
+- [ ] Cảnh báo khớp rule `BR-INV-006` và không dùng bảng tổng tồn dễ lệch.
 
-**Kiểm chứng:** Unit query test + E2E bộ lọc.
+**Verification:**
+- [ ] Unit query test + E2E bộ lọc.
+- [ ] Các lệnh áp dụng trong bảng `Lệnh chuẩn` pass.
 
-## Checkpoint Phase 10
+**Dependencies:** `P10-S03`
 
-- [ ] WF-06 pass đầu-cuối.
-- [ ] Không có điều chỉnh chưa duyệt làm đổi tồn.
-- [ ] Lock được giải phóng đúng khi hoàn tất/hủy.
+**Files:** `app/backend/src/{Controllers,Dto,Models,Services,Data}/**`, `app/backend.Tests/**`, `app/frontend/src/**`, `docs/specs/**`
 
+**Quy mô:** M
+
+## Checkpoint CP10-B — Hoàn tất phase
+
+- [ ] Backend test pass bằng lệnh chuẩn.
+- [ ] Frontend test/lint/build pass bằng lệnh chuẩn.
+- [ ] Lát cắt hiện tại chạy end-to-end.
+- [ ] Evidence được gắn trong `todo.md`.
+- [ ] Người phụ trách kỹ thuật review.
+- [ ] Người phụ trách sản phẩm review nếu hành vi nghiệp vụ thay đổi.

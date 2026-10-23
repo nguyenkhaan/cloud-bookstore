@@ -4,59 +4,119 @@
 
 Ghi nhận từng ca/lần làm, sửa có phê duyệt và trả lương gắn đúng ca; không mở rộng thành lịch làm hoặc bảng lương theo kỳ.
 
-## Step 1 — Hồ sơ và bản ghi ca
+## Step P11-S01 — Lập bản ghi ca
 
-**Feature:** `EMP-001`, `SHIFT-001`.
+**Mô tả ngắn:** BE dùng hồ sơ nhân viên Phase 02, tạo bản ghi duy nhất theo nhân viên/ngày/thứ tự ca.
 
+**Tham chiếu:** Feature/OQ `EMP-001`, `SHIFT-001`; Rule `BR-HR-001`, `BR-ATT-001`–`BR-ATT-003`, `BR-PAYROLL-001`–`BR-PAYROLL-003`; Workflow `WF-09`, `WF-10`.
+
+**Công việc:**
 - [ ] BE dùng hồ sơ nhân viên Phase 02, tạo bản ghi duy nhất theo nhân viên/ngày/thứ tự ca.
 - [ ] FE có danh sách ca cá nhân và màn hình Admin tra cứu.
 - [ ] Test nhiều ca cùng ngày và trùng `shift_no`.
 
-**Chấp nhận:** Không có module lịch tuần/tháng; nhân viên nghỉ việc được đổi trạng thái, không xóa.
+**Acceptance:**
+- [ ] Không có module lịch tuần/tháng.
+- [ ] nhân viên nghỉ việc được đổi trạng thái, không xóa.
 
-**Kiểm chứng:** Constraint test + E2E tạo ca.
+**Verification:**
+- [ ] Constraint test + E2E tạo ca.
+- [ ] Các lệnh áp dụng trong bảng `Lệnh chuẩn` pass.
 
-**Phạm vi:** M.
+**Dependencies:** `CP02-B`, `CP06-B`
 
-## Step 2 — Check-in, check-out và trạng thái công
+**Files:** `app/backend/src/{Controllers,Dto,Models,Services,Data}/**`, `app/backend.Tests/**`, `app/frontend/src/**`, `docs/specs/**`
 
-**Feature:** `ATT-001`.
+**Quy mô:** M
 
+## Step P11-S02 — Ghi nhận chấm công
+
+**Mô tả ngắn:** BE ghi thời điểm, số phút và trạng thái có mặt/trễ/vắng/thiếu/nghỉ theo policy.
+
+**Tham chiếu:** Feature/OQ `ATT-001`; Rule `BR-HR-001`, `BR-ATT-001`–`BR-ATT-003`, `BR-PAYROLL-001`–`BR-PAYROLL-003`; Workflow `WF-09`, `WF-10`.
+
+**Công việc:**
 - [ ] BE ghi thời điểm, số phút và trạng thái có mặt/trễ/vắng/thiếu/nghỉ theo policy.
 - [ ] FE cho nhân viên thao tác ca của mình và hiển thị lỗi rõ khi sai thứ tự.
 - [ ] Test check-out trước check-in, thao tác lặp và ca qua ngày theo quyết định Phase 00.
 
-**Chấp nhận:** Thiếu một đầu được đánh dấu thiếu chấm công, không tự suy đoán giờ.
+**Acceptance:**
+- [ ] Thiếu một đầu được đánh dấu thiếu chấm công, không tự suy đoán giờ.
 
-**Kiểm chứng:** Unit time test + E2E WF-09.
+**Verification:**
+- [ ] Unit time test + E2E WF-09.
+- [ ] Các lệnh áp dụng trong bảng `Lệnh chuẩn` pass.
 
-## Step 3 — Điều chỉnh chấm công
+**Dependencies:** `P11-S01`
 
-**Feature:** `ATT-002`.
+**Files:** `app/backend/src/{Controllers,Dto,Models,Services,Data}/**`, `app/backend.Tests/**`, `app/frontend/src/**`, `docs/specs/**`
 
+**Quy mô:** M
+
+## Checkpoint CP11-A — Sau P11-S02
+
+- [ ] Backend test pass bằng lệnh chuẩn.
+- [ ] Frontend test/lint/build pass bằng lệnh chuẩn.
+- [ ] Lát cắt hiện tại chạy end-to-end.
+- [ ] Evidence được gắn trong `todo.md`.
+- [ ] Người phụ trách kỹ thuật review.
+- [ ] Người phụ trách sản phẩm review nếu hành vi nghiệp vụ thay đổi.
+
+
+## Step P11-S03 — Duyệt điều chỉnh công
+
+**Mô tả ngắn:** BE tạo yêu cầu có lý do và snapshot trước/sau; Admin duyệt mới áp dụng.
+
+**Tham chiếu:** Feature/OQ `ATT-002`; Rule `BR-HR-001`, `BR-ATT-001`–`BR-ATT-003`, `BR-PAYROLL-001`–`BR-PAYROLL-003`; Workflow `WF-09`, `WF-10`.
+
+**Công việc:**
 - [ ] BE tạo yêu cầu có lý do và snapshot trước/sau; Admin duyệt mới áp dụng.
 - [ ] FE có luồng yêu cầu và hàng chờ duyệt.
 - [ ] Test tự duyệt, sửa sau duyệt và audit.
 
-**Chấp nhận:** Mọi sửa thủ công truy được người yêu cầu/người duyệt/lý do.
+**Acceptance:**
+- [ ] Mọi sửa thủ công truy được người yêu cầu/người duyệt/lý do.
 
-**Kiểm chứng:** RBAC + audit integration test.
+**Verification:**
+- [ ] RBAC + audit integration test.
+- [ ] Các lệnh áp dụng trong bảng `Lệnh chuẩn` pass.
 
-## Step 4 — Lương và ghi nhận chi theo ca
+**Dependencies:** `P11-S02`
 
-**Feature:** `PAYROLL-001`–`PAYROLL-003`.
+**Files:** `app/backend/src/{Controllers,Dto,Models,Services,Data}/**`, `app/backend.Tests/**`, `app/frontend/src/**`, `docs/specs/**`
 
+**Quy mô:** M
+
+## Step P11-S04 — Thanh toán lương ca
+
+**Mô tả ngắn:** BE lưu lương thực nhận theo ca, duyệt điều chỉnh và tạo payment chi đúng một ca.
+
+**Tham chiếu:** Feature/OQ `PAYROLL-001`–`PAYROLL-003`; Rule `BR-HR-001`, `BR-ATT-001`–`BR-ATT-003`, `BR-PAYROLL-001`–`BR-PAYROLL-003`; Workflow `WF-09`, `WF-10`.
+
+**Công việc:**
 - [ ] BE lưu lương thực nhận theo ca, duyệt điều chỉnh và tạo payment chi đúng một ca.
 - [ ] FE cho nhân viên xem lương bản thân; Admin ghi/duyệt/trả lương.
 - [ ] Test quyền xem, trả trùng, tiền mặt không có ca két và chuyển khoản ngoài hệ thống.
 
-**Chấp nhận:** Một khoản chi lương truy đúng WorkRecord; không có bảng lương theo kỳ.
+**Acceptance:**
+- [ ] Một khoản chi lương truy đúng WorkRecord.
+- [ ] không có bảng lương theo kỳ.
 
-**Kiểm chứng:** Integration + E2E WF-10.
+**Verification:**
+- [ ] Integration + E2E WF-10.
+- [ ] Các lệnh áp dụng trong bảng `Lệnh chuẩn` pass.
 
-## Checkpoint Phase 11
+**Dependencies:** `P11-S03`
 
-- [ ] WF-09 và WF-10 pass.
-- [ ] Dữ liệu lương được che đúng quyền.
-- [ ] Điều chỉnh công/lương đều có duyệt và audit.
+**Files:** `app/backend/src/{Controllers,Dto,Models,Services,Data}/**`, `app/backend.Tests/**`, `app/frontend/src/**`, `docs/specs/**`
 
+**Quy mô:** M
+
+## Checkpoint CP11-B — Hoàn tất phase
+
+- [ ] Backend test pass bằng lệnh chuẩn.
+- [ ] Frontend test/lint/build pass bằng lệnh chuẩn.
+- [ ] Lát cắt hiện tại chạy end-to-end.
+- [ ] Evidence được gắn trong `todo.md`.
+- [ ] Người phụ trách kỹ thuật review.
+- [ ] Người phụ trách sản phẩm review nếu hành vi nghiệp vụ thay đổi.

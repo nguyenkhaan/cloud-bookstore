@@ -39,7 +39,7 @@ dotnet run --project app/backend/backend.csproj
 dotnet test backend.sln
 ```
 
-Hiện chưa có script kiểm thử frontend và chưa thấy test project backend; đây là khoảng trống phải được xử lý trước khi triển khai tính năng nghiệp vụ.
+Hiện chưa có script kiểm thử frontend. Backend đã có project xUnit `app/backend.Tests`, nhưng Phase 01 vẫn phải chuẩn hóa lệnh kiểm thử và môi trường database test trước khi triển khai tính năng nghiệp vụ.
 
 ## Project Structure
 
@@ -49,7 +49,7 @@ app/backend/    # Backend hiện tại; công nghệ cuối cùng còn chờ ADR
 docs/           # Nguồn sự thật cho SDD
 docs/specs/     # Đặc tả tính năng được tạo ở bước Specify tiếp theo
 docs/decisions/ # Product/architecture decision records
-tasks/          # Plan và task ở giai đoạn sau; chưa tạo trong bước này
+docs/plans/     # Implementation plan, task tracker và checkpoint
 ```
 
 ## Code Style

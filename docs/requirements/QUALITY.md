@@ -54,4 +54,4 @@
 - Có backup/restore drill và mục tiêu RPO/RTO đã duyệt.
 - Có runbook cho lỗi webhook, đối soát và hàng đợi thông báo.
 - Quyền production và secret được cấp theo nguyên tắc tối thiểu.
-- Mục tiêu hiệu năng, bảo mật và coverage trong `OQ-015` đã được chốt.
+- Mục tiêu hiệu năng, bảo mật và coverage trong `OQ-014` đã được chốt.

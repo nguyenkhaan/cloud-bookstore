@@ -4,61 +4,118 @@
 
 Nhân sự nội bộ đăng nhập an toàn, chỉ dùng đúng quyền và mọi thao tác nhạy cảm được truy vết.
 
-## Step 1 — Admin gốc và danh sách email
+## Step P02-S01 — Quản trị email nội bộ
 
-**Feature:** `AUTH-001`, `AUTH-002`, `EMP-001`.
+**Mô tả ngắn:** BE tạo seed Admin gốc an toàn và API quản lý email/tài khoản; ngăn khóa, xóa hoặc hạ quyền Admin gốc.
 
+**Tham chiếu:** Feature/OQ `AUTH-001`, `AUTH-002`, `EMP-001`; Rule `BR-GEN-007`, `BR-HR-001` và rule auth trong spec đã duyệt; Workflow Auth/RBAC flows.
+
+**Công việc:**
 - [ ] BE tạo seed Admin gốc an toàn và API quản lý email/tài khoản; ngăn khóa, xóa hoặc hạ quyền Admin gốc.
 - [ ] FE có màn hình danh sách nhân viên, mời email và thay đổi trạng thái theo quyền.
 - [ ] Test trùng email, email không phân biệt hoa thường và thao tác vượt quyền.
 
-**Chấp nhận:** Chỉ Admin quản lý tài khoản; dữ liệu nhạy cảm không xuất hiện trong response/log.
+**Acceptance:**
+- [ ] Chỉ Admin quản lý tài khoản.
+- [ ] dữ liệu nhạy cảm không xuất hiện trong response/log.
 
-**Kiểm chứng:** Integration test API + E2E Admin mời nhân viên.
+**Verification:**
+- [ ] Integration test API + E2E Admin mời nhân viên.
+- [ ] Các lệnh áp dụng trong bảng `Lệnh chuẩn` pass.
 
-**Phạm vi:** M.
+**Dependencies:** `CP01-B`
 
-## Step 2 — Đăng ký, OTP và mật khẩu
+**Files:** `app/backend/src/{Controllers,Dto,Models,Services}/**`, `app/backend.Tests/**`, `app/frontend/src/**`, `docs/specs/**`
 
-**Feature:** `AUTH-003`, một phần `AUTH-004`.
+**Quy mô:** M
 
+## Step P02-S02 — Đăng ký bằng OTP
+
+**Mô tả ngắn:** BE thực hiện luồng đăng ký theo ADR auth, OTP/token băm, hết hạn và giới hạn thử.
+
+**Tham chiếu:** Feature/OQ `AUTH-003`, một phần `AUTH-004`; Rule `BR-GEN-007`, `BR-HR-001` và rule auth trong spec đã duyệt; Workflow Auth/RBAC flows.
+
+**Công việc:**
 - [ ] BE thực hiện luồng đăng ký theo ADR auth, OTP/token băm, hết hạn và giới hạn thử.
 - [ ] FE thực hiện form đăng ký/xác minh với lỗi cụ thể và trạng thái gửi lại.
 - [ ] Test email không được phép, OTP sai/hết hạn/dùng lại và mật khẩu yếu.
 
-**Chấp nhận:** Chỉ email đã được Admin cho phép mới kích hoạt tài khoản.
+**Acceptance:**
+- [ ] Chỉ email đã được Admin cho phép mới kích hoạt tài khoản.
 
-**Kiểm chứng:** Unit + integration + E2E luồng đăng ký.
+**Verification:**
+- [ ] Unit + integration + E2E luồng đăng ký.
+- [ ] Các lệnh áp dụng trong bảng `Lệnh chuẩn` pass.
 
-**Phụ thuộc:** Step 1.
+**Dependencies:** `P02-S01`
 
-## Step 3 — Đăng nhập và vòng đời phiên
+**Files:** `app/backend/src/{Controllers,Dto,Models,Services}/**`, `app/backend.Tests/**`, `app/frontend/src/**`, `docs/specs/**`
 
-**Feature:** `AUTH-004`, `AUTH-005`.
+**Quy mô:** M
 
+## Checkpoint CP02-A — Sau P02-S02
+
+- [ ] Backend test pass bằng lệnh chuẩn.
+- [ ] Frontend test/lint/build pass bằng lệnh chuẩn.
+- [ ] Lát cắt hiện tại chạy end-to-end.
+- [ ] Evidence được gắn trong `todo.md`.
+- [ ] Người phụ trách kỹ thuật review.
+- [ ] Người phụ trách sản phẩm review nếu hành vi nghiệp vụ thay đổi.
+
+
+## Step P02-S03 — Quản lý vòng đời phiên
+
+**Mô tả ngắn:** BE hỗ trợ đăng nhập, đăng xuất, đổi/quên mật khẩu, timeout và khóa tài khoản theo ADR.
+
+**Tham chiếu:** Feature/OQ `AUTH-004`, `AUTH-005`; Rule `BR-GEN-007`, `BR-HR-001` và rule auth trong spec đã duyệt; Workflow Auth/RBAC flows.
+
+**Công việc:**
 - [ ] BE hỗ trợ đăng nhập, đăng xuất, đổi/quên mật khẩu, timeout và khóa tài khoản theo ADR.
 - [ ] FE có route bảo vệ, khôi phục phiên hợp lệ và đưa về đăng nhập khi phiên hết hạn.
 - [ ] Test token/session hết hạn, tài khoản bị khóa và logout không dùng lại phiên cũ.
 
-**Chấp nhận:** Không thể truy cập API bảo vệ sau logout/khóa/hết hạn.
+**Acceptance:**
+- [ ] Không thể truy cập API bảo vệ sau logout/khóa/hết hạn.
 
-**Kiểm chứng:** Security integration test + E2E đăng nhập/đăng xuất.
+**Verification:**
+- [ ] Security integration test + E2E đăng nhập/đăng xuất.
+- [ ] Các lệnh áp dụng trong bảng `Lệnh chuẩn` pass.
 
-## Step 4 — RBAC và audit log
+**Dependencies:** `P02-S02`
 
-**Feature:** `RBAC-001`–`RBAC-003`, `AUD-001`, `AUD-002`.
+**Files:** `app/backend/src/{Controllers,Dto,Models,Services}/**`, `app/backend.Tests/**`, `app/frontend/src/**`, `docs/specs/**`
 
+**Quy mô:** M
+
+## Step P02-S04 — Thực thi RBAC có audit
+
+**Mô tả ngắn:** BE áp chính sách ba vai trò trên API; ghi audit append-only cho tài khoản/quyền.
+
+**Tham chiếu:** Feature/OQ `RBAC-001`–`RBAC-003`, `AUD-001`, `AUD-002`; Rule `BR-GEN-007`, `BR-HR-001` và rule auth trong spec đã duyệt; Workflow Auth/RBAC flows.
+
+**Công việc:**
 - [ ] BE áp chính sách ba vai trò trên API; ghi audit append-only cho tài khoản/quyền.
 - [ ] FE ẩn thao tác không phù hợp nhưng vẫn xử lý đúng lỗi 403 từ BE; có màn hình tra cứu audit theo quyền.
 - [ ] Test ma trận quyền, thay đổi trước/sau, lý do và correlation ID.
 
-**Chấp nhận:** Gọi trực tiếp API ngoài quyền bị từ chối và không đổi dữ liệu.
+**Acceptance:**
+- [ ] Gọi trực tiếp API ngoài quyền bị từ chối và không đổi dữ liệu.
 
-**Kiểm chứng:** Test ma trận RBAC + E2E cho từng vai trò.
+**Verification:**
+- [ ] Test ma trận RBAC + E2E cho từng vai trò.
+- [ ] Các lệnh áp dụng trong bảng `Lệnh chuẩn` pass.
 
-## Checkpoint Phase 02
+**Dependencies:** `P02-S03`
 
-- [ ] Ba vai trò đăng nhập và thấy đúng chức năng.
-- [ ] Backend là nguồn quyết định quyền cuối cùng.
-- [ ] Audit truy được actor, hành động, đối tượng và thời gian.
+**Files:** `app/backend/src/{Controllers,Dto,Models,Services}/**`, `app/backend.Tests/**`, `app/frontend/src/**`, `docs/specs/**`
 
+**Quy mô:** M
+
+## Checkpoint CP02-B — Hoàn tất phase
+
+- [ ] Backend test pass bằng lệnh chuẩn.
+- [ ] Frontend test/lint/build pass bằng lệnh chuẩn.
+- [ ] Lát cắt hiện tại chạy end-to-end.
+- [ ] Evidence được gắn trong `todo.md`.
+- [ ] Người phụ trách kỹ thuật review.
+- [ ] Người phụ trách sản phẩm review nếu hành vi nghiệp vụ thay đổi.

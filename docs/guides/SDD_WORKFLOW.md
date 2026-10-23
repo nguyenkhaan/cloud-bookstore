@@ -10,11 +10,11 @@
 
 ## 2. Plan
 
-Chỉ bắt đầu sau khi spec được duyệt. Plan phải chỉ ra dependency, thứ tự, rủi ro, checkpoint và cách kiểm chứng. Plan không nằm trong bộ tài liệu hiện tại và chưa được tạo ở bước tái cấu trúc này.
+Chỉ bắt đầu sau khi spec được duyệt. Plan phải chỉ ra dependency, thứ tự, rủi ro, checkpoint và cách kiểm chứng. Plan được lưu duy nhất trong [`docs/plans/`](../plans/README.md); không tạo bản sao trong `tasks/`.
 
 ## 3. Tasks
 
-Tách plan thành lát cắt nhỏ, mỗi task có acceptance, verify và danh sách file dự kiến. Không dùng FEATURE.md như task tracker.
+Tách plan thành lát cắt nhỏ, mỗi task có acceptance, verification, dependency, file dự kiến và quy mô. Theo dõi trạng thái tại [`docs/plans/todo.md`](../plans/todo.md); không dùng `FEATURE.md` như task tracker.
 
 ## 4. Implement
 

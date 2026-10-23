@@ -1,7 +1,7 @@
 # Yêu cầu phi chức năng
 
 **Trạng thái:** Proposed  
-Các giá trị định lượng còn thiếu được theo dõi tại `OQ-015`.
+Các giá trị định lượng còn thiếu được theo dõi tại `OQ-014`.
 
 ## NFR-SEC — Bảo mật
 

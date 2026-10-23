@@ -30,4 +30,4 @@ Cửa hàng đồng thời bán sách cũ, cho thuê sách/truyện tranh, thu m
 
 Sản phẩm thành công khi nhân viên có thể hoàn thành toàn bộ công việc tại cửa hàng trên một hệ thống, Admin đối soát được sách–tiền–người thực hiện, và không cần một giao diện tự phục vụ dành cho khách hàng.
 
-Các mục tiêu định lượng về tốc độ giao dịch, sai lệch kho/két, uptime và độ bao phủ kiểm thử phải được chốt trong `OQ-015` trước UAT.
+Các mục tiêu định lượng về tốc độ giao dịch, sai lệch kho/két, uptime và độ bao phủ kiểm thử phải được chốt trong `OQ-014` trước UAT.

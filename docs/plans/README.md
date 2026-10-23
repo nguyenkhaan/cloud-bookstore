@@ -2,71 +2,150 @@
 
 ## Mục tiêu
 
-Triển khai hệ thống từ nền tảng ban đầu đến khi sẵn sàng nghiệm thu. Mỗi phase tạo ra một lát cắt chạy được, gồm dữ liệu, backend, frontend và kiểm thử liên quan; không làm toàn bộ backend rồi mới làm frontend.
+Triển khai hệ thống theo các lát cắt chạy được, gồm dữ liệu, backend, frontend và kiểm thử liên quan. `docs/plans/phase-*.md` là nguồn nội dung kế hoạch; [`todo.md`](./todo.md) chỉ theo dõi trạng thái, owner và evidence. Không tạo bản sao trong `tasks/`.
 
-## Trạng thái và giả định
+## Trạng thái
 
-- Bộ kế hoạch này dựa trên tài liệu đang hoạt động trong `docs/`; `docs/legacy/` chỉ dùng để truy nguyên.
-- PostgreSQL đã được chấp thuận. React hiện có được giữ làm frontend.
-- Backend và cơ chế xác thực chưa được chốt; Phase 00 phải giải quyết trước khi dựng nền kỹ thuật.
-- Các quy tắc còn `Proposed` và câu hỏi P0 phải được duyệt trước khi code vùng bị ảnh hưởng.
-- Yêu cầu hiện tại đặt plan trong `docs/plans/`, dù `docs/CONTENT.md` và quy ước SDD cũ đang ghi plan ở `tasks/`. Không tạo bản sao ở hai nơi để tránh lệch nội dung.
+- Tài liệu hoạt động trong `docs/` là nguồn yêu cầu; `docs/legacy/` chỉ dùng để truy nguyên.
+- PostgreSQL đã được chấp thuận tại `ADR-001`; backend và cơ chế xác thực vẫn chờ Phase 00.
+- Không triển khai vùng bị ảnh hưởng bởi câu hỏi P0 hoặc rule/spec chưa được duyệt.
+- Definition of Done chuẩn nằm tại [`requirements/QUALITY.md`](../requirements/QUALITY.md#definition-of-done-cho-triển-khai-sau-này); không duy trì một bản sao khác trong plan.
 
-## Cách thực hiện mỗi step
+## Architecture Decisions
 
-1. Đọc feature ID, business rule, workflow và decision được tham chiếu.
-2. Viết hoặc duyệt feature spec trong `docs/specs/`.
-3. Viết test cho hành vi quan trọng và nhánh lỗi.
-4. Làm backend và frontend của cùng lát cắt.
-5. Chạy test, lint, build và kiểm tra thủ công.
-6. Chỉ đánh dấu hoàn tất khi đạt acceptance criteria.
+| Quyết định | Trạng thái | Ảnh hưởng kế hoạch |
+| --- | --- | --- |
+| `ADR-001` — PostgreSQL | Accepted | Áp dụng từ Phase 01. |
+| `ADR-002` — Backend | Chưa tạo; chờ `OQ-001` | Chặn lệnh backend chuẩn và Phase 01. |
+| `ADR-003` — Xác thực | Chưa tạo; chờ `OQ-002` | Chặn Phase 02. |
+| `ADR-004` — Hợp đồng tích hợp | Chưa tạo; chờ `OQ-006`, `OQ-007` | Chặn VietQR/webhook và Zalo. |
+| `PDR-001`–`PDR-007` | Accepted | Là ranh giới sản phẩm cho mọi phase. |
+
+## Risks and Mitigations
+
+| Rủi ro | Mức | Giảm thiểu |
+| --- | --- | --- |
+| Backend/auth chưa có ADR | Cao | Hoàn tất Phase 00 trước khi mở Phase 01–02. |
+| Nhiều rule/spec còn `Proposed` | Cao | Mỗi step phải liên kết rule/spec và dừng nếu còn P0. |
+| Phase 05 có dependency một phần vào Phase 06 | Trung bình | Tách checkpoint 05A; chỉ hoàn tất 05B sau nền payment. |
+| Thông báo phụ thuộc nhiều nguồn sự kiện | Trung bình | Tích hợp outbox tại phase nguồn; Phase 12 chỉ đóng sau Phase 05–11. |
+| Cấu hình có phiên bản xuất hiện quá muộn | Cao | Dựng nền đọc/seed cấu hình ở Phase 01; UI quản trị hoàn thiện ở Phase 13. |
+| Frontend chưa có test script | Cao | Phase 01 phải thêm unit/component/E2E runner trước feature nghiệp vụ. |
+| `DATABASE.txt` chưa phải schema được duyệt | Trung bình | Chỉ tạo migration từ spec/rule/decision đã Accepted. |
+
+## Open Questions
+
+| ID | Mức chặn | Owner cần xác nhận | Phase bị ảnh hưởng |
+| --- | --- | --- | --- |
+| `OQ-001`, `OQ-002` | P0 | Tech Lead/Product Owner | 01–02 |
+| `OQ-003`, `OQ-004`, `OQ-006` | P0 | Product Owner/Kế toán/Tech Lead | 06, 08–09 |
+| `OQ-005`, `OQ-008`, `OQ-009`, `OQ-011` | P1 | Product Owner/Kế toán | 05–06, 09, 13 |
+| `OQ-007`, `OQ-010`, `OQ-014` | P1 | Product Owner/Tech Lead | 11–14 |
+| `OQ-012`, `OQ-013` | P2 | Product Owner/Kế toán | 04, 13 |
+
+Chi tiết và trạng thái quyết định được quản lý tại [`OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md). Các mục tiêu NFR định lượng thuộc `OQ-014`.
+
+## Mẫu step chuẩn
+
+Mỗi step phải là một kết quả dọc có thể hoàn tất trong một phiên tập trung. Không dùng tiêu đề ghép bằng “và”; step L/XL phải tiếp tục tách tới XS/S/M.
+
+```markdown
+## Step PXX-SYY — <Kết quả duy nhất>
+
+**Mô tả ngắn:** <Một câu mô tả kết quả.>
+
+**Tham chiếu:** Feature `<ID>`; Rule `<ID>`; Workflow `<ID>`; Decision `<ID/OQ>`.
+
+**Acceptance:**
+- [ ] <Điều kiện cụ thể, kiểm thử được.>
+
+**Verification:**
+- [ ] `<lệnh cụ thể>` pass.
+- [ ] <Kiểm tra E2E hoặc thủ công> pass.
+
+**Dependencies:** `<Step ID>` hoặc `Không`.
+
+**Files:** `<đường dẫn hoặc glob có giới hạn>`.
+
+**Quy mô:** XS | S | M.
+```
+
+Quy mô: XS là một file/cấu hình; S là 1–2 file; M là một lát cắt khoảng 3–5 file. L/XL không được đưa vào thực thi khi chưa tách.
 
 ## Thứ tự phase
 
 | Phase | Kết quả chính | Phụ thuộc |
 | --- | --- | --- |
-| [00](./phase-00-chot-yeu-cau-va-quyet-dinh.md) | Chốt P0, duyệt đặc tả cấp dự án | Không |
-| [01](./phase-01-setup-nen-tang.md) | Dựng project, test, DB, khung UI/API | 00 |
-| [02](./phase-02-tai-khoan-phan-quyen-audit.md) | Đăng nhập nội bộ, ba vai trò, audit | 01 |
-| [03](./phase-03-danh-muc-an-ban-ban-sach.md) | Quản lý đầu sách, ấn bản, bản vật lý | 02 |
-| [04](./phase-04-khach-hang-thanh-vien.md) | Hồ sơ khách và hạng thành viên | 02 |
-| [05](./phase-05-nhap-kho-va-thu-mua.md) | Nhà cung cấp, nhập kho, thu mua | 03, 04; bước chi tiền cần 06 |
-| [06](./phase-06-ca-ket-va-thanh-toan.md) | Ca két, tiền mặt, VietQR, đối soát | 02 |
-| [07](./phase-07-ban-sach-tai-quay.md) | Luồng bán hoàn chỉnh tại quầy | 03, 04, 06 |
+| [00](./phase-00-chot-yeu-cau-va-quyet-dinh.md) | Chốt P0 và duyệt đầu vào | Không |
+| [01](./phase-01-setup-nen-tang.md) | Nền FE–BE–DB, test và config core | 00 |
+| [02](./phase-02-tai-khoan-phan-quyen-audit.md) | Auth, RBAC, audit | 01 |
+| [03](./phase-03-danh-muc-an-ban-ban-sach.md) | Danh mục, ấn bản, bản vật lý | 02 |
+| [04](./phase-04-khach-hang-thanh-vien.md) | Khách hàng và thành viên | 02 |
+| [05](./phase-05-nhap-kho-va-thu-mua.md) | Nhập kho và thu mua | 03, 04; checkpoint 05B cần 06.1–06.2 |
+| [06](./phase-06-ca-ket-va-thanh-toan.md) | Ca két và payment ledger | 02 |
+| [07](./phase-07-ban-sach-tai-quay.md) | Bán tại quầy | 03, 04, 06 |
 | [08](./phase-08-thue-sach.md) | Lập phiếu thuê và thu cọc | 03, 04, 06 |
-| [09](./phase-09-gia-han-tra-sach.md) | Gia hạn, trả và quyết toán | 08 |
-| [10](./phase-10-kiem-ke-va-dieu-chinh-kho.md) | Kiểm kê, duyệt chênh lệch, cảnh báo tồn | 03, 05 |
+| [09](./phase-09-gia-han-tra-sach.md) | Gia hạn, trả và quyết toán | 08, 06 |
+| [10](./phase-10-kiem-ke-va-dieu-chinh-kho.md) | Kiểm kê và điều chỉnh | 03, 05A |
 | [11](./phase-11-nhan-su-cham-cong-luong.md) | Công và lương theo ca | 02, 06 |
-| [12](./phase-12-thong-bao-va-tich-hop.md) | Outbox, Zalo/email, giám sát tích hợp | 07, 09 |
-| [13](./phase-13-bao-cao-cau-hinh-van-hanh.md) | Cấu hình, báo cáo, xuất file, health | 07–12 |
+| [12](./phase-12-thong-bao-va-tich-hop.md) | Outbox, adapter và vận hành gửi | 05–11 theo nguồn sự kiện |
+| [13](./phase-13-bao-cao-cau-hinh-van-hanh.md) | Quản trị cấu hình, báo cáo và vận hành | 05–12 |
 | [14](./phase-14-hardening-uat-phat-hanh.md) | Bảo mật, hiệu năng, UAT, phát hành | 01–13 |
 
-## Dependency chính
+## Dependency graph
 
 ```text
-Quyết định P0
-└── Nền tảng + DB + test
-    ├── Auth/RBAC/Audit
-    │   ├── Danh mục/Ấn bản/Bản sách
-    │   │   ├── Nhập kho/Thu mua
-    │   │   ├── Bán ───────────────┐
-    │   │   ├── Thuê → Trả         ├── Thông báo/Báo cáo
-    │   │   └── Kiểm kê            │
-    │   ├── Khách hàng/Thành viên ─┤
-    │   └── Ca két/Thanh toán ─────┤
-    └── Nhân sự/Công/Lương ────────┘
+Phase 00
+└── Phase 01: nền tảng + DB + test + config core
+    └── Phase 02: Auth/RBAC/Audit
+        ├── Phase 03: Danh mục/Ấn bản/Bản sách ──┐
+        ├── Phase 04: Khách hàng/Thành viên ─────┼──> Phase 05A
+        └── Phase 06: Ca két/Payment ────────────┴──> Phase 05B
+             ├── Phase 07: Bán
+             ├── Phase 08: Thuê ──> Phase 09: Gia hạn/Trả
+             └── Phase 11: Công/Lương
+Phase 03 + Phase 05A ──> Phase 10: Kiểm kê
+Phase 05–11 ───────────> Phase 12: Thông báo
+Phase 05–12 ───────────> Phase 13: Báo cáo/Vận hành
+Phase 01–13 ───────────> Phase 14: Phát hành
 ```
 
-## Quy tắc checkpoint
+## Checkpoint chuẩn
 
-- Sau mỗi 2–3 step: toàn bộ test hiện có phải pass; frontend build/lint và backend build/test phải pass.
-- Không chuyển phase nếu còn lỗi dữ liệu, quyền hoặc giao dịch tài chính.
-- Có thể song song các phase độc lập sau khi API contract và migration dùng chung đã ổn định; không chạy song song hai thay đổi trên cùng schema.
-- Phase 05 Step 1–3 có thể làm song song với Phase 06; Phase 05 Step 4 và checkpoint chỉ hoàn tất sau nền thanh toán của Phase 06.
+Đặt checkpoint sau mỗi 2–3 step và khi kết thúc phase.
 
-## Điểm cần sửa trong tài liệu trước khi code
+```markdown
+## Checkpoint CPXX-Y — <Mốc>
+- [ ] Backend test pass bằng lệnh chuẩn.
+- [ ] Frontend test/lint/build pass bằng lệnh chuẩn.
+- [ ] Lát cắt hiện tại chạy end-to-end.
+- [ ] Evidence được gắn trong `todo.md`.
+- [ ] Người phụ trách kỹ thuật review.
+- [ ] Người phụ trách sản phẩm review nếu hành vi nghiệp vụ thay đổi.
+```
 
-- `OPEN_QUESTIONS.md` hiện đánh số tới `OQ-014`, nhưng `VISION.md`, `NON_FUNCTIONAL.md` và `QUALITY.md` tham chiếu `OQ-015`.
-- `PROJECT_SPEC.md` và nhiều requirement vẫn là `Proposed`.
-- `DATABASE.txt` là mô hình định hướng, chưa có đủ khóa ngoại/check constraint và còn một số điểm cần đối chiếu với rule đã chốt.
+## Lệnh chuẩn
+
+Phase 00 phải đổi trạng thái bảng này từ `Provisional` sang `Accepted` sau khi `ADR-002` được duyệt. Các lệnh backend dưới đây phản ánh ASP.NET Core hiện có, chưa phải quyết định thay cho `OQ-001`.
+
+| Gate | Lệnh | Trạng thái |
+| --- | --- | --- |
+| Backend restore | `dotnet restore backend.sln` | Provisional |
+| Backend build | `dotnet build backend.sln --no-restore` | Provisional |
+| Backend test | `dotnet test backend.sln --no-build` | Provisional |
+| Backend run | `dotnet run --project app/backend/backend.csproj` | Provisional |
+| Frontend install | `cd app/frontend && bun install --frozen-lockfile` | Current |
+| Frontend lint | `cd app/frontend && bun run lint` | Current |
+| Frontend build | `cd app/frontend && bun run build` | Current |
+| Frontend run | `cd app/frontend && bun run dev` | Current |
+| Frontend test | Chờ Phase 01 thêm script | Blocked |
+| End-to-end test | Chờ Phase 01 chọn runner và thêm script | Blocked |
+
+## Quy tắc hoàn tất
+
+- Step chỉ được `DONE` khi acceptance, verification và Definition of Done đều đạt.
+- Không chuyển phase nếu còn lỗi dữ liệu, quyền hoặc tài chính chưa xử lý.
+- Không chạy song song hai step thay đổi cùng schema khi contract chưa ổn định.
+- Phase 05A có thể song song Phase 06; Phase 05B chỉ bắt đầu sau `P06-S02`.
+- Mọi thay đổi hành vi phải cập nhật spec/decision trước code.
 

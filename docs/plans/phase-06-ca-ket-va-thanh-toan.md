@@ -4,59 +4,119 @@
 
 Tạo nền tiền tệ dùng chung cho bán, thuê–trả, thu mua và lương; đảm bảo idempotency và truy vết.
 
-## Step 1 — Mở và theo dõi ca két
+## Step P06-S01 — Mở ca két
 
-**Feature:** `CASH-001`, `CASH-002`.
+**Mô tả ngắn:** BE chỉ cho một ca két mở, lưu tiền đầu ca và tính số dư lý thuyết từ payment tiền mặt.
 
+**Tham chiếu:** Feature/OQ `CASH-001`, `CASH-002`; Rule `BR-PAY-001`–`BR-PAY-005`, `BR-CASH-001`–`BR-CASH-003`, `BR-INT-001`–`BR-INT-002`; Workflow `WF-07`, `WF-08`.
+
+**Công việc:**
 - [ ] BE chỉ cho một ca két mở, lưu tiền đầu ca và tính số dư lý thuyết từ payment tiền mặt.
 - [ ] FE có màn hình mở ca, trạng thái ca hiện tại và danh sách thu/chi.
 - [ ] Test mở trùng, số tiền âm, quyền và thời điểm theo `Asia/Ho_Chi_Minh`.
 
-**Chấp nhận:** Giao dịch tiền mặt không thể ghi khi thiếu ca mở.
+**Acceptance:**
+- [ ] Giao dịch tiền mặt không thể ghi khi thiếu ca mở.
 
-**Kiểm chứng:** Constraint/integration test + E2E mở ca.
+**Verification:**
+- [ ] Constraint/integration test + E2E mở ca.
+- [ ] Các lệnh áp dụng trong bảng `Lệnh chuẩn` pass.
 
-**Phạm vi:** M.
+**Dependencies:** `CP02-B`
 
-## Step 2 — Payment ledger và tiền mặt
+**Files:** `app/backend/src/{Controllers,Dto,Models,Services,Data}/**`, `app/backend.Tests/**`, `app/frontend/src/**`, `docs/specs/**`
 
-**Feature:** `PAY-001`, `PAY-006`, `PAY-007`.
+**Quy mô:** M
 
+## Step P06-S02 — Ghi payment ledger
+
+**Mô tả ngắn:** BE ghi payment vào/ra với idempotency key và đúng một chứng từ nguồn.
+
+**Tham chiếu:** Feature/OQ `PAY-001`, `PAY-006`, `PAY-007`; Rule `BR-PAY-001`–`BR-PAY-005`, `BR-CASH-001`–`BR-CASH-003`, `BR-INT-001`–`BR-INT-002`; Workflow `WF-07`, `WF-08`.
+
+**Công việc:**
 - [ ] BE ghi payment vào/ra với idempotency key và đúng một chứng từ nguồn.
 - [ ] FE có modal thanh toán tiền mặt, tiền khách đưa/tiền thối và xác nhận rõ.
 - [ ] Test retry, payment trùng, source sai loại và giao dịch đảo.
 
-**Chấp nhận:** Payment thành công không sửa/xóa trực tiếp; retry không ghi hai lần.
+**Acceptance:**
+- [ ] Payment thành công không sửa/xóa trực tiếp.
+- [ ] retry không ghi hai lần.
 
-**Kiểm chứng:** Unit + integration test idempotency.
+**Verification:**
+- [ ] Unit + integration test idempotency.
+- [ ] Các lệnh áp dụng trong bảng `Lệnh chuẩn` pass.
 
-## Step 3 — VietQR và webhook
+**Dependencies:** `P06-S01`
 
-**Feature:** `PAY-002`–`PAY-005`.
+**Files:** `app/backend/src/{Controllers,Dto,Models,Services,Data}/**`, `app/backend.Tests/**`, `app/frontend/src/**`, `docs/specs/**`
 
+**Quy mô:** M
+
+## Checkpoint CP06-A — Sau P06-S02
+
+- [ ] Backend test pass bằng lệnh chuẩn.
+- [ ] Frontend test/lint/build pass bằng lệnh chuẩn.
+- [ ] Lát cắt hiện tại chạy end-to-end.
+- [ ] Evidence được gắn trong `todo.md`.
+- [ ] Người phụ trách kỹ thuật review.
+- [ ] Người phụ trách sản phẩm review nếu hành vi nghiệp vụ thay đổi.
+
+
+## Step P06-S03 — Xử lý VietQR/webhook
+
+**Mô tả ngắn:** BE sinh QR tham chiếu unique, xác thực/lưu webhook và đối chiếu số tiền/tài khoản theo ADR.
+
+**Tham chiếu:** Feature/OQ `PAY-002`–`PAY-005`., `INTEGRATION-001`; Rule `BR-PAY-001`–`BR-PAY-005`, `BR-CASH-001`–`BR-CASH-003`, `BR-INT-001`–`BR-INT-002`; Workflow `WF-07`, `WF-08`.
+
+**Công việc:**
 - [ ] BE sinh QR tham chiếu unique, xác thực/lưu webhook và đối chiếu số tiền/tài khoản theo ADR.
 - [ ] FE hiển thị QR, đếm hạn, polling theo request cũ khi mất kết nối và trạng thái cần đối soát.
 - [ ] Test chữ ký sai, webhook trùng/đến muộn, thiếu/thừa tiền và timeout.
 
-**Chấp nhận:** Chỉ webhook hợp lệ, khớp đủ mới hoàn tất; sự kiện sai lệch không bị mất.
+**Acceptance:**
+- [ ] Chỉ webhook hợp lệ, khớp đủ mới hoàn tất.
+- [ ] sự kiện sai lệch không bị mất.
 
-**Kiểm chứng:** Contract test nhà cung cấp + E2E sandbox.
+**Verification:**
+- [ ] Contract test nhà cung cấp + E2E sandbox.
+- [ ] Các lệnh áp dụng trong bảng `Lệnh chuẩn` pass.
 
-## Step 4 — Đóng ca và xử lý chênh lệch
+**Dependencies:** `P06-S02`
 
-**Feature:** `CASH-003`–`CASH-005`.
+**Files:** `app/backend/src/{Controllers,Dto,Models,Services,Data}/**`, `app/backend.Tests/**`, `app/frontend/src/**`, `docs/specs/**`
 
+**Quy mô:** M
+
+## Step P06-S04 — Đóng ca két
+
+**Mô tả ngắn:** BE tạm chặn thu/chi mới khi đóng, tính chênh lệch và yêu cầu Admin duyệt ngoại lệ.
+
+**Tham chiếu:** Feature/OQ `CASH-003`–`CASH-005`; Rule `BR-PAY-001`–`BR-PAY-005`, `BR-CASH-001`–`BR-CASH-003`, `BR-INT-001`–`BR-INT-002`; Workflow `WF-07`, `WF-08`.
+
+**Công việc:**
 - [ ] BE tạm chặn thu/chi mới khi đóng, tính chênh lệch và yêu cầu Admin duyệt ngoại lệ.
 - [ ] FE hỗ trợ kiểm đếm, giải trình và màn hình duyệt.
 - [ ] Test race condition giao dịch lúc đóng ca và ca đã đóng chỉ đọc.
 
-**Chấp nhận:** Không có payment tiền mặt lọt vào ca sau thời điểm đóng.
+**Acceptance:**
+- [ ] Không có payment tiền mặt lọt vào ca sau thời điểm đóng.
 
-**Kiểm chứng:** Concurrency test + E2E đóng ca có/không chênh lệch.
+**Verification:**
+- [ ] Concurrency test + E2E đóng ca có/không chênh lệch.
+- [ ] Các lệnh áp dụng trong bảng `Lệnh chuẩn` pass.
 
-## Checkpoint Phase 06
+**Dependencies:** `P06-S03`
 
-- [ ] Tiền mặt và VietQR đều có happy path cùng fallback.
-- [ ] Webhook/idempotency/concurrency test pass.
-- [ ] Sổ payment sẵn sàng dùng lại cho các phase giao dịch.
+**Files:** `app/backend/src/{Controllers,Dto,Models,Services,Data}/**`, `app/backend.Tests/**`, `app/frontend/src/**`, `docs/specs/**`
 
+**Quy mô:** M
+
+## Checkpoint CP06-B — Hoàn tất phase
+
+- [ ] Backend test pass bằng lệnh chuẩn.
+- [ ] Frontend test/lint/build pass bằng lệnh chuẩn.
+- [ ] Lát cắt hiện tại chạy end-to-end.
+- [ ] Evidence được gắn trong `todo.md`.
+- [ ] Người phụ trách kỹ thuật review.
+- [ ] Người phụ trách sản phẩm review nếu hành vi nghiệp vụ thay đổi.

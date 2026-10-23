@@ -40,6 +40,10 @@ docs/
 │   └── ADR-*.md                       # Các quyết định kiến trúc đã được chấp thuận
 ├── specs/
 │   └── README.md                      # Quy ước cho đặc tả tính năng ở bước sau
+├── plans/
+│   ├── README.md                      # Kế hoạch triển khai, dependency và checkpoint
+│   ├── todo.md                        # Trạng thái thực thi, owner và evidence
+│   └── phase-*.md                     # Các lát cắt triển khai theo phase
 ├── guides/
 │   └── SDD_WORKFLOW.md                # Cách duy trì tài liệu theo SDD
 └── legacy/
@@ -74,4 +78,5 @@ docs/
 2. Mỗi đặc tả tính năng phải liên kết tới feature ID và business rule ID liên quan.
 3. Quy tắc tài chính, phân quyền và chuyển trạng thái phải có tiêu chí kiểm thử.
 4. Không sao chép nội dung từ `legacy/` vào tài liệu hoạt động nếu chưa đối chiếu xung đột.
-5. Không ghi implementation plan trong `docs/`; plan và task chỉ được tạo ở giai đoạn SDD tiếp theo sau khi đặc tả được duyệt.
+5. Implementation plan chỉ được lưu trong `docs/plans/`; không tạo bản sao trong `tasks/` hoặc `docs/specs/`.
+6. `docs/plans/phase-*.md` là nguồn nội dung; `docs/plans/todo.md` chỉ theo dõi trạng thái, owner và evidence.
