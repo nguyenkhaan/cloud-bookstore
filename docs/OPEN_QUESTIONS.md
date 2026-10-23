@@ -4,7 +4,6 @@ Tài liệu này là hàng đợi quyết định, không phải implementation 
 
 | ID | Mức chặn | Câu hỏi cần quyết định | Ảnh hưởng |
 | --- | --- | --- | --- |
-| OQ-001 | P0 | Backend chính thức là Hono hay ASP.NET Core? PostgreSQL đã được chốt tại [`ADR-001`](./decisions/ADR-001-postgresql-primary-database.md). | Backend, test và deployment |
 | OQ-002 | P0 | Chính sách xác thực: JWT hay session, vòng đời OTP, mật khẩu, khóa tài khoản và timeout phiên? | AUTH, bảo mật |
 | OQ-003 | P0 | Đơn giá thuê mặc định, cách tính phần ngày lẻ và quy tắc làm tròn tiền là gì? | Thuê–trả, báo cáo |
 | OQ-004 | P0 | Các mức hư hỏng, tỷ lệ bồi thường và trạng thái bản sách sau xử lý là gì? | Trả sách, tồn kho, tài chính |

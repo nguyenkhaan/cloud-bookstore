@@ -15,9 +15,8 @@ File này chỉ theo dõi trạng thái, owner và evidence. Nội dung acceptan
 | --- | --- | --- | --- | --- |
 | DOC-001 | Duyệt cách dùng `docs/plans/` làm nguồn plan duy nhất | Chưa gán | TODO | — |
 | DOC-002 | Duyệt `OQ-014` làm nguồn cho mục tiêu NFR định lượng | Chưa gán | TODO | — |
-| P00-S01 | Chọn backend và tạo `ADR-002` | Chưa gán | BLOCKED | `OQ-001` |
-| P00-S02 | Chọn cơ chế xác thực và tạo `ADR-003` | Chưa gán | BLOCKED | `OQ-002` |
-| CMD-001 | Chuyển bảng Lệnh chuẩn sang `Accepted` | Chưa gán | BLOCKED | `ADR-002` |
+| ADR-002 | Ghi nhận ASP.NET Core là backend chính thức | Chưa gán | DONE | [`ADR-002`](../decisions/ADR-002-aspnet-core-backend.md) |
+| CMD-001 | Chuyển lệnh backend chuẩn sang `Accepted` | Chưa gán | DONE | [`ADR-002`](../decisions/ADR-002-aspnet-core-backend.md) |
 | TEST-001 | Thêm script test frontend | Chưa gán | TODO | — |
 | TEST-002 | Thêm script E2E | Chưa gán | TODO | — |
 
@@ -45,7 +44,7 @@ File này chỉ theo dõi trạng thái, owner và evidence. Nội dung acceptan
 
 | ID | Step | Owner | Trạng thái | Evidence |
 | --- | --- | --- | --- | --- |
-| `P00-S01` | [Chốt kiến trúc truy cập](./phase-00-chot-yeu-cau-va-quyet-dinh.md) | Chưa gán | TODO | — |
+| `P00-S01` | [Chốt cơ chế xác thực](./phase-00-chot-yeu-cau-va-quyet-dinh.md) | Chưa gán | BLOCKED | `OQ-002` |
 | `P00-S02` | [Chốt chính sách tài chính thuê](./phase-00-chot-yeu-cau-va-quyet-dinh.md) | Chưa gán | TODO | — |
 | `P00-S03` | [Chốt phạm vi tích hợp](./phase-00-chot-yeu-cau-va-quyet-dinh.md) | Chưa gán | TODO | — |
 | `P00-S04` | [Duyệt đầu vào triển khai](./phase-00-chot-yeu-cau-va-quyet-dinh.md) | Chưa gán | TODO | — |

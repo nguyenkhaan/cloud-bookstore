@@ -1,7 +1,7 @@
 # Đặc tả cấp dự án: Old Bookstore
 
 **Trạng thái:** Proposed — chờ rà soát toàn bộ tài liệu mới  
-**Cập nhật:** 2026-10-20
+**Cập nhật:** 2026-10-23
 
 ## Objective
 
@@ -11,19 +11,15 @@ Người dùng trực tiếp chỉ gồm Admin, Nhân viên và Quản lý kho. 
 
 ## Tech Stack
 
-### Đã quan sát trong repository
+### Công nghệ đã chấp thuận
 
 - Frontend: React 19, TypeScript, Vite, Tailwind CSS và Bun.
-- Backend hiện có: ASP.NET Core trên .NET 10, Entity Framework Core và PostgreSQL provider.
+- Backend chính thức: ASP.NET Core trên .NET 10 theo [`ADR-002`](./decisions/ADR-002-aspnet-core-backend.md), Entity Framework Core và PostgreSQL provider.
 - Cơ sở dữ liệu chính thức: PostgreSQL theo [`ADR-001`](./decisions/ADR-001-postgresql-primary-database.md).
-
-### Chưa được chấp thuận
-
-README gốc yêu cầu Hono trong khi mã nguồn hiện tại dùng ASP.NET Core; lựa chọn backend vẫn mở tại `OQ-001` trong [`OPEN_QUESTIONS.md`](./OPEN_QUESTIONS.md). PostgreSQL đã được chốt; phần nghiệp vụ trong bộ tài liệu này không phụ thuộc vào lựa chọn backend.
 
 ## Commands
 
-Các lệnh dưới đây phản ánh mã nguồn hiện tại, không phải quyết định kiến trúc cuối cùng.
+Các lệnh dưới đây là lệnh chuẩn cho stack đã được chấp thuận.
 
 ```bash
 # Frontend
@@ -32,7 +28,7 @@ cd app/frontend && bun run dev
 cd app/frontend && bun run lint
 cd app/frontend && bun run build
 
-# Backend ASP.NET Core hiện tại
+# Backend ASP.NET Core
 dotnet restore backend.sln
 dotnet build backend.sln
 dotnet run --project app/backend/backend.csproj
@@ -45,7 +41,7 @@ Hiện chưa có script kiểm thử frontend. Backend đã có project xUnit `a
 
 ```text
 app/frontend/   # Giao diện POS và quản trị nội bộ
-app/backend/    # Backend hiện tại; công nghệ cuối cùng còn chờ ADR
+app/backend/    # Backend ASP.NET Core chính thức
 docs/           # Nguồn sự thật cho SDD
 docs/specs/     # Đặc tả tính năng được tạo ở bước Specify tiếp theo
 docs/decisions/ # Product/architecture decision records

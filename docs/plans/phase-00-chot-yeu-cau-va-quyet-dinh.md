@@ -4,27 +4,28 @@
 
 Biến bộ tài liệu hiện tại thành đầu vào đủ rõ để triển khai, không để sinh viên phải tự đoán chính sách nghiệp vụ hoặc công nghệ.
 
-## Step P00-S01 — Chốt kiến trúc truy cập
+## Step P00-S01 — Chốt cơ chế xác thực
 
-**Mô tả ngắn:** So sánh Hono và ASP.NET Core theo năng lực nhóm, hosting, test và code hiện có; tạo ADR và chọn đúng một backend.
+**Mô tả ngắn:** Chọn một cơ chế xác thực phù hợp với backend ASP.NET Core đã được chấp thuận tại `ADR-002`.
 
-**Tham chiếu:** Feature/OQ `OQ-001`, `OQ-002`; Rule Các OQ/decision được nêu trong step; Workflow Không.
+**Tham chiếu:** Feature/OQ `OQ-002`; Rule Các OQ/decision được nêu trong step; Workflow Không; Decision `ADR-002`.
 
 **Công việc:**
-- [ ] So sánh Hono và ASP.NET Core theo năng lực nhóm, hosting, test và code hiện có; tạo ADR và chọn đúng một backend.
 - [ ] Chọn JWT hoặc session; chốt OTP, mật khẩu, khóa tài khoản, timeout và seed Admin gốc.
-- [ ] Đồng bộ `README.md`, `PROJECT_SPEC.md`, lệnh chạy và cấu trúc thư mục theo quyết định.
+- [ ] Tạo `ADR-003` cho cơ chế xác thực đã chọn.
+- [ ] Đồng bộ `README.md`, `PROJECT_SPEC.md` và tài liệu bảo mật theo quyết định.
 
 **Acceptance:**
-- [ ] Không còn hai backend hoặc hai cơ chế auth cùng được xem là phương án triển khai.
+- [ ] ASP.NET Core là backend duy nhất được mô tả trong tài liệu triển khai.
+- [ ] Chỉ một cơ chế xác thực được xem là phương án triển khai.
 
 **Verification:**
-- [ ] Người phụ trách duyệt ADR; lệnh trong `PROJECT_SPEC.md` khớp repository.
+- [ ] Người phụ trách duyệt `ADR-003`; lệnh trong `PROJECT_SPEC.md` khớp repository.
 - [ ] Các lệnh áp dụng trong bảng `Lệnh chuẩn` pass.
 
 **Dependencies:** Không
 
-**Files:** `docs/decisions/ADR-002-*.md`, `docs/decisions/ADR-003-*.md`, `README.md`, `docs/PROJECT_SPEC.md`.
+**Files:** `docs/decisions/ADR-003-*.md`, `README.md`, `docs/PROJECT_SPEC.md`, `docs/OPEN_QUESTIONS.md`.
 
 **Quy mô:** M
 

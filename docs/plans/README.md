@@ -7,7 +7,7 @@ Triển khai hệ thống theo các lát cắt chạy được, gồm dữ liệ
 ## Trạng thái
 
 - Tài liệu hoạt động trong `docs/` là nguồn yêu cầu; `docs/legacy/` chỉ dùng để truy nguyên.
-- PostgreSQL đã được chấp thuận tại `ADR-001`; backend và cơ chế xác thực vẫn chờ Phase 00.
+- PostgreSQL đã được chấp thuận tại `ADR-001`; ASP.NET Core đã được chấp thuận tại `ADR-002`; cơ chế xác thực vẫn chờ Phase 00.
 - Không triển khai vùng bị ảnh hưởng bởi câu hỏi P0 hoặc rule/spec chưa được duyệt.
 - Definition of Done chuẩn nằm tại [`requirements/QUALITY.md`](../requirements/QUALITY.md#definition-of-done-cho-triển-khai-sau-này); không duy trì một bản sao khác trong plan.
 
@@ -16,7 +16,7 @@ Triển khai hệ thống theo các lát cắt chạy được, gồm dữ liệ
 | Quyết định | Trạng thái | Ảnh hưởng kế hoạch |
 | --- | --- | --- |
 | `ADR-001` — PostgreSQL | Accepted | Áp dụng từ Phase 01. |
-| `ADR-002` — Backend | Chưa tạo; chờ `OQ-001` | Chặn lệnh backend chuẩn và Phase 01. |
+| [`ADR-002`](../decisions/ADR-002-aspnet-core-backend.md) — ASP.NET Core | Accepted | Là backend chính thức; lệnh backend chuẩn có hiệu lực. |
 | `ADR-003` — Xác thực | Chưa tạo; chờ `OQ-002` | Chặn Phase 02. |
 | `ADR-004` — Hợp đồng tích hợp | Chưa tạo; chờ `OQ-006`, `OQ-007` | Chặn VietQR/webhook và Zalo. |
 | `PDR-001`–`PDR-007` | Accepted | Là ranh giới sản phẩm cho mọi phase. |
@@ -25,7 +25,7 @@ Triển khai hệ thống theo các lát cắt chạy được, gồm dữ liệ
 
 | Rủi ro | Mức | Giảm thiểu |
 | --- | --- | --- |
-| Backend/auth chưa có ADR | Cao | Hoàn tất Phase 00 trước khi mở Phase 01–02. |
+| Cơ chế xác thực chưa có ADR | Cao | Hoàn tất `ADR-003` trước khi mở Phase 02. |
 | Nhiều rule/spec còn `Proposed` | Cao | Mỗi step phải liên kết rule/spec và dừng nếu còn P0. |
 | Phase 05 có dependency một phần vào Phase 06 | Trung bình | Tách checkpoint 05A; chỉ hoàn tất 05B sau nền payment. |
 | Thông báo phụ thuộc nhiều nguồn sự kiện | Trung bình | Tích hợp outbox tại phase nguồn; Phase 12 chỉ đóng sau Phase 05–11. |
@@ -37,7 +37,7 @@ Triển khai hệ thống theo các lát cắt chạy được, gồm dữ liệ
 
 | ID | Mức chặn | Owner cần xác nhận | Phase bị ảnh hưởng |
 | --- | --- | --- | --- |
-| `OQ-001`, `OQ-002` | P0 | Tech Lead/Product Owner | 01–02 |
+| `OQ-002` | P0 | Tech Lead/Product Owner | 02 |
 | `OQ-003`, `OQ-004`, `OQ-006` | P0 | Product Owner/Kế toán/Tech Lead | 06, 08–09 |
 | `OQ-005`, `OQ-008`, `OQ-009`, `OQ-011` | P1 | Product Owner/Kế toán | 05–06, 09, 13 |
 | `OQ-007`, `OQ-010`, `OQ-014` | P1 | Product Owner/Tech Lead | 11–14 |
@@ -126,14 +126,14 @@ Phase 01–13 ───────────> Phase 14: Phát hành
 
 ## Lệnh chuẩn
 
-Phase 00 phải đổi trạng thái bảng này từ `Provisional` sang `Accepted` sau khi `ADR-002` được duyệt. Các lệnh backend dưới đây phản ánh ASP.NET Core hiện có, chưa phải quyết định thay cho `OQ-001`.
+ASP.NET Core đã được chấp thuận tại `ADR-002`; các lệnh backend dưới đây là lệnh chuẩn của dự án.
 
 | Gate | Lệnh | Trạng thái |
 | --- | --- | --- |
-| Backend restore | `dotnet restore backend.sln` | Provisional |
-| Backend build | `dotnet build backend.sln --no-restore` | Provisional |
-| Backend test | `dotnet test backend.sln --no-build` | Provisional |
-| Backend run | `dotnet run --project app/backend/backend.csproj` | Provisional |
+| Backend restore | `dotnet restore backend.sln` | Accepted |
+| Backend build | `dotnet build backend.sln --no-restore` | Accepted |
+| Backend test | `dotnet test backend.sln --no-build` | Accepted |
+| Backend run | `dotnet run --project app/backend/backend.csproj` | Accepted |
 | Frontend install | `cd app/frontend && bun install --frozen-lockfile` | Current |
 | Frontend lint | `cd app/frontend && bun run lint` | Current |
 | Frontend build | `cd app/frontend && bun run build` | Current |

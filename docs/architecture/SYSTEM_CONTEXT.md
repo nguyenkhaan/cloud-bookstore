@@ -1,7 +1,7 @@
 # Bối cảnh hệ thống
 
 **Trạng thái:** Proposed  
-Tài liệu này mô tả ranh giới logic, không quyết định framework backend.
+Tài liệu này mô tả ranh giới logic. Backend dùng ASP.NET Core theo [`ADR-002`](../decisions/ADR-002-aspnet-core-backend.md).
 
 ```mermaid
 flowchart LR
@@ -44,9 +44,8 @@ flowchart LR
 
 ## Ranh giới chưa quyết định
 
-- Framework backend và persistence chính thức (`OQ-001`).
 - Cơ chế authentication/session (`OQ-002`).
 - Nhà cung cấp và hợp đồng API cụ thể (`OQ-006`, `OQ-007`).
 - Hạ tầng triển khai, job scheduler, queue và storage cho file báo cáo.
 
-Các nội dung trên phải có ADR trước khi trở thành ràng buộc triển khai.
+Các nội dung còn lại phải có ADR trước khi trở thành ràng buộc triển khai.

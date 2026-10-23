@@ -50,5 +50,6 @@ Feature, business rule, spec hoặc mã nguồn bị ảnh hưởng.
 | [`PDR-006`](./PDR-006-simple-staff-payroll-and-cash.md) | Accepted | Chấm công, lương và két tối giản cho MVP |
 | [`PDR-007`](./PDR-007-dual-channel-book-copy-availability.md) | Accepted | Bản sách mặc định dùng được cho cả bán và thuê |
 | [`ADR-001`](./ADR-001-postgresql-primary-database.md) | Accepted | PostgreSQL là cơ sở dữ liệu chính |
+| [`ADR-002`](./ADR-002-aspnet-core-backend.md) | Accepted | ASP.NET Core là backend chính thức |
 
-Quyết định backend và xác thực vẫn mở tại [`OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md).
+Quyết định xác thực vẫn mở tại [`OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md); backend tuân theo `ADR-002`.
