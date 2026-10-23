@@ -5,8 +5,11 @@ using backend.src.Data;
 using backend.src.Exceptions;
 using backend.src.Scripts;
 using backend.src.Services;
+using backend.src.Bases.Enums;
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 //System Configuration: Controller, Database, Exception...
@@ -40,6 +43,7 @@ builder.Services.AddExceptionHandler<ApiHandlerException>();
 builder.Services.AddOpenApi();
 
 builder.Services.AddHttpClient<RedisService>();
+builder.Services.AddTransient<TokenJtiStore>();
 builder.Services
     .AddHealthChecks()
     .AddCheck<RedisReadinessHealthCheck>("redis", tags: ["ready"]);
@@ -59,6 +63,7 @@ builder.Services
     .AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
     {
+        options.MapInboundClaims = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -76,6 +81,31 @@ builder.Services
                 )
             ),
             RoleClaimType = "role"
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var jti = context.Principal?.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+                if (string.IsNullOrWhiteSpace(jti))
+                {
+                    context.Fail("Token JTI is missing.");
+                    return;
+                }
+
+                var tokenStore = context.HttpContext.RequestServices.GetRequiredService<TokenJtiStore>();
+                try
+                {
+                    if (!await tokenStore.IsActiveAsync(jti, TokenType.ACCESS, context.HttpContext.RequestAborted))
+                    {
+                        context.Fail("Token has been revoked.");
+                    }
+                }
+                catch (Exception)
+                {
+                    context.Fail("Token state is unavailable.");
+                }
+            }
         };
     });
 builder.Services.AddAuthorization();

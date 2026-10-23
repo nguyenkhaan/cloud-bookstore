@@ -41,6 +41,8 @@ public class TokenService(IConfiguration configuration)
         var key = new SymmetricSecurityKey(keyByte);
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var token = new JwtSecurityToken(
+            issuer: configuration["ApiSettings:Issuer"],
+            audience: configuration["ApiSettings:Audience"],
             claims: claims,
             expires: expires,
             signingCredentials: creds
@@ -50,13 +52,19 @@ public class TokenService(IConfiguration configuration)
     }
 
     public ClaimsPrincipal ValidateRegisterVerificationToken(string token)
+        => ValidateToken(token, TokenType.VERIFY_REGISTER);
+
+    public ClaimsPrincipal ValidateRefreshToken(string token)
+        => ValidateToken(token, TokenType.REFRESH);
+
+    private ClaimsPrincipal ValidateToken(string token, TokenType type)
     {
         if (string.IsNullOrWhiteSpace(token))
             throw new SecurityTokenException("Token is required");
 
-        var secret = GetSecretKey(TokenType.VERIFY_REGISTER);
+        var secret = GetSecretKey(type);
         if (string.IsNullOrWhiteSpace(secret))
-            throw new InvalidOperationException("Register verification token secret is not configured");
+            throw new InvalidOperationException($"{type} token secret is not configured");
 
         var tokenHandler = new JwtSecurityTokenHandler
         {

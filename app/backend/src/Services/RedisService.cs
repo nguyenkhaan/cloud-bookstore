@@ -55,6 +55,19 @@ public sealed class RedisService(HttpClient httpClient, IConfiguration configura
         return GetIntegerResult(result, "DEL") > 0;
     }
 
+    public async Task<long> DeleteManyAsync(IEnumerable<string> keys, CancellationToken cancellationToken = default)
+    {
+        var command = new List<string> { "DEL" };
+        command.AddRange(keys.Select(ValidateKey));
+        if (command.Count == 1)
+        {
+            throw new ArgumentException("At least one Redis key is required.", nameof(keys));
+        }
+
+        var result = await ExecuteAsync(command, cancellationToken);
+        return GetIntegerResult(result, "DEL");
+    }
+
     public async Task<bool> ExistsAsync(string key, CancellationToken cancellationToken = default)
     {
         var result = await ExecuteAsync(["EXISTS", ValidateKey(key)], cancellationToken);
