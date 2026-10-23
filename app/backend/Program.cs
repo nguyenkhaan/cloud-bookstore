@@ -75,10 +75,20 @@ builder.Services
     });
 builder.Services.AddAuthorization();
 
+builder.Services
+    .AddOptions<EmailSettings>()
+    .BindConfiguration("Email")
+    .ValidateDataAnnotations()
+    .Validate(
+        settings => Uri.TryCreate(settings.FrontendBaseUrl, UriKind.Absolute, out _),
+        "Email:FrontendBaseUrl must be an absolute URL.")
+    .ValidateOnStart();
+
 //Dependency Injection
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<SettingService>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 //Dependency Injection -> builder.Services.AddScoped<AuthService>();
 var app = builder.Build();
