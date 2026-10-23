@@ -59,3 +59,18 @@ app/frontend/
 ```
 
 Build with Cloudian 💙 Cloud
+
+## Backend configuration
+
+Use `app/backend/appsettings.example.json` as a template. Keep your actual `app/backend/appsettings.json` local; Git ignores it. Configure deployment values through environment variables or your secret manager:
+
+```text
+ConnectionStrings__DefaultConnection
+UpstashRedis__RestUrl
+UpstashRedis__RestToken
+Jwt__AccessSecret__Key
+Jwt__RefreshSecret__Key
+Jwt__VerifyRegisterSecret__Key
+```
+
+If any credential was previously committed, rotate it with its provider before relying on the rewritten Git history.
