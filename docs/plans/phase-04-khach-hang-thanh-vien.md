@@ -97,7 +97,8 @@ Tạo hồ sơ khách dùng chung cho bán, thuê và thu mua; hạng được t
 
 **Công việc:**
 - [ ] Chốt spec trường dữ liệu, trạng thái, quyền và chính sách xóa/lưu trữ trước khi tạo schema.
-- [ ] BE tạo API quản lý yêu cầu và audit; FE có danh sách, form và bộ lọc trạng thái.
+- [ ] BE tạo API lập, xem, cập nhật trạng thái yêu cầu theo quyền; ghi audit cho thay đổi.
+- [ ] FE tạo form tiếp nhận, danh sách lọc theo trạng thái và màn hình chi tiết yêu cầu.
 - [ ] Test quyền, chuyển trạng thái, validation và retention.
 
 **Acceptance:**

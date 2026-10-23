@@ -94,9 +94,9 @@ Gửi thông báo một chiều qua Zalo/email bằng outbox, có retry và khô
 **Tham chiếu:** Feature/OQ Không; Rule `BR-INT-001`–`BR-INT-003`; Workflow `WF-11`.
 
 **Công việc:**
-- [ ] Gắn correlation ID từ chứng từ tới outbox/provider result.
-- [ ] Tạo metric/log cho lỗi, retry, tuổi bản ghi chờ và circuit breaker.
-- [ ] Viết runbook xử lý hàng đợi tắc và provider ngừng hoạt động.
+- [ ] BE lưu và truyền correlation ID qua chứng từ, bản ghi outbox và kết quả gửi từ provider.
+- [ ] BE xuất metric/log cho lỗi gửi, số lần retry, tuổi bản ghi chờ và trạng thái circuit breaker.
+- [ ] Tạo dashboard tra cứu theo correlation ID; viết runbook xử lý hàng đợi tắc và provider ngừng hoạt động.
 
 **Acceptance:**
 - [ ] Người vận hành xác định được thông báo nào lỗi, vì sao và cách xử lý.
