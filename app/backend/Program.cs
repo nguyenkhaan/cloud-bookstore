@@ -39,6 +39,11 @@ builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiHandlerException>();
 builder.Services.AddOpenApi();
 
+builder.Services.AddHttpClient<RedisService>();
+builder.Services
+    .AddHealthChecks()
+    .AddCheck<RedisReadinessHealthCheck>("redis", tags: ["ready"]);
+
 string connectionString = builder.Configuration["ConnectionStrings:DefaultConnection"] 
     ?? throw new InvalidDataException("Cannot connect to database. Please check your connection string");
 Console.WriteLine("Database connection configured.");
@@ -106,5 +111,9 @@ if (args.Contains("--seed", StringComparer.OrdinalIgnoreCase))
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/api/health/readiness", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
 
 app.Run();
