@@ -51,13 +51,8 @@ public class AuthService(AppDbContext dbContext, TokenService tokenService, Sett
         {
             if (employee.Status == EmployeeStatus.PENDING_OTP)
             {
-                var claims = new List<Claim>
-                {
-                    new("email" , employee.Email)
-                };
-                var activateToken = tokenService.GenerateToken(employee.Id, TokenType.VERIFY_REGISTER, claims);
-                await tokenJtiStore.StoreAsync(activateToken, TokenType.VERIFY_REGISTER);
-                return new RegisterResponse(employee.Email, employee.FullName, activateToken);
+                var activationToken = await CreateRegistrationVerificationTokenAsync(employee);
+                return new RegisterResponse(employee.Email, employee.FullName, activationToken);
             }
 
             throw new ConflictException("User has been registered");
@@ -66,7 +61,7 @@ public class AuthService(AppDbContext dbContext, TokenService tokenService, Sett
         var newEmployee = new EmployeeModel
         {
             Email = request.Email,
-            Password = BCrypt.Net.BCrypt.HashPassword(request.Password, workFactor: 12),
+            Password = BCryptHasher.HashPassword(request.Password, workFactor: 12),
             FullName = request.FullName,
             Phone = request.Phone,
             Status = EmployeeStatus.PENDING_OTP,
@@ -78,21 +73,30 @@ public class AuthService(AppDbContext dbContext, TokenService tokenService, Sett
             await dbContext.Employees.AddAsync(newEmployee);
             await dbContext.SaveChangesAsync();
 
-            var newClaims = new List<Claim>
-            {
-                new("email" , request.Email)
-            };
-            var verifyToken = tokenService.GenerateToken(newEmployee.Id, TokenType.VERIFY_REGISTER, newClaims);
-            await tokenJtiStore.StoreAsync(verifyToken, TokenType.VERIFY_REGISTER);
+            var verificationToken = await CreateRegistrationVerificationTokenAsync(newEmployee);
 
             await transaction.CommitAsync();
-            return new RegisterResponse(Email : newEmployee.Email, FullName: newEmployee.FullName, Activation: verifyToken);
+            return new RegisterResponse(
+                Email: newEmployee.Email,
+                FullName: newEmployee.FullName,
+                Activation: verificationToken);
         }
         catch
         {
             await transaction.RollbackAsync();
             throw;
         }
+    }
+
+    private async Task<string> CreateRegistrationVerificationTokenAsync(EmployeeModel employee)
+    {
+        var claims = new List<Claim>
+        {
+            new("email", employee.Email)
+        };
+        var token = tokenService.GenerateToken(employee.Id, TokenType.VERIFY_REGISTER, claims);
+        await tokenJtiStore.StoreRegistrationVerificationAsync(token);
+        return token;
     }
 
     public async Task Verify(string token)
@@ -113,7 +117,7 @@ public class AuthService(AppDbContext dbContext, TokenService tokenService, Sett
         if (!Guid.TryParse(subject, out var employeeId) || string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(jti))
             throw new UnauthorizedException("Invalid or expired verification token");
 
-        if (!await tokenJtiStore.IsActiveAsync(jti, TokenType.VERIFY_REGISTER))
+        if (!await tokenJtiStore.IsRegistrationVerificationActiveAsync(employeeId, jti))
             throw new UnauthorizedException("Invalid or expired verification token");
 
         var employee = await dbContext.Employees.FindAsync(employeeId);
@@ -122,7 +126,7 @@ public class AuthService(AppDbContext dbContext, TokenService tokenService, Sett
 
         if (employee.Status == EmployeeStatus.ACTIVE)
         {
-            await tokenJtiStore.RevokeAsync(jti, TokenType.VERIFY_REGISTER);
+            await tokenJtiStore.RevokeRegistrationVerificationAsync(employeeId, jti);
             return;
         }
         if (employee.Status != EmployeeStatus.PENDING_OTP)
@@ -130,7 +134,7 @@ public class AuthService(AppDbContext dbContext, TokenService tokenService, Sett
 
         employee.Status = EmployeeStatus.ACTIVE;
         await dbContext.SaveChangesAsync();
-        await tokenJtiStore.RevokeAsync(jti, TokenType.VERIFY_REGISTER);
+        await tokenJtiStore.RevokeRegistrationVerificationAsync(employeeId, jti);
     }
 
     public async Task Logout(string refreshToken)

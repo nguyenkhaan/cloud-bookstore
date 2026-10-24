@@ -131,7 +131,7 @@ public class AuthServiceTests
             employee.Id,
             TokenType.VERIFY_REGISTER,
             [new Claim("email", employee.Email)]);
-        await tokenStore.StoreAsync(token, TokenType.VERIFY_REGISTER);
+        await tokenStore.StoreRegistrationVerificationAsync(token);
 
         await authService.Verify(token);
 
@@ -186,7 +186,7 @@ public class AuthServiceTests
             employee.Id,
             TokenType.VERIFY_REGISTER,
             [new Claim("email", employee.Email)]);
-        await tokenStore.StoreAsync(token, TokenType.VERIFY_REGISTER);
+        await tokenStore.StoreRegistrationVerificationAsync(token);
 
         await Assert.ThrowsAsync<ForbiddenException>(() => authService.Verify(token));
 
@@ -249,7 +249,42 @@ public class AuthServiceTests
     }
 
     [Fact]
-    public async Task Register_StoresVerificationJti()
+    public async Task Register_Again_InvalidatesPreviousVerificationToken()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var dbOptions = new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite(connection)
+            .Options;
+        await SeedCashierRole(dbOptions);
+        await using var dbContext = new AppDbContext(dbOptions);
+        var configuration = CreateAuthConfiguration();
+        var authService = new AuthService(
+            dbContext,
+            new TokenService(configuration),
+            new SettingService(configuration),
+            CreateTokenStore(configuration, new FakeRedisHandler()));
+        var request = new RegisterRequest
+        {
+            Email = "new@cloud.io",
+            FullName = "New Cashier",
+            Password = "TestPassword123!",
+            Phone = "0123456789"
+        };
+
+        var firstRegistration = await authService.Register(request);
+        var secondRegistration = await authService.Register(request);
+
+        await Assert.ThrowsAsync<UnauthorizedException>(() =>
+            authService.Verify(firstRegistration.Activation));
+        await authService.Verify(secondRegistration.Activation);
+
+        var employee = await dbContext.Employees.SingleAsync(item => item.Email == request.Email);
+        Assert.Equal(EmployeeStatus.ACTIVE, employee.Status);
+    }
+
+    [Fact]
+    public async Task Register_StoresCurrentVerificationJti()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
@@ -270,8 +305,9 @@ public class AuthServiceTests
             Phone = "0123456789"
         });
 
-        var jti = new JwtSecurityTokenHandler().ReadJwtToken(response.Activation).Id;
-        Assert.True(await tokenStore.IsActiveAsync(jti, TokenType.VERIFY_REGISTER));
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(response.Activation);
+        var employeeId = Guid.Parse(jwt.Subject);
+        Assert.True(await tokenStore.IsRegistrationVerificationActiveAsync(employeeId, jwt.Id));
     }
 
     private static ConfigurationManager CreateVerifyConfiguration(string secret) => new()
