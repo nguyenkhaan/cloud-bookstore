@@ -7,5 +7,10 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+    proxy: {
+      // Gọi /api/* từ FE => Vite chuyển sang BE, cookie refresh cùng origin nên không cần CORS khi dev.
+      // Đổi cổng cho đúng với launchSettings.json của backend.
+      '/api': { target: 'http://localhost:4000', changeOrigin: true },
+    },
   },
 })
