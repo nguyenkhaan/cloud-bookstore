@@ -1,11 +1,13 @@
+
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http.HttpResults;
 using backend.src.Exceptions;
 
 namespace backend.src.Controllers;
 
 [ApiController]
 [Route("api/health")]
+[AllowAnonymous]
 public class HealthController : ControllerBase
 {
     [HttpGet("liveness")]
@@ -13,6 +15,7 @@ public class HealthController : ControllerBase
     {
         return Ok("Build with Cloudian 💙 Cloud");
     }
+
     [HttpGet("json")]
     public IActionResult GetHealthText()
     {
@@ -21,9 +24,12 @@ public class HealthController : ControllerBase
             message = "Build with Cloudian 💙 Cloud"
         });
     }
+
     [HttpGet("exception")]
     public string GetHealthError()
     {
-        throw new BadRequestException("This is an exception for testing");
+        throw new BadRequestException(
+            "This is an exception for testing"
+        );
     }
 }
