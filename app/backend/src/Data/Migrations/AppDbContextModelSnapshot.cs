@@ -333,10 +333,16 @@ namespace backend.src.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<int>("FailedLoginAttempts")
+                        .HasColumnType("integer");
+
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("LockoutEndUtc")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Password")
                         .IsRequired()

@@ -26,6 +26,8 @@ public class EmployeeModel
     [ForeignKey(nameof(RoleId))]
     public RoleModel Role { get; set; } = null!;
     public EmployeeStatus Status { get; set; }
+    public int FailedLoginAttempts { get; set; }
+    public DateTime? LockoutEndUtc { get; set; }
     [MaxLength(128)]
     public string? PasswordResetTokenHash { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

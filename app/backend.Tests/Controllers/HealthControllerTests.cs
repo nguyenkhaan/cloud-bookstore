@@ -17,7 +17,7 @@ public sealed class HealthControllerTests
 
         var ok = Assert.IsType<OkObjectResult>(result);
         Assert.Equal(StatusCodes.Status200OK, ok.StatusCode);
-        Assert.Equal(new EmailHealthResponse("Healthy"), ok.Value);
+        Assert.Equal(new HealthController.EmailHealthResponse("Healthy"), ok.Value);
     }
 
     [Fact]
@@ -29,7 +29,7 @@ public sealed class HealthControllerTests
 
         var unavailable = Assert.IsType<ObjectResult>(result);
         Assert.Equal(StatusCodes.Status503ServiceUnavailable, unavailable.StatusCode);
-        Assert.Equal(new EmailHealthResponse("Unhealthy"), unavailable.Value);
+        Assert.Equal(new HealthController.EmailHealthResponse("Unhealthy"), unavailable.Value);
     }
 
     [Fact]

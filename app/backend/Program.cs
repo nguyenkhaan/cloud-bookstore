@@ -42,6 +42,12 @@ builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiHandlerException>();
 builder.Services.AddOpenApi();
 
+builder.Services
+    .AddOptions<AuthSecuritySettings>()
+    .BindConfiguration(AuthSecuritySettings.SectionName)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
 builder.Services.AddHttpClient<RedisService>();
 builder.Services.AddTransient<TokenJtiStore>();
 builder.Services
@@ -73,6 +79,7 @@ builder.Services
 
             ValidIssuer = builder.Configuration["ApiSettings:Issuer"],
             ValidAudience = builder.Configuration["ApiSettings:Audience"],
+            ClockSkew = TimeSpan.Zero,
 
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(
@@ -99,6 +106,25 @@ builder.Services
                     if (!await tokenStore.IsActiveAsync(jti, TokenType.ACCESS, context.HttpContext.RequestAborted))
                     {
                         context.Fail("Token has been revoked.");
+                        return;
+                    }
+
+                    var subject = context.Principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                    if (!Guid.TryParse(subject, out var employeeId))
+                    {
+                        context.Fail("Token subject is invalid.");
+                        return;
+                    }
+
+                    var dbContext = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+                    var employee = await dbContext.Employees
+                        .AsNoTracking()
+                        .SingleOrDefaultAsync(item => item.Id == employeeId, context.HttpContext.RequestAborted);
+                    if (employee is null ||
+                        employee.Status != backend.src.Models.Enums.EmployeeStatus.ACTIVE ||
+                        employee.LockoutEndUtc > DateTime.UtcNow)
+                    {
+                        context.Fail("Account is unavailable.");
                     }
                 }
                 catch (Exception)
@@ -133,6 +159,8 @@ app.UseExceptionHandler(new ExceptionHandlerOptions
 {
     AllowStatusCode404Response = true
 });
+
+app.UseCors("AllowFrontend");
 
 
 if (app.Environment.IsDevelopment())

@@ -8,6 +8,8 @@ namespace backend.src.Controllers;
 [Route("api/health")]
 public class HealthController(IEmailHealthCheck emailHealthCheck) : ControllerBase
 {
+    public sealed record EmailHealthResponse(string Status);
+
     [HttpGet("liveness")]
     public IActionResult GetHealthLiveness()
     {
