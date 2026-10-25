@@ -13,6 +13,7 @@ using backend.src.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using Xunit;
 
 namespace backend.Tests.Services;
@@ -68,6 +69,84 @@ public class AuthServiceTests
         var response = await authService.Login(new LoginRequest("  CASHIER@CLOUD.IO  ", password));
 
         Assert.False(string.IsNullOrWhiteSpace(response.AccessToken));
+    }
+
+    [Fact]
+    public async Task Login_TemporarilyLocksAnAccountAfterTheConfiguredNumberOfFailedAttempts()
+    {
+        await using var connection = await OpenConnectionAsync();
+        await using var dbContext = new AppDbContext(CreateDatabaseOptions(connection));
+        await dbContext.Database.EnsureCreatedAsync();
+        var employee = await SeedEmployee(dbContext, EmployeeStatus.ACTIVE);
+        const string password = "TestPassword123!";
+        employee.Password = BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
+        await dbContext.SaveChangesAsync();
+
+        var configuration = CreateAuthenticationConfiguration();
+        configuration["AuthSecurity:MaxFailedLoginAttempts"] = "2";
+        configuration["AuthSecurity:LockoutDurationMinutes"] = "15";
+        var authService = CreateAuthService(dbContext, configuration);
+
+        await Assert.ThrowsAsync<UnauthorizedException>(() =>
+            authService.Login(new LoginRequest(employee.Email, "wrong-password")));
+        var locked = await Assert.ThrowsAsync<ForbiddenException>(() =>
+            authService.Login(new LoginRequest(employee.Email, "wrong-password")));
+
+        Assert.Equal("Account is temporarily locked. Try again later.", locked.Message);
+        await Assert.ThrowsAsync<ForbiddenException>(() =>
+            authService.Login(new LoginRequest(employee.Email, password)));
+    }
+
+    [Fact]
+    public async Task Login_ClearsAnExpiredTemporaryLock_WhenCredentialsAreCorrect()
+    {
+        await using var connection = await OpenConnectionAsync();
+        await using var dbContext = new AppDbContext(CreateDatabaseOptions(connection));
+        await dbContext.Database.EnsureCreatedAsync();
+        var employee = await SeedEmployee(dbContext, EmployeeStatus.ACTIVE);
+        const string password = "TestPassword123!";
+        employee.Password = BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
+        employee.FailedLoginAttempts = 5;
+        employee.LockoutEndUtc = DateTime.UtcNow.AddMinutes(-1);
+        await dbContext.SaveChangesAsync();
+
+        var response = await CreateAuthService(dbContext, CreateAuthenticationConfiguration())
+            .Login(new LoginRequest(employee.Email, password));
+
+        Assert.False(string.IsNullOrWhiteSpace(response.AccessToken));
+        Assert.Equal(0, employee.FailedLoginAttempts);
+        Assert.Null(employee.LockoutEndUtc);
+    }
+
+    [Fact]
+    public async Task Login_IssuesNewTokens_AfterAnEarlierAccessTokenHasExpired()
+    {
+        await using var connection = await OpenConnectionAsync();
+        await using var dbContext = new AppDbContext(CreateDatabaseOptions(connection));
+        await dbContext.Database.EnsureCreatedAsync();
+        var employee = await SeedEmployee(dbContext, EmployeeStatus.ACTIVE);
+        const string password = "TestPassword123!";
+        employee.Password = BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
+        await dbContext.SaveChangesAsync();
+
+        var configuration = CreateAuthenticationConfiguration();
+        var expiredToken = new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
+            claims:
+            [
+                new Claim(JwtRegisteredClaimNames.Sub, employee.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim("token_use", TokenType.ACCESS.ToString())
+            ],
+            expires: DateTime.UtcNow.AddSeconds(-1),
+            signingCredentials: new SigningCredentials(
+                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:AccessSecret:Key"]!)),
+                SecurityAlgorithms.HmacSha256)));
+
+        Assert.Throws<SecurityTokenExpiredException>(() => new TokenService(configuration).ValidateAccessToken(expiredToken));
+        var response = await CreateAuthService(dbContext, configuration).Login(new LoginRequest(employee.Email, password));
+
+        Assert.False(string.IsNullOrWhiteSpace(response.AccessToken));
+        Assert.False(string.IsNullOrWhiteSpace(response.RefreshToken));
     }
 
     [Fact]
@@ -429,7 +508,8 @@ public class AuthServiceTests
             new TokenService(configuration),
             new SettingService(configuration),
             emailService ?? new NoOpEmailService(),
-            tokenStore ?? CreateTokenStore(configuration, new FakeRedisHandler()));
+            tokenStore ?? CreateTokenStore(configuration, new FakeRedisHandler()),
+            configuration);
     }
 
     private static ConfigurationManager CreateVerifyConfiguration(string secret) => new()
