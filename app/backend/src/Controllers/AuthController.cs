@@ -45,4 +45,11 @@ public class AuthController(AuthService authService) : ControllerBase
         await authService.ResetPassword(request);
         return NoContent();
     }
+
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+    {
+        await authService.Logout(request.RefreshToken);
+        return NoContent();
+    }
 }

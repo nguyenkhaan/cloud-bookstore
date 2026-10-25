@@ -17,7 +17,8 @@ public class AuthService(
     AppDbContext dbContext,
     TokenService tokenService,
     SettingService settingService,
-    IEmailService emailService)
+    IEmailService emailService,
+    TokenJtiStore tokenJtiStore)
 {
     public async Task<LoginResponse> Login(LoginRequest request)
     {
@@ -39,6 +40,7 @@ public class AuthService(
         };
         var accessToken = tokenService.GenerateToken(employee.Id, TokenType.ACCESS, claims);
         var refreshToken = tokenService.GenerateToken(employee.Id, TokenType.REFRESH, claims);
+        await tokenJtiStore.StoreLoginAsync(accessToken, refreshToken);
         return new LoginResponse(accessToken, refreshToken);
     }
     public async Task<RegisterResponse> Register(RegisterRequest request)
@@ -62,7 +64,7 @@ public class AuthService(
         {
             if (employee.Status == EmployeeStatus.PENDING_OTP)
             {
-                var verificationToken = GenerateEmailToken(employee.Id, employee.Email, TokenType.VERIFY_REGISTER);
+                var verificationToken = await CreateRegistrationVerificationTokenAsync(employee);
                 await emailService.SendAccountVerificationEmailAsync(employee.Email, employee.FullName, verificationToken);
                 return new RegisterResponse(employee.Email, employee.FullName);
             }
@@ -73,22 +75,20 @@ public class AuthService(
         var newEmployee = new EmployeeModel
         {
             Email = request.Email,
-            Password = BCrypt.Net.BCrypt.HashPassword(request.Password, workFactor: 12),
+            Password = BCryptHasher.HashPassword(request.Password, workFactor: 12),
             FullName = request.FullName,
             Phone = request.Phone,
             Status = EmployeeStatus.PENDING_OTP,
             Role = employeeRole!
         };
-        var newEmployeeVerificationToken = GenerateEmailToken(
-            newEmployee.Id,
-            newEmployee.Email,
-            TokenType.VERIFY_REGISTER);
+        string newEmployeeVerificationToken;
         await using var transaction = await dbContext.Database.BeginTransactionAsync();
         try
         {
             await dbContext.Employees.AddAsync(newEmployee);
             await dbContext.SaveChangesAsync();
 
+            newEmployeeVerificationToken = await CreateRegistrationVerificationTokenAsync(newEmployee);
             await transaction.CommitAsync();
         }
         catch
@@ -102,6 +102,17 @@ public class AuthService(
             newEmployee.FullName,
             newEmployeeVerificationToken);
         return new RegisterResponse(Email: newEmployee.Email, FullName: newEmployee.FullName);
+    }
+
+    private async Task<string> CreateRegistrationVerificationTokenAsync(EmployeeModel employee)
+    {
+        var claims = new List<Claim>
+        {
+            new("email", employee.Email)
+        };
+        var token = tokenService.GenerateToken(employee.Id, TokenType.VERIFY_REGISTER, claims);
+        await tokenJtiStore.StoreRegistrationVerificationAsync(token);
+        return token;
     }
 
     public async Task Verify(string token)
@@ -118,7 +129,11 @@ public class AuthService(
 
         var subject = principal.FindFirstValue(JwtRegisteredClaimNames.Sub);
         var email = principal.FindFirstValue("email");
-        if (!Guid.TryParse(subject, out var employeeId) || string.IsNullOrWhiteSpace(email))
+        var jti = principal.FindFirstValue(JwtRegisteredClaimNames.Jti);
+        if (!Guid.TryParse(subject, out var employeeId) || string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(jti))
+            throw new UnauthorizedException("Invalid or expired verification token");
+
+        if (!await tokenJtiStore.IsRegistrationVerificationActiveAsync(employeeId, jti))
             throw new UnauthorizedException("Invalid or expired verification token");
 
         var employee = await dbContext.Employees.FindAsync(employeeId);
@@ -126,12 +141,41 @@ public class AuthService(
             throw new UnauthorizedException("Invalid or expired verification token");
 
         if (employee.Status == EmployeeStatus.ACTIVE)
+        {
+            await tokenJtiStore.RevokeRegistrationVerificationAsync(employeeId, jti);
             return;
+        }
         if (employee.Status != EmployeeStatus.PENDING_OTP)
             throw new ForbiddenException("Account cannot be verified");
 
         employee.Status = EmployeeStatus.ACTIVE;
         await dbContext.SaveChangesAsync();
+        await tokenJtiStore.RevokeRegistrationVerificationAsync(employeeId, jti);
+    }
+
+    public async Task Logout(string refreshToken)
+    {
+        ClaimsPrincipal refreshPrincipal;
+        try
+        {
+            refreshPrincipal = tokenService.ValidateRefreshToken(refreshToken);
+        }
+        catch (Exception exception) when (exception is SecurityTokenException or ArgumentException)
+        {
+            throw new UnauthorizedException("Invalid or expired refresh token");
+        }
+
+        var refreshJti = refreshPrincipal.FindFirstValue(JwtRegisteredClaimNames.Jti);
+        if (string.IsNullOrWhiteSpace(refreshJti))
+        {
+            throw new UnauthorizedException("Invalid or expired refresh token");
+        }
+
+        var accessJti = await tokenJtiStore.GetAccessJtiForRefreshAsync(refreshJti);
+        if (string.IsNullOrWhiteSpace(accessJti))
+            throw new UnauthorizedException("Invalid or expired refresh token");
+
+        await tokenJtiStore.RevokeLoginAsync(accessJti, refreshJti);
     }
 
     public async Task RequestPasswordReset(ForgotPasswordRequest request)
