@@ -342,6 +342,10 @@ namespace backend.src.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("PasswordResetTokenHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
                     b.Property<string>("Phone")
                         .IsRequired()
                         .HasMaxLength(12)

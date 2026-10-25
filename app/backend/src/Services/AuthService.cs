@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using backend.src.Bases.Enums;
 using backend.src.Data;
@@ -11,16 +13,27 @@ using BCryptHasher = BCrypt.Net.BCrypt;
 using backend.src.Models;
 namespace backend.src.Services;
 
-public class AuthService(AppDbContext dbContext, TokenService tokenService, SettingService settingService, TokenJtiStore tokenJtiStore)
+public class AuthService(
+    AppDbContext dbContext,
+    TokenService tokenService,
+    SettingService settingService,
+    IEmailService emailService,
+    TokenJtiStore tokenJtiStore)
 {
     public async Task<LoginResponse> Login(LoginRequest request)
     {
-        var employee = await dbContext.Employees.Include(employee => employee.Role).FirstOrDefaultAsync(u => u.Email == request.Email);
+        var email = request.Email.Trim();
+        var normalizedEmail = email.ToLowerInvariant();
+        var employee = await dbContext.Employees
+            .Include(employee => employee.Role)
+            .FirstOrDefaultAsync(user => user.Email.ToLower() == normalizedEmail);
         if (employee is null)
-            throw new NotFoundException("User not found");
+            throw new UnauthorizedException("Invalid email or password");
         var passwordIsValid = BCryptHasher.Verify(request.Password, employee.Password);
         if (!passwordIsValid)
-            throw new NotFoundException("User not found");
+            throw new UnauthorizedException("Invalid email or password");
+        if (employee.Status != EmployeeStatus.ACTIVE)
+            throw new ForbiddenException("Account is not verified or is unavailable");
         var claims = new List<Claim>
         {
             new ("role" , employee.Role.RoleName.ToString())
@@ -46,13 +59,14 @@ public class AuthService(AppDbContext dbContext, TokenService tokenService, Sett
         {
             throw new BadRequestException("Email domain is not allowed");
         }
-        var employee = await dbContext.Employees.FirstOrDefaultAsync(em => em.Email == request.Email);
+        var employee = await dbContext.Employees.FirstOrDefaultAsync(em => em.Email == email);
         if (employee != null)
         {
             if (employee.Status == EmployeeStatus.PENDING_OTP)
             {
-                var activationToken = await CreateRegistrationVerificationTokenAsync(employee);
-                return new RegisterResponse(employee.Email, employee.FullName, activationToken);
+                var verificationToken = await CreateRegistrationVerificationTokenAsync(employee);
+                await emailService.SendAccountVerificationEmailAsync(employee.Email, employee.FullName, verificationToken);
+                return new RegisterResponse(employee.Email, employee.FullName);
             }
 
             throw new ConflictException("User has been registered");
@@ -67,25 +81,27 @@ public class AuthService(AppDbContext dbContext, TokenService tokenService, Sett
             Status = EmployeeStatus.PENDING_OTP,
             Role = employeeRole!
         };
+        string newEmployeeVerificationToken;
         await using var transaction = await dbContext.Database.BeginTransactionAsync();
         try
         {
             await dbContext.Employees.AddAsync(newEmployee);
             await dbContext.SaveChangesAsync();
 
-            var verificationToken = await CreateRegistrationVerificationTokenAsync(newEmployee);
-
+            newEmployeeVerificationToken = await CreateRegistrationVerificationTokenAsync(newEmployee);
             await transaction.CommitAsync();
-            return new RegisterResponse(
-                Email: newEmployee.Email,
-                FullName: newEmployee.FullName,
-                Activation: verificationToken);
         }
         catch
         {
             await transaction.RollbackAsync();
             throw;
         }
+
+        await emailService.SendAccountVerificationEmailAsync(
+            newEmployee.Email,
+            newEmployee.FullName,
+            newEmployeeVerificationToken);
+        return new RegisterResponse(Email: newEmployee.Email, FullName: newEmployee.FullName);
     }
 
     private async Task<string> CreateRegistrationVerificationTokenAsync(EmployeeModel employee)
@@ -160,5 +176,77 @@ public class AuthService(AppDbContext dbContext, TokenService tokenService, Sett
             throw new UnauthorizedException("Invalid or expired refresh token");
 
         await tokenJtiStore.RevokeLoginAsync(accessJti, refreshJti);
+    }
+
+    public async Task RequestPasswordReset(ForgotPasswordRequest request)
+    {
+        var email = request.Email.Trim();
+        var employee = await dbContext.Employees.FirstOrDefaultAsync(employee => employee.Email == email);
+        if (employee is null || employee.Status != EmployeeStatus.ACTIVE)
+            return;
+
+        var resetToken = GenerateEmailToken(employee.Id, employee.Email, TokenType.RESET_PASSWORD);
+        employee.PasswordResetTokenHash = HashToken(resetToken);
+        await dbContext.SaveChangesAsync();
+
+        await emailService.SendPasswordResetEmailAsync(employee.Email, employee.FullName, resetToken);
+    }
+
+    public async Task ResetPassword(ResetPasswordRequest request)
+    {
+        ClaimsPrincipal principal;
+        try
+        {
+            principal = tokenService.ValidatePasswordResetToken(request.Token);
+        }
+        catch (Exception exception) when (exception is SecurityTokenException or ArgumentException)
+        {
+            throw new UnauthorizedException("Invalid or expired password reset token");
+        }
+
+        var subject = principal.FindFirstValue(JwtRegisteredClaimNames.Sub);
+        var email = principal.FindFirstValue("email");
+        if (!Guid.TryParse(subject, out var employeeId) || string.IsNullOrWhiteSpace(email))
+            throw new UnauthorizedException("Invalid or expired password reset token");
+
+        var employee = await dbContext.Employees.FindAsync(employeeId);
+        if (employee is null ||
+            employee.Status != EmployeeStatus.ACTIVE ||
+            !string.Equals(employee.Email, email, StringComparison.OrdinalIgnoreCase) ||
+            !MatchesTokenHash(employee.PasswordResetTokenHash, request.Token))
+        {
+            throw new UnauthorizedException("Invalid or expired password reset token");
+        }
+
+        employee.Password = BCryptHasher.HashPassword(request.NewPassword, workFactor: 12);
+        employee.PasswordResetTokenHash = null;
+        await dbContext.SaveChangesAsync();
+    }
+
+    private string GenerateEmailToken(Guid employeeId, string email, TokenType type)
+    {
+        return tokenService.GenerateToken(employeeId, type, [new Claim("email", email)]);
+    }
+
+    private static string HashToken(string token)
+    {
+        return Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
+    }
+
+    private static bool MatchesTokenHash(string? storedHash, string token)
+    {
+        if (string.IsNullOrWhiteSpace(storedHash))
+            return false;
+
+        try
+        {
+            var expectedHash = Convert.FromBase64String(storedHash);
+            var actualHash = SHA256.HashData(Encoding.UTF8.GetBytes(token));
+            return CryptographicOperations.FixedTimeEquals(expectedHash, actualHash);
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
     }
 }

@@ -1,54 +1,59 @@
-using System.Security.Claims;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using backend.src.Bases.Enums;
+using Microsoft.IdentityModel.Tokens;
+
 namespace backend.src.Services;
 
 public class TokenService(IConfiguration configuration)
 {
     public string? GetSecretKey(TokenType type)
     {
-        //Su dung truc tiep cai tham so nay luon chu khong gan no tro thanh 1 doi tuong cua class 
-        // => Hoan toan co the dung binh thuong
-        if (type == TokenType.ACCESS)
-            return configuration["Jwt:AccessSecret:Key"];
-        if (type == TokenType.REFRESH)
-            return configuration["Jwt:RefreshSecret:Key"];
-        if (type == TokenType.VERIFY_REGISTER)
-            return configuration["Jwt:VerifyRegisterSecret:Key"];
-        return null;
+        return type switch
+        {
+            TokenType.ACCESS => configuration["Jwt:AccessSecret:Key"],
+            TokenType.REFRESH => configuration["Jwt:RefreshSecret:Key"],
+            TokenType.VERIFY_REGISTER => configuration["Jwt:VerifyRegisterSecret:Key"],
+            TokenType.RESET_PASSWORD => configuration["Jwt:ResetPasswordSecret:Key"],
+            _ => null
+        };
     }
-    public string GenerateToken(Guid userId , TokenType type, IEnumerable<Claim>? additionalClaims = null)
+
+    public string GenerateToken(Guid userId, TokenType type, IEnumerable<Claim>? additionalClaims = null)
     {
         var secret = GetSecretKey(type);
         if (string.IsNullOrWhiteSpace(secret))
-            throw new InvalidOperationException($"Secret key for ${type} is not configured");
-        var keyByte = Encoding.UTF8.GetBytes(secret);
+            throw new InvalidOperationException($"Secret key for {type} is not configured");
+
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Sub , userId.ToString()),
-            new(JwtRegisteredClaimNames.Jti , Guid.NewGuid().ToString())
+            new(JwtRegisteredClaimNames.Sub, userId.ToString()),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new("token_use", type.ToString())
         };
-        if (additionalClaims != null) claims.AddRange(additionalClaims);
+        if (additionalClaims is not null)
+            claims.AddRange(additionalClaims);
+
         var expires = type switch
         {
             TokenType.ACCESS => DateTime.UtcNow.AddMinutes(15),
             TokenType.REFRESH => DateTime.UtcNow.AddDays(7),
             TokenType.VERIFY_REGISTER => DateTime.UtcNow.AddMinutes(1024),
+            TokenType.RESET_PASSWORD => DateTime.UtcNow.AddMinutes(15),
             _ => throw new ArgumentOutOfRangeException(nameof(type))
         };
-        var key = new SymmetricSecurityKey(keyByte);
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
         var token = new JwtSecurityToken(
             issuer: configuration["ApiSettings:Issuer"],
             audience: configuration["ApiSettings:Audience"],
             claims: claims,
             expires: expires,
-            signingCredentials: creds
-        );
-        return new JwtSecurityTokenHandler().WriteToken(token);
+            signingCredentials: new SigningCredentials(
+                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),
+                SecurityAlgorithms.HmacSha256));
 
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
     public ClaimsPrincipal ValidateRegisterVerificationToken(string token)
@@ -57,6 +62,9 @@ public class TokenService(IConfiguration configuration)
     public ClaimsPrincipal ValidateRefreshToken(string token)
         => ValidateToken(token, TokenType.REFRESH);
 
+    public ClaimsPrincipal ValidatePasswordResetToken(string token)
+        => ValidateToken(token, TokenType.RESET_PASSWORD);
+
     private ClaimsPrincipal ValidateToken(string token, TokenType type)
     {
         if (string.IsNullOrWhiteSpace(token))
@@ -64,12 +72,9 @@ public class TokenService(IConfiguration configuration)
 
         var secret = GetSecretKey(type);
         if (string.IsNullOrWhiteSpace(secret))
-            throw new InvalidOperationException($"{type} token secret is not configured");
+            throw new InvalidOperationException($"Secret key for {type} is not configured");
 
-        var tokenHandler = new JwtSecurityTokenHandler
-        {
-            MapInboundClaims = false
-        };
+        var tokenHandler = new JwtSecurityTokenHandler { MapInboundClaims = false };
         var validationParameters = new TokenValidationParameters
         {
             ValidateIssuer = false,
@@ -83,6 +88,10 @@ public class TokenService(IConfiguration configuration)
             ClockSkew = TimeSpan.Zero
         };
 
-        return tokenHandler.ValidateToken(token, validationParameters, out _);
+        var principal = tokenHandler.ValidateToken(token, validationParameters, out _);
+        if (!string.Equals(principal.FindFirstValue("token_use"), type.ToString(), StringComparison.Ordinal))
+            throw new SecurityTokenException("Invalid token type");
+
+        return principal;
     }
 }

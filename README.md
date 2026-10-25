@@ -15,6 +15,10 @@ The backend provides a secure REST API backed by PostgreSQL, while the frontend 
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
 ![Bun](https://img.shields.io/badge/Bun-Package_Manager-000000?logo=bun&logoColor=white)
 
+## Local email testing
+
+Start Mailpit with `docker compose up -d mailpit`, then open `http://localhost:8025`. The backend development SMTP settings point to Mailpit on port `1025`. See [email authentication guide](docs/guides/email-authentication.md) for configuration and endpoint contracts.
+
 ## Backend Folder Structure
 
 ```text
