@@ -1,11 +1,15 @@
-import './App.css'
+import { BrowserRouter } from 'react-router-dom'
+import { AuthProvider } from './context/AuthProvider'
+import { AppRoutes } from './routes/AppRoutes'
 
 function App() {
-  return (
-    <main className="grid min-h-screen place-items-center bg-stone-950 text-stone-100">
-      <h1 className="text-4xl font-semibold">Old Bookstore</h1>
-    </main>
-  )
+    return (
+        <BrowserRouter>
+            <AuthProvider>
+                <AppRoutes />
+            </AuthProvider>
+        </BrowserRouter>
+    )
 }
 
 export default App
