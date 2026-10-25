@@ -10,6 +10,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Xunit;
+using backend.Tests.Fakes;
 
 namespace backend.Tests.Services;
 
@@ -30,15 +31,17 @@ public class AuthServiceTests
 
         var configuration = new ConfigurationManager
         {
-            ["AppSettings:AllowedEmainDomains"] = "@cloud.io"
+            ["AppSettings:AllowedEmailDomains"] = "@cloud.io"
         };
         var authService = new AuthService(
             dbContext,
             new TokenService(configuration),
-            new SettingService(configuration));
+            new SettingService(configuration)),
+            new FakeSessionStore(),
+            new FakeSessionStore());
         var request = new RegisterRequest
         {
-            Email = "cashier@example.com",
+            Email = "cashier@cloud.io",
             FullName = "Cashier Test",
             Password = "TestPassword123!",
             Phone = "0123456789"
@@ -62,7 +65,9 @@ public class AuthServiceTests
         var authService = new AuthService(
             dbContext,
             new TokenService(configuration),
-            new SettingService(configuration));
+            new SettingService(configuration)),
+            new FakeSessionStore(),
+            new FakeSessionStore());
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             authService.Login(new LoginRequest("missing@example.com", "TestPassword123!")));
@@ -81,11 +86,11 @@ public class AuthServiceTests
 
         var configuration = new ConfigurationManager
         {
-            ["AppSettings:AllowedEmainDomains"] = "@example.com"
+            ["AppSettings:AllowedEmailDomains"] = "@cloud.io"
         };
         var request = new RegisterRequest
         {
-            Email = "cashier@example.com",
+            Email = "cashier@cloud.io",
             FullName = "Cashier Test",
             Password = "TestPassword123!",
             Phone = "0123456789"
@@ -96,8 +101,9 @@ public class AuthServiceTests
             var authService = new AuthService(
                 dbContext,
                 new TokenService(configuration),
-                new SettingService(configuration));
-
+                new SettingService(configuration)),
+                new FakeSessionStore(),
+                new FakeSessionStore());
             await Assert.ThrowsAsync<InvalidOperationException>(() => authService.Register(request));
         }
 
@@ -118,7 +124,7 @@ public class AuthServiceTests
         var employee = await SeedEmployee(dbContext, EmployeeStatus.PENDING_OTP);
         var configuration = CreateVerifyConfiguration(VerifyRegisterSecret);
         var tokenService = new TokenService(configuration);
-        var authService = new AuthService(dbContext, tokenService, new SettingService(configuration));
+        var authService = new AuthService(dbContext, tokenService, new SettingService(configuration), new FakeSessionStore(), new FakeSessionStore()));
         var token = tokenService.GenerateToken(
             employee.Id,
             TokenType.VERIFY_REGISTER,
@@ -144,7 +150,9 @@ public class AuthServiceTests
         var authService = new AuthService(
             dbContext,
             new TokenService(configuration),
-            new SettingService(configuration));
+            new SettingService(configuration)),
+            new FakeSessionStore(),
+            new FakeSessionStore());
         var token = new TokenService(CreateVerifyConfiguration("different-verify-register-secret-key-32-chars"))
             .GenerateToken(
                 employee.Id,
@@ -169,7 +177,7 @@ public class AuthServiceTests
         var employee = await SeedEmployee(dbContext, EmployeeStatus.LOCKED);
         var configuration = CreateVerifyConfiguration(VerifyRegisterSecret);
         var tokenService = new TokenService(configuration);
-        var authService = new AuthService(dbContext, tokenService, new SettingService(configuration));
+        var authService = new AuthService(dbContext, tokenService, new SettingService(configuration), new FakeSessionStore(), new FakeSessionStore()));
         var token = tokenService.GenerateToken(
             employee.Id,
             TokenType.VERIFY_REGISTER,
