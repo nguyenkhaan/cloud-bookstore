@@ -9,6 +9,7 @@ docker compose up -d mailpit
 ```
 
 Open `http://localhost:8025` to view the local inbox. The backend development configuration sends SMTP to `localhost:1025`.
+Mailpit stores its local data in the named `mailpit-data` Docker volume.
 
 Mailpit is a development-only SMTP sink. It displays messages addressed to the email entered by the user but does not deliver them to an external inbox.
 
@@ -34,6 +35,7 @@ Do not commit SMTP credentials or JWT secrets. A backend running in a Docker net
 
 | Endpoint | Request | Success | Notes |
 | --- | --- | --- | --- |
+| `GET /health/email` | None | `200` with `status: "Healthy"` | Opens an SMTP connection only; returns `503` with `status: "Unhealthy"` when the configured SMTP server cannot be reached. It does not send an email. |
 | `POST /api/auth/register` | `email`, `fullName`, `password`, `phone` | `201` with `email`, `fullName` | Sends verification email. It no longer returns a token. |
 | `POST /api/auth/verify` | `token` | `204` | Activates a pending account. |
 | `POST /api/auth/password-reset-requests` | `email` | `204` | Always returns `204`; sends a reset email only for an active account. |

@@ -89,6 +89,7 @@ builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<SettingService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddSingleton<IEmailHealthCheck, EmailHealthCheck>();
 
 //Dependency Injection -> builder.Services.AddScoped<AuthService>();
 var app = builder.Build();
