@@ -5,6 +5,7 @@ using backend.src.Data;
 using backend.src.Exceptions;
 using backend.src.Configurations;
 using backend.src.Infrastructure;
+using backend.src.Models.Enums;
 using backend.src.Scripts;
 using backend.src.Services;
 using backend.src.Bases.Enums;
@@ -13,9 +14,17 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
+using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 //System Configuration: Controller, Database, Exception...
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    { //Cau hinh de cho phep nhan enum la chuoi khi gui request. 
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(
+            namingPolicy: null,
+            allowIntegerValues: false
+        ));
+    });
 //CORS configuration
 builder.Services.AddCors(options =>
 {
@@ -35,6 +44,7 @@ builder.Services.AddCors(options =>
                 "GET",
                 "POST",
                 "PUT",
+                "PATCH",
                 "DELETE",
                 "OPTIONS"
             );
@@ -105,7 +115,6 @@ builder.Services
                     context.Fail("Token JTI is missing.");
                     return;
                 }
-
                 var tokenStore = context.HttpContext.RequestServices.GetRequiredService<TokenJtiStore>();
                 try
                 {
@@ -121,17 +130,37 @@ builder.Services
                         context.Fail("Token subject is invalid.");
                         return;
                     }
-
+                    //Getting role name 
+                    var jwtRoleValue = context.Principal?
+                        .FindFirst("role")?
+                        .Value;
                     var dbContext = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+                    //Lay them va so sanh voi role name ben trong database nua de co the nam duoc ro hon
                     var employee = await dbContext.Employees
                         .AsNoTracking()
+                        .Include(employee => employee.Role)
                         .SingleOrDefaultAsync(item => item.Id == employeeId, context.HttpContext.RequestAborted);
                     if (employee is null ||
                         employee.Status != backend.src.Models.Enums.EmployeeStatus.ACTIVE ||
                         employee.LockoutEndUtc > DateTime.UtcNow)
                     {
                         context.Fail("Account is unavailable.");
+                        return;
                     }
+                    if (!Enum.TryParse<RoleName>(
+                        jwtRoleValue,
+                        ignoreCase: true,
+                        out var jwtRole))
+                    {
+                        context.Fail("Token role is invalid.");
+                        return;
+                    }
+                    if (employee.Role.RoleName != jwtRole)
+                    {
+                        context.Fail("Account role has been changed");
+                        return;
+                    }
+
                 }
                 catch (Exception)
                 {
@@ -156,7 +185,8 @@ builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<SettingService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<EmailService>();
-
+builder.Services.AddScoped<EmployeeService>();
+builder.Services.AddScoped<AuditLogService>();
 //Dependency Injection -> builder.Services.AddScoped<AuthService>();
 var app = builder.Build();
 

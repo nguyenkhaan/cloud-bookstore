@@ -22,6 +22,7 @@ public class EmployeeModel
     [MaxLength(12)]
     public string Phone { get; set; } = string.Empty;
     public string? AvatarUrl { get; set; } = null;
+    [ConcurrencyCheck]
     public Guid RoleId { get; set; }
     [ForeignKey(nameof(RoleId))]
     public RoleModel Role { get; set; } = null!;
