@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { getRouteDecision } from '../auth/session.js';
+import { getRouteDecision } from '../auth/session';
 import { useAuth } from '../hooks/useAuth';
 import { ActivateAccountPage } from '../pages/ActivateAccount/ActivateAccountPage';
 import {

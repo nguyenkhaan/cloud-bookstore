@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { extractActivationToken } from '../../auth/activation.js'
+import { extractActivationToken } from '../../auth/activation'
 import { Banner } from '../../features/auth/components/Banner'
 import { ArrowLeftIcon } from '../../features/auth/components/Icons'
 import { CenterLayout } from '../../features/auth/components/CenterLayout'

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { getSafeNextPath } from '../../auth/session.js'
+import { getSafeNextPath } from '../../auth/session'
 import { Banner } from '../../features/auth/components/Banner'
 import { PasswordField } from '../../features/auth/components/PasswordField'
 import { SplitLayout } from '../../features/auth/components/SplitLayout'

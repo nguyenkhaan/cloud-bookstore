@@ -1,6 +1,6 @@
-﻿import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import { getAccessTokenExpiration, isAccessTokenUsable } from '../auth/session.js'
+import { getAccessTokenExpiration, isAccessTokenUsable } from '../auth/session'
 import * as authApi from '../features/auth/services/authApi'
 import { navigate } from '../routes/router'
 import { ApiError } from '../services/apiClient'
