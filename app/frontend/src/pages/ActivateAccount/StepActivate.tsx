@@ -1,12 +1,12 @@
 import type { FormEvent } from 'react'
-import { TextField } from '../../features/auth/components/TextField'
+import { TextField } from '@/features/auth/components/TextField'
 
 type StepActivateProps = {
   email: string
-  /** Đã gửi liên kết trong phiên làm việc này (đã đăng ký qua trang này). */
+
   linkSent: boolean
   busy: boolean
-  /** Còn mật khẩu trong bộ nhớ nên có thể tự đăng nhập sau khi kích hoạt. */
+
   canSignIn: boolean
   link: string
   resendSeconds: number
@@ -19,7 +19,7 @@ type StepActivateProps = {
 export function StepActivate(props: StepActivateProps) {
   const { email, linkSent, busy, canSignIn, link, resendSeconds, onLinkChange, onSubmit, onResend, onRestart } = props
 
-  // Mở thẳng từ liên kết trong email: không có form, chỉ có trạng thái xử lý.
+
   if (!linkSent) {
     return busy ? (
       <p className="cb-note" role="status">Đang kích hoạt tài khoản…</p>

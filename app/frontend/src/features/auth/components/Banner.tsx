@@ -1,5 +1,5 @@
-﻿import type { ReactNode } from 'react'
-import type { NoticeTone } from '../errors'
+import type { ReactNode } from 'react'
+import type { NoticeTone } from '@/features/auth/errors'
 import { AlertIcon, CheckIcon, InfoIcon } from './Icons'
 
 const icons = { warning: InfoIcon, error: AlertIcon, success: CheckIcon, info: InfoIcon } as const

@@ -1,9 +1,9 @@
-// Các trang chưa làm lại, giữ nguyên nội dung từ App.tsx cũ. Sẽ tách tiếp theo từng step.
+
 import { useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
-import { useAuth } from '../../hooks/useAuth'
-import { navigate } from '../../routes/router'
-import { apiUrl } from '../../services/apiClient'
+import { useAuth } from '@/hooks/useAuth'
+import { navigate } from '@/routes/router'
+import { apiUrl } from '@/services/apiClient'
 
 export function Header() {
   const { session, signOut } = useAuth()

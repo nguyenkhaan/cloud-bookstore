@@ -13,3 +13,15 @@ services:
 
 volumes:
   mailpit-data:
+
+minio:
+    image: cgr.dev/chainguard/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: cloudian
+      MINIO_ROOT_PASSWORD: cloudian
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data

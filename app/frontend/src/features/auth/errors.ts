@@ -1,4 +1,4 @@
-﻿import { ApiError } from '../../services/apiClient'
+import { ApiError } from '@/services/apiClient'
 
 export type NoticeTone = 'warning' | 'error' | 'success' | 'info'
 export type Notice = { tone: NoticeTone; message: string }

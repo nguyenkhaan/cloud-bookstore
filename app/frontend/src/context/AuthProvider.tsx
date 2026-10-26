@@ -1,18 +1,18 @@
-﻿import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import { getAccessTokenExpiration, isAccessTokenUsable } from '../auth/session.js'
-import * as authApi from '../features/auth/services/authApi'
-import { navigate } from '../routes/router'
-import { ApiError } from '../services/apiClient'
-import { AuthContext } from './auth-context'
-import type { AuthContextValue, Session } from './auth-context'
+import { getAccessTokenExpiration, isAccessTokenUsable } from '@/auth/session'
+import * as authApi from '@/features/auth/services/authApi'
+import { navigate } from '@/routes/router'
+import { ApiError } from '@/services/apiClient'
+import { AuthContext } from '@/context/auth-context'
+import type { AuthContextValue, Session } from '@/context/auth-context'
 
 const revokeQuietly = (refreshToken: string) => {
     void authApi.logout(refreshToken).catch(() => undefined)
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    // Phiên chỉ nằm trong bộ nhớ (ADR-004), không ghi vào localStorage/sessionStorage.
+
     const [session, setSession] = useState<Session | null>(null)
 
     const login = useCallback(async (email: string, password: string) => {

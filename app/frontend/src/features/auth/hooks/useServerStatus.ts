@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { checkServerReady } from '../services/authApi'
+import { checkServerReady } from '@/features/auth/services/authApi'
 
 export type ServerStatus = 'checking' | 'online' | 'offline'
 

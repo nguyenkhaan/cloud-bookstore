@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
-import { extractActivationToken } from '../../auth/activation.js'
-import { Banner } from '../../features/auth/components/Banner'
-import { ArrowLeftIcon } from '../../features/auth/components/Icons'
-import { CenterLayout } from '../../features/auth/components/CenterLayout'
-import { Stepper } from '../../features/auth/components/Stepper'
-import { describeRegisterError, describeVerifyError } from '../../features/auth/errors'
-import type { Notice } from '../../features/auth/errors'
-import { useCountdown } from '../../features/auth/hooks/useCountdown'
-import * as authApi from '../../features/auth/services/authApi'
-import { useAuth } from '../../hooks/useAuth'
-import { navigate } from '../../routes/router'
-import { ApiError } from '../../services/apiClient'
+import { extractActivationToken } from '@/auth/activation'
+import { Banner } from '@/features/auth/components/Banner'
+import { ArrowLeftIcon } from '@/features/auth/components/Icons'
+import { CenterLayout } from '@/features/auth/components/CenterLayout'
+import { Stepper } from '@/features/auth/components/Stepper'
+import { describeRegisterError, describeVerifyError } from '@/features/auth/errors'
+import type { Notice } from '@/features/auth/errors'
+import { useCountdown } from '@/features/auth/hooks/useCountdown'
+import * as authApi from '@/features/auth/services/authApi'
+import { useAuth } from '@/hooks/useAuth'
+import { navigate } from '@/routes/router'
+import { ApiError } from '@/services/apiClient'
 import { StepActivate } from './StepActivate'
 import { StepDone } from './StepDone'
 import { StepInfo } from './StepInfo'
@@ -25,7 +25,7 @@ const RESEND_SECONDS = 60
 
 export function ActivateAccountPage({ search }: { search: string }) {
   const { login } = useAuth()
-  // Token có sẵn khi người dùng bấm liên kết trong email (/verify-email?token=...).
+
   const [linkToken] = useState(() => new URLSearchParams(search).get('token'))
   const [step, setStep] = useState<Step>(linkToken ? 'activate' : 'info')
   const [info, setInfo] = useState<AccountInfo>({ fullName: '', email: '', phone: '' })
@@ -37,7 +37,7 @@ export function ActivateAccountPage({ search }: { search: string }) {
   const { remaining, start } = useCountdown()
   const requestedToken = useRef<string | null>(null)
 
-  // Tự kích hoạt khi mở từ liên kết email, rồi bỏ token khỏi thanh địa chỉ.
+
   useEffect(() => {
     if (!linkToken || requestedToken.current === linkToken) return
     requestedToken.current = linkToken
@@ -64,7 +64,7 @@ export function ActivateAccountPage({ search }: { search: string }) {
       return true
     } catch (error) {
       setNotice(describeRegisterError(error))
-      // Lỗi do email/thông tin: đưa người dùng về bước nhập thông tin để sửa.
+
       if (error instanceof ApiError && (error.status === 400 || error.status === 409)) setStep('info')
       return false
     } finally {
@@ -106,7 +106,7 @@ export function ActivateAccountPage({ search }: { search: string }) {
         navigate('/dashboard', true)
         return
       } catch {
-        // Đã kích hoạt thành công nhưng chưa đăng nhập được: để người dùng tự đăng nhập ở bước cuối.
+
       }
     }
     setPassword('')

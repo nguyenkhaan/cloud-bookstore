@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { getSafeNextPath } from '../../auth/session.js'
-import { Banner } from '../../features/auth/components/Banner'
-import { PasswordField } from '../../features/auth/components/PasswordField'
-import { SplitLayout } from '../../features/auth/components/SplitLayout'
-import { TextField } from '../../features/auth/components/TextField'
-import { describeLoginError } from '../../features/auth/errors'
-import type { Notice } from '../../features/auth/errors'
-import { useAuth } from '../../hooks/useAuth'
-import { navigate } from '../../routes/router'
+import { getSafeNextPath } from '@/auth/session'
+import { Banner } from '@/features/auth/components/Banner'
+import { PasswordField } from '@/features/auth/components/PasswordField'
+import { SplitLayout } from '@/features/auth/components/SplitLayout'
+import { TextField } from '@/features/auth/components/TextField'
+import { describeLoginError } from '@/features/auth/errors'
+import type { Notice } from '@/features/auth/errors'
+import { useAuth } from '@/hooks/useAuth'
+import { navigate } from '@/routes/router'
 
 export function LoginPage({ search }: { search: string }) {
   const { login } = useAuth()
