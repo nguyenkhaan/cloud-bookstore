@@ -1,13 +1,22 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using backend.src.Exceptions;
-using backend.src.Services;
+using backend.src.Infrastructure;
 
 namespace backend.src.Controllers;
 
 [ApiController]
 [Route("api/health")]
-public class HealthController(IEmailHealthCheck emailHealthCheck) : ControllerBase
+public class HealthController(EmailService emailService) : ControllerBase
 {
+    public sealed class SendTestEmailRequest
+    {
+        [Required, EmailAddress]
+        public required string RecipientEmail { get; init; }
+    }
+
+    public sealed record EmailTestResponse(string Status);
+
     [HttpGet("liveness")]
     public IActionResult GetHealthLiveness()
     {
@@ -27,15 +36,17 @@ public class HealthController(IEmailHealthCheck emailHealthCheck) : ControllerBa
         throw new BadRequestException("This is an exception for testing");
     }
 
-    [HttpGet("/health/email")]
-    [ProducesResponseType<EmailHealthResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType<EmailHealthResponse>(StatusCodes.Status503ServiceUnavailable)]
-    public async Task<IActionResult> GetEmailHealth(CancellationToken cancellationToken)
+    [HttpPost("/health/email")]
+    [ProducesResponseType<EmailTestResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<EmailTestResponse>(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> SendTestEmail(
+        [FromBody] SendTestEmailRequest request,
+        CancellationToken cancellationToken)
     {
-        var isHealthy = await emailHealthCheck.IsHealthyAsync(cancellationToken);
-        var response = new EmailHealthResponse(isHealthy ? "Healthy" : "Unhealthy");
+        var sent = await emailService.SendTestEmailAsync(request.RecipientEmail, cancellationToken);
+        var response = new EmailTestResponse(sent ? "Sent" : "Unavailable");
 
-        return isHealthy
+        return sent
             ? Ok(response)
             : StatusCode(StatusCodes.Status503ServiceUnavailable, response);
     }

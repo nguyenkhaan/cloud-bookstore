@@ -2,7 +2,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
-namespace backend.src.Services;
+namespace backend.src.Infrastructure;
 
 public sealed class RedisService(HttpClient httpClient, IConfiguration configuration)
 {

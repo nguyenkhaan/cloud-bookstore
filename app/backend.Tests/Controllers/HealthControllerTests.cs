@@ -1,7 +1,10 @@
+using backend.src.Configurations;
 using backend.src.Controllers;
-using backend.src.Services;
+using backend.src.Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace backend.Tests.Controllers;
@@ -9,44 +12,65 @@ namespace backend.Tests.Controllers;
 public sealed class HealthControllerTests
 {
     [Fact]
-    public async Task GetEmailHealth_Returns200WhenSmtpIsReachable()
+    public async Task SendTestEmail_Returns200WhenMessageIsAccepted()
     {
-        var controller = new HealthController(new FakeEmailHealthCheck(true));
+        var emailService = new FakeEmailService(true);
+        var controller = new HealthController(emailService);
+        var request = new HealthController.SendTestEmailRequest
+        {
+            RecipientEmail = "developer@example.com"
+        };
 
-        var result = await controller.GetEmailHealth(CancellationToken.None);
+        var result = await controller.SendTestEmail(request, CancellationToken.None);
 
         var ok = Assert.IsType<OkObjectResult>(result);
         Assert.Equal(StatusCodes.Status200OK, ok.StatusCode);
-        Assert.Equal(new EmailHealthResponse("Healthy"), ok.Value);
+        Assert.Equal(new HealthController.EmailTestResponse("Sent"), ok.Value);
+        Assert.Equal("developer@example.com", emailService.RecipientEmail);
     }
 
     [Fact]
-    public async Task GetEmailHealth_Returns503WhenSmtpIsUnreachable()
+    public async Task SendTestEmail_Returns503WhenMessageIsRejected()
     {
-        var controller = new HealthController(new FakeEmailHealthCheck(false));
+        var controller = new HealthController(new FakeEmailService(false));
+        var request = new HealthController.SendTestEmailRequest
+        {
+            RecipientEmail = "developer@example.com"
+        };
 
-        var result = await controller.GetEmailHealth(CancellationToken.None);
+        var result = await controller.SendTestEmail(request, CancellationToken.None);
 
         var unavailable = Assert.IsType<ObjectResult>(result);
         Assert.Equal(StatusCodes.Status503ServiceUnavailable, unavailable.StatusCode);
-        Assert.Equal(new EmailHealthResponse("Unhealthy"), unavailable.Value);
+        Assert.Equal(new HealthController.EmailTestResponse("Unavailable"), unavailable.Value);
     }
 
     [Fact]
-    public void GetEmailHealth_UsesTheRootHealthEmailRoute()
+    public void SendTestEmail_UsesPostOnTheRootHealthEmailRoute()
     {
         var route = typeof(HealthController)
-            .GetMethod(nameof(HealthController.GetEmailHealth))
-            ?.GetCustomAttributes(typeof(HttpGetAttribute), inherit: true)
-            .Cast<HttpGetAttribute>()
+            .GetMethod(nameof(HealthController.SendTestEmail))
+            ?.GetCustomAttributes(typeof(HttpPostAttribute), inherit: true)
+            .Cast<HttpPostAttribute>()
             .Single();
 
         Assert.NotNull(route);
         Assert.Equal("/health/email", route.Template);
     }
 
-    private sealed class FakeEmailHealthCheck(bool isHealthy) : IEmailHealthCheck
+    private sealed class FakeEmailService(bool sendResult) : EmailService(
+        Options.Create(new EmailSettings()),
+        NullLogger<EmailService>.Instance)
     {
-        public Task<bool> IsHealthyAsync(CancellationToken cancellationToken) => Task.FromResult(isHealthy);
+        public string? RecipientEmail { get; private set; }
+
+        public override Task<bool> SendTestEmailAsync(
+            string recipientEmail,
+            CancellationToken cancellationToken = default)
+        {
+            RecipientEmail = recipientEmail;
+            return Task.FromResult(sendResult);
+        }
     }
+
 }

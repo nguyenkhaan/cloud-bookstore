@@ -11,6 +11,11 @@ export interface MainLayoutProps {
   pageTitle?: string;
   screenCode?: string;
   actionButton?: React.ReactNode;
+  user?: {
+    name: string;
+    role: string;
+    avatarUrl?: string;
+  };
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({
@@ -21,6 +26,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   pageTitle,
   screenCode,
   actionButton,
+  user,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -81,6 +87,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           breadcrumbs={getBreadcrumbs()}
           onToggleSidebar={() => setIsMobileOpen(!isMobileOpen)}
           isSidebarCollapsed={isCollapsed}
+          user={user}
         />
 
         <main className="flex-1 px-6 py-6 overflow-y-auto">

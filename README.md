@@ -75,6 +75,22 @@ UpstashRedis__RestToken
 Jwt__AccessSecret__Key
 Jwt__RefreshSecret__Key
 Jwt__VerifyRegisterSecret__Key
+Jwt__ResetPasswordSecret__Key
+AuthSecurity__MaxFailedLoginAttempts
+AuthSecurity__LockoutDurationMinutes
+AuthSecurity__AccessTokenLifetimeMinutes
+AuthSecurity__RefreshTokenLifetimeMinutes
+AuthSecurity__VerificationTokenLifetimeMinutes
+AuthSecurity__ResetPasswordTokenLifetimeMinutes
+Email__FromAddress
+Email__FromName
+Email__SmtpHost
+Email__SmtpPort
+Email__UseStartTls
+Email__FrontendBaseUrl
+Email__VerifyEmailPath
+Email__ResetPasswordPath
+VITE_API_BASE_URL
 ```
 
 If any credential was previously committed, rotate it with its provider before relying on the rewritten Git history.

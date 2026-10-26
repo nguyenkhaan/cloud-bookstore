@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using backend.src.Services;
+using Microsoft.AspNetCore.Authorization;
 using backend.src.Dto.AuthDto;
+using backend.src.Services;
 
 namespace backend.src.Controllers;
 
@@ -50,6 +51,13 @@ public class AuthController(AuthService authService) : ControllerBase
     public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
     {
         await authService.Logout(request.RefreshToken);
+        return NoContent();
+    }
+
+    [Authorize]
+    [HttpGet("session")]
+    public IActionResult GetSession()
+    {
         return NoContent();
     }
 }
