@@ -34,6 +34,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<NotificationOutboxModel> NotificationOutbox => Set<NotificationOutboxModel>();
     public DbSet<AuditLogModel> AuditLogs => Set<AuditLogModel>();
 
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        EnsureAuditLogsAreAppendOnly();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(
+        bool acceptAllChangesOnSuccess,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureAuditLogsAreAppendOnly();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -54,4 +68,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     }
 
     private static void EnumAsString<TEntity, TProperty>(EntityTypeBuilder<TEntity> entity, Expression<Func<TEntity, TProperty>> property) where TEntity : class => entity.Property(property).HasConversion<string>();
+
+    private void EnsureAuditLogsAreAppendOnly()
+    {
+        var auditWasChanged = ChangeTracker.Entries<AuditLogModel>()
+            .Any(entry => entry.State is EntityState.Modified or EntityState.Deleted);
+        if (auditWasChanged)
+            throw new InvalidOperationException("Audit logs are append-only and cannot be changed or deleted.");
+    }
 }

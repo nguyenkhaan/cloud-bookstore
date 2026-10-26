@@ -7,4 +7,6 @@ public record class AuditLogResponse(
     string Action,
     string EntityType,
     Guid EntityId,
+    string? BeforeData,
+    string? AfterData,
     string? Reason) { }

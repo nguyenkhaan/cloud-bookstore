@@ -30,6 +30,8 @@ public class AuditLogService(AppDbContext dbContext)
                     x.Action,
                     x.EntityType,
                     x.EntityId,
+                    x.BeforeData,
+                    x.AfterData,
                     x.Reason
                 )).ToListAsync(cancellationToken);
     }
