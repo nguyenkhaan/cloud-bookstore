@@ -1,4 +1,5 @@
 import React from 'react';
+import { navigate } from '@/routes/router';
 import logoImg from '@/assets/images/logo.jpg';
 import {
   DashboardIcon,
@@ -13,6 +14,7 @@ import {
   HeadphonesIcon,
   PanelToggleIcon,
   ExternalLinkIcon,
+  LogoutIcon,
 } from '@/components/common/Icons';
 import { Badge, type BadgeVariant } from '@/components/common/Badge';
 
@@ -30,6 +32,7 @@ export interface SidebarProps {
   onNavigate?: (id: string) => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  onSignOut?: () => void;
   storeName?: string;
   branchName?: string;
   storeAddress?: string;
@@ -52,10 +55,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onNavigate,
   isCollapsed = false,
   onToggleCollapse,
+  onSignOut,
   storeName = 'Nhà sách Mây',
   branchName = 'Cơ sở 01',
   storeAddress = 'Quận 3, TP. Hồ Chí Minh',
 }) => {
+  const handleSignOut = () => {
+    if (onSignOut) {
+      onSignOut();
+    }
+    navigate('/login', true);
+  };
   return (
     <aside
       className={`relative flex flex-col justify-between border-r border-slate-200/80 bg-white transition-all duration-300 ease-in-out select-none ${
@@ -167,17 +177,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
 
-        <button
-          type="button"
-          onClick={onToggleCollapse}
-          className={`flex w-full items-center rounded-xl px-2.5 py-2 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 ${
-            isCollapsed ? 'justify-center' : 'gap-2.5'
-          }`}
-          title={isCollapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'}
-        >
-          <PanelToggleIcon size={17} className={isCollapsed ? 'rotate-180' : ''} />
-          {!isCollapsed && <span>Thu gọn thanh bên</span>}
-        </button>
+        <div className="space-y-1">
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className={`flex w-full items-center rounded-xl px-2.5 py-2 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-700 cursor-pointer ${
+              isCollapsed ? 'justify-center' : 'gap-2.5'
+            }`}
+            title={isCollapsed ? 'Đăng xuất' : undefined}
+          >
+            <LogoutIcon size={17} />
+            {!isCollapsed && <span>Đăng xuất</span>}
+          </button>
+
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            className={`flex w-full items-center rounded-xl px-2.5 py-2 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 cursor-pointer ${
+              isCollapsed ? 'justify-center' : 'gap-2.5'
+            }`}
+            title={isCollapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'}
+          >
+            <PanelToggleIcon size={17} className={isCollapsed ? 'rotate-180' : ''} />
+            {!isCollapsed && <span>Thu gọn thanh bên</span>}
+          </button>
+        </div>
       </div>
     </aside>
   );

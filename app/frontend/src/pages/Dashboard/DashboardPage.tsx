@@ -11,6 +11,7 @@ export function DashboardPage({ onSignOut }: DashboardPageProps) {
 
   return (
     <MainLayout
+      onSignOut={onSignOut}
       currentPath={currentTab}
       onNavigate={(id) => setCurrentTab(id)}
       screenCode={currentTab === 'overview' ? 'SCR-REP-01 / TỔNG QUAN' : undefined}

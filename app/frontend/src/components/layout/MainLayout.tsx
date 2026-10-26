@@ -7,6 +7,7 @@ export interface MainLayoutProps {
   children?: React.ReactNode;
   currentPath?: string;
   onNavigate?: (id: string) => void;
+  onSignOut?: () => void;
   breadcrumbs?: (string | BreadcrumbItem)[];
   pageTitle?: string;
   screenCode?: string;
@@ -22,6 +23,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   children,
   currentPath = 'pos',
   onNavigate,
+  onSignOut,
   breadcrumbs,
   pageTitle,
   screenCode,
@@ -79,6 +81,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           }}
           isCollapsed={isCollapsed}
           onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
+          onSignOut={onSignOut}
         />
       </div>
 
