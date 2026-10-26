@@ -54,7 +54,7 @@ public class AuthController(AuthService authService) : ControllerBase
         return NoContent();
     }
 
-    [Authorize]
+    [Authorize(Roles ="admin")]
     [HttpGet("session")]
     public IActionResult GetSession()
     {
