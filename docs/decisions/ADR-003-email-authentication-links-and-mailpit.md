@@ -14,7 +14,7 @@ Staff registration already creates a signed verification token, but previously r
 
 ## Decision
 
-- Deliver account-verification and password-reset links by email through `IEmailService`.
+- Deliver account-verification, password-reset, and test messages through `EmailService`.
 - Run Mailpit as a local-only Docker Compose service. The web inbox is on port 8025 and SMTP is on port 1025.
 - Build frontend links from `Email:FrontendBaseUrl`, `Email:VerifyEmailPath`, and `Email:ResetPasswordPath`; never hard-code the frontend host in application code.
 - Use a dedicated `Jwt:ResetPasswordSecret:Key` for reset tokens. Reset tokens expire after 15 minutes and their SHA-256 hash is stored against the employee record; the hash is cleared after a successful reset, making each link single-use.

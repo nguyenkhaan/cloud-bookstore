@@ -3,23 +3,29 @@ using System.Security.Cryptography;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using backend.src.Bases.Enums;
+using backend.src.Configurations;
 using backend.src.Data;
 using backend.src.Dto.AuthDto;
 using backend.src.Exceptions;
+using backend.src.Infrastructure;
 using backend.src.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using BCryptHasher = BCrypt.Net.BCrypt;
 using backend.src.Models;
+
 namespace backend.src.Services;
 
 public class AuthService(
     AppDbContext dbContext,
     TokenService tokenService,
     SettingService settingService,
-    IEmailService emailService,
-    TokenJtiStore tokenJtiStore)
+    EmailService emailService,
+    TokenJtiStore tokenJtiStore,
+    IConfiguration configuration)
 {
+    private readonly AuthSecuritySettings securitySettings = AuthSecuritySettings.FromConfiguration(configuration);
+
     public async Task<LoginResponse> Login(LoginRequest request)
     {
         var email = request.Email.Trim();
@@ -29,11 +35,42 @@ public class AuthService(
             .FirstOrDefaultAsync(user => user.Email.ToLower() == normalizedEmail);
         if (employee is null)
             throw new UnauthorizedException("Invalid email or password");
+
+        var now = DateTime.UtcNow;
+        if (employee.LockoutEndUtc is { } lockoutEndUtc)
+        {
+            if (lockoutEndUtc > now)
+                throw new ForbiddenException("Account is temporarily locked. Try again later.");
+
+            employee.LockoutEndUtc = null;
+            employee.FailedLoginAttempts = 0;
+        }
+
         var passwordIsValid = BCryptHasher.Verify(request.Password, employee.Password);
         if (!passwordIsValid)
+        {
+            employee.FailedLoginAttempts++;
+            if (employee.FailedLoginAttempts >= securitySettings.MaxFailedLoginAttempts)
+            {
+                employee.LockoutEndUtc = now.AddMinutes(securitySettings.LockoutDurationMinutes);
+            }
+
+            await dbContext.SaveChangesAsync();
+            if (employee.LockoutEndUtc is not null)
+                throw new ForbiddenException("Account is temporarily locked. Try again later.");
+
             throw new UnauthorizedException("Invalid email or password");
+        }
         if (employee.Status != EmployeeStatus.ACTIVE)
             throw new ForbiddenException("Account is not verified or is unavailable");
+
+        if (employee.FailedLoginAttempts != 0 || employee.LockoutEndUtc is not null)
+        {
+            employee.FailedLoginAttempts = 0;
+            employee.LockoutEndUtc = null;
+            await dbContext.SaveChangesAsync();
+        }
+
         var claims = new List<Claim>
         {
             new ("role" , employee.Role.RoleName.ToString())

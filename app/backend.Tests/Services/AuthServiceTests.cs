@@ -4,15 +4,20 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using backend.src.Bases.Enums;
+using backend.src.Configurations;
 using backend.src.Data;
 using backend.src.Dto.AuthDto;
 using backend.src.Exceptions;
 using backend.src.Models;
 using backend.src.Models.Enums;
+using backend.src.Infrastructure;
 using backend.src.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Xunit;
 
 namespace backend.Tests.Services;
@@ -68,6 +73,84 @@ public class AuthServiceTests
         var response = await authService.Login(new LoginRequest("  CASHIER@CLOUD.IO  ", password));
 
         Assert.False(string.IsNullOrWhiteSpace(response.AccessToken));
+    }
+
+    [Fact]
+    public async Task Login_TemporarilyLocksAnAccountAfterTheConfiguredNumberOfFailedAttempts()
+    {
+        await using var connection = await OpenConnectionAsync();
+        await using var dbContext = new AppDbContext(CreateDatabaseOptions(connection));
+        await dbContext.Database.EnsureCreatedAsync();
+        var employee = await SeedEmployee(dbContext, EmployeeStatus.ACTIVE);
+        const string password = "TestPassword123!";
+        employee.Password = BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
+        await dbContext.SaveChangesAsync();
+
+        var configuration = CreateAuthenticationConfiguration();
+        configuration["AuthSecurity:MaxFailedLoginAttempts"] = "2";
+        configuration["AuthSecurity:LockoutDurationMinutes"] = "15";
+        var authService = CreateAuthService(dbContext, configuration);
+
+        await Assert.ThrowsAsync<UnauthorizedException>(() =>
+            authService.Login(new LoginRequest(employee.Email, "wrong-password")));
+        var locked = await Assert.ThrowsAsync<ForbiddenException>(() =>
+            authService.Login(new LoginRequest(employee.Email, "wrong-password")));
+
+        Assert.Equal("Account is temporarily locked. Try again later.", locked.Message);
+        await Assert.ThrowsAsync<ForbiddenException>(() =>
+            authService.Login(new LoginRequest(employee.Email, password)));
+    }
+
+    [Fact]
+    public async Task Login_ClearsAnExpiredTemporaryLock_WhenCredentialsAreCorrect()
+    {
+        await using var connection = await OpenConnectionAsync();
+        await using var dbContext = new AppDbContext(CreateDatabaseOptions(connection));
+        await dbContext.Database.EnsureCreatedAsync();
+        var employee = await SeedEmployee(dbContext, EmployeeStatus.ACTIVE);
+        const string password = "TestPassword123!";
+        employee.Password = BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
+        employee.FailedLoginAttempts = 5;
+        employee.LockoutEndUtc = DateTime.UtcNow.AddMinutes(-1);
+        await dbContext.SaveChangesAsync();
+
+        var response = await CreateAuthService(dbContext, CreateAuthenticationConfiguration())
+            .Login(new LoginRequest(employee.Email, password));
+
+        Assert.False(string.IsNullOrWhiteSpace(response.AccessToken));
+        Assert.Equal(0, employee.FailedLoginAttempts);
+        Assert.Null(employee.LockoutEndUtc);
+    }
+
+    [Fact]
+    public async Task Login_IssuesNewTokens_AfterAnEarlierAccessTokenHasExpired()
+    {
+        await using var connection = await OpenConnectionAsync();
+        await using var dbContext = new AppDbContext(CreateDatabaseOptions(connection));
+        await dbContext.Database.EnsureCreatedAsync();
+        var employee = await SeedEmployee(dbContext, EmployeeStatus.ACTIVE);
+        const string password = "TestPassword123!";
+        employee.Password = BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
+        await dbContext.SaveChangesAsync();
+
+        var configuration = CreateAuthenticationConfiguration();
+        var expiredToken = new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
+            claims:
+            [
+                new Claim(JwtRegisteredClaimNames.Sub, employee.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim("token_use", TokenType.ACCESS.ToString())
+            ],
+            expires: DateTime.UtcNow.AddSeconds(-1),
+            signingCredentials: new SigningCredentials(
+                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:AccessSecret:Key"]!)),
+                SecurityAlgorithms.HmacSha256)));
+
+        Assert.Throws<SecurityTokenExpiredException>(() => new TokenService(configuration).ValidateAccessToken(expiredToken));
+        var response = await CreateAuthService(dbContext, configuration).Login(new LoginRequest(employee.Email, password));
+
+        Assert.False(string.IsNullOrWhiteSpace(response.AccessToken));
+        Assert.False(string.IsNullOrWhiteSpace(response.RefreshToken));
     }
 
     [Fact]
@@ -421,7 +504,7 @@ public class AuthServiceTests
     private static AuthService CreateAuthService(
         AppDbContext dbContext,
         ConfigurationManager configuration,
-        IEmailService? emailService = null,
+        EmailService? emailService = null,
         TokenJtiStore? tokenStore = null)
     {
         return new AuthService(
@@ -429,7 +512,8 @@ public class AuthServiceTests
             new TokenService(configuration),
             new SettingService(configuration),
             emailService ?? new NoOpEmailService(),
-            tokenStore ?? CreateTokenStore(configuration, new FakeRedisHandler()));
+            tokenStore ?? CreateTokenStore(configuration, new FakeRedisHandler()),
+            configuration);
     }
 
     private static ConfigurationManager CreateVerifyConfiguration(string secret) => new()
@@ -490,37 +574,67 @@ public class AuthServiceTests
         await dbContext.SaveChangesAsync();
     }
 
-    private sealed class NoOpEmailService : IEmailService
+    private abstract class TestEmailService() : EmailService(
+        Options.Create(new EmailSettings()),
+        NullLogger<EmailService>.Instance)
     {
-        public Task SendAccountVerificationEmailAsync(string recipientEmail, string recipientName, string token) => Task.CompletedTask;
-
-        public Task SendPasswordResetEmailAsync(string recipientEmail, string recipientName, string token) => Task.CompletedTask;
     }
 
-    private sealed class RecordingEmailService : IEmailService
+    private sealed class NoOpEmailService : TestEmailService
+    {
+        public override Task SendAccountVerificationEmailAsync(
+            string recipientEmail,
+            string recipientName,
+            string token,
+            CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public override Task SendPasswordResetEmailAsync(
+            string recipientEmail,
+            string recipientName,
+            string token,
+            CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+
+    private sealed class RecordingEmailService : TestEmailService
     {
         public List<EmailRequest> VerificationEmails { get; } = [];
         public List<EmailRequest> PasswordResetEmails { get; } = [];
 
-        public Task SendAccountVerificationEmailAsync(string recipientEmail, string recipientName, string token)
+        public override Task SendAccountVerificationEmailAsync(
+            string recipientEmail,
+            string recipientName,
+            string token,
+            CancellationToken cancellationToken = default)
         {
             VerificationEmails.Add(new EmailRequest(recipientEmail, recipientName, token));
             return Task.CompletedTask;
         }
 
-        public Task SendPasswordResetEmailAsync(string recipientEmail, string recipientName, string token)
+        public override Task SendPasswordResetEmailAsync(
+            string recipientEmail,
+            string recipientName,
+            string token,
+            CancellationToken cancellationToken = default)
         {
             PasswordResetEmails.Add(new EmailRequest(recipientEmail, recipientName, token));
             return Task.CompletedTask;
         }
     }
 
-    private sealed class ThrowingEmailService : IEmailService
+    private sealed class ThrowingEmailService : TestEmailService
     {
-        public Task SendAccountVerificationEmailAsync(string recipientEmail, string recipientName, string token)
+        public override Task SendAccountVerificationEmailAsync(
+            string recipientEmail,
+            string recipientName,
+            string token,
+            CancellationToken cancellationToken = default)
             => throw new InvalidOperationException("SMTP is unavailable");
 
-        public Task SendPasswordResetEmailAsync(string recipientEmail, string recipientName, string token)
+        public override Task SendPasswordResetEmailAsync(
+            string recipientEmail,
+            string recipientName,
+            string token,
+            CancellationToken cancellationToken = default)
             => throw new InvalidOperationException("SMTP is unavailable");
     }
 
@@ -553,5 +667,61 @@ public class AuthServiceTests
             values[key] = value;
             return "OK";
         }
+    }
+
+    [Fact]
+    public async Task Logout_RejectsAMalformedRefreshToken()
+    {
+        await using var connection = await OpenConnectionAsync();
+        await using var dbContext = new AppDbContext(CreateDatabaseOptions(connection));
+        await dbContext.Database.EnsureCreatedAsync();
+        var authService = CreateAuthService(dbContext, CreateAuthenticationConfiguration());
+
+        await Assert.ThrowsAsync<UnauthorizedException>(() => authService.Logout("not-a-jwt"));
+        await Assert.ThrowsAsync<UnauthorizedException>(() => authService.Logout(string.Empty));
+    }
+
+    [Fact]
+    public async Task Logout_RejectsAnAccessToken_AndLeavesTheSessionActive()
+    {
+        await using var connection = await OpenConnectionAsync();
+        await using var dbContext = new AppDbContext(CreateDatabaseOptions(connection));
+        await dbContext.Database.EnsureCreatedAsync();
+        var employee = await SeedEmployee(dbContext, EmployeeStatus.ACTIVE);
+        employee.Password = BCrypt.Net.BCrypt.HashPassword("TestPassword123!");
+        await dbContext.SaveChangesAsync();
+
+        var configuration = CreateAuthenticationConfiguration();
+        var tokenStore = CreateTokenStore(configuration, new FakeRedisHandler());
+        var authService = CreateAuthService(dbContext, configuration, new NoOpEmailService(), tokenStore);
+        var response = await authService.Login(new LoginRequest(employee.Email, "TestPassword123!"));
+
+        await Assert.ThrowsAsync<UnauthorizedException>(() => authService.Logout(response.AccessToken));
+
+        var accessJwt = new JwtSecurityTokenHandler().ReadJwtToken(response.AccessToken);
+        Assert.True(await tokenStore.IsActiveAsync(accessJwt.Id, TokenType.ACCESS));
+    }
+
+    [Fact]
+    public async Task Logout_CannotBeReplayedWithTheSameRefreshToken()
+    {
+        await using var connection = await OpenConnectionAsync();
+        await using var dbContext = new AppDbContext(CreateDatabaseOptions(connection));
+        await dbContext.Database.EnsureCreatedAsync();
+        var employee = await SeedEmployee(dbContext, EmployeeStatus.ACTIVE);
+        employee.Password = BCrypt.Net.BCrypt.HashPassword("TestPassword123!");
+        await dbContext.SaveChangesAsync();
+
+        var configuration = CreateAuthenticationConfiguration();
+        var authService = CreateAuthService(
+            dbContext,
+            configuration,
+            new NoOpEmailService(),
+            CreateTokenStore(configuration, new FakeRedisHandler()));
+        var response = await authService.Login(new LoginRequest(employee.Email, "TestPassword123!"));
+
+        await authService.Logout(response.RefreshToken);
+
+        await Assert.ThrowsAsync<UnauthorizedException>(() => authService.Logout(response.RefreshToken));
     }
 }

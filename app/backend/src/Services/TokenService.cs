@@ -2,12 +2,15 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using backend.src.Bases.Enums;
+using backend.src.Configurations;
 using Microsoft.IdentityModel.Tokens;
 
 namespace backend.src.Services;
 
 public class TokenService(IConfiguration configuration)
 {
+    private readonly AuthSecuritySettings securitySettings = AuthSecuritySettings.FromConfiguration(configuration);
+
     public string? GetSecretKey(TokenType type)
     {
         return type switch
@@ -37,10 +40,10 @@ public class TokenService(IConfiguration configuration)
 
         var expires = type switch
         {
-            TokenType.ACCESS => DateTime.UtcNow.AddMinutes(15),
-            TokenType.REFRESH => DateTime.UtcNow.AddDays(7),
-            TokenType.VERIFY_REGISTER => DateTime.UtcNow.AddMinutes(1024),
-            TokenType.RESET_PASSWORD => DateTime.UtcNow.AddMinutes(15),
+            TokenType.ACCESS => DateTime.UtcNow.AddMinutes(securitySettings.AccessTokenLifetimeMinutes),
+            TokenType.REFRESH => DateTime.UtcNow.AddMinutes(securitySettings.RefreshTokenLifetimeMinutes),
+            TokenType.VERIFY_REGISTER => DateTime.UtcNow.AddMinutes(securitySettings.VerificationTokenLifetimeMinutes),
+            TokenType.RESET_PASSWORD => DateTime.UtcNow.AddMinutes(securitySettings.ResetPasswordTokenLifetimeMinutes),
             _ => throw new ArgumentOutOfRangeException(nameof(type))
         };
 
@@ -58,6 +61,9 @@ public class TokenService(IConfiguration configuration)
 
     public ClaimsPrincipal ValidateRegisterVerificationToken(string token)
         => ValidateToken(token, TokenType.VERIFY_REGISTER);
+
+    public ClaimsPrincipal ValidateAccessToken(string token)
+        => ValidateToken(token, TokenType.ACCESS);
 
     public ClaimsPrincipal ValidateRefreshToken(string token)
         => ValidateToken(token, TokenType.REFRESH);

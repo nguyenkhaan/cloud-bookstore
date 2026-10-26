@@ -1,6 +1,6 @@
 using backend.src.Bases.Enums;
 
-namespace backend.src.Services;
+namespace backend.src.Infrastructure;
 
 public static class RedisKeyManager
 {
