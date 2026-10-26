@@ -14,6 +14,7 @@ import {
   PanelToggleIcon,
   ExternalLinkIcon,
 } from '../../common/Icons';
+import { Badge, type BadgeVariant } from '../../common/Badge';
 
 export interface NavItem {
   id: string;
@@ -21,7 +22,7 @@ export interface NavItem {
   href?: string;
   icon: React.ComponentType<{ size?: number; className?: string }>;
   badge?: string | number;
-  badgeVariant?: 'orange' | 'indigo' | 'emerald';
+  badgeVariant?: BadgeVariant;
 }
 
 export interface SidebarProps {
@@ -130,17 +131,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
 
                 {!isCollapsed && item.badge && (
-                  <span
-                    className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                      item.badgeVariant === 'orange'
-                        ? 'bg-amber-100 text-amber-700'
-                        : item.badgeVariant === 'emerald'
-                        ? 'bg-emerald-100 text-emerald-700'
-                        : 'bg-indigo-100 text-indigo-700'
-                    }`}
-                  >
+                  <Badge variant={item.badgeVariant || 'orange'} size="xs">
                     {item.badge}
-                  </span>
+                  </Badge>
                 )}
               </button>
             );

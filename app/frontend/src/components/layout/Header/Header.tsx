@@ -1,5 +1,6 @@
 import React from 'react';
 import { BellIcon, PanelToggleIcon } from '../../common/Icons';
+import { Badge } from '../../common/Badge';
 
 export interface BreadcrumbItem {
   label: string;
@@ -74,20 +75,14 @@ export const Header: React.FC<HeaderProps> = ({
 
       <div className="flex items-center gap-4">
         {shiftName && (
-          <div
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium border ${
-              isShiftOpen
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                : 'border-slate-200 bg-slate-50 text-slate-600'
-            }`}
+          <Badge
+            variant={isShiftOpen ? 'success' : 'neutral'}
+            size="md"
+            dot
+            pulse={isShiftOpen}
           >
-            <span
-              className={`h-2 w-2 rounded-full ${
-                isShiftOpen ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
-              }`}
-            />
-            <span>{shiftName}</span>
-          </div>
+            {shiftName}
+          </Badge>
         )}
 
         <button
