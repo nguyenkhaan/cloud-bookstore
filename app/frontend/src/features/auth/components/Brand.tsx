@@ -1,4 +1,4 @@
-﻿import { brand } from '../../../config/brand'
+import { brand } from '@/config/brand'
 import { BookIcon } from './Icons'
 
 export function Brand({ compact = false }: { compact?: boolean }) {

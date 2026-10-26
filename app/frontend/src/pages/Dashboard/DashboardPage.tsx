@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { MainLayout } from '../../components/layout';
-import { Card, StatCard, SearchIcon } from '../../components/common';
+import { MainLayout } from '@/components/layout';
+import { Card, StatCard, SearchIcon } from '@/components/common';
 
 export interface DashboardPageProps {
   onSignOut?: () => void;
@@ -99,4 +99,3 @@ export function DashboardPage({ onSignOut }: DashboardPageProps) {
     </MainLayout>
   );
 }
-

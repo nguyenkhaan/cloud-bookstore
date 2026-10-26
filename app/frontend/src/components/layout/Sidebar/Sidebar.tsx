@@ -1,5 +1,5 @@
 import React from 'react';
-import logoImg from '../../../assets/images/logo.jpg';
+import logoImg from '@/assets/images/logo.jpg';
 import {
   DashboardIcon,
   PosIcon,
@@ -13,8 +13,8 @@ import {
   HeadphonesIcon,
   PanelToggleIcon,
   ExternalLinkIcon,
-} from '../../common/Icons';
-import { Badge, type BadgeVariant } from '../../common/Badge';
+} from '@/components/common/Icons';
+import { Badge, type BadgeVariant } from '@/components/common/Badge';
 
 export interface NavItem {
   id: string;

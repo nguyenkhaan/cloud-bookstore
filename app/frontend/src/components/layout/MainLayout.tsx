@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Sidebar } from './Sidebar/Sidebar';
-import { Header, type BreadcrumbItem } from './Header/Header';
-import { Footer } from './Footer/Footer';
+import { Sidebar } from '@/components/layout/Sidebar/Sidebar';
+import { Header, type BreadcrumbItem } from '@/components/layout/Header/Header';
+import { Footer } from '@/components/layout/Footer/Footer';
 
 export interface MainLayoutProps {
   children?: React.ReactNode;

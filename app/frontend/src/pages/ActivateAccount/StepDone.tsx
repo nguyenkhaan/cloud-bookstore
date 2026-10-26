@@ -1,5 +1,5 @@
-import { Banner } from '../../features/auth/components/Banner'
-import { navigate } from '../../routes/router'
+import { Banner } from '@/features/auth/components/Banner'
+import { navigate } from '@/routes/router'
 
 export function StepDone() {
   return (

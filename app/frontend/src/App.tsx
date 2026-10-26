@@ -1,7 +1,7 @@
 import './App.css';
-import './features/auth/auth.css';
-import { AuthProvider } from './context/AuthProvider';
-import { AppRoutes } from './routes/AppRoutes';
+import '@/features/auth/auth.css';
+import { AuthProvider } from '@/context/AuthProvider';
+import { AppRoutes } from '@/routes/AppRoutes';
 
 export function App() {
   return (

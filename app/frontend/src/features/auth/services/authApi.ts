@@ -1,4 +1,4 @@
-import { ApiError, apiUrl, postJson } from '../../../services/apiClient'
+import { ApiError, apiUrl, postJson } from '@/services/apiClient'
 
 export type LoginTokens = { accessToken: string; refreshToken: string }
 export type RegisterInput = { email: string; fullName: string; phone: string; password: string }

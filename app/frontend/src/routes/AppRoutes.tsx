@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
-import { getRouteDecision } from '../auth/session';
-import { useAuth } from '../hooks/useAuth';
-import { ActivateAccountPage } from '../pages/ActivateAccount/ActivateAccountPage';
+import { getRouteDecision } from '@/auth/session';
+import { useAuth } from '@/hooks/useAuth';
+import { ActivateAccountPage } from '@/pages/ActivateAccount/ActivateAccountPage';
 import {
   Catalog,
   Checkout,
@@ -10,10 +10,10 @@ import {
   InventoryEditor,
   ResetPasswordPage,
   StatusPage,
-} from '../pages/legacy/LegacyPages';
-import { DashboardPage } from '../pages/Dashboard/DashboardPage';
-import { LoginPage } from '../pages/Login/LoginPage';
-import { navigate, useLocation } from './router';
+} from '@/pages/legacy/LegacyPages';
+import { DashboardPage } from '@/pages/Dashboard/DashboardPage';
+import { LoginPage } from '@/pages/Login/LoginPage';
+import { navigate, useLocation } from '@/routes/router';
 
 export function AppRoutes() {
   const { pathname, search } = useLocation();

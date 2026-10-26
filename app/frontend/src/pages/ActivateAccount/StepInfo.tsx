@@ -1,5 +1,5 @@
 import type { ChangeEvent, FormEvent } from 'react'
-import { TextField } from '../../features/auth/components/TextField'
+import { TextField } from '@/features/auth/components/TextField'
 
 export type AccountInfo = { fullName: string; email: string; phone: string }
 

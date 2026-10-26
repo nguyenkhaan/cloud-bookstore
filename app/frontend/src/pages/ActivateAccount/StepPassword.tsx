@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { isPasswordAcceptable, PASSWORD_MAX_LENGTH } from '../../auth/password'
-import { PasswordField } from '../../features/auth/components/PasswordField'
-import { PasswordRules } from '../../features/auth/components/PasswordRules'
+import { isPasswordAcceptable, PASSWORD_MAX_LENGTH } from '@/auth/password'
+import { PasswordField } from '@/features/auth/components/PasswordField'
+import { PasswordRules } from '@/features/auth/components/PasswordRules'
 
 type StepPasswordProps = {
   email: string
