@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using backend.src.Dto.AuditLogDto;
 using backend.src.Dto.EmployeeDto;
 using backend.src.Models.Enums;
 using backend.src.Services;
@@ -23,8 +24,8 @@ public class EmployeeController(EmployeeService employeeService) : ControllerBas
         {
             return Unauthorized();
         }
-        
-        var response = employeeService.ChangeRoleAsync(actorId, employeeId, request, cancellationToken);
-        return // something here 
+        var context = new AuditLogContext(actorId, ipAddress);
+        var response = await employeeService.ChangeRoleAsync(actorId, employeeId, request, context , cancellationToken);
+        return Ok(response);
     }
 }

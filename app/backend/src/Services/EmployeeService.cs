@@ -2,6 +2,7 @@ using backend.src.Data;
 using backend.src.Dto.AuditLogDto;
 using backend.src.Dto.EmployeeDto;
 using backend.src.Exceptions;
+using backend.src.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.src.Services;
@@ -15,31 +16,45 @@ public class EmployeeService(AppDbContext dbContext , AuditLogService auditLogSe
         AuditLogContext context,
         CancellationToken cancellationToken = default)
     {
-        //Thuc hien tao moi cac gia tri ben trong AuditLog table 
-        var actor = await dbContext.Employees.FirstOrDefaultAsync(e => e.Id == actorId , cancellationToken);
-        if (actor is null) 
+        if (string.IsNullOrWhiteSpace(request.Reason))
+            throw new BadRequestException("Reason is required");
+
+        var actor = await dbContext.Employees
+            .Include(employee => employee.Role)
+            .FirstOrDefaultAsync(employee => employee.Id == actorId, cancellationToken);
+        if (actor is null)
             throw new NotFoundException("Actor for this action is invalid");
+        if (actor.Role.RoleName != RoleName.ADMIN)
+            throw new ForbiddenException("Only Admin can change employee roles");
+
         var employee = await dbContext.Employees
-            .Include(e => e.Role)
-            .FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
+            .Include(item => item.Role)
+            .FirstOrDefaultAsync(item => item.Id == employeeId, cancellationToken);
         if (employee is null)
             throw new NotFoundException("Employee for this action is invalid");
-        var role = await dbContext.Roles.FirstOrDefaultAsync(r => r.RoleName == request.RoleName, cancellationToken);
+
+        var role = await dbContext.Roles.FirstOrDefaultAsync(
+            item => item.RoleName == request.RoleName && item.IsActive,
+            cancellationToken);
         if (role is null)
             throw new NotFoundException("Role does not exist");
-        //Update the role
-        var previousRole = employee.Role.RoleName.ToString();
+
+        var previousRole = employee.Role.RoleName;
+        if (previousRole == request.RoleName)
+            return new EmployeeRoleResponse(employee.Id, previousRole, request.RoleName, DateTime.UtcNow);
 
         var createAuditLogEntry = new CreateAuditLogEntry(
-                "CHANGE_ROLE",
-                "EmployeeModel",
-                employee.Id,
-                employee.Role.RoleName.ToString(),
-                request.RoleName.ToString(),
-                "Admin Promote Role",
-                context
-            );
-        auditLogService.CreateAuditLogEntryAsync(entry, cancellationToken);
+            "CHANGE_ROLE",
+            "EmployeeModel",
+            employee.Id,
+            previousRole.ToString(),
+            request.RoleName.ToString(),
+            request.Reason,
+            context);
 
+        employee.RoleId = role.Id;
+        var auditLog = await auditLogService.CreateAuditLogEntryAsync(createAuditLogEntry, cancellationToken);
+
+        return new EmployeeRoleResponse(employee.Id, previousRole, request.RoleName, auditLog.OccurredAt);
     }
 }
