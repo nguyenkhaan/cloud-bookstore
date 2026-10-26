@@ -668,4 +668,60 @@ public class AuthServiceTests
             return "OK";
         }
     }
+
+    [Fact]
+    public async Task Logout_RejectsAMalformedRefreshToken()
+    {
+        await using var connection = await OpenConnectionAsync();
+        await using var dbContext = new AppDbContext(CreateDatabaseOptions(connection));
+        await dbContext.Database.EnsureCreatedAsync();
+        var authService = CreateAuthService(dbContext, CreateAuthenticationConfiguration());
+
+        await Assert.ThrowsAsync<UnauthorizedException>(() => authService.Logout("not-a-jwt"));
+        await Assert.ThrowsAsync<UnauthorizedException>(() => authService.Logout(string.Empty));
+    }
+
+    [Fact]
+    public async Task Logout_RejectsAnAccessToken_AndLeavesTheSessionActive()
+    {
+        await using var connection = await OpenConnectionAsync();
+        await using var dbContext = new AppDbContext(CreateDatabaseOptions(connection));
+        await dbContext.Database.EnsureCreatedAsync();
+        var employee = await SeedEmployee(dbContext, EmployeeStatus.ACTIVE);
+        employee.Password = BCrypt.Net.BCrypt.HashPassword("TestPassword123!");
+        await dbContext.SaveChangesAsync();
+
+        var configuration = CreateAuthenticationConfiguration();
+        var tokenStore = CreateTokenStore(configuration, new FakeRedisHandler());
+        var authService = CreateAuthService(dbContext, configuration, new NoOpEmailService(), tokenStore);
+        var response = await authService.Login(new LoginRequest(employee.Email, "TestPassword123!"));
+
+        await Assert.ThrowsAsync<UnauthorizedException>(() => authService.Logout(response.AccessToken));
+
+        var accessJwt = new JwtSecurityTokenHandler().ReadJwtToken(response.AccessToken);
+        Assert.True(await tokenStore.IsActiveAsync(accessJwt.Id, TokenType.ACCESS));
+    }
+
+    [Fact]
+    public async Task Logout_CannotBeReplayedWithTheSameRefreshToken()
+    {
+        await using var connection = await OpenConnectionAsync();
+        await using var dbContext = new AppDbContext(CreateDatabaseOptions(connection));
+        await dbContext.Database.EnsureCreatedAsync();
+        var employee = await SeedEmployee(dbContext, EmployeeStatus.ACTIVE);
+        employee.Password = BCrypt.Net.BCrypt.HashPassword("TestPassword123!");
+        await dbContext.SaveChangesAsync();
+
+        var configuration = CreateAuthenticationConfiguration();
+        var authService = CreateAuthService(
+            dbContext,
+            configuration,
+            new NoOpEmailService(),
+            CreateTokenStore(configuration, new FakeRedisHandler()));
+        var response = await authService.Login(new LoginRequest(employee.Email, "TestPassword123!"));
+
+        await authService.Logout(response.RefreshToken);
+
+        await Assert.ThrowsAsync<UnauthorizedException>(() => authService.Logout(response.RefreshToken));
+    }
 }
