@@ -1,7 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using backend.src.Bases.Enums;
 
-namespace backend.src.Services;
+namespace backend.src.Infrastructure;
 
 public sealed class TokenJtiStore(RedisService redisService)
 {

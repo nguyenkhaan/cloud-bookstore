@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using backend.src.Bases.Enums;
+using backend.src.Configurations;
 using Microsoft.IdentityModel.Tokens;
 
 namespace backend.src.Services;

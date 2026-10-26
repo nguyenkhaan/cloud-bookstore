@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace backend.src.Services;
+namespace backend.src.Infrastructure;
 
 public sealed class RedisReadinessHealthCheck(
     RedisService redisService,

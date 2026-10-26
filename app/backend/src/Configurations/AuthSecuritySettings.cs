@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.Configuration;
 
-namespace backend.src.Services;
+namespace backend.src.Configurations;
 
 public sealed class AuthSecuritySettings
 {

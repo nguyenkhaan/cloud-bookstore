@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace backend.src.Services;
+namespace backend.src.Configurations;
 
 public sealed class EmailSettings
 {

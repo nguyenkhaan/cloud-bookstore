@@ -3,6 +3,8 @@
 // Run: dotnet watch run 
 using backend.src.Data;
 using backend.src.Exceptions;
+using backend.src.Configurations;
+using backend.src.Infrastructure;
 using backend.src.Scripts;
 using backend.src.Services;
 using backend.src.Bases.Enums;
@@ -149,8 +151,7 @@ builder.Services
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<SettingService>();
 builder.Services.AddScoped<AuthService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddSingleton<IEmailHealthCheck, EmailHealthCheck>();
+builder.Services.AddScoped<EmailService>();
 
 //Dependency Injection -> builder.Services.AddScoped<AuthService>();
 var app = builder.Build();

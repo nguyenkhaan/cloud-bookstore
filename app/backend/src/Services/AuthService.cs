@@ -3,21 +3,24 @@ using System.Security.Cryptography;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using backend.src.Bases.Enums;
+using backend.src.Configurations;
 using backend.src.Data;
 using backend.src.Dto.AuthDto;
 using backend.src.Exceptions;
+using backend.src.Infrastructure;
 using backend.src.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using BCryptHasher = BCrypt.Net.BCrypt;
 using backend.src.Models;
+
 namespace backend.src.Services;
 
 public class AuthService(
     AppDbContext dbContext,
     TokenService tokenService,
     SettingService settingService,
-    IEmailService emailService,
+    EmailService emailService,
     TokenJtiStore tokenJtiStore,
     IConfiguration configuration)
 {

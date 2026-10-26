@@ -41,7 +41,7 @@ Do not commit SMTP credentials or JWT secrets. A backend running in a Docker net
 
 | Endpoint | Request | Success | Notes |
 | --- | --- | --- | --- |
-| `GET /health/email` | None | `200` with `status: "Healthy"` | Opens an SMTP connection only; returns `503` with `status: "Unhealthy"` when the configured SMTP server cannot be reached. It does not send an email. |
+| `POST /health/email` | `recipientEmail` | `200` with `status: "Sent"` | Sends an HTML test email through the configured SMTP server; returns `503` with `status: "Unavailable"` when delivery fails. |
 | `POST /api/auth/register` | `email`, `fullName`, `password`, `phone` | `201` with `email`, `fullName` | Sends verification email. It no longer returns a token. |
 | `POST /api/auth/verify` | `token` | `204` | Activates a pending account. |
 | `POST /api/auth/password-reset-requests` | `email` | `204` | Always returns `204`; sends a reset email only for an active account. |

@@ -4,15 +4,19 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using backend.src.Bases.Enums;
+using backend.src.Configurations;
 using backend.src.Data;
 using backend.src.Dto.AuthDto;
 using backend.src.Exceptions;
 using backend.src.Models;
 using backend.src.Models.Enums;
+using backend.src.Infrastructure;
 using backend.src.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Xunit;
 
@@ -500,7 +504,7 @@ public class AuthServiceTests
     private static AuthService CreateAuthService(
         AppDbContext dbContext,
         ConfigurationManager configuration,
-        IEmailService? emailService = null,
+        EmailService? emailService = null,
         TokenJtiStore? tokenStore = null)
     {
         return new AuthService(
@@ -570,37 +574,67 @@ public class AuthServiceTests
         await dbContext.SaveChangesAsync();
     }
 
-    private sealed class NoOpEmailService : IEmailService
+    private abstract class TestEmailService() : EmailService(
+        Options.Create(new EmailSettings()),
+        NullLogger<EmailService>.Instance)
     {
-        public Task SendAccountVerificationEmailAsync(string recipientEmail, string recipientName, string token) => Task.CompletedTask;
-
-        public Task SendPasswordResetEmailAsync(string recipientEmail, string recipientName, string token) => Task.CompletedTask;
     }
 
-    private sealed class RecordingEmailService : IEmailService
+    private sealed class NoOpEmailService : TestEmailService
+    {
+        public override Task SendAccountVerificationEmailAsync(
+            string recipientEmail,
+            string recipientName,
+            string token,
+            CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public override Task SendPasswordResetEmailAsync(
+            string recipientEmail,
+            string recipientName,
+            string token,
+            CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+
+    private sealed class RecordingEmailService : TestEmailService
     {
         public List<EmailRequest> VerificationEmails { get; } = [];
         public List<EmailRequest> PasswordResetEmails { get; } = [];
 
-        public Task SendAccountVerificationEmailAsync(string recipientEmail, string recipientName, string token)
+        public override Task SendAccountVerificationEmailAsync(
+            string recipientEmail,
+            string recipientName,
+            string token,
+            CancellationToken cancellationToken = default)
         {
             VerificationEmails.Add(new EmailRequest(recipientEmail, recipientName, token));
             return Task.CompletedTask;
         }
 
-        public Task SendPasswordResetEmailAsync(string recipientEmail, string recipientName, string token)
+        public override Task SendPasswordResetEmailAsync(
+            string recipientEmail,
+            string recipientName,
+            string token,
+            CancellationToken cancellationToken = default)
         {
             PasswordResetEmails.Add(new EmailRequest(recipientEmail, recipientName, token));
             return Task.CompletedTask;
         }
     }
 
-    private sealed class ThrowingEmailService : IEmailService
+    private sealed class ThrowingEmailService : TestEmailService
     {
-        public Task SendAccountVerificationEmailAsync(string recipientEmail, string recipientName, string token)
+        public override Task SendAccountVerificationEmailAsync(
+            string recipientEmail,
+            string recipientName,
+            string token,
+            CancellationToken cancellationToken = default)
             => throw new InvalidOperationException("SMTP is unavailable");
 
-        public Task SendPasswordResetEmailAsync(string recipientEmail, string recipientName, string token)
+        public override Task SendPasswordResetEmailAsync(
+            string recipientEmail,
+            string recipientName,
+            string token,
+            CancellationToken cancellationToken = default)
             => throw new InvalidOperationException("SMTP is unavailable");
     }
 
