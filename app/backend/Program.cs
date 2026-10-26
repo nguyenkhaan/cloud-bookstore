@@ -42,7 +42,11 @@ builder.Services.AddCors(options =>
 });
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiHandlerException>();
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+    options.AddOperationTransformer<BearerSecurityOperation>();
+});
 
 builder.Services
     .AddOptions<AuthSecuritySettings>()

@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using backend.src.Exceptions;
 using backend.src.Infrastructure;
+using Microsoft.AspNetCore.Authorization;
 
 namespace backend.src.Controllers;
 
@@ -36,7 +37,7 @@ public class HealthController(EmailService emailService) : ControllerBase
         throw new BadRequestException("This is an exception for testing");
     }
 
-    [HttpPost("/health/email")]
+    [HttpPost("health/email")]
     [ProducesResponseType<EmailTestResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<EmailTestResponse>(StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> SendTestEmail(
@@ -49,5 +50,11 @@ public class HealthController(EmailService emailService) : ControllerBase
         return sent
             ? Ok(response)
             : StatusCode(StatusCodes.Status503ServiceUnavailable, response);
+    }
+    [Authorize(Roles ="ADMIN")]
+    [HttpGet("health/authorization")]
+    public async Task<IActionResult> TestAuthorization()
+    {
+        return Ok("Testing authorization successfully");
     }
 }
