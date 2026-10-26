@@ -2,6 +2,7 @@ using backend.src.Data;
 using backend.src.Dto.AuditLogDto;
 using backend.src.Dto.EmployeeDto;
 using backend.src.Exceptions;
+using backend.src.Models;
 using backend.src.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -53,7 +54,15 @@ public class EmployeeService(AppDbContext dbContext , AuditLogService auditLogSe
             context);
 
         employee.RoleId = role.Id;
-        var auditLog = await auditLogService.CreateAuditLogEntryAsync(createAuditLogEntry, cancellationToken);
+        AuditLogModel auditLog;
+        try
+        {
+            auditLog = await auditLogService.CreateAuditLogEntryAsync(createAuditLogEntry, cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new ConflictException("Employee role was changed by another request. Please retry.");
+        }
 
         return new EmployeeRoleResponse(employee.Id, previousRole, request.RoleName, auditLog.OccurredAt);
     }

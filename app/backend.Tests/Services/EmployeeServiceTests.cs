@@ -141,6 +141,51 @@ public class EmployeeServiceTests
         Assert.Empty(await verificationContext.AuditLogs.ToListAsync());
     }
 
+    [Fact]
+    public async Task ChangeRoleAsync_RejectsAStaleRoleChangeWithoutWritingAnotherAudit()
+    {
+        await using var connection = await OpenConnectionAsync();
+        Guid actorId;
+        Guid employeeId;
+        Guid inventoryRoleId;
+        await using (var setupContext = new AppDbContext(CreateOptions(connection)))
+        {
+            await setupContext.Database.EnsureCreatedAsync();
+            var data = await SeedEmployeesAsync(setupContext);
+            actorId = data.Actor.Id;
+            employeeId = data.Employee.Id;
+            inventoryRoleId = data.InventoryRole.Id;
+        }
+
+        await using var staleContext = new AppDbContext(CreateOptions(connection));
+        await staleContext.Employees
+            .Include(employee => employee.Role)
+            .Where(employee => employee.Id == actorId || employee.Id == employeeId)
+            .LoadAsync();
+
+        await using (var winnerContext = new AppDbContext(CreateOptions(connection)))
+        {
+            await CreateService(winnerContext).ChangeRoleAsync(
+                actorId,
+                employeeId,
+                new ChangeEmployeeRequest(RoleName.INVENTORY_MANAGER, "Move to warehouse"),
+                new AuditLogContext(actorId, IPAddress.Loopback));
+        }
+
+        await Assert.ThrowsAsync<ConflictException>(() => CreateService(staleContext).ChangeRoleAsync(
+            actorId,
+            employeeId,
+            new ChangeEmployeeRequest(RoleName.ADMIN, "Stale promotion"),
+            new AuditLogContext(actorId, IPAddress.Loopback)));
+
+        await using var verificationContext = new AppDbContext(CreateOptions(connection));
+        var persistedEmployee = await verificationContext.Employees
+            .AsNoTracking()
+            .SingleAsync(employee => employee.Id == employeeId);
+        Assert.Equal(inventoryRoleId, persistedEmployee.RoleId);
+        Assert.Single(await verificationContext.AuditLogs.ToListAsync());
+    }
+
     private static EmployeeService CreateService(AppDbContext dbContext)
         => new(dbContext, new AuditLogService(dbContext));
 
