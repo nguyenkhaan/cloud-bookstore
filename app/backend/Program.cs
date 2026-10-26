@@ -44,6 +44,7 @@ builder.Services.AddCors(options =>
                 "GET",
                 "POST",
                 "PUT",
+                "PATCH",
                 "DELETE",
                 "OPTIONS"
             );
@@ -184,6 +185,7 @@ builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<SettingService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<EmployeeService>();
 builder.Services.AddScoped<AuditLogService>();
 //Dependency Injection -> builder.Services.AddScoped<AuthService>();
 var app = builder.Build();
