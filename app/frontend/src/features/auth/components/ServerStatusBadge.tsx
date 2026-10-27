@@ -1,4 +1,6 @@
 import type { ServerStatus } from '@/features/auth/auth.type'
+import { Badge } from '@/components/common/Badge'
+import type { BadgeVariant } from '@/components/common/Badge'
 
 const labels: Record<ServerStatus, string> = {
   checking: 'Đang kiểm tra máy chủ',
@@ -6,11 +8,16 @@ const labels: Record<ServerStatus, string> = {
   offline: 'Không kết nối được máy chủ',
 }
 
+const variants: Record<ServerStatus, BadgeVariant> = {
+  checking: 'neutral',
+  online: 'success',
+  offline: 'danger',
+}
+
 export function ServerStatusBadge({ status }: { status: ServerStatus }) {
   return (
-    <span className={`cb-status cb-status--${status}`} role="status">
-      <span aria-hidden="true" className="cb-status__dot" />
+    <Badge dot pulse={status === 'checking'} role="status" size="sm" variant={variants[status]}>
       {labels[status]}
-    </span>
+    </Badge>
   )
 }

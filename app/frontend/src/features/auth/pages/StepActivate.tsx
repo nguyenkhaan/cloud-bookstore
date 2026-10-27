@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react'
-import { TextField } from '@/components/common/TextField'
+import { Button, TextField } from '@/components/common'
 
 type StepActivateProps = {
   email: string
@@ -22,11 +22,11 @@ export function StepActivate(props: StepActivateProps) {
 
   if (!linkSent) {
     return busy ? (
-      <p className="cb-note" role="status">Đang kích hoạt tài khoản…</p>
+      <p className="mt-5 text-[13px] leading-5 text-slate-700" role="status">Đang kích hoạt tài khoản…</p>
     ) : (
-      <div className="cb-form">
-        <p className="cb-note">Liên kết này không dùng được. Hãy đăng ký lại để nhận liên kết mới.</p>
-        <button className="cb-btn cb-btn--primary cb-btn--block" onClick={onRestart} type="button">Nhận liên kết mới</button>
+      <div className="mt-5 flex flex-col gap-4">
+        <p className="text-[13px] leading-5 text-slate-700">Liên kết này không dùng được. Hãy đăng ký lại để nhận liên kết mới.</p>
+        <Button className="min-h-11" fullWidth onClick={onRestart} size="lg" type="button" variant="primary">Nhận liên kết mới</Button>
       </div>
     )
   }
@@ -37,8 +37,8 @@ export function StepActivate(props: StepActivateProps) {
   }
 
   return (
-    <form className="cb-form" onSubmit={submit}>
-      <p className="cb-note">
+    <form className="mt-5 flex flex-col gap-4" onSubmit={submit}>
+      <p className="text-[13px] leading-5 text-slate-700">
         Chúng tôi đã gửi liên kết kích hoạt tới <strong>{email}</strong>. Mở email và bấm vào liên kết, hoặc dán liên kết vào ô bên dưới.
       </p>
       <TextField
@@ -50,14 +50,14 @@ export function StepActivate(props: StepActivateProps) {
         spellCheck={false}
         value={link}
       />
-      <button className="cb-btn cb-btn--primary cb-btn--block" disabled={busy || !link.trim()} type="submit">
+      <Button className="min-h-11" disabled={busy || !link.trim()} fullWidth loading={busy} size="lg" type="submit" variant="primary">
         {busy ? 'Đang kích hoạt…' : canSignIn ? 'Hoàn tất kích hoạt & Đăng nhập' : 'Kích hoạt tài khoản'}
-      </button>
-      <p className="cb-resend">
+      </Button>
+      <p className="text-center text-[13px] text-slate-500">
         Chưa nhận được email?{' '}
-        <button className="cb-link" disabled={busy || resendSeconds > 0} onClick={onResend} type="button">
+        <Button className="min-h-11 px-1 text-[13px] text-indigo-600 hover:bg-transparent hover:text-indigo-700 hover:underline" disabled={busy || resendSeconds > 0} onClick={onResend} size="sm" type="button" variant="ghost">
           {resendSeconds > 0 ? `Gửi lại (${resendSeconds}s)` : 'Gửi lại liên kết'}
-        </button>
+        </Button>
       </p>
     </form>
   )

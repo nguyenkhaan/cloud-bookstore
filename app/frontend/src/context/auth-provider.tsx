@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import type { PropsWithChildren } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { AuthContext } from './AuthProvider'
@@ -25,7 +25,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     clearStoredSession(window.localStorage)
   }, [])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setAccessToken(session?.accessToken ?? null)
   }, [session?.accessToken])
 

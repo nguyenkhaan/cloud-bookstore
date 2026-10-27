@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Button, Card } from '@/components/common'
 import { extractActivationToken } from '@/features/auth/activation'
 import { Banner } from '@/features/auth/components/Banner'
 import { ArrowLeftIcon } from '@/features/auth/components/Icons'
@@ -127,12 +128,12 @@ export function ActivateAccountPage({ search }: { search: string }) {
 
   return (
     <CenterLayout>
-      <section aria-labelledby="activate-title" className="cb-card cb-card--wide">
-        <h1 className="cb-title" id="activate-title">Kích hoạt tài khoản nhân viên</h1>
-        <p className="cb-subtitle">Email của bạn cần được Quản trị viên thêm vào danh sách cho phép trước khi kích hoạt.</p>
+      <Card aria-labelledby="activate-title" className="mx-auto w-full max-w-[540px] rounded-3xl border-slate-200/70 p-5 shadow-[0_8px_28px_rgba(30,27,75,0.06)] sm:p-9" padding="none" role="region">
+        <h1 className="text-[28px] font-bold leading-tight text-indigo-950" id="activate-title">Kích hoạt tài khoản nhân viên</h1>
+        <p className="mt-2.5 text-sm text-slate-500">Email của bạn cần được Quản trị viên thêm vào danh sách cho phép trước khi kích hoạt.</p>
         <Stepper current={STEP_INDEX[step]} steps={STEPS} />
 
-        <div className="cb-step-body">
+        <div className="flex flex-col gap-4">
           {step === 'info' && <StepInfo onChange={setInfo} onNext={goToPasswordStep} values={info} />}
           {step === 'password' && (
             <StepPassword
@@ -163,11 +164,9 @@ export function ActivateAccountPage({ search }: { search: string }) {
         </div>
 
         {step !== 'done' && (
-          <button className="cb-link cb-back" onClick={() => navigate('/login')} type="button">
-            <ArrowLeftIcon /> Quay lại đăng nhập
-          </button>
+          <Button className="mt-5 min-h-11 px-1 text-[13px] text-indigo-600 hover:bg-transparent hover:text-indigo-700 hover:underline" icon={<ArrowLeftIcon />} onClick={() => navigate('/login')} size="sm" type="button" variant="ghost">Quay lại đăng nhập</Button>
         )}
-      </section>
+      </Card>
     </CenterLayout>
   )
 }

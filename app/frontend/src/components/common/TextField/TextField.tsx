@@ -15,7 +15,7 @@ export function TextField({ label, hint, invalid, id, className, ...inputProps }
   const hintId = `${inputId}-hint`
   return (
     <div className={cn(
-      'block rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 transition-[border-color,box-shadow] focus-within:border-indigo-600 focus-within:ring-3 focus-within:ring-indigo-600/15',
+      'block rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 transition-[border-color,box-shadow] focus-within:border-indigo-600 focus-within:ring-3 focus-within:ring-indigo-600/15 motion-reduce:transition-none',
       invalid && 'border-rose-600 focus-within:border-rose-600 focus-within:ring-rose-600/15',
       className,
     )}>

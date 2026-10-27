@@ -80,3 +80,10 @@ test('auth context and provider live in the application context module', () => {
   assert.ok(!existsSync(src('tmp', 'context', 'AuthProvider.tsx')))
   assert.ok(!existsSync(src('tmp', 'context', 'auth-context.ts')))
 })
+
+test('auth UI uses the shared Tailwind design system without a feature stylesheet', () => {
+  assert.ok(!existsSync(src('features', 'auth', 'auth.css')))
+
+  const app = readFileSync(src('App.tsx'), 'utf8')
+  assert.doesNotMatch(app, /features\/auth\/auth\.css/)
+})

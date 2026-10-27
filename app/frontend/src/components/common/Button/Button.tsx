@@ -50,7 +50,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={disabled || loading}
         className={cn(
-          'inline-flex cursor-pointer select-none items-center justify-center font-medium transition-all disabled:cursor-not-allowed',
+          'inline-flex cursor-pointer select-none items-center justify-center font-medium transition-[background-color,border-color,color,box-shadow,opacity] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed motion-reduce:transition-none',
           fullWidth && 'w-full',
           variantClasses[variant],
           sizeClasses[size],

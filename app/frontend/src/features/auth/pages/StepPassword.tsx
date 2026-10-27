@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { isPasswordAcceptable, PASSWORD_MAX_LENGTH } from '@/features/auth/password'
+import { Button } from '@/components/common'
 import { PasswordField } from '@/features/auth/components/PasswordField'
 import { PasswordRules } from '@/features/auth/components/PasswordRules'
 
@@ -24,8 +25,8 @@ export function StepPassword({ email, password, busy, onPasswordChange, onBack, 
   }
 
   return (
-    <form className="cb-form" onSubmit={submit}>
-      <p className="cb-note">Liên kết kích hoạt sẽ được gửi tới <strong>{email}</strong>.</p>
+    <form className="mt-5 flex flex-col gap-4" onSubmit={submit}>
+      <p className="text-[13px] leading-5 text-slate-700">Liên kết kích hoạt sẽ được gửi tới <strong>{email}</strong>.</p>
       <PasswordField
         autoComplete="new-password"
         hint={<PasswordRules password={password} />}
@@ -45,10 +46,10 @@ export function StepPassword({ email, password, busy, onPasswordChange, onBack, 
         required
         value={confirm}
       />
-      <button className="cb-btn cb-btn--primary cb-btn--block" disabled={!canSubmit} type="submit">
+      <Button className="min-h-11" disabled={!canSubmit} fullWidth loading={busy} size="lg" type="submit" variant="primary">
         {busy ? 'Đang gửi…' : 'Gửi liên kết kích hoạt'}
-      </button>
-      <button className="cb-link cb-link--center" disabled={busy} onClick={onBack} type="button">Sửa thông tin</button>
+      </Button>
+      <Button className="min-h-11 self-center px-2 text-[13px] text-indigo-600 hover:bg-transparent hover:text-indigo-700 hover:underline" disabled={busy} onClick={onBack} size="sm" type="button" variant="ghost">Sửa thông tin</Button>
     </form>
   )
 }

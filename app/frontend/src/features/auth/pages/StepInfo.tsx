@@ -1,5 +1,5 @@
 import type { ChangeEvent, FormEvent } from 'react'
-import { TextField } from '@/components/common/TextField'
+import { Button, TextField } from '@/components/common'
 import type { AccountInfo } from '@/features/auth/auth.type'
 
 type StepInfoProps = { values: AccountInfo; onChange: (values: AccountInfo) => void; onNext: () => void }
@@ -14,7 +14,7 @@ export function StepInfo({ values, onChange, onNext }: StepInfoProps) {
   }
 
   return (
-    <form className="cb-form" onSubmit={submit}>
+    <form className="mt-5 flex flex-col gap-4" onSubmit={submit}>
       <TextField autoComplete="name" label="Họ và tên" onChange={set('fullName')} required value={values.fullName} />
       <TextField
         autoComplete="email"
@@ -36,7 +36,7 @@ export function StepInfo({ values, onChange, onNext }: StepInfoProps) {
         type="tel"
         value={values.phone}
       />
-      <button className="cb-btn cb-btn--primary cb-btn--block" type="submit">Tiếp tục</button>
+      <Button className="min-h-11" fullWidth size="lg" type="submit" variant="primary">Tiếp tục</Button>
     </form>
   )
 }

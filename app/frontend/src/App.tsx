@@ -1,5 +1,3 @@
-import './App.css';
-import '@/features/auth/auth.css';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from '@/context/auth-provider';
 import AppRoutes from '@/routes/AppRoutes';
