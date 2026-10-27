@@ -64,10 +64,12 @@ test('application brand configuration lives in shared lib', () => {
 })
 
 test('React Query is configured at the application root', () => {
-  assert.ok(existsSync(src('lib', 'query-client.ts')))
-  assert.ok(existsSync(src('context', 'QueryProvider.tsx')))
+  assert.ok(!existsSync(src('lib', 'query-client.ts')))
+  assert.ok(!existsSync(src('context', 'QueryProvider.tsx')))
 
   const main = readFileSync(src('main.tsx'), 'utf8')
-  assert.match(main, /<QueryProvider>/)
+  assert.match(main, /import \{ QueryClient, QueryClientProvider \} from ['"]@tanstack\/react-query['"]/)
+  assert.match(main, /const queryClient = new QueryClient\(\)[\s\S]*createRoot/)
+  assert.match(main, /<QueryClientProvider client=\{queryClient\}>/)
   assert.match(main, /<App\s*\/>/)
 })
