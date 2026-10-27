@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from '@/lib/cn';
 
 export type CardPadding = 'none' | 'sm' | 'md' | 'lg';
 
@@ -37,11 +38,15 @@ export const Card: React.FC<CardProps> = ({
 
   return (
     <div
-      className={`rounded-2xl border border-slate-200/80 bg-white shadow-2xs transition-shadow ${paddingClasses[padding]} ${className}`}
+      className={cn(
+        'rounded-2xl border border-slate-200/80 bg-white shadow-2xs transition-shadow',
+        paddingClasses[padding],
+        className,
+      )}
       {...props}
     >
       {hasHeader && (
-        <div className={`flex items-start justify-between gap-4 mb-4 ${headerClassName}`}>
+        <div className={cn('mb-4 flex items-start justify-between gap-4', headerClassName)}>
           <div>
             <div className="flex items-center gap-2">
               {title && (
@@ -65,7 +70,7 @@ export const Card: React.FC<CardProps> = ({
         </div>
       )}
 
-      {children && <div className={bodyClassName}>{children}</div>}
+      {children && <div className={cn(bodyClassName)}>{children}</div>}
 
       {footer && (
         <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
