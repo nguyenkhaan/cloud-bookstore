@@ -69,7 +69,6 @@ beforeEach(() => {
   requests.length = 0
   nextFailure = undefined
   responseData['/auth/login'] = { accessToken: 'access-token', refreshToken: 'refresh-token' }
-  apiClient.setAccessToken?.()
 })
 
 after(async () => {
@@ -132,6 +131,18 @@ test('session check sends the login access token with the authenticated client',
       url: '/auth/session',
     },
   ])
+})
+
+test('failed logout still removes the access token from later private requests', async () => {
+  await authApi.login({ email: 'reader@example.com', password: 'password-123' })
+  requests.length = 0
+  nextFailure = {}
+
+  await assert.rejects(authApi.logout({ refreshToken: 'refresh-token' }))
+  requests.length = 0
+  await authApi.getSession()
+
+  assert.equal(requests[0].authorization, undefined)
 })
 
 test('HTTP failures keep the backend status and message in ApiError', async () => {
