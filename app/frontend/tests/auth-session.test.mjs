@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { getRouteDecision, isAccessTokenUsable } from '../src/tmp/auth/session.ts'
+import { getRouteDecision, getSafeNextPath, isAccessTokenUsable } from '../src/features/auth/session.ts'
 
 function tokenWithExpiration(expirationInSeconds) {
   const payload = Buffer.from(JSON.stringify({ exp: expirationInSeconds })).toString('base64url')
@@ -30,4 +30,11 @@ test('public catalog remains viewable but checkout requires a usable access toke
     getRouteDecision('/checkout', '', expiredToken),
     { type: 'redirect', to: '/login?next=%2Fcheckout' },
   )
+})
+
+test('only local application paths are accepted as a post-login destination', () => {
+  assert.equal(getSafeNextPath('/dashboard?tab=today'), '/dashboard?tab=today')
+  assert.equal(getSafeNextPath('https://example.com/phishing'), '/dashboard')
+  assert.equal(getSafeNextPath('//example.com/phishing'), '/dashboard')
+  assert.equal(getSafeNextPath(null), '/dashboard')
 })
