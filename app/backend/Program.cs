@@ -40,6 +40,7 @@ builder.Services.AddCors(options =>
                 "Authorization",
                 "Accept"
             )
+            .AllowCredentials()
             .WithMethods(
                 "GET",
                 "POST",

@@ -1,7 +1,7 @@
-import { ApiError } from '@/services/apiClient'
+import { ApiError } from './auth.service'
+import type { Notice } from './auth.type'
 
-export type NoticeTone = 'warning' | 'error' | 'success' | 'info'
-export type Notice = { tone: NoticeTone; message: string }
+export type { Notice, NoticeTone } from './auth.type'
 
 const network: Notice = { tone: 'error', message: 'Không thể kết nối tới máy chủ. Hãy kiểm tra mạng và thử lại.' }
 const unexpected: Notice = { tone: 'error', message: 'Có lỗi không mong muốn. Hãy thử lại sau.' }

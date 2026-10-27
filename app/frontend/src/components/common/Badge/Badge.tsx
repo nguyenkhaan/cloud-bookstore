@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from '@/lib/cn';
 
 export type BadgeVariant = 'success' | 'warning' | 'danger' | 'info' | 'brand' | 'neutral' | 'orange';
 export type BadgeSize = 'xs' | 'sm' | 'md';
@@ -62,12 +63,17 @@ export const Badge: React.FC<BadgeProps> = ({
 
   return (
     <span
-      className={`inline-flex items-center select-none font-medium ${styles.container} ${sizeClasses[size]} ${className}`}
+      className={cn(
+        'inline-flex select-none items-center font-medium',
+        styles.container,
+        sizeClasses[size],
+        className,
+      )}
       {...props}
     >
       {dot && (
         <span
-          className={`h-1.5 w-1.5 shrink-0 rounded-full ${styles.dot} ${pulse ? 'animate-pulse' : ''}`}
+          className={cn('h-1.5 w-1.5 shrink-0 rounded-full', styles.dot, pulse && 'animate-pulse')}
         />
       )}
       {icon && <span className="shrink-0">{icon}</span>}

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { cn } from '@/lib/cn'
 
 type IconProps = { className?: string }
 
@@ -6,7 +7,7 @@ function Icon({ className, children }: IconProps & { children: ReactNode }) {
   return (
     <svg
       aria-hidden="true"
-      className={className ?? 'cb-icon'}
+      className={cn('h-4 w-4 shrink-0', className)}
       fill="none"
       height="16"
       stroke="currentColor"

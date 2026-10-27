@@ -1,41 +1,42 @@
-import { useEffect } from 'react';
-import { getRouteDecision } from '@/auth/session';
-import { useAuth } from '@/hooks/useAuth';
-import { ActivateAccountPage } from '@/pages/ActivateAccount/ActivateAccountPage';
-import {
-  Catalog,
-  Checkout,
-  ForgotPasswordPage,
-  Home,
-  InventoryEditor,
-  ResetPasswordPage,
-  StatusPage,
-} from '@/pages/legacy/LegacyPages';
-import { DashboardPage } from '@/pages/Dashboard/DashboardPage';
-import { LoginPage } from '@/pages/Login/LoginPage';
-import { navigate, useLocation } from '@/routes/router';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
-export function AppRoutes() {
-  const { pathname, search } = useLocation();
-  const { session, signOut } = useAuth();
-  const decision = getRouteDecision(pathname, search, session?.accessToken);
-  const redirectTo = decision.type === 'redirect' && typeof decision.to === 'string' ? decision.to : null;
+import LoginPage from '@/features/auth/pages/LoginPage'
+import ActivateAccountPage from '@/features/auth/pages/ActivateAccountPage'
+import DashboardPage from '@/features/dashboard/pages/DashboardPage'
+import { useAuth } from '@/features/auth/auth.hook'
+import { isAccessTokenUsable } from '@/features/auth/session'
 
-  useEffect(() => {
-    if (redirectTo) navigate(redirectTo, true);
-  }, [redirectTo]);
+function LoginRoute() {
+  const { search } = useLocation()
+  return <LoginPage search={search} />
+}
 
-  if (decision.type === 'redirect') {
-    return <StatusPage message="Phiên đăng nhập đã hết hạn. Đang chuyển đến trang đăng nhập…" />;
+function ActivateAccountRoute() {
+  const { search } = useLocation()
+  return <ActivateAccountPage search={search} />
+}
+
+function DashboardRoute() {
+  const { pathname, search } = useLocation()
+  const { session, signOut } = useAuth()
+
+  if (!isAccessTokenUsable(session?.accessToken)) {
+    const next = encodeURIComponent(`${pathname}${search}`)
+    return <Navigate replace to={`/login?next=${next}`} />
   }
 
-  if (pathname === '/login') return <LoginPage search={search} />;
-  if (pathname === '/activate' || pathname === '/verify-email') return <ActivateAccountPage search={search} />;
-  if (pathname === '/forgot-password') return <ForgotPasswordPage />;
-  if (pathname === '/reset-password') return <ResetPasswordPage search={search} />;
-  if (pathname === '/dashboard') return <DashboardPage onSignOut={signOut} />;
-  if (pathname === '/checkout') return <Checkout />;
-  if (pathname === '/inventory/new' || /^\/inventory\/[^/]+\/edit$/.test(pathname)) return <InventoryEditor />;
-  if (pathname === '/catalog') return <Catalog />;
-  return <Home />;
+  return <DashboardPage onSignOut={signOut} />
+}
+
+export default function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<Navigate replace to="/login" />} />
+      <Route path="/login" element={<LoginRoute />} />
+      <Route path="/activate" element={<ActivateAccountRoute />} />
+      <Route path="/verify-email" element={<ActivateAccountRoute />} />
+      <Route path="/dashboard" element={<DashboardRoute />} />
+      <Route path="*" element={<Navigate replace to="/login" />} />
+    </Routes>
+  )
 }

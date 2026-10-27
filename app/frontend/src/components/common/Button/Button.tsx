@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from '@/lib/cn';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success';
 export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
@@ -48,9 +49,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         disabled={disabled || loading}
-        className={`inline-flex items-center justify-center font-medium transition-all select-none cursor-pointer disabled:cursor-not-allowed ${
-          fullWidth ? 'w-full' : ''
-        } ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+        className={cn(
+          'inline-flex cursor-pointer select-none items-center justify-center font-medium transition-[background-color,border-color,color,box-shadow,opacity] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed motion-reduce:transition-none',
+          fullWidth && 'w-full',
+          variantClasses[variant],
+          sizeClasses[size],
+          className,
+        )}
         {...props}
       >
         {loading ? (

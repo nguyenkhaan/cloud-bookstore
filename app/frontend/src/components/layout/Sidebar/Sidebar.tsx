@@ -1,5 +1,4 @@
 import React from 'react';
-import { navigate } from '@/routes/router';
 import logoImg from '@/assets/images/logo.jpg';
 import {
   DashboardIcon,
@@ -38,7 +37,7 @@ export interface SidebarProps {
   storeAddress?: string;
 }
 
-export const DEFAULT_NAV_ITEMS: NavItem[] = [
+const DEFAULT_NAV_ITEMS: NavItem[] = [
   { id: 'overview', label: 'Tổng quan', icon: DashboardIcon },
   { id: 'pos', label: 'Quầy giao dịch', icon: PosIcon },
   { id: 'inventory', label: 'Kho & đầu sách', icon: InventoryIcon },
@@ -61,10 +60,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   storeAddress = 'Quận 3, TP. Hồ Chí Minh',
 }) => {
   const handleSignOut = () => {
-    if (onSignOut) {
-      onSignOut();
-    }
-    navigate('/login', true);
+    onSignOut?.();
   };
   return (
     <aside

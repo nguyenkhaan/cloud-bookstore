@@ -11,11 +11,11 @@ const shelves = [0, 3, 5].map((offset) =>
 /** Minh họa kệ sách bằng CSS. Thay bằng ảnh thật (login-hero.webp) khi có file. */
 export function HeroArt() {
     return (
-        <div aria-hidden="true" className="cb-hero">
+        <div aria-hidden="true" className="flex flex-col justify-between gap-3.5 rounded-[18px] bg-[linear-gradient(160deg,#f4c97a_0%,#b9722c_55%,#5b3414_100%)] px-[22px] pb-4 pt-[22px]">
             {shelves.map((books, shelfIndex) => (
-                <div className="cb-hero__shelf" key={shelfIndex}>
+                <div className="flex h-[92px] items-end gap-[3px] border-b-[6px] border-[#4a2a10] pb-1.5" key={shelfIndex}>
                     {books.map((book, bookIndex) => (
-                        <span key={bookIndex} style={{ height: `${book.height}%`, background: book.color }} />
+                        <span className="flex-1 rounded-t-sm opacity-90" key={bookIndex} style={{ height: `${book.height}%`, background: book.color }} />
                     ))}
                 </div>
             ))}

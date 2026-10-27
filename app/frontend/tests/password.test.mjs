@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { getPasswordChecks, isPasswordAcceptable } from '../src/auth/password.ts'
+import { getPasswordChecks, isPasswordAcceptable } from '../src/features/auth/password.ts'
 
 test('a password needs 12 to 128 characters, an uppercase letter, a digit and a symbol', () => {
   assert.equal(isPasswordAcceptable('Abcdefgh1234!'), true)
