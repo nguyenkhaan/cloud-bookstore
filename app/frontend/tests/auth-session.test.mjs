@@ -1,29 +1,38 @@
 import assert from 'node:assert/strict'
-import test from 'node:test'
-import { getRouteDecision, getSafeNextPath } from '../src/features/auth/session.ts'
+import { existsSync, readFileSync } from 'node:fs'
+import { after, before, test } from 'node:test'
+import { resolve } from 'node:path'
+import { createServer } from 'vite'
 
-test('a protected route without a restored cookie session redirects to login and preserves the destination', () => {
-  assert.deepEqual(
-    getRouteDecision('/dashboard', '?tab=today', false),
-    { type: 'redirect', to: '/login?next=%2Fdashboard%3Ftab%3Dtoday' },
-  )
+const src = (...parts) => resolve(import.meta.dirname, '..', 'src', ...parts)
+
+let loginPage
+let server
+
+before(async () => {
+  server = await createServer({ appType: 'custom', server: { hmr: false, middlewareMode: true } })
+  loginPage = await server.ssrLoadModule('/src/features/auth/pages/LoginPage.tsx')
 })
 
-test('public catalog remains viewable but checkout requires a restored cookie session', () => {
-  assert.deepEqual(getRouteDecision('/catalog', '', false), { type: 'allow' })
-  assert.deepEqual(
-    getRouteDecision('/checkout', '', false),
-    { type: 'redirect', to: '/login?next=%2Fcheckout' },
-  )
+after(async () => {
+  await server?.close()
 })
 
-test('a restored cookie session can view protected routes without decoding a JWT', () => {
-  assert.deepEqual(getRouteDecision('/dashboard', '', true), { type: 'allow' })
+test('the dashboard route waits for AuthProvider and redirects unauthenticated users', () => {
+  const routes = readFileSync(src('routes', 'AppRoutes.tsx'), 'utf8')
+
+  assert.match(routes, /if \(isInitializing\) return null/)
+  assert.match(routes, /if \(!session\)/)
+  assert.match(routes, /\/login\?next=\$\{next\}/)
 })
 
 test('only local application paths are accepted as a post-login destination', () => {
-  assert.equal(getSafeNextPath('/dashboard?tab=today'), '/dashboard?tab=today')
-  assert.equal(getSafeNextPath('https://example.com/phishing'), '/dashboard')
-  assert.equal(getSafeNextPath('//example.com/phishing'), '/dashboard')
-  assert.equal(getSafeNextPath(null), '/dashboard')
+  assert.equal(loginPage.getSafeNextPath('/dashboard?tab=today'), '/dashboard?tab=today')
+  assert.equal(loginPage.getSafeNextPath('https://example.com/phishing'), '/dashboard')
+  assert.equal(loginPage.getSafeNextPath('//example.com/phishing'), '/dashboard')
+  assert.equal(loginPage.getSafeNextPath(null), '/dashboard')
+})
+
+test('route helpers are not kept in a separate session module', () => {
+  assert.equal(existsSync(src('features', 'auth', 'session.ts')), false)
 })

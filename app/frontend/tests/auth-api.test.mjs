@@ -6,8 +6,9 @@ const requests = []
 
 let apiClient
 let authApi
-let errorMessages
+let activationPage
 let failures
+let loginPage
 let onSessionExpiredCalls
 let server
 
@@ -61,11 +62,12 @@ describe('auth service', { concurrency: false }, () => {
   before(async () => {
     server = await createServer({
       appType: 'custom',
-      server: { middlewareMode: true },
+      server: { hmr: false, middlewareMode: true },
     })
 
     authApi = await server.ssrLoadModule('/src/features/auth/auth.service.ts')
-    errorMessages = await server.ssrLoadModule('/src/features/auth/errors.ts')
+    loginPage = await server.ssrLoadModule('/src/features/auth/pages/LoginPage.tsx')
+    activationPage = await server.ssrLoadModule('/src/features/auth/pages/ActivateAccountPage.tsx')
     apiClient = await server.ssrLoadModule('/src/api/client.ts')
     apiClient.publicClient.defaults.adapter = recordRequest('public')
     apiClient.privateClient.defaults.adapter = recordRequest('private')
@@ -269,59 +271,59 @@ describe('auth service', { concurrency: false }, () => {
   test('unknown errors use the common unexpected-error notice', () => {
     const expected = { tone: 'error', message: 'Có lỗi không mong muốn. Hãy thử lại sau.' }
 
-    assert.deepEqual(errorMessages.describeLoginError(new Error()), expected)
-    assert.deepEqual(errorMessages.describeRegisterError(new Error()), expected)
-    assert.deepEqual(errorMessages.describeVerifyError(new Error()), expected)
+    assert.deepEqual(loginPage.describeLoginError(new Error()), expected)
+    assert.deepEqual(activationPage.describeRegisterError(new Error()), expected)
+    assert.deepEqual(activationPage.describeVerifyError(new Error()), expected)
   })
 
   test('network API errors use the common connection notice', () => {
     const expected = { tone: 'error', message: 'Không thể kết nối tới máy chủ. Hãy kiểm tra mạng và thử lại.' }
 
-    assert.deepEqual(errorMessages.describeLoginError(new authApi.ApiError(0, '')), expected)
-    assert.deepEqual(errorMessages.describeRegisterError(new authApi.ApiError(0, '')), expected)
-    assert.deepEqual(errorMessages.describeVerifyError(new authApi.ApiError(0, '')), expected)
+    assert.deepEqual(loginPage.describeLoginError(new authApi.ApiError(0, '')), expected)
+    assert.deepEqual(activationPage.describeRegisterError(new authApi.ApiError(0, '')), expected)
+    assert.deepEqual(activationPage.describeVerifyError(new authApi.ApiError(0, '')), expected)
   })
 
   test('login errors distinguish invalid credentials and locked accounts', () => {
-    assert.deepEqual(errorMessages.describeLoginError(new authApi.ApiError(401, '')), {
+    assert.deepEqual(loginPage.describeLoginError(new authApi.ApiError(401, '')), {
       tone: 'warning',
       message: 'Email hoặc mật khẩu không đúng. Tài khoản sẽ bị tạm khóa nếu nhập sai quá nhiều lần.',
     })
-    assert.deepEqual(errorMessages.describeLoginError(new authApi.ApiError(403, 'Account locked')), {
+    assert.deepEqual(loginPage.describeLoginError(new authApi.ApiError(403, 'Account locked')), {
       tone: 'error',
       message: 'Tài khoản đang bị tạm khóa do nhập sai nhiều lần. Vui lòng thử lại sau ít phút.',
     })
-    assert.deepEqual(errorMessages.describeLoginError(new authApi.ApiError(403, '')), {
+    assert.deepEqual(loginPage.describeLoginError(new authApi.ApiError(403, '')), {
       tone: 'warning',
       message: 'Tài khoản chưa được kích hoạt hoặc không khả dụng. Hãy kích hoạt tài khoản hoặc liên hệ Quản trị viên.',
     })
   })
 
   test('register errors preserve their specific recovery guidance', () => {
-    assert.deepEqual(errorMessages.describeRegisterError(new authApi.ApiError(409, '')), {
+    assert.deepEqual(activationPage.describeRegisterError(new authApi.ApiError(409, '')), {
       tone: 'error',
       message: 'Email này đã được đăng ký và kích hoạt. Hãy đăng nhập hoặc dùng Quên mật khẩu.',
     })
-    assert.deepEqual(errorMessages.describeRegisterError(new authApi.ApiError(400, 'Email domain is not allowed')), {
+    assert.deepEqual(activationPage.describeRegisterError(new authApi.ApiError(400, 'Email domain is not allowed')), {
       tone: 'error',
       message: 'Email chưa được cấp quyền bởi Quản trị viên.',
     })
-    assert.deepEqual(errorMessages.describeRegisterError(new authApi.ApiError(400, 'Invalid email')), {
+    assert.deepEqual(activationPage.describeRegisterError(new authApi.ApiError(400, 'Invalid email')), {
       tone: 'error',
       message: 'Email không hợp lệ.',
     })
-    assert.deepEqual(errorMessages.describeRegisterError(new authApi.ApiError(400, '')), {
+    assert.deepEqual(activationPage.describeRegisterError(new authApi.ApiError(400, '')), {
       tone: 'error',
       message: 'Thông tin chưa hợp lệ. Hãy kiểm tra lại email, họ tên, số điện thoại và mật khẩu.',
     })
   })
 
   test('verification errors distinguish forbidden accounts from invalid links', () => {
-    assert.deepEqual(errorMessages.describeVerifyError(new authApi.ApiError(403, '')), {
+    assert.deepEqual(activationPage.describeVerifyError(new authApi.ApiError(403, '')), {
       tone: 'error',
       message: 'Tài khoản này không thể kích hoạt. Hãy liên hệ Quản trị viên.',
     })
-    assert.deepEqual(errorMessages.describeVerifyError(new authApi.ApiError(400, '')), {
+    assert.deepEqual(activationPage.describeVerifyError(new authApi.ApiError(400, '')), {
       tone: 'error',
       message: 'Liên kết kích hoạt không hợp lệ hoặc đã hết hạn. Hãy gửi lại liên kết mới.',
     })

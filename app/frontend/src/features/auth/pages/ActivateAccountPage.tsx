@@ -6,8 +6,6 @@ import { Banner } from '@/features/auth/components/Banner'
 import { ArrowLeftIcon } from '@/features/auth/components/Icons'
 import { CenterLayout } from '@/features/auth/components/CenterLayout'
 import { Stepper } from '@/features/auth/components/Stepper'
-import { describeRegisterError, describeVerifyError } from '@/features/auth/errors'
-import type { Notice } from '@/features/auth/errors'
 import { useCountdown } from '@/features/auth/auth.hook'
 import { ApiError } from '@/features/auth/auth.service'
 import { useAuth, useRegisterMutation, useVerifyMutation } from '@/features/auth/auth.hook'
@@ -15,6 +13,7 @@ import { StepActivate } from './StepActivate'
 import { StepDone } from './StepDone'
 import { StepInfo } from './StepInfo'
 import type { AccountInfo } from '@/features/auth/auth.type'
+import type { Notice } from '@/features/auth/auth.type'
 import { StepPassword } from './StepPassword'
 
 type Step = 'info' | 'password' | 'activate' | 'done'
@@ -22,6 +21,44 @@ type Step = 'info' | 'password' | 'activate' | 'done'
 const STEPS = ['Thông tin', 'Mật khẩu', 'Kích hoạt'] as const
 const STEP_INDEX: Record<Step, number> = { info: 0, password: 1, activate: 2, done: STEPS.length }
 const RESEND_SECONDS = 60
+const network: Notice = { tone: 'error', message: 'Không thể kết nối tới máy chủ. Hãy kiểm tra mạng và thử lại.' }
+const unexpected: Notice = { tone: 'error', message: 'Có lỗi không mong muốn. Hãy thử lại sau.' }
+
+// eslint-disable-next-line react/only-export-components -- unit-tested activation page helper
+export function describeRegisterError(error: unknown): Notice {
+  if (!(error instanceof ApiError)) return unexpected
+
+  switch (error.status) {
+    case 0:
+      return network
+    case 409:
+      return { tone: 'error', message: 'Email này đã được đăng ký và kích hoạt. Hãy đăng nhập hoặc dùng Quên mật khẩu.' }
+    case 400:
+      if (/domain/i.test(error.message)) {
+        return { tone: 'error', message: 'Email chưa được cấp quyền bởi Quản trị viên.' }
+      }
+      if (/invalid email/i.test(error.message)) {
+        return { tone: 'error', message: 'Email không hợp lệ.' }
+      }
+      return { tone: 'error', message: 'Thông tin chưa hợp lệ. Hãy kiểm tra lại email, họ tên, số điện thoại và mật khẩu.' }
+    default:
+      return { tone: 'error', message: 'Không thể gửi email kích hoạt lúc này. Hãy thử gửi lại sau ít phút.' }
+  }
+}
+
+// eslint-disable-next-line react/only-export-components -- unit-tested activation page helper
+export function describeVerifyError(error: unknown): Notice {
+  if (!(error instanceof ApiError)) return unexpected
+
+  switch (error.status) {
+    case 0:
+      return network
+    case 403:
+      return { tone: 'error', message: 'Tài khoản này không thể kích hoạt. Hãy liên hệ Quản trị viên.' }
+    default:
+      return { tone: 'error', message: 'Liên kết kích hoạt không hợp lệ hoặc đã hết hạn. Hãy gửi lại liên kết mới.' }
+  }
+}
 
 export function ActivateAccountPage({ search }: { search: string }) {
   const { login } = useAuth()
