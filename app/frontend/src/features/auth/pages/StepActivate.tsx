@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react'
-import { TextField } from '@/components/TextField'
+import { TextField } from '@/components/common/TextField'
 
 type StepActivateProps = {
   email: string

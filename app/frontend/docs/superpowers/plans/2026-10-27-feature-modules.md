@@ -4,7 +4,7 @@
 
 **Goal:** Establish auth and dashboard feature modules, extract shared TextField, and adopt a React Router route table.
 
-**Architecture:** Domain-owned UI lives beneath its feature; shared UI remains in `src/components`. Unmigrated screens continue to resolve from `src/tmp` so the refactor can proceed incrementally.
+**Architecture:** Domain-owned UI lives beneath its feature; shared UI remains in `src/components`. Unmigrated screens stay in `src/tmp` and are not registered in the new route table until their feature is refactored.
 
 **Tech Stack:** React 19, React Router, TypeScript 6, Vite 8, Bun
 
@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Preserve existing runtime behavior.
-- Keep legacy and unrelated pages in `src/tmp`.
+- Keep legacy and unrelated pages in `src/tmp` and out of `AppRoutes.tsx`.
 - Use Bun for dependency and verification commands.
 
 ## Review Focus
@@ -28,14 +28,14 @@
 
 ### Task 1: Establish feature module boundaries
 
-- [ ] Add and run a failing filesystem contract test.
-- [ ] Move auth/dashboard pages and auth components to their modules.
-- [ ] Extract shared TextField and update imports.
-- [ ] Add module hook, service, and type files without speculative behavior.
+- [x] Add and run a failing filesystem contract test.
+- [x] Move auth/dashboard pages and auth components to their modules.
+- [x] Extract shared TextField and update imports.
+- [x] Add module hook, service, and type files without speculative behavior.
 
 ### Task 2: Adopt React Router route table
 
-- [ ] Add `react-router-dom` with Bun.
-- [ ] Implement `src/routes/AppRoutes.tsx` using `BrowserRouter`, `Routes`, and `Route`.
-- [ ] Update app and navigation integrations.
-- [ ] Run tests, lint, and production build.
+- [x] Add `react-router-dom` with Bun.
+- [x] Implement `src/routes/AppRoutes.tsx` using `BrowserRouter`, `Routes`, and `Route`.
+- [x] Update app and navigation integrations.
+- [x] Run tests, lint, and production build.

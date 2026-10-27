@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { MainLayout } from '@/tmp/components/layout';
-import { Card, StatCard, SearchIcon } from '@/tmp/components/common';
+import { MainLayout } from '@/components/layout';
+import { Card, StatCard, SearchIcon } from '@/components/common';
 import type { DashboardPageProps } from '@/features/dashboard/dashboard.type';
 
 export function DashboardPage({ onSignOut }: DashboardPageProps) {

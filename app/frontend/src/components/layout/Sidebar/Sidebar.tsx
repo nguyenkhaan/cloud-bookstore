@@ -15,8 +15,8 @@ import {
   PanelToggleIcon,
   ExternalLinkIcon,
   LogoutIcon,
-} from '@/tmp/components/common/Icons';
-import { Badge, type BadgeVariant } from '@/tmp/components/common/Badge';
+} from '@/components/common/Icons';
+import { Badge, type BadgeVariant } from '@/components/common/Badge';
 
 export interface NavItem {
   id: string;

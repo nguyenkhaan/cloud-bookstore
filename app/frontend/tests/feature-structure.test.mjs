@@ -9,7 +9,7 @@ const src = (...parts) => path.join(frontendRoot, 'src', ...parts)
 
 test('auth and dashboard UI are organized as feature modules', () => {
   const expectedFiles = [
-    ['components', 'TextField', 'TextField.tsx'],
+    ['components', 'common', 'TextField', 'TextField.tsx'],
     ['features', 'auth', 'pages', 'LoginPage.tsx'],
     ['features', 'auth', 'pages', 'ActivateAccountPage.tsx'],
     ['features', 'auth', 'components', 'PasswordField.tsx'],
@@ -36,4 +36,25 @@ test('auth and dashboard UI are organized as feature modules', () => {
   assert.match(routes, /path=['"]\/dashboard['"]/)
   assert.doesNotMatch(routes, /@\/tmp\/pages/)
   assert.doesNotMatch(routes, /path=['"]\/(catalog|checkout|inventory)/)
+})
+
+test('shared components live outside tmp', () => {
+  const sharedFiles = [
+    ['components', 'common', 'Badge', 'Badge.tsx'],
+    ['components', 'common', 'Button', 'Button.tsx'],
+    ['components', 'common', 'Card', 'Card.tsx'],
+    ['components', 'common', 'StatCard', 'StatCard.tsx'],
+    ['components', 'common', 'Icons', 'Icons.tsx'],
+    ['components', 'layout', 'MainLayout.tsx'],
+    ['components', 'layout', 'Header', 'Header.tsx'],
+    ['components', 'layout', 'Sidebar', 'Sidebar.tsx'],
+    ['components', 'layout', 'Footer', 'Footer.tsx'],
+  ]
+
+  for (const parts of sharedFiles) {
+    assert.ok(existsSync(src(...parts)), `missing src/${parts.join('/')}`)
+  }
+
+  assert.ok(existsSync(src('tmp', 'components', 'common', 'Modal', '.gitkeep')))
+  assert.ok(!existsSync(src('tmp', 'components', 'common', 'Icons.tsx')))
 })

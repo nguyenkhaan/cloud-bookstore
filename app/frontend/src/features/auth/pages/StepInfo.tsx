@@ -1,5 +1,5 @@
 import type { ChangeEvent, FormEvent } from 'react'
-import { TextField } from '@/components/TextField'
+import { TextField } from '@/components/common/TextField'
 import type { AccountInfo } from '@/features/auth/auth.type'
 
 type StepInfoProps = { values: AccountInfo; onChange: (values: AccountInfo) => void; onNext: () => void }

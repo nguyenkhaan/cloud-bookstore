@@ -1,6 +1,6 @@
 import React from 'react';
-import { BellIcon, PanelToggleIcon } from '@/tmp/components/common/Icons';
-import { Badge } from '@/tmp/components/common/Badge';
+import { BellIcon, PanelToggleIcon } from '@/components/common/Icons';
+import { Badge } from '@/components/common/Badge';
 
 export interface BreadcrumbItem {
   label: string;
