@@ -37,7 +37,7 @@ export interface SidebarProps {
   storeAddress?: string;
 }
 
-export const DEFAULT_NAV_ITEMS: NavItem[] = [
+const DEFAULT_NAV_ITEMS: NavItem[] = [
   { id: 'overview', label: 'Tổng quan', icon: DashboardIcon },
   { id: 'pos', label: 'Quầy giao dịch', icon: PosIcon },
   { id: 'inventory', label: 'Kho & đầu sách', icon: InventoryIcon },

@@ -25,8 +25,8 @@ const RESEND_SECONDS = 60
 export function ActivateAccountPage({ search }: { search: string }) {
   const { login } = useAuth()
   const navigate = useNavigate()
-  const registerMutation = useRegisterMutation()
-  const verifyMutation = useVerifyMutation()
+  const { mutateAsync: registerAccount } = useRegisterMutation()
+  const { mutateAsync: verifyAccount } = useVerifyMutation()
 
   const [linkToken] = useState(() => new URLSearchParams(search).get('token'))
   const [step, setStep] = useState<Step>(linkToken ? 'activate' : 'info')
@@ -44,18 +44,17 @@ export function ActivateAccountPage({ search }: { search: string }) {
     if (!linkToken || requestedToken.current === linkToken) return
     requestedToken.current = linkToken
     window.history.replaceState(null, '', '/activate')
-    verifyMutation
-      .mutateAsync({ token: linkToken })
+    verifyAccount({ token: linkToken })
       .then(() => setStep('done'))
       .catch((error: unknown) => setNotice(describeVerifyError(error)))
       .finally(() => setIsBusy(false))
-  }, [linkToken])
+  }, [linkToken, verifyAccount])
 
   const submitRegistration = async (): Promise<boolean> => {
     setIsBusy(true)
     setNotice(null)
     try {
-      await registerMutation.mutateAsync({
+      await registerAccount({
         fullName: info.fullName.trim(),
         email: info.email.trim(),
         phone: info.phone.trim(),
@@ -94,7 +93,7 @@ export function ActivateAccountPage({ search }: { search: string }) {
     setIsBusy(true)
     setNotice(null)
     try {
-      await verifyMutation.mutateAsync({ token })
+      await verifyAccount({ token })
     } catch (error) {
       setNotice(describeVerifyError(error))
       setIsBusy(false)
