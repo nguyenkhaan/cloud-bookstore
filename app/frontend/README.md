@@ -1,4 +1,4 @@
-# Old Bookstore Frontend
+# Cloud Bookstore Frontend
 
 React 19, TypeScript, Vite, Tailwind CSS, and Bun.
 
