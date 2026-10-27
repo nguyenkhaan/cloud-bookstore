@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { getRouteDecision, isAccessTokenUsable } from '../src/auth/session.ts'
+import { getRouteDecision, isAccessTokenUsable } from '../src/tmp/auth/session.ts'
 
 function tokenWithExpiration(expirationInSeconds) {
   const payload = Buffer.from(JSON.stringify({ exp: expirationInSeconds })).toString('base64url')

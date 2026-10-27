@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { extractActivationToken } from '../src/auth/activation.ts'
+import { extractActivationToken } from '../src/tmp/auth/activation.ts'
 
 const token = 'aaa.bbb-1.ccc_2'
 
