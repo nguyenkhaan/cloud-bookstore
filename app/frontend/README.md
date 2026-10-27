@@ -14,10 +14,12 @@ bun run dev
 The app runs at `http://localhost:5173`. Set the backend origin in `.env`:
 
 ```dotenv
-VITE_BASE_URL=http://localhost:4000
+VITE_BASE_URL=https://localhost:7073
 ```
 
 The API client appends `/api` when needed. Use `VITE_BASE_URL`; `VITE_API_BASE_URL` is not read by the current client.
+
+Browser authentication uses cross-site `HttpOnly; Secure; SameSite=None` cookies. For local development, trust the ASP.NET development certificate (`dotnet dev-certs https --trust`) and start the backend with its `https` launch profile. Do not point the frontend at the HTTP backend profile: browsers reject `SameSite=None` cookies unless they are `Secure`.
 
 ## Source structure
 
@@ -59,8 +61,8 @@ Placement rules:
 
 `src/contract/api-contract.ts` is generated. Never edit it manually.
 
-1. Start the backend at `http://localhost:4000`.
-2. Confirm `http://localhost:4000/openapi/v1.json` is available.
+1. Start the backend with `dotnet run --launch-profile https`.
+2. Confirm `https://localhost:7073/openapi/v1.json` is available.
 3. Run:
 
 ```bash

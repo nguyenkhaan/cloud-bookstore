@@ -17,6 +17,11 @@ public class BearerSecurityOperation : IOpenApiOperationTransformer
         operation.Security.Add(
             new OpenApiSecurityRequirement
             {
+                [new OpenApiSecuritySchemeReference("CookieAuth", context.Document)] = []
+            });
+        operation.Security.Add(
+            new OpenApiSecurityRequirement
+            {
                 [new OpenApiSecuritySchemeReference("Bearer", context.Document)] = []
             }
         );

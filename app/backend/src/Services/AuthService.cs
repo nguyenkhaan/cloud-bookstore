@@ -22,11 +22,12 @@ public class AuthService(
     SettingService settingService,
     EmailService emailService,
     TokenJtiStore tokenJtiStore,
+    CsrfTokenService csrfTokenService,
     IConfiguration configuration)
 {
     private readonly AuthSecuritySettings securitySettings = AuthSecuritySettings.FromConfiguration(configuration);
 
-    public async Task<LoginResponse> Login(LoginRequest request)
+    public async Task<BrowserAuthenticationSession> Login(LoginRequest request)
     {
         var email = request.Email.Trim();
         var normalizedEmail = email.ToLowerInvariant();
@@ -77,8 +78,11 @@ public class AuthService(
         };
         var accessToken = tokenService.GenerateToken(employee.Id, TokenType.ACCESS, claims);
         var refreshToken = tokenService.GenerateToken(employee.Id, TokenType.REFRESH, claims);
-        await tokenJtiStore.StoreLoginAsync(accessToken, refreshToken);
-        return new LoginResponse(accessToken, refreshToken);
+        var accessJti = await tokenJtiStore.StoreLoginAsync(accessToken, refreshToken);
+        var csrfToken = await csrfTokenService.IssueAsync(
+            accessJti,
+            TimeSpan.FromMinutes(securitySettings.RefreshTokenLifetimeMinutes));
+        return new BrowserAuthenticationSession(accessToken, refreshToken, csrfToken);
     }
     public async Task<RegisterResponse> Register(RegisterRequest request)
     {
@@ -190,29 +194,72 @@ public class AuthService(
         await tokenJtiStore.RevokeRegistrationVerificationAsync(employeeId, jti);
     }
 
-    public async Task Logout(string refreshToken)
+    public async Task<BrowserAuthenticationSession> Refresh(string refreshToken, string? csrfToken)
     {
-        ClaimsPrincipal refreshPrincipal;
-        try
-        {
-            refreshPrincipal = tokenService.ValidateRefreshToken(refreshToken);
-        }
-        catch (Exception exception) when (exception is SecurityTokenException or ArgumentException)
-        {
+        var refreshPrincipal = ValidateRefreshToken(refreshToken);
+        var refreshJti = refreshPrincipal.FindFirstValue(JwtRegisteredClaimNames.Jti)!;
+        var accessJti = await tokenJtiStore.GetAccessJtiForRefreshAsync(refreshJti);
+        if (string.IsNullOrWhiteSpace(accessJti))
             throw new UnauthorizedException("Invalid or expired refresh token");
+
+        if (!await csrfTokenService.IsValidAsync(accessJti, csrfToken))
+            throw new ForbiddenException("Invalid CSRF token");
+
+        var subject = refreshPrincipal.FindFirstValue(JwtRegisteredClaimNames.Sub);
+        if (!Guid.TryParse(subject, out var employeeId))
+            throw new UnauthorizedException("Invalid or expired refresh token");
+
+        var employee = await dbContext.Employees
+            .Include(item => item.Role)
+            .SingleOrDefaultAsync(item => item.Id == employeeId);
+        if (employee is null ||
+            employee.Status != EmployeeStatus.ACTIVE ||
+            employee.LockoutEndUtc > DateTime.UtcNow)
+        {
+            throw new UnauthorizedException("Account is unavailable.");
         }
 
-        var refreshJti = refreshPrincipal.FindFirstValue(JwtRegisteredClaimNames.Jti);
-        if (string.IsNullOrWhiteSpace(refreshJti))
-        {
+        if (!await tokenJtiStore.ConsumeRefreshAsync(refreshJti))
             throw new UnauthorizedException("Invalid or expired refresh token");
-        }
+
+        await tokenJtiStore.RevokeAccessAsync(accessJti);
+        await csrfTokenService.RevokeAsync(accessJti);
+
+        var claims = new List<Claim>
+        {
+            new("role", employee.Role.RoleName.ToString())
+        };
+        var accessToken = tokenService.GenerateToken(employee.Id, TokenType.ACCESS, claims);
+        var nextRefreshToken = tokenService.GenerateToken(employee.Id, TokenType.REFRESH, claims);
+        var nextAccessJti = await tokenJtiStore.StoreLoginAsync(accessToken, nextRefreshToken);
+        var nextCsrfToken = await csrfTokenService.IssueAsync(
+            nextAccessJti,
+            TimeSpan.FromMinutes(securitySettings.RefreshTokenLifetimeMinutes));
+        return new BrowserAuthenticationSession(accessToken, nextRefreshToken, nextCsrfToken);
+    }
+
+    public async Task Logout(string refreshToken, string? csrfToken)
+    {
+        var refreshPrincipal = ValidateRefreshToken(refreshToken);
+        var refreshJti = refreshPrincipal.FindFirstValue(JwtRegisteredClaimNames.Jti)!;
 
         var accessJti = await tokenJtiStore.GetAccessJtiForRefreshAsync(refreshJti);
         if (string.IsNullOrWhiteSpace(accessJti))
             throw new UnauthorizedException("Invalid or expired refresh token");
 
+        if (!await csrfTokenService.IsValidAsync(accessJti, csrfToken))
+            throw new ForbiddenException("Invalid CSRF token");
+
         await tokenJtiStore.RevokeLoginAsync(accessJti, refreshJti);
+        await csrfTokenService.RevokeAsync(accessJti);
+    }
+
+    public async Task<BrowserSessionResponse> GetBrowserSessionAsync(string accessJti)
+    {
+        var csrfToken = await csrfTokenService.IssueAsync(
+            accessJti,
+            TimeSpan.FromMinutes(securitySettings.RefreshTokenLifetimeMinutes));
+        return new BrowserSessionResponse(csrfToken);
     }
 
     public async Task RequestPasswordReset(ForgotPasswordRequest request)
@@ -263,6 +310,23 @@ public class AuthService(
     private string GenerateEmailToken(Guid employeeId, string email, TokenType type)
     {
         return tokenService.GenerateToken(employeeId, type, [new Claim("email", email)]);
+    }
+
+    private ClaimsPrincipal ValidateRefreshToken(string refreshToken)
+    {
+        try
+        {
+            var refreshPrincipal = tokenService.ValidateRefreshToken(refreshToken);
+            var refreshJti = refreshPrincipal.FindFirstValue(JwtRegisteredClaimNames.Jti);
+            if (string.IsNullOrWhiteSpace(refreshJti))
+                throw new UnauthorizedException("Invalid or expired refresh token");
+
+            return refreshPrincipal;
+        }
+        catch (Exception exception) when (exception is SecurityTokenException or ArgumentException)
+        {
+            throw new UnauthorizedException("Invalid or expired refresh token");
+        }
     }
 
     private static string HashToken(string token)

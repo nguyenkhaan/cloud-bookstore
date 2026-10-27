@@ -1,10 +1,10 @@
 import { createContext } from 'react'
-import type { AuthSession } from '@/features/auth/auth.storage'
 
-export type { AuthSession } from '@/features/auth/auth.storage'
+export type AuthSession = { authenticated: true }
 
 export type AuthContextValue = {
   session: AuthSession | null
+  isInitializing: boolean
   login: (email: string, password: string) => Promise<void>
   signOut: () => void
 }

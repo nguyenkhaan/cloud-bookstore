@@ -1,11 +1,17 @@
 import axios from 'axios'
 import type { AxiosError, AxiosResponse } from 'axios'
-import { privateClient, publicClient } from '@/api/client'
+import {
+  clearCsrfToken,
+  getCsrfToken,
+  privateClient,
+  publicClient,
+  setCsrfToken,
+  setSessionRecovery,
+} from '@/api/client'
 import type {
+  BrowserSessionResponse,
   ForgotPasswordRequest,
   LoginRequest,
-  LoginResponse,
-  LogoutRequest,
   RegisterRequest,
   RegisterResponse,
   ResetPasswordRequest,
@@ -24,6 +30,7 @@ export class ApiError extends Error {
 
 const AUTH_ENDPOINTS = {
   login: '/auth/login',
+  refresh: '/auth/refresh',
   register: '/auth/register',
   verify: '/auth/verify',
   passwordResetRequests: '/auth/password-reset-requests',
@@ -31,12 +38,6 @@ const AUTH_ENDPOINTS = {
   logout: '/auth/logout',
   session: '/auth/session',
 } as const
-
-let accessToken: string | null = null
-
-export function setAccessToken(token: string | null): void {
-  accessToken = token
-}
 
 function getErrorMessage(error: AxiosError<unknown>): string {
   const data = error.response?.data
@@ -60,25 +61,40 @@ async function requestData<T>(request: () => Promise<AxiosResponse<T>>): Promise
   }
 }
 
-function isLoginResponse(value: unknown): value is LoginResponse {
+function isBrowserSessionResponse(value: unknown): value is BrowserSessionResponse {
   return (
     typeof value === 'object' &&
     value !== null &&
-    'accessToken' in value &&
-    typeof value.accessToken === 'string' &&
-    'refreshToken' in value &&
-    typeof value.refreshToken === 'string'
+    'csrfToken' in value &&
+    typeof value.csrfToken === 'string' &&
+    value.csrfToken.length > 0
   )
 }
 
-export async function login(request: LoginRequest): Promise<LoginResponse> {
-  const response = await requestData(() => publicClient.post<unknown>(AUTH_ENDPOINTS.login, request))
-  if (!isLoginResponse(response)) {
-    throw new ApiError(502, 'Unexpected login response')
+function storeCsrfToken(response: unknown): BrowserSessionResponse {
+  if (!isBrowserSessionResponse(response)) {
+    throw new ApiError(502, 'Unexpected authentication response')
   }
-  setAccessToken(response.accessToken)
+
+  setCsrfToken(response.csrfToken)
   return response
 }
+
+export async function login(request: LoginRequest): Promise<BrowserSessionResponse> {
+  return storeCsrfToken(
+    await requestData(() => publicClient.post<unknown>(AUTH_ENDPOINTS.login, request)),
+  )
+}
+
+export async function refreshSession(): Promise<BrowserSessionResponse> {
+  return storeCsrfToken(
+    await requestData(() => publicClient.post<unknown>(AUTH_ENDPOINTS.refresh)),
+  )
+}
+
+setSessionRecovery(async () => {
+  await refreshSession()
+})
 
 export async function register(request: RegisterRequest): Promise<RegisterResponse> {
   return requestData(() => publicClient.post<RegisterResponse>(AUTH_ENDPOINTS.register, request))
@@ -96,19 +112,19 @@ export async function resetPassword(request: ResetPasswordRequest): Promise<void
   await requestData(() => publicClient.post<void>(AUTH_ENDPOINTS.passwordResets, request))
 }
 
-export async function logout(request: LogoutRequest): Promise<void> {
+export async function logout(csrfToken = getCsrfToken()): Promise<void> {
   try {
-    await requestData(() => publicClient.post<void>(AUTH_ENDPOINTS.logout, request))
+    await requestData(() => publicClient.post<void>(AUTH_ENDPOINTS.logout, undefined, {
+      headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : undefined,
+    }))
   } finally {
-    setAccessToken(null)
+    clearCsrfToken()
   }
 }
 
-export async function getSession(): Promise<void> {
-  await requestData(() =>
-    privateClient.get<void>(AUTH_ENDPOINTS.session, {
-      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
-    }),
+export async function getSession(): Promise<BrowserSessionResponse> {
+  return storeCsrfToken(
+    await requestData(() => privateClient.get<unknown>(AUTH_ENDPOINTS.session)),
   )
 }
 

@@ -4,7 +4,7 @@ Tài liệu này là hàng đợi quyết định, không phải implementation 
 
 | ID | Mức chặn | Câu hỏi cần quyết định | Ảnh hưởng |
 | --- | --- | --- | --- |
-| OQ-002 | P0 | Chính sách xác thực: JWT hay session, vòng đời OTP, mật khẩu, khóa tài khoản và timeout phiên? | AUTH, bảo mật |
+| OQ-002 | Resolved | JWT trong HttpOnly cookie, synchronizer CSRF token, JTI revoke/rotation và bearer fallback tạm thời được chốt tại `ADR-003`. | AUTH, bảo mật |
 | OQ-003 | P0 | Đơn giá thuê mặc định, cách tính phần ngày lẻ và quy tắc làm tròn tiền là gì? | Thuê–trả, báo cáo |
 | OQ-004 | P0 | Các mức hư hỏng, tỷ lệ bồi thường và trạng thái bản sách sau xử lý là gì? | Trả sách, tồn kho, tài chính |
 | OQ-005 | P1 | Hoàn cọc có bắt buộc theo phương thức nộp ban đầu không? | Thanh toán, đối soát |

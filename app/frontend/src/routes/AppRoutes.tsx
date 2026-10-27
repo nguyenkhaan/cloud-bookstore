@@ -4,7 +4,6 @@ import LoginPage from '@/features/auth/pages/LoginPage'
 import ActivateAccountPage from '@/features/auth/pages/ActivateAccountPage'
 import DashboardPage from '@/features/dashboard/pages/DashboardPage'
 import { useAuth } from '@/features/auth/auth.hook'
-import { isAccessTokenUsable } from '@/features/auth/session'
 
 function LoginRoute() {
   const { search } = useLocation()
@@ -18,9 +17,11 @@ function ActivateAccountRoute() {
 
 function DashboardRoute() {
   const { pathname, search } = useLocation()
-  const { session, signOut } = useAuth()
+  const { session, isInitializing, signOut } = useAuth()
 
-  if (!isAccessTokenUsable(session?.accessToken)) {
+  if (isInitializing) return null
+
+  if (!session) {
     const next = encodeURIComponent(`${pathname}${search}`)
     return <Navigate replace to={`/login?next=${next}`} />
   }

@@ -1,66 +1,73 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { PropsWithChildren } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { clearCsrfToken, getCsrfToken, setSessionExpiredHandler } from '@/api/client'
 import { AuthContext } from './AuthProvider'
 import type { AuthContextValue, AuthSession } from './AuthProvider'
 import { useLoginMutation, useLogoutMutation } from '@/features/auth/auth.hook'
-import { clearStoredSession, readStoredSession, writeStoredSession } from '@/features/auth/auth.storage'
-import { ApiError, setAccessToken } from '@/features/auth/auth.service'
-import { getAccessTokenExpiration, isAccessTokenUsable } from '@/features/auth/session'
+import { getSession } from '@/features/auth/auth.service'
 
-function initialSession(): AuthSession | null {
-  return typeof window === 'undefined' ? null : readStoredSession(window.localStorage)
-}
+const authenticatedSession: AuthSession = { authenticated: true }
 
 export function AuthProvider({ children }: PropsWithChildren) {
-  const [session, setSession] = useState<AuthSession | null>(initialSession)
+  const [session, setSession] = useState<AuthSession | null>(null)
+  const [isInitializing, setIsInitializing] = useState(true)
   const { mutateAsync: requestLogin } = useLoginMutation()
   const { mutate: requestLogout } = useLogoutMutation()
   const navigate = useNavigate()
   const location = useLocation()
 
   const clearSession = useCallback(() => {
+    clearCsrfToken()
     setSession(null)
-    setAccessToken(null)
-    clearStoredSession(window.localStorage)
   }, [])
 
-  useLayoutEffect(() => {
-    setAccessToken(session?.accessToken ?? null)
-  }, [session?.accessToken])
+  const redirectToLogin = useCallback(() => {
+    clearSession()
+    if (location.pathname === '/login') return
+
+    const next = `${location.pathname}${location.search}`
+    navigate(`/login?next=${encodeURIComponent(next)}`, { replace: true })
+  }, [clearSession, location.pathname, location.search, navigate])
 
   useEffect(() => {
-    const expiration = getAccessTokenExpiration(session?.accessToken)
-    if (expiration === null) return
+    setSessionExpiredHandler(redirectToLogin)
+    return () => setSessionExpiredHandler(null)
+  }, [redirectToLogin])
 
-    const timer = window.setTimeout(() => {
-      const refreshToken = session?.refreshToken
-      const next = `${location.pathname}${location.search}`
-      clearSession()
-      if (refreshToken) requestLogout({ refreshToken })
-      navigate(`/login?next=${encodeURIComponent(next)}`, { replace: true })
-    }, Math.max(0, expiration - Date.now()))
+  useEffect(() => {
+    let active = true
 
-    return () => window.clearTimeout(timer)
-  }, [clearSession, location.pathname, location.search, navigate, requestLogout, session])
+    void getSession()
+      .then(() => {
+        if (active) setSession(authenticatedSession)
+      })
+      .catch(() => {
+        if (active) clearSession()
+      })
+      .finally(() => {
+        if (active) setIsInitializing(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [clearSession])
 
   const login = useCallback(async (email: string, password: string) => {
-    const nextSession = await requestLogin({ email: email.trim(), password })
-    if (!isAccessTokenUsable(nextSession.accessToken)) {
-      throw new ApiError(502, 'Unusable access token')
-    }
-    writeStoredSession(window.localStorage, nextSession)
-    setAccessToken(nextSession.accessToken)
-    setSession(nextSession)
+    await requestLogin({ email: email.trim(), password })
+    setSession(authenticatedSession)
   }, [requestLogin])
 
   const signOut = useCallback(() => {
-    const refreshToken = session?.refreshToken
+    requestLogout(getCsrfToken())
     clearSession()
     navigate('/login', { replace: true })
-    if (refreshToken) requestLogout({ refreshToken })
-  }, [clearSession, navigate, requestLogout, session?.refreshToken])
+  }, [clearSession, navigate, requestLogout])
 
-  const value = useMemo<AuthContextValue>(() => ({ session, login, signOut }), [session, login, signOut])
+  const value = useMemo<AuthContextValue>(
+    () => ({ session, isInitializing, login, signOut }),
+    [session, isInitializing, login, signOut],
+  )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

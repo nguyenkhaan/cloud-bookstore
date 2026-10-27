@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using System.IdentityModel.Tokens.Jwt;
+using backend.src.Configurations;
 using backend.src.Dto.AuthDto;
 using backend.src.Services;
 
@@ -7,15 +9,20 @@ namespace backend.src.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public class AuthController(AuthService authService) : ControllerBase
+public class AuthController(
+    AuthService authService,
+    AuthCookieService authCookieService,
+    AuthCookieSettings authCookieSettings) : ControllerBase
 {
     [HttpPost("login")]
-    public async Task<IActionResult> Login(
+    [ProducesResponseType<BrowserSessionResponse>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<BrowserSessionResponse>> Login(
         [FromBody] LoginRequest request
     )
     {
-        var response = await authService.Login(request);
-        return Ok(response);
+        var session = await authService.Login(request);
+        authCookieService.AppendAuthenticationCookies(Response, session.AccessToken, session.RefreshToken);
+        return Ok(new BrowserSessionResponse(session.CsrfToken));
     }
     [HttpPost("register")]
     public async Task<IActionResult> Register(
@@ -48,16 +55,52 @@ public class AuthController(AuthService authService) : ControllerBase
     }
 
     [HttpPost("logout")]
-    public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Logout()
     {
-        await authService.Logout(request.RefreshToken);
-        return NoContent();
+        try
+        {
+            var refreshToken = Request.Cookies[authCookieSettings.RefreshCookieName] ?? string.Empty;
+            var csrfToken = Request.Headers[authCookieSettings.CsrfHeaderName].ToString();
+            await authService.Logout(refreshToken, csrfToken);
+            return NoContent();
+        }
+        finally
+        {
+            authCookieService.ExpireAuthenticationCookies(Response);
+        }
     }
 
-    [Authorize(Roles ="admin")]
-    [HttpGet("session")]
-    public IActionResult GetSession()
+    [HttpPost("refresh")]
+    [ProducesResponseType<BrowserSessionResponse>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<BrowserSessionResponse>> Refresh()
     {
-        return NoContent();
+        try
+        {
+            var refreshToken = Request.Cookies[authCookieSettings.RefreshCookieName] ?? string.Empty;
+            var csrfToken = Request.Headers[authCookieSettings.CsrfHeaderName].ToString();
+            var session = await authService.Refresh(refreshToken, csrfToken);
+            authCookieService.AppendAuthenticationCookies(Response, session.AccessToken, session.RefreshToken);
+            return Ok(new BrowserSessionResponse(session.CsrfToken));
+        }
+        catch (backend.src.Exceptions.UnauthorizedException)
+        {
+            authCookieService.ExpireAuthenticationCookies(Response);
+            throw;
+        }
+    }
+
+    [Authorize]
+    [HttpGet("session")]
+    [ProducesResponseType<BrowserSessionResponse>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<BrowserSessionResponse>> GetSession()
+    {
+        var accessJti = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+        if (string.IsNullOrWhiteSpace(accessJti))
+        {
+            return Unauthorized();
+        }
+
+        return Ok(await authService.GetBrowserSessionAsync(accessJti));
     }
 }

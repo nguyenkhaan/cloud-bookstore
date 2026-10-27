@@ -16,6 +16,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
 using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
+var authCookieSettings = builder.Configuration
+    .GetSection(AuthCookieSettings.SectionName)
+    .Get<AuthCookieSettings>() ?? new AuthCookieSettings();
+var authSecuritySettings = AuthSecuritySettings.FromConfiguration(builder.Configuration);
 //System Configuration: Controller, Database, Exception...
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -31,14 +35,12 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy
-            .WithOrigins(
-                "https://cloudbook.cloudian.io.vn",
-                "http://localhost:5173"
-            )
+            .WithOrigins(authCookieSettings.AllowedOrigins)
             .WithHeaders(
                 "Content-Type",
                 "Authorization",
-                "Accept"
+                "Accept",
+                authCookieSettings.CsrfHeaderName
             )
             .AllowCredentials()
             .WithMethods(
@@ -64,9 +66,27 @@ builder.Services
     .BindConfiguration(AuthSecuritySettings.SectionName)
     .ValidateDataAnnotations()
     .ValidateOnStart();
+builder.Services
+    .AddOptions<AuthCookieSettings>()
+    .BindConfiguration(AuthCookieSettings.SectionName)
+    .ValidateDataAnnotations()
+    .Validate(
+        settings => settings.AllowedOrigins.All(origin =>
+            Uri.TryCreate(origin, UriKind.Absolute, out var parsedOrigin) &&
+            string.Equals(
+                parsedOrigin.GetLeftPart(UriPartial.Authority),
+                origin.TrimEnd('/'),
+                StringComparison.OrdinalIgnoreCase)),
+        "AuthCookies:AllowedOrigins must contain absolute origins without a path.")
+    .ValidateOnStart();
+builder.Services.AddSingleton(authCookieSettings);
+builder.Services.AddSingleton(authSecuritySettings);
 
 builder.Services.AddHttpClient<RedisService>();
 builder.Services.AddTransient<TokenJtiStore>();
+builder.Services.AddScoped<AuthCookieService>();
+builder.Services.AddScoped<ICsrfTokenStore, RedisCsrfTokenStore>();
+builder.Services.AddScoped<CsrfTokenService>();
 builder.Services
     .AddHealthChecks()
     .AddCheck<RedisReadinessHealthCheck>("redis", tags: ["ready"]);
@@ -108,6 +128,31 @@ builder.Services
         };
         options.Events = new JwtBearerEvents
         {
+            OnMessageReceived = context =>
+            {
+                var selection = AuthTokenSelector.Select(
+                    context.Request,
+                    authCookieSettings.AccessCookieName);
+                if (selection.AccessCookiePresent)
+                {
+                    context.HttpContext.Items[AuthTokenSelector.CookieAuthenticationItem] = true;
+                    if (string.IsNullOrWhiteSpace(selection.Token))
+                    {
+                        context.Fail("Access cookie is invalid.");
+                        return Task.CompletedTask;
+                    }
+
+                    context.Token = selection.Token;
+                    return Task.CompletedTask;
+                }
+
+                if (!string.IsNullOrWhiteSpace(selection.Token))
+                {
+                    context.Token = selection.Token;
+                }
+
+                return Task.CompletedTask;
+            },
             OnTokenValidated = async context =>
             {
                 var jti = context.Principal?.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
@@ -197,6 +242,7 @@ app.UseExceptionHandler(new ExceptionHandlerOptions
 });
 
 app.UseCors("AllowFrontend");
+app.UseMiddleware<UnsafeOriginValidationMiddleware>();
 
 
 if (app.Environment.IsDevelopment())
@@ -214,6 +260,7 @@ if (args.Contains("--seed", StringComparer.OrdinalIgnoreCase))
     return;
 }
 app.UseAuthentication();
+app.UseMiddleware<CsrfProtectionMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/api/health/readiness", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
