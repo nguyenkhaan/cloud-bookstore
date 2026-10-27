@@ -2,13 +2,38 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Badge, Button, Card, TextField } from '@/components/common'
-import { getSafeNextPath } from '@/features/auth/session'
 import { Banner } from '@/features/auth/components/Banner'
 import { PasswordField } from '@/features/auth/components/PasswordField'
 import { SplitLayout } from '@/features/auth/components/SplitLayout'
-import { describeLoginError } from '@/features/auth/errors'
-import type { Notice } from '@/features/auth/errors'
 import { useAuth } from '@/features/auth/auth.hook'
+import { ApiError } from '@/features/auth/auth.service'
+import type { Notice } from '@/features/auth/auth.type'
+
+const unexpected: Notice = { tone: 'error', message: 'Có lỗi không mong muốn. Hãy thử lại sau.' }
+
+// eslint-disable-next-line react/only-export-components -- unit-tested login page helper
+export function getSafeNextPath(value: string | null): string {
+  return value?.startsWith('/') && !value.startsWith('//') ? value : '/dashboard'
+}
+
+// eslint-disable-next-line react/only-export-components -- unit-tested login page helper
+export function describeLoginError(error: unknown): Notice {
+  if (!(error instanceof ApiError)) return unexpected
+
+  switch (error.status) {
+    case 0:
+      return { tone: 'error', message: 'Không thể kết nối tới máy chủ. Hãy kiểm tra mạng và thử lại.' }
+    case 401:
+      return { tone: 'warning', message: 'Email hoặc mật khẩu không đúng. Tài khoản sẽ bị tạm khóa nếu nhập sai quá nhiều lần.' }
+    case 403:
+      if (/locked/i.test(error.message)) {
+        return { tone: 'error', message: 'Tài khoản đang bị tạm khóa do nhập sai nhiều lần. Vui lòng thử lại sau ít phút.' }
+      }
+      return { tone: 'warning', message: 'Tài khoản chưa được kích hoạt hoặc không khả dụng. Hãy kích hoạt tài khoản hoặc liên hệ Quản trị viên.' }
+    default:
+      return { tone: 'error', message: 'Không thể đăng nhập lúc này. Hãy thử lại sau.' }
+  }
+}
 
 export function LoginPage({ search }: { search: string }) {
   const { login } = useAuth()

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import type { NoticeTone } from '@/features/auth/errors'
+import type { NoticeTone } from '@/features/auth/auth.type'
 import { cn } from '@/lib/cn'
 import { AlertIcon, CheckIcon, InfoIcon } from './Icons'
 

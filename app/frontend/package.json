@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "test": "node --test",
+    "test": "node --test --test-concurrency=1",
     "lint": "oxlint",
     "preview": "vite preview",
     "generate:api": "openapi-typescript https://localhost:7073/openapi/v1.json -o src/contract/api-contract.ts"
