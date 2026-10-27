@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { getSafeNextPath } from '@/tmp/auth/session'
-import { Banner } from '@/tmp/features/auth/components/Banner'
-import { PasswordField } from '@/tmp/features/auth/components/PasswordField'
-import { SplitLayout } from '@/tmp/features/auth/components/SplitLayout'
-import { TextField } from '@/tmp/features/auth/components/TextField'
-import { describeLoginError } from '@/tmp/features/auth/errors'
-import type { Notice } from '@/tmp/features/auth/errors'
-import { useAuth } from '@/tmp/hooks/useAuth'
+import { Banner } from '@/features/auth/components/Banner'
+import { PasswordField } from '@/features/auth/components/PasswordField'
+import { SplitLayout } from '@/features/auth/components/SplitLayout'
+import { TextField } from '@/components/TextField'
+import { describeLoginError } from '@/features/auth/errors'
+import type { Notice } from '@/features/auth/errors'
+import { useAuth } from '@/features/auth/auth.hook'
 import { navigate } from '@/tmp/routes/router'
 
 export function LoginPage({ search }: { search: string }) {
@@ -79,3 +79,5 @@ export function LoginPage({ search }: { search: string }) {
     </SplitLayout>
   )
 }
+
+export default LoginPage

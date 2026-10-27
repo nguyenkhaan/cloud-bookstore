@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { brand } from '@/tmp/config/brand'
-import { useServerStatus } from '@/tmp/features/auth/hooks/useServerStatus'
+import { useServerStatus } from '@/features/auth/auth.hook'
 import { Brand } from './Brand'
 import { HeroArt } from './HeroArt'
 import { ServerStatusBadge } from './ServerStatusBadge'

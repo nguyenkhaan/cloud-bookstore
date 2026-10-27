@@ -1,7 +1,5 @@
 import { ApiError, apiUrl, postJson } from '@/tmp/services/apiClient'
-
-export type LoginTokens = { accessToken: string; refreshToken: string }
-export type RegisterInput = { email: string; fullName: string; phone: string; password: string }
+import type { LoginTokens, RegisterInput } from './auth.type'
 
 function isLoginTokens(payload: unknown): payload is LoginTokens {
   return (

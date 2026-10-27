@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import { MainLayout } from '@/tmp/components/layout';
 import { Card, StatCard, SearchIcon } from '@/tmp/components/common';
-
-export interface DashboardPageProps {
-  onSignOut?: () => void;
-}
+import type { DashboardPageProps } from '@/features/dashboard/dashboard.type';
 
 export function DashboardPage({ onSignOut }: DashboardPageProps) {
   const [currentTab, setCurrentTab] = useState('overview');
@@ -100,3 +97,5 @@ export function DashboardPage({ onSignOut }: DashboardPageProps) {
     </MainLayout>
   );
 }
+
+export default DashboardPage

@@ -1,20 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
 import { extractActivationToken } from '@/tmp/auth/activation'
-import { Banner } from '@/tmp/features/auth/components/Banner'
-import { ArrowLeftIcon } from '@/tmp/features/auth/components/Icons'
-import { CenterLayout } from '@/tmp/features/auth/components/CenterLayout'
-import { Stepper } from '@/tmp/features/auth/components/Stepper'
-import { describeRegisterError, describeVerifyError } from '@/tmp/features/auth/errors'
-import type { Notice } from '@/tmp/features/auth/errors'
-import { useCountdown } from '@/tmp/features/auth/hooks/useCountdown'
-import * as authApi from '@/tmp/features/auth/services/authApi'
-import { useAuth } from '@/tmp/hooks/useAuth'
+import { Banner } from '@/features/auth/components/Banner'
+import { ArrowLeftIcon } from '@/features/auth/components/Icons'
+import { CenterLayout } from '@/features/auth/components/CenterLayout'
+import { Stepper } from '@/features/auth/components/Stepper'
+import { describeRegisterError, describeVerifyError } from '@/features/auth/errors'
+import type { Notice } from '@/features/auth/errors'
+import { useCountdown } from '@/features/auth/auth.hook'
+import * as authApi from '@/features/auth/auth.service'
+import { useAuth } from '@/features/auth/auth.hook'
 import { navigate } from '@/tmp/routes/router'
 import { ApiError } from '@/tmp/services/apiClient'
 import { StepActivate } from './StepActivate'
 import { StepDone } from './StepDone'
 import { StepInfo } from './StepInfo'
-import type { AccountInfo } from './StepInfo'
+import type { AccountInfo } from '@/features/auth/auth.type'
 import { StepPassword } from './StepPassword'
 
 type Step = 'info' | 'password' | 'activate' | 'done'
@@ -170,4 +170,6 @@ export function ActivateAccountPage({ search }: { search: string }) {
     </CenterLayout>
   )
 }
+
+export default ActivateAccountPage
 

@@ -1,7 +1,7 @@
 
 import { useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
-import { useAuth } from '@/tmp/hooks/useAuth'
+import { useAuth } from '@/features/auth/auth.hook'
 import { navigate } from '@/tmp/routes/router'
 import { apiUrl } from '@/tmp/services/apiClient'
 

@@ -1,4 +1,4 @@
-import type { ServerStatus } from '@/tmp/features/auth/hooks/useServerStatus'
+import type { ServerStatus } from '@/features/auth/auth.type'
 
 const labels: Record<ServerStatus, string> = {
   checking: 'Đang kiểm tra máy chủ',
