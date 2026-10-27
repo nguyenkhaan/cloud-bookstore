@@ -69,6 +69,7 @@ beforeEach(() => {
   requests.length = 0
   nextFailure = undefined
   responseData['/auth/login'] = { accessToken: 'access-token', refreshToken: 'refresh-token' }
+  authApi.setAccessToken(null)
 })
 
 after(async () => {
@@ -131,6 +132,23 @@ test('session check sends the login access token with the authenticated client',
       url: '/auth/session',
     },
   ])
+})
+
+test('a restored access token is sent with the next private request', async () => {
+  authApi.setAccessToken('restored-access-token')
+
+  await authApi.getSession()
+
+  assert.equal(requests[0].authorization, 'Bearer restored-access-token')
+})
+
+test('clearing the access token removes it from later private requests', async () => {
+  authApi.setAccessToken('restored-access-token')
+  authApi.setAccessToken(null)
+
+  await authApi.getSession()
+
+  assert.equal(requests[0].authorization, undefined)
 })
 
 test('failed logout still removes the access token from later private requests', async () => {

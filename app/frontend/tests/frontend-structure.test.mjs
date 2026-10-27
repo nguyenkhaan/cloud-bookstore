@@ -20,7 +20,6 @@ test('frontend uses the staged source structure and a single TypeScript config',
     'pages',
     'routes',
     'store/slices',
-    'tmp',
   ]
   const rootFiles = ['App.css', 'App.tsx', 'index.css', 'main.tsx', 'vite-env.d.ts']
 
@@ -31,8 +30,7 @@ test('frontend uses the staged source structure and a single TypeScript config',
     assert.ok(existsSync(path.join(srcRoot, file)), `missing src/${file}`)
   }
 
-  assert.ok(existsSync(path.join(srcRoot, 'tmp/auth')))
-  assert.ok(existsSync(path.join(srcRoot, 'tmp/features/dashboard')))
+  assert.ok(!existsSync(path.join(srcRoot, 'tmp')))
   assert.ok(!existsSync(path.join(frontendRoot, 'tsconfig.app.json')))
   assert.ok(!existsSync(path.join(frontendRoot, 'tsconfig.node.json')))
 

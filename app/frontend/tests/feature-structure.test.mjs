@@ -73,3 +73,10 @@ test('React Query is configured at the application root', () => {
   assert.match(main, /<QueryClientProvider client=\{queryClient\}>/)
   assert.match(main, /<App\s*\/>/)
 })
+
+test('auth context and provider live in the application context module', () => {
+  assert.ok(existsSync(src('context', 'AuthProvider.ts')))
+  assert.ok(existsSync(src('context', 'auth-provider.tsx')))
+  assert.ok(!existsSync(src('tmp', 'context', 'AuthProvider.tsx')))
+  assert.ok(!existsSync(src('tmp', 'context', 'auth-context.ts')))
+})

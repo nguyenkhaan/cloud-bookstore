@@ -1,4 +1,4 @@
-import { getPasswordChecks } from '@/tmp/auth/password'
+import { getPasswordChecks } from '@/features/auth/password'
 
 const rules = [
   ['length', '12–128 ký tự'],

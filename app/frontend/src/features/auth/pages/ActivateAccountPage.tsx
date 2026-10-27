@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { extractActivationToken } from '@/tmp/auth/activation'
+import { useNavigate } from 'react-router-dom'
+import { extractActivationToken } from '@/features/auth/activation'
 import { Banner } from '@/features/auth/components/Banner'
 import { ArrowLeftIcon } from '@/features/auth/components/Icons'
 import { CenterLayout } from '@/features/auth/components/CenterLayout'
@@ -7,10 +8,8 @@ import { Stepper } from '@/features/auth/components/Stepper'
 import { describeRegisterError, describeVerifyError } from '@/features/auth/errors'
 import type { Notice } from '@/features/auth/errors'
 import { useCountdown } from '@/features/auth/auth.hook'
-import * as authApi from '@/features/auth/auth.service'
 import { ApiError } from '@/features/auth/auth.service'
-import { useAuth } from '@/features/auth/auth.hook'
-import { navigate } from '@/tmp/routes/router'
+import { useAuth, useRegisterMutation, useVerifyMutation } from '@/features/auth/auth.hook'
 import { StepActivate } from './StepActivate'
 import { StepDone } from './StepDone'
 import { StepInfo } from './StepInfo'
@@ -25,6 +24,9 @@ const RESEND_SECONDS = 60
 
 export function ActivateAccountPage({ search }: { search: string }) {
   const { login } = useAuth()
+  const navigate = useNavigate()
+  const registerMutation = useRegisterMutation()
+  const verifyMutation = useVerifyMutation()
 
   const [linkToken] = useState(() => new URLSearchParams(search).get('token'))
   const [step, setStep] = useState<Step>(linkToken ? 'activate' : 'info')
@@ -42,8 +44,8 @@ export function ActivateAccountPage({ search }: { search: string }) {
     if (!linkToken || requestedToken.current === linkToken) return
     requestedToken.current = linkToken
     window.history.replaceState(null, '', '/activate')
-    authApi
-      .verify({ token: linkToken })
+    verifyMutation
+      .mutateAsync({ token: linkToken })
       .then(() => setStep('done'))
       .catch((error: unknown) => setNotice(describeVerifyError(error)))
       .finally(() => setIsBusy(false))
@@ -53,7 +55,7 @@ export function ActivateAccountPage({ search }: { search: string }) {
     setIsBusy(true)
     setNotice(null)
     try {
-      await authApi.register({
+      await registerMutation.mutateAsync({
         fullName: info.fullName.trim(),
         email: info.email.trim(),
         phone: info.phone.trim(),
@@ -92,7 +94,7 @@ export function ActivateAccountPage({ search }: { search: string }) {
     setIsBusy(true)
     setNotice(null)
     try {
-      await authApi.verify({ token })
+      await verifyMutation.mutateAsync({ token })
     } catch (error) {
       setNotice(describeVerifyError(error))
       setIsBusy(false)
@@ -103,7 +105,7 @@ export function ActivateAccountPage({ search }: { search: string }) {
     if (canSignIn) {
       try {
         await login(info.email, password)
-        navigate('/dashboard', true)
+        navigate('/dashboard', { replace: true })
         return
       } catch {
 

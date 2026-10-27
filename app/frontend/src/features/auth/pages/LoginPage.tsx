@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { getSafeNextPath } from '@/tmp/auth/session'
+import { useNavigate } from 'react-router-dom'
+import { getSafeNextPath } from '@/features/auth/session'
 import { Banner } from '@/features/auth/components/Banner'
 import { PasswordField } from '@/features/auth/components/PasswordField'
 import { SplitLayout } from '@/features/auth/components/SplitLayout'
@@ -8,10 +9,10 @@ import { TextField } from '@/components/common/TextField'
 import { describeLoginError } from '@/features/auth/errors'
 import type { Notice } from '@/features/auth/errors'
 import { useAuth } from '@/features/auth/auth.hook'
-import { navigate } from '@/tmp/routes/router'
 
 export function LoginPage({ search }: { search: string }) {
   const { login } = useAuth()
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [notice, setNotice] = useState<Notice | null>(null)
@@ -26,7 +27,7 @@ export function LoginPage({ search }: { search: string }) {
     setIsSubmitting(true)
     try {
       await login(email, password)
-      navigate(getSafeNextPath(params.get('next')), true)
+      navigate(getSafeNextPath(params.get('next')), { replace: true })
     } catch (error) {
       setNotice(describeLoginError(error))
       setPassword('')

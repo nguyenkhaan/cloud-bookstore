@@ -1,10 +1,10 @@
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
 import LoginPage from '@/features/auth/pages/LoginPage'
 import ActivateAccountPage from '@/features/auth/pages/ActivateAccountPage'
 import DashboardPage from '@/features/dashboard/pages/DashboardPage'
 import { useAuth } from '@/features/auth/auth.hook'
-import { isAccessTokenUsable } from '@/tmp/auth/session'
+import { isAccessTokenUsable } from '@/features/auth/session'
 
 function LoginRoute() {
   const { search } = useLocation()
@@ -30,15 +30,13 @@ function DashboardRoute() {
 
 export default function AppRoutes() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Navigate replace to="/login" />} />
-        <Route path="/login" element={<LoginRoute />} />
-        <Route path="/activate" element={<ActivateAccountRoute />} />
-        <Route path="/verify-email" element={<ActivateAccountRoute />} />
-        <Route path="/dashboard" element={<DashboardRoute />} />
-        <Route path="*" element={<Navigate replace to="/login" />} />
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      <Route path="/" element={<Navigate replace to="/login" />} />
+      <Route path="/login" element={<LoginRoute />} />
+      <Route path="/activate" element={<ActivateAccountRoute />} />
+      <Route path="/verify-email" element={<ActivateAccountRoute />} />
+      <Route path="/dashboard" element={<DashboardRoute />} />
+      <Route path="*" element={<Navigate replace to="/login" />} />
+    </Routes>
   )
 }

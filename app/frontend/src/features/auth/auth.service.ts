@@ -34,6 +34,10 @@ const AUTH_ENDPOINTS = {
 
 let accessToken: string | null = null
 
+export function setAccessToken(token: string | null): void {
+  accessToken = token
+}
+
 function getErrorMessage(error: AxiosError<unknown>): string {
   const data = error.response?.data
   if (
@@ -72,7 +76,7 @@ export async function login(request: LoginRequest): Promise<LoginResponse> {
   if (!isLoginResponse(response)) {
     throw new ApiError(502, 'Unexpected login response')
   }
-  accessToken = response.accessToken
+  setAccessToken(response.accessToken)
   return response
 }
 
@@ -96,7 +100,7 @@ export async function logout(request: LogoutRequest): Promise<void> {
   try {
     await requestData(() => publicClient.post<void>(AUTH_ENDPOINTS.logout, request))
   } finally {
-    accessToken = null
+    setAccessToken(null)
   }
 }
 

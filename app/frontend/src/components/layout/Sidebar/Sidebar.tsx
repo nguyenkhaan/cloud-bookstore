@@ -1,5 +1,4 @@
 import React from 'react';
-import { navigate } from '@/tmp/routes/router';
 import logoImg from '@/assets/images/logo.jpg';
 import {
   DashboardIcon,
@@ -61,10 +60,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   storeAddress = 'Quận 3, TP. Hồ Chí Minh',
 }) => {
   const handleSignOut = () => {
-    if (onSignOut) {
-      onSignOut();
-    }
-    navigate('/login', true);
+    onSignOut?.();
   };
   return (
     <aside

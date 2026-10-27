@@ -1,6 +1,6 @@
 import { useCallback, useContext, useEffect, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { AuthContext } from '@/tmp/context/auth-context'
+import { AuthContext } from '@/context/AuthProvider'
 import {
   checkServerReady,
   getSession,

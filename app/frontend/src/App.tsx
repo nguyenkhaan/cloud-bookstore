@@ -1,13 +1,16 @@
 import './App.css';
 import '@/features/auth/auth.css';
-import { AuthProvider } from '@/tmp/context/AuthProvider';
+import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from '@/context/auth-provider';
 import AppRoutes from '@/routes/AppRoutes';
 
 export function App() {
   return (
-    <AuthProvider>
-      <AppRoutes />
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 
