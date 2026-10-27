@@ -55,6 +55,19 @@ test('shared components live outside tmp', () => {
     assert.ok(existsSync(src(...parts)), `missing src/${parts.join('/')}`)
   }
 
-  assert.ok(existsSync(src('tmp', 'components', 'common', 'Modal', '.gitkeep')))
   assert.ok(!existsSync(src('tmp', 'components', 'common', 'Icons.tsx')))
+})
+
+test('application brand configuration lives in shared lib', () => {
+  assert.ok(existsSync(src('lib', 'brand.ts')))
+  assert.ok(!existsSync(src('tmp', 'config', 'brand.ts')))
+})
+
+test('React Query is configured at the application root', () => {
+  assert.ok(existsSync(src('lib', 'query-client.ts')))
+  assert.ok(existsSync(src('context', 'QueryProvider.tsx')))
+
+  const main = readFileSync(src('main.tsx'), 'utf8')
+  assert.match(main, /<QueryProvider>/)
+  assert.match(main, /<App\s*\/>/)
 })

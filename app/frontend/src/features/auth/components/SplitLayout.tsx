@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { brand } from '@/tmp/config/brand'
+import { brand } from '@/lib/brand'
 import { useServerStatus } from '@/features/auth/auth.hook'
 import { Brand } from './Brand'
 import { HeroArt } from './HeroArt'

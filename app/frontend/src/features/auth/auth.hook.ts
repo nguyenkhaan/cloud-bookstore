@@ -1,7 +1,78 @@
 import { useCallback, useContext, useEffect, useState } from 'react'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { AuthContext } from '@/tmp/context/auth-context'
-import { checkServerReady } from './auth.service'
-import type { ServerStatus } from './auth.type'
+import {
+  checkServerReady,
+  getSession,
+  login,
+  logout,
+  register,
+  requestPasswordReset,
+  resetPassword,
+  verify,
+} from './auth.service'
+import type {
+  ForgotPasswordRequest,
+  LoginRequest,
+  LogoutRequest,
+  RegisterRequest,
+  ResetPasswordRequest,
+  ServerStatus,
+  VerifyRequest,
+} from './auth.type'
+
+export function useLoginMutation() {
+  return useMutation({
+    mutationKey: ['auth', 'login'],
+    mutationFn: (request: LoginRequest) => login(request),
+  })
+}
+
+export function useRegisterMutation() {
+  return useMutation({
+    mutationKey: ['auth', 'register'],
+    mutationFn: (request: RegisterRequest) => register(request),
+  })
+}
+
+export function useVerifyMutation() {
+  return useMutation({
+    mutationKey: ['auth', 'verify'],
+    mutationFn: (request: VerifyRequest) => verify(request),
+  })
+}
+
+export function useRequestPasswordResetMutation() {
+  return useMutation({
+    mutationKey: ['auth', 'password-reset-request'],
+    mutationFn: (request: ForgotPasswordRequest) => requestPasswordReset(request),
+  })
+}
+
+export function useResetPasswordMutation() {
+  return useMutation({
+    mutationKey: ['auth', 'password-reset'],
+    mutationFn: (request: ResetPasswordRequest) => resetPassword(request),
+  })
+}
+
+export function useLogoutMutation() {
+  return useMutation({
+    mutationKey: ['auth', 'logout'],
+    mutationFn: (request: LogoutRequest) => logout(request),
+  })
+}
+
+export function useSessionQuery() {
+  return useQuery({
+    queryKey: ['auth', 'session'],
+    queryFn: async () => {
+      await getSession()
+      return true
+    },
+    retry: false,
+  })
+}
 
 export function useAuth() {
   const value = useContext(AuthContext)

@@ -8,9 +8,9 @@ import { describeRegisterError, describeVerifyError } from '@/features/auth/erro
 import type { Notice } from '@/features/auth/errors'
 import { useCountdown } from '@/features/auth/auth.hook'
 import * as authApi from '@/features/auth/auth.service'
+import { ApiError } from '@/features/auth/auth.service'
 import { useAuth } from '@/features/auth/auth.hook'
 import { navigate } from '@/tmp/routes/router'
-import { ApiError } from '@/tmp/services/apiClient'
 import { StepActivate } from './StepActivate'
 import { StepDone } from './StepDone'
 import { StepInfo } from './StepInfo'
@@ -43,7 +43,7 @@ export function ActivateAccountPage({ search }: { search: string }) {
     requestedToken.current = linkToken
     window.history.replaceState(null, '', '/activate')
     authApi
-      .verify(linkToken)
+      .verify({ token: linkToken })
       .then(() => setStep('done'))
       .catch((error: unknown) => setNotice(describeVerifyError(error)))
       .finally(() => setIsBusy(false))
@@ -92,7 +92,7 @@ export function ActivateAccountPage({ search }: { search: string }) {
     setIsBusy(true)
     setNotice(null)
     try {
-      await authApi.verify(token)
+      await authApi.verify({ token })
     } catch (error) {
       setNotice(describeVerifyError(error))
       setIsBusy(false)

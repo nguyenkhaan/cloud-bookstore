@@ -1,4 +1,4 @@
-import { ApiError } from '@/tmp/services/apiClient'
+import { ApiError } from './auth.service'
 import type { Notice } from './auth.type'
 
 export type { Notice, NoticeTone } from './auth.type'

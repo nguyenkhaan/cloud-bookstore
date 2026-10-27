@@ -2,13 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { getAccessTokenExpiration, isAccessTokenUsable } from '@/tmp/auth/session'
 import * as authApi from '@/features/auth/auth.service'
+import { ApiError } from '@/features/auth/auth.service'
 import { navigate } from '@/tmp/routes/router'
-import { ApiError } from '@/tmp/services/apiClient'
 import { AuthContext } from '@/tmp/context/auth-context'
 import type { AuthContextValue, Session } from '@/tmp/context/auth-context'
 
 const revokeQuietly = (refreshToken: string) => {
-    void authApi.logout(refreshToken).catch(() => undefined)
+    void authApi.logout({ refreshToken }).catch(() => undefined)
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -16,7 +16,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [session, setSession] = useState<Session | null>(null)
 
     const login = useCallback(async (email: string, password: string) => {
-        const tokens = await authApi.login(email, password)
+        const tokens = await authApi.login({ email: email.trim(), password })
         if (!isAccessTokenUsable(tokens.accessToken)) throw new ApiError(502, 'Unusable access token')
         setSession(tokens)
     }, [])
