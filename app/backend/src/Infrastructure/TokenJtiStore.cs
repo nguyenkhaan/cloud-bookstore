@@ -22,7 +22,7 @@ public sealed class TokenJtiStore(RedisService redisService)
             cancellationToken);
     }
 
-    public async Task StoreLoginAsync(string accessToken, string refreshToken, CancellationToken cancellationToken = default)
+    public async Task<string> StoreLoginAsync(string accessToken, string refreshToken, CancellationToken cancellationToken = default)
     {
         var access = ReadToken(accessToken);
         var refresh = ReadToken(refreshToken);
@@ -33,6 +33,7 @@ public sealed class TokenJtiStore(RedisService redisService)
 
         await StoreAsync(access, TokenType.ACCESS, access.Subject, cancellationToken);
         await StoreAsync(refresh, TokenType.REFRESH, access.Id, cancellationToken);
+        return access.Id;
     }
 
     public Task<string?> GetAccessJtiForRefreshAsync(string refreshJti, CancellationToken cancellationToken = default)
@@ -84,6 +85,12 @@ public sealed class TokenJtiStore(RedisService redisService)
                 RedisKeyManager.ForToken(TokenType.REFRESH, refreshJti)
             ],
             cancellationToken);
+
+    public Task<bool> ConsumeRefreshAsync(string refreshJti, CancellationToken cancellationToken = default)
+        => redisService.DeleteAsync(RedisKeyManager.ForToken(TokenType.REFRESH, refreshJti), cancellationToken);
+
+    public Task<bool> RevokeAccessAsync(string accessJti, CancellationToken cancellationToken = default)
+        => redisService.DeleteAsync(RedisKeyManager.ForToken(TokenType.ACCESS, accessJti), cancellationToken);
 
     private static TimeSpan GetRemainingLifetime(JwtSecurityToken jwt)
     {

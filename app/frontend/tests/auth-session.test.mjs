@@ -1,35 +1,24 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { getRouteDecision, getSafeNextPath, isAccessTokenUsable } from '../src/features/auth/session.ts'
+import { getRouteDecision, getSafeNextPath } from '../src/features/auth/session.ts'
 
-function tokenWithExpiration(expirationInSeconds) {
-  const payload = Buffer.from(JSON.stringify({ exp: expirationInSeconds })).toString('base64url')
-  return `header.${payload}.signature`
-}
-
-test('an expired access token is not usable', () => {
-  const expiredToken = tokenWithExpiration(Math.floor(Date.now() / 1000) - 1)
-
-  assert.equal(isAccessTokenUsable(expiredToken), false)
-})
-
-test('a protected route with an expired token redirects to login and preserves the destination', () => {
-  const expiredToken = tokenWithExpiration(Math.floor(Date.now() / 1000) - 1)
-
+test('a protected route without a restored cookie session redirects to login and preserves the destination', () => {
   assert.deepEqual(
-    getRouteDecision('/dashboard', '?tab=today', expiredToken),
+    getRouteDecision('/dashboard', '?tab=today', false),
     { type: 'redirect', to: '/login?next=%2Fdashboard%3Ftab%3Dtoday' },
   )
 })
 
-test('public catalog remains viewable but checkout requires a usable access token', () => {
-  const expiredToken = tokenWithExpiration(Math.floor(Date.now() / 1000) - 1)
-
-  assert.deepEqual(getRouteDecision('/catalog', '', expiredToken), { type: 'allow' })
+test('public catalog remains viewable but checkout requires a restored cookie session', () => {
+  assert.deepEqual(getRouteDecision('/catalog', '', false), { type: 'allow' })
   assert.deepEqual(
-    getRouteDecision('/checkout', '', expiredToken),
+    getRouteDecision('/checkout', '', false),
     { type: 'redirect', to: '/login?next=%2Fcheckout' },
   )
+})
+
+test('a restored cookie session can view protected routes without decoding a JWT', () => {
+  assert.deepEqual(getRouteDecision('/dashboard', '', true), { type: 'allow' })
 })
 
 test('only local application paths are accepted as a post-login destination', () => {

@@ -6,6 +6,7 @@ public static class RedisKeyManager
 {
     private const string ServicePrefix = "cloudbookstore";
     private const string AuthenticationScope = "auth";
+    private const string CsrfScope = "csrf";
     private const string RegistrationVerificationScope = "verify_register";
 
     public static string ForToken(TokenType tokenType, string tokenId)
@@ -30,6 +31,16 @@ public static class RedisKeyManager
             RegistrationVerificationScope,
             "current",
             employeeId.ToString("D"));
+    }
+
+    public static string ForCsrf(string accessTokenId)
+    {
+        if (string.IsNullOrWhiteSpace(accessTokenId))
+        {
+            throw new ArgumentException("Access token ID is required.", nameof(accessTokenId));
+        }
+
+        return Join(AuthenticationScope, CsrfScope, accessTokenId);
     }
 
     private static string Join(params string[] segments)

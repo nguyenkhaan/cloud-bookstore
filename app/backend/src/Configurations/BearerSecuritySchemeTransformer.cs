@@ -6,7 +6,8 @@ using Microsoft.OpenApi;
 namespace backend.src.Configurations;
 
 internal sealed class BearerSecuritySchemeTransformer(
-    IAuthenticationSchemeProvider authenticationSchemeProvider
+    IAuthenticationSchemeProvider authenticationSchemeProvider,
+    AuthCookieSettings authCookieSettings
 ) : IOpenApiDocumentTransformer
 {
     public async Task TransformAsync(
@@ -30,7 +31,15 @@ internal sealed class BearerSecuritySchemeTransformer(
                 Scheme = "bearer",
                 BearerFormat = "JWT",
                 In = ParameterLocation.Header,
-                Description = "Enter your JWT access token."
+                Description = "Temporary fallback for non-browser callers that send an access JWT."
+            };
+        components.SecuritySchemes["CookieAuth"] =
+            new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.ApiKey,
+                In = ParameterLocation.Cookie,
+                Name = authCookieSettings.AccessCookieName,
+                Description = "Browser authentication through an HttpOnly access-token cookie. Unsafe requests also require X-CSRF-Token."
             };
     }
 }

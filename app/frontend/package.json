@@ -9,7 +9,7 @@
     "test": "node --test",
     "lint": "oxlint",
     "preview": "vite preview",
-    "generate:api": "openapi-typescript http://localhost:4000/openapi/v1.json -o src/contract/api-contract.ts"
+    "generate:api": "openapi-typescript https://localhost:7073/openapi/v1.json -o src/contract/api-contract.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.105.0",

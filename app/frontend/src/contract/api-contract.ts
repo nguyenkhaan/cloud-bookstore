@@ -75,7 +75,11 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "text/plain": components["schemas"]["BrowserSessionResponse"];
+                        "application/json": components["schemas"]["BrowserSessionResponse"];
+                        "text/json": components["schemas"]["BrowserSessionResponse"];
+                    };
                 };
             };
         };
@@ -257,20 +261,51 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["LogoutRequest"];
-                    "text/json": components["schemas"]["LogoutRequest"];
-                    "application/*+json": components["schemas"]["LogoutRequest"];
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
                 };
             };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
             responses: {
                 /** @description OK */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "text/plain": components["schemas"]["BrowserSessionResponse"];
+                        "application/json": components["schemas"]["BrowserSessionResponse"];
+                        "text/json": components["schemas"]["BrowserSessionResponse"];
+                    };
                 };
             };
         };
@@ -301,7 +336,11 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "text/plain": components["schemas"]["BrowserSessionResponse"];
+                        "application/json": components["schemas"]["BrowserSessionResponse"];
+                        "text/json": components["schemas"]["BrowserSessionResponse"];
+                    };
                 };
             };
         };
@@ -548,6 +587,9 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        BrowserSessionResponse: {
+            csrfToken: string;
+        };
         ChangeEmployeeRequest: {
             roleName: components["schemas"]["RoleName"];
             reason: string;
@@ -561,9 +603,6 @@ export interface components {
         LoginRequest: {
             email: string;
             password: string;
-        };
-        LogoutRequest: {
-            refreshToken: string;
         };
         RegisterRequest: {
             email: string;

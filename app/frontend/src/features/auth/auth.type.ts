@@ -5,9 +5,7 @@ export type RegisterRequest = components['schemas']['RegisterRequest']
 export type VerifyRequest = components['schemas']['VerifyRequest']
 export type ForgotPasswordRequest = components['schemas']['ForgotPasswordRequest']
 export type ResetPasswordRequest = components['schemas']['ResetPasswordRequest']
-export type LogoutRequest = components['schemas']['LogoutRequest']
-
-export type LoginResponse = { accessToken: string; refreshToken: string }
+export type BrowserSessionResponse = components['schemas']['BrowserSessionResponse']
 export type RegisterResponse = { email: string; fullName: string }
 
 export type AccountInfo = { fullName: string; email: string; phone: string }

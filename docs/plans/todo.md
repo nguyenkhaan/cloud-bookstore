@@ -56,6 +56,12 @@ File này chỉ theo dõi trạng thái, owner và evidence. Nội dung acceptan
 | `P02-S02` | [Đăng ký bằng OTP](./phase-02-tai-khoan-phan-quyen-audit.md) | Chưa gán | TODO | — |
 | `P02-S03` | [Quản lý vòng đời phiên](./phase-02-tai-khoan-phan-quyen-audit.md) | Chưa gán | TODO | — |
 | `P02-S04` | [Thực thi RBAC có audit](./phase-02-tai-khoan-phan-quyen-audit.md) | Chưa gán | TODO | — |
+| `AUTH-001-T01` | [Thiết lập test backend](./AUTH-001-browser-cookie-session.md#task-auth-001-t01-thiết-lập-bề-mặt-test-backend-không-ghi-đè-file-untracked) | Codex | DONE | `dotnet test backend.sln --no-build --no-restore`: 16 passed |
+| `AUTH-001-T02` | [Nền cookie, CSRF và token source](./AUTH-001-browser-cookie-session.md#task-auth-001-t02-dựng-nền-cookie-csrf-và-chọn-nguồn-access-token) | Codex | DONE | Cookie/CSRF/Origin unit tests; backend temporary build passed |
+| `AUTH-001-T03` | [Contract login/session/refresh/logout](./AUTH-001-browser-cookie-session.md#task-auth-001-t03-chuyển-loginsessionrefresh-và-logout-sang-contract-cookie) | Codex | IN_REVIEW | Local OpenAPI verified; browser login flow still needs environment-backed UAT |
+| `AUTH-001-T04` | [Axios credential và CSRF memory state](./AUTH-001-browser-cookie-session.md#task-auth-001-t04-chuyển-axios-sang-credentialed-request-và-csrf-memory-state) | Codex | DONE | `bun run test`, `bun run lint`, `bun run build` passed |
+| `AUTH-001-T05` | [Session in-memory và route guard](./AUTH-001-browser-cookie-session.md#task-auth-001-t05-chuyển-authprovider-và-route-guard-sang-session-in-memory) | Codex | IN_REVIEW | Session/storage/route tests passed; browser UAT still required |
+| `AUTH-001-T06` | [Contract regeneration và regression](./AUTH-001-browser-cookie-session.md#task-auth-001-t06-regenerate-contract-và-chạy-regression-liên-tầng) | Codex | IN_REVIEW | OpenAPI regenerated; backend 16 tests and frontend 34 tests passed |
 | `P03-S01` | [Quản lý phân cấp danh mục](./phase-03-danh-muc-an-ban-ban-sach.md) | Chưa gán | TODO | — |
 | `P03-S02` | [Tra cứu ấn bản bằng ISBN](./phase-03-danh-muc-an-ban-ban-sach.md) | Chưa gán | TODO | — |
 | `P03-S03` | [Quản lý bản vật lý](./phase-03-danh-muc-an-ban-ban-sach.md) | Chưa gán | TODO | — |

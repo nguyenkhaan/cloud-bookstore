@@ -12,6 +12,8 @@ export function extractActivationToken(value?: string): string | null {
   const rawToken = validToken(input)
   if (rawToken) return rawToken
 
-  const query = input.startsWith('token=') ? input : new URL(input, 'http://localhost').search.slice(1)
-  return validToken(new URLSearchParams(query).get('token'))
+  const params = input.startsWith('token=')
+    ? new URLSearchParams(input)
+    : new URL(input, 'http://localhost').searchParams
+  return validToken(params.get('token'))
 }

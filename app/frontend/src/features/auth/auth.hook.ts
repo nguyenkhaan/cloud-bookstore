@@ -14,7 +14,6 @@ import {
 import type {
   ForgotPasswordRequest,
   LoginRequest,
-  LogoutRequest,
   RegisterRequest,
   ResetPasswordRequest,
   ServerStatus,
@@ -59,17 +58,14 @@ export function useResetPasswordMutation() {
 export function useLogoutMutation() {
   return useMutation({
     mutationKey: ['auth', 'logout'],
-    mutationFn: (request: LogoutRequest) => logout(request),
+    mutationFn: logout,
   })
 }
 
 export function useSessionQuery() {
   return useQuery({
     queryKey: ['auth', 'session'],
-    queryFn: async () => {
-      await getSession()
-      return true
-    },
+    queryFn: getSession,
     retry: false,
   })
 }
