@@ -5,6 +5,7 @@ using System.Text.Json;
 using backend.src.Data;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using NpgsqlTypes;
 
 namespace backend.src.Scripts;
 
@@ -86,13 +87,19 @@ public static class Seed
     {
         var columns = row.EnumerateObject().ToArray();
         var names = string.Join(", ", columns.Select(column => $"\"{column.Name}\""));
-        var values = string.Join(", ", columns.Select((_, index) => $"@p{index}"));
+        var values = string.Join(", ", columns.Select(column => $"@{column.Name}"));
         await using var command = new NpgsqlCommand($"INSERT INTO \"{table}\" ({names}) VALUES ({values}) ON CONFLICT DO NOTHING", connection, transaction);
-        foreach (var (column, index) in columns.Select((column, index) => (column, index)))
-        {
-            command.Parameters.AddWithValue($"p{index}", ToDatabaseValue(column.Name, column.Value));
-        }
+        foreach (var column in columns)
+            command.Parameters.Add(CreateParameter(column.Name, column.Value));
         await command.ExecuteNonQueryAsync();
+    }
+
+    internal static NpgsqlParameter CreateParameter(string columnName, JsonElement value)
+    {
+        var parameter = new NpgsqlParameter(columnName, ToDatabaseValue(columnName, value));
+        if (value.ValueKind is JsonValueKind.Object or JsonValueKind.Array)
+            parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
+        return parameter;
     }
 
     private static object ToDatabaseValue(string columnName, JsonElement value) => value.ValueKind switch

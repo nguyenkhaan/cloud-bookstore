@@ -1,4 +1,5 @@
 using backend.src.Data;
+using backend.src.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Xunit;
@@ -102,6 +103,29 @@ public sealed class AppDbContextModelTests
         Assert.NotNull(AssertProperty(employee, "PasswordResetTokenHash"));
     }
 
+    [Fact]
+    public void DatabaseDefaults_MatchWorkflowStartingStates()
+    {
+        var model = BuildModel();
+
+        AssertDatabaseDefault(model, "backend.src.Models.BookCopyModel", "Status", BookCopyStatus.PENDING_RECEIPT);
+        AssertDatabaseDefault(model, "backend.src.Models.StockReceiptLineModel", "Availability", BookChannelAvailability.BOTH);
+        AssertDatabaseDefault(model, "backend.src.Models.StockReceiptModel", "Status", ApprovalStatus.DRAFT);
+        AssertDatabaseDefault(model, "backend.src.Models.InventoryAdjustmentRequestModel", "Status", InventoryAdjustmentStatus.PENDING_APPROVAL);
+        AssertDatabaseDefault(model, "backend.src.Models.PaymentModel", "Status", PaymentStatus.PENDING);
+        AssertDatabaseDefault(model, "backend.src.Models.NotificationOutboxModel", "Status", NotificationStatus.PENDING);
+    }
+
+    [Fact]
+    public void DamageLevelDefault_UsesSentinelOutsideBookCopyStatusDomain()
+    {
+        var property = AssertProperty(
+            BuildModel().FindEntityType("backend.src.Models.DamageLevelModel"),
+            "CopyStatusAfter");
+
+        Assert.Equal((BookCopyStatus)(-1), property.Sentinel);
+    }
+
     private static IProperty AssertProperty(IEntityType? entity, string propertyName)
     {
         Assert.NotNull(entity);
@@ -116,5 +140,13 @@ public sealed class AppDbContextModelTests
         Assert.Contains(entity.GetForeignKeys(), foreignKey =>
             foreignKey.PrincipalEntityType == principal &&
             foreignKey.Properties.Select(property => property.Name).SequenceEqual([propertyName]));
+    }
+
+    private static void AssertDatabaseDefault(IModel model, string entityName, string propertyName, object expected)
+    {
+        var property = AssertProperty(model.FindEntityType(entityName), propertyName);
+        var annotation = property.FindAnnotation(RelationalAnnotationNames.DefaultValue);
+        Assert.NotNull(annotation);
+        Assert.Equal(expected, annotation.Value);
     }
 }

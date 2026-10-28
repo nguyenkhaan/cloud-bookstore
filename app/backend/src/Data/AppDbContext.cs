@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using backend.src.Models;
+using backend.src.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -105,7 +106,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         customer.Property(x => x.IsFlagged).HasDefaultValue(false);
 
         modelBuilder.Entity<SystemSettingModel>().Property(x => x.Value).HasPrecision(18, 4);
-        modelBuilder.Entity<DamageLevelModel>().Property(x => x.PenaltyPct).HasPrecision(5, 2);
+        var damageLevel = modelBuilder.Entity<DamageLevelModel>();
+        damageLevel.Property(x => x.PenaltyPct).HasPrecision(5, 2);
+        damageLevel.Property(x => x.CopyStatusAfter)
+            .HasDefaultValue(BookCopyStatus.DAMAGED)
+            .HasSentinel((BookCopyStatus)(-1));
 
         var bookSeries = modelBuilder.Entity<BookSeriesModel>();
         bookSeries.Property(x => x.IsActive).HasDefaultValue(true);
@@ -121,20 +126,50 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         edition.Property(x => x.IsActive).HasDefaultValue(true);
 
         var stockReceipt = modelBuilder.Entity<StockReceiptModel>();
+        stockReceipt.Property(x => x.Status).HasDefaultValue(ApprovalStatus.DRAFT);
         stockReceipt.Property(x => x.TotalAmount).HasDefaultValue(0L);
         stockReceipt.Property(x => x.NeedsApproval).HasDefaultValue(false);
         stockReceipt.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
 
-        modelBuilder.Entity<StockReceiptLineModel>().Property(x => x.Quantity).HasDefaultValue(1);
-        modelBuilder.Entity<BookCopyModel>().Property(x => x.CreatedAt).HasDefaultValueSql("now()");
-        modelBuilder.Entity<InventoryCheckModel>().Property(x => x.CheckedAt).HasDefaultValueSql("now()");
-        modelBuilder.Entity<InventoryAdjustmentRequestModel>().Property(x => x.RequestedAt).HasDefaultValueSql("now()");
-        modelBuilder.Entity<SaleInvoiceModel>().Property(x => x.CreatedAt).HasDefaultValueSql("now()");
-        modelBuilder.Entity<SaleInvoiceLineModel>().Property(x => x.DiscountPct).HasPrecision(5, 2).HasDefaultValue(0m);
-        modelBuilder.Entity<RentalSlipModel>().Property(x => x.CreatedAt).HasDefaultValueSql("now()");
-        modelBuilder.Entity<ReturnModel>().Property(x => x.ReturnedAt).HasDefaultValueSql("now()");
+        var stockReceiptLine = modelBuilder.Entity<StockReceiptLineModel>();
+        stockReceiptLine.Property(x => x.Availability).HasDefaultValue(BookChannelAvailability.BOTH);
+        stockReceiptLine.Property(x => x.Quantity).HasDefaultValue(1);
+
+        var bookCopy = modelBuilder.Entity<BookCopyModel>();
+        bookCopy.Property(x => x.Availability).HasDefaultValue(BookChannelAvailability.BOTH);
+        bookCopy.Property(x => x.Status).HasDefaultValue(BookCopyStatus.PENDING_RECEIPT);
+        bookCopy.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+
+        var inventoryCheck = modelBuilder.Entity<InventoryCheckModel>();
+        inventoryCheck.Property(x => x.IsFound).HasDefaultValue(false);
+        inventoryCheck.Property(x => x.CheckedAt).HasDefaultValueSql("now()");
+
+        var inventoryAdjustment = modelBuilder.Entity<InventoryAdjustmentRequestModel>();
+        inventoryAdjustment.Property(x => x.Status).HasDefaultValue(InventoryAdjustmentStatus.PENDING_APPROVAL);
+        inventoryAdjustment.Property(x => x.RequestedAt).HasDefaultValueSql("now()");
+
+        var saleInvoice = modelBuilder.Entity<SaleInvoiceModel>();
+        saleInvoice.Property(x => x.Status).HasDefaultValue(SaleInvoiceStatus.DRAFT);
+        saleInvoice.Property(x => x.Subtotal).HasDefaultValue(0L);
+        saleInvoice.Property(x => x.DiscountTotal).HasDefaultValue(0L);
+        saleInvoice.Property(x => x.TotalPayable).HasDefaultValue(0L);
+        saleInvoice.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+
+        var saleInvoiceLine = modelBuilder.Entity<SaleInvoiceLineModel>();
+        saleInvoiceLine.Property(x => x.DiscountPct).HasPrecision(5, 2).HasDefaultValue(0m);
+        saleInvoiceLine.Property(x => x.DiscountAmount).HasDefaultValue(0L);
+        saleInvoiceLine.Property(x => x.Status).HasDefaultValue(SaleInvoiceLineStatus.ACTIVE);
+
+        var rentalSlip = modelBuilder.Entity<RentalSlipModel>();
+        rentalSlip.Property(x => x.Status).HasDefaultValue(RentalSlipStatus.DRAFT);
+        rentalSlip.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+
+        var bookReturn = modelBuilder.Entity<ReturnModel>();
+        bookReturn.Property(x => x.Status).HasDefaultValue(ReturnStatus.DRAFT);
+        bookReturn.Property(x => x.ReturnedAt).HasDefaultValueSql("now()");
 
         var rentalLine = modelBuilder.Entity<RentalLineModel>();
+        rentalLine.Property(x => x.Status).HasDefaultValue(RentalLineStatus.PENDING_DEPOSIT);
         rentalLine.Property(x => x.RentDiscountPct).HasPrecision(5, 2).HasDefaultValue(0m);
         rentalLine.Property(x => x.ExtensionCount).HasDefaultValue((short)0);
         rentalLine.Property(x => x.ExtensionFeeTotal).HasDefaultValue(0L);
@@ -154,19 +189,27 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         rentalExtension.Property(x => x.ExtendedAt).HasDefaultValueSql("now()");
         rentalExtension.Property(x => x.LatePenaltyLocked).HasDefaultValue(0L);
 
-        modelBuilder.Entity<CashSessionModel>().Property(x => x.OpenedAt).HasDefaultValueSql("now()");
-        modelBuilder.Entity<PaymentModel>().Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+        var cashSession = modelBuilder.Entity<CashSessionModel>();
+        cashSession.Property(x => x.Status).HasDefaultValue(CashSessionStatus.OPEN);
+        cashSession.Property(x => x.OpenedAt).HasDefaultValueSql("now()");
+
+        var payment = modelBuilder.Entity<PaymentModel>();
+        payment.Property(x => x.Status).HasDefaultValue(PaymentStatus.PENDING);
+        payment.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
 
         var workRecord = modelBuilder.Entity<EmployeeWorkRecordModel>();
         workRecord.Property(x => x.ShiftNo).HasDefaultValue((short)1);
+        workRecord.Property(x => x.AttendanceStatus).HasDefaultValue(AttendanceStatus.PRESENT);
         workRecord.Property(x => x.WorkedMinutes).HasDefaultValue(0);
         workRecord.Property(x => x.OvertimeMinutes).HasDefaultValue(0);
         workRecord.Property(x => x.ShiftSalary).HasDefaultValue(0L);
+        workRecord.Property(x => x.PaymentStatus).HasDefaultValue(WorkRecordPaymentStatus.UNPAID);
         workRecord.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
         workRecord.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
 
         var notification = modelBuilder.Entity<NotificationOutboxModel>();
         notification.Property(x => x.Content).HasColumnType("jsonb");
+        notification.Property(x => x.Status).HasDefaultValue(NotificationStatus.PENDING);
         notification.Property(x => x.AttemptCount).HasDefaultValue((short)0);
         notification.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
 

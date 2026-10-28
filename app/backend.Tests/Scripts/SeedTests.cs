@@ -1,6 +1,8 @@
 using System.Reflection;
 using System.Text.Json;
 using backend.src.Scripts;
+using Npgsql;
+using NpgsqlTypes;
 using Xunit;
 
 namespace backend.Tests.Scripts;
@@ -42,6 +44,19 @@ public sealed class SeedTests
         var exception = Assert.Throws<InvalidDataException>(() => GetOrderedNames("""{"roles": {}}"""));
 
         Assert.Equal("Seed table roles must contain a JSON array.", exception.Message);
+    }
+
+    [Fact]
+    public void CreateParameter_UsesJsonbForObjectValues()
+    {
+        using var document = JsonDocument.Parse("""{"status":"PAID"}""");
+        var method = typeof(Seed).GetMethod("CreateParameter", BindingFlags.Static | BindingFlags.NonPublic);
+        Assert.NotNull(method);
+
+        var parameter = Assert.IsType<NpgsqlParameter>(method.Invoke(null, ["payload", document.RootElement]));
+
+        Assert.Equal(NpgsqlDbType.Jsonb, parameter.NpgsqlDbType);
+        Assert.Equal("""{"status":"PAID"}""", parameter.Value);
     }
 
     private static string[] GetOrderedNames(string json)
