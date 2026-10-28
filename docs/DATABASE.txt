@@ -263,8 +263,18 @@ table categories {
   Note: 'Thể loại sách/truyện (phân cấp).'
 }
 
+table book_series {
+  id uuid [pk]
+  name varchar(255) [not null]
+  description text
+  is_active boolean [not null, default: true]
+  created_at timestamptz [not null, default: `now()`]
+  Note: 'Bộ sách gồm nhiều đầu sách/tập; sách độc lập có thể không thuộc bộ.'
+}
+
 table titles {
   id uuid [pk]
+  series_id uuid [note: 'Bộ sách chứa đầu sách/tập; NULL với sách độc lập']
   name varchar(255) [not null]
   volume_label varchar(30) [note: 'Số hoặc nhãn tập ở cấp đầu sách, ví dụ Tập 12']
   author varchar(255)
@@ -272,6 +282,7 @@ table titles {
   description text
   created_at timestamptz [not null, default: `now()`]
   category_id uuid
+  is_active boolean [not null, default: true]
   Note: "Đầu sách/tập ở cấp nội dung; không phải ấn bản hoặc bản sách vật lý."
 }
 
@@ -285,7 +296,6 @@ table edition {
   publisher varchar(255)
   publish_year smallint
   cover_price bigint [not null, note: 'Giá bìa ước tính - cơ sở đề xuất giá thu mua']
-  default_rent_price bigint [note: 'Đơn giá thuê/ngày mặc định; được snapshot vào dòng phiếu khi thuê']
   min_stock_sale integer [not null, default: 0, note: 'Ngưỡng cảnh báo tồn khả dụng của ấn bản cho nhóm bán']
   min_stock_rental integer [not null, default: 0, note: 'Ngưỡng cảnh báo tồn khả dụng của ấn bản cho nhóm thuê']
   cover_image_url text
@@ -351,6 +361,7 @@ table book_copies {
   condition_note text
   cost_price bigint [not null]
   selling_price bigint [note: 'Giá bán thực tế; cũng là cơ sở tính cọc. Bắt buộc có trước khi sang available']
+  rental_rate bigint [note: 'Đơn giá thuê/ngày của bản sách; được snapshot vào rental_lines.daily_rate khi thuê']
   shelf_code varchar(30) [note: 'Vị trí kệ (văn bản ở bản lõi)']
   receipt_line_id uuid [not null, note: 'Truy nguồn gốc: dòng phiếu nhập hoặc thu mua']
   created_at timestamptz [not null, default: `now()`]
@@ -540,7 +551,7 @@ table payments {
   method PaymentMethod [not null]
   amount bigint [not null]
   status PaymentStatus [not null, default: 'PENDING']
-  cash_session_id uuid [not null]
+  cash_session_id uuid [note: 'Bắt buộc khi method = CASH; NULL khi method = BANK_TRANSFER']
   // đúng MỘT chứng từ nguồn có giá trị, khớp với payment_type
   sale_invoice_id uuid
   rental_slip_id uuid
