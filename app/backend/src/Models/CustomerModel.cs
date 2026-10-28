@@ -7,23 +7,22 @@ public class CustomerModel
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
     [Required]
-    [MaxLength(12)]
+    [MaxLength(15)]
     public string Phone { get; set; } = string.Empty;
     [Required]
-    [MaxLength(200)]
+    [MaxLength(150)]
     public string FullName { get; set; } = string.Empty;
-    [Required]
+    [MaxLength(255)]
     [EmailAddress]
-    public string Email { get; set; } = string.Empty;
-    [Required]
-    [RegularExpression(@"^\d{12}$")]
-    public string NationalId { get; set; } = string.Empty;
-    public string Address { get; set; } = string.Empty;
+    public string? Email { get; set; }
+    [MaxLength(20)]
+    public string? NationalId { get; set; }
+    public string? Address { get; set; }
     public Guid TierId { get; set; }
     [ForeignKey(nameof(TierId))]
     public MembershipTierModel MembershipTier { get; set; } = null!;
-    public int EligibleSpend { get; set; }
+    public long EligibleSpend { get; set; }
     public bool IsFlagged { get; set; }
-    public string FlagReason { get; set; } = string.Empty;
+    public string? FlagReason { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

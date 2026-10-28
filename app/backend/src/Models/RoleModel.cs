@@ -8,5 +8,5 @@ public class RoleModel
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
     public RoleName RoleName { get; set; }
-    public bool IsActive { get; set; }
+    public bool IsActive { get; set; } = true;
 }

@@ -14,6 +14,7 @@ public class BookCopyModel
     public string? ConditionNote { get; set; }
     public long CostPrice { get; set; }
     public long? SellingPrice { get; set; }
+    public long? RentalRate { get; set; }
     [MaxLength(30)] public string? ShelfCode { get; set; }
     public Guid ReceiptLineId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

@@ -14,7 +14,6 @@ public class EditionModel
     [MaxLength(255)] public string? Publisher { get; set; }
     public short? PublishYear { get; set; }
     public long CoverPrice { get; set; }
-    public long? DefaultRentPrice { get; set; }
     public int MinStockSale { get; set; }
     public int MinStockRental { get; set; }
     public string? CoverImageUrl { get; set; }
