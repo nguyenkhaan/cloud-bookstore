@@ -10,8 +10,36 @@ namespace backend.src.Scripts;
 
 public static class Seed
 {
-    private static readonly HashSet<string> AllowedTables =
-    ["roles", "employee", "membership_tiers", "customers", "system_settings", "damage_levels", "categories", "titles", "edition", "suppliers", "stock_receipts", "stock_receipt_lines", "book_copies", "inventory_checks", "inventory_adjustment_requests", "cash_sessions", "sale_invoices", "sale_invoice_lines", "rental_slips", "returns", "rental_lines", "rental_extensions", "payments", "employee_work_records", "notification_outbox", "audit_logs"];
+    private static readonly string[] TableOrder =
+    [
+        "roles",
+        "employee",
+        "membership_tiers",
+        "customers",
+        "system_settings",
+        "damage_levels",
+        "categories",
+        "book_series",
+        "titles",
+        "edition",
+        "suppliers",
+        "stock_receipts",
+        "stock_receipt_lines",
+        "book_copies",
+        "inventory_checks",
+        "inventory_adjustment_requests",
+        "cash_sessions",
+        "sale_invoices",
+        "sale_invoice_lines",
+        "rental_slips",
+        "returns",
+        "rental_lines",
+        "rental_extensions",
+        "employee_work_records",
+        "payments",
+        "notification_outbox",
+        "audit_logs"
+    ];
 
     public static async Task RunAsync(IServiceProvider services, string contentRootPath)
     {
@@ -23,14 +51,35 @@ public static class Seed
         await connection.OpenAsync();
         await using var transaction = await connection.BeginTransactionAsync();
 
-        foreach (var table in document.RootElement.EnumerateObject())
+        foreach (var table in GetTablesInDependencyOrder(document.RootElement))
         {
-            if (!AllowedTables.Contains(table.Name)) throw new InvalidDataException($"Unsupported seed table: {table.Name}");
-            foreach (var row in table.Value.EnumerateArray()) await InsertRowAsync(connection, transaction, table.Name, row);
+            foreach (var row in table.Value.EnumerateArray())
+                await InsertRowAsync(connection, transaction, table.Key, row);
         }
 
         await transaction.CommitAsync();
         Console.WriteLine("Seed data imported successfully.");
+    }
+
+    internal static IEnumerable<KeyValuePair<string, JsonElement>> GetTablesInDependencyOrder(JsonElement root)
+    {
+        if (root.ValueKind != JsonValueKind.Object)
+            throw new InvalidDataException("Seed data root must be a JSON object.");
+
+        var tables = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+        foreach (var table in root.EnumerateObject())
+        {
+            if (!TableOrder.Contains(table.Name, StringComparer.Ordinal))
+                throw new InvalidDataException($"Unsupported seed table: {table.Name}");
+            if (table.Value.ValueKind != JsonValueKind.Array)
+                throw new InvalidDataException($"Seed table {table.Name} must contain a JSON array.");
+            if (!tables.TryAdd(table.Name, table.Value))
+                throw new InvalidDataException($"Duplicate seed table: {table.Name}");
+        }
+
+        foreach (var tableName in TableOrder)
+            if (tables.TryGetValue(tableName, out var rows))
+                yield return new KeyValuePair<string, JsonElement>(tableName, rows);
     }
 
     private static async Task InsertRowAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, string table, JsonElement row)
