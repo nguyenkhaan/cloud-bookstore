@@ -93,6 +93,7 @@ ipch/
 *.vspx
 *.sap
 .superpowers/
+.worktrees/
 # TFS 2012 Local Workspace
 $tf/
 
