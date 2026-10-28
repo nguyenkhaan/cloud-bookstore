@@ -167,6 +167,7 @@
     },
     {
       "Id": "00000000-0000-0000-0000-000000000502",
+      "ParentId": "00000000-0000-0000-0000-000000000501",
       "Name": "Kinh điển",
       "IsActive": true
     },
@@ -181,22 +182,37 @@
       "IsActive": true
     }
   ],
+  "book_series": [
+    {
+      "Id": "00000000-0000-0000-0000-000000000551",
+      "Name": "Harry Potter",
+      "Description": "Bộ tiểu thuyết giả tưởng gồm nhiều tập của J. K. Rowling.",
+      "IsActive": true,
+      "CreatedAt": "2026-01-01T00:00:00Z"
+    }
+  ],
   "titles": [
     {
       "Id": "00000000-0000-0000-0000-000000000601",
-      "Name": "Dế Mèn Phiêu Lưu Ký",
-      "Author": "Tô Hoài",
-      "OriginalPublishYear": 1941,
-      "CategoryId": "00000000-0000-0000-0000-000000000501",
-      "CreatedAt": "2026-01-01T00:00:00Z"
+      "SeriesId": "00000000-0000-0000-0000-000000000551",
+      "Name": "Harry Potter và Hòn đá Phù thủy",
+      "VolumeLabel": "Tập 1",
+      "Author": "J. K. Rowling",
+      "OriginalPublishYear": 1997,
+      "CategoryId": "00000000-0000-0000-0000-000000000503",
+      "CreatedAt": "2026-01-01T00:00:00Z",
+      "IsActive": true
     },
     {
       "Id": "00000000-0000-0000-0000-000000000602",
-      "Name": "Tắt Đèn",
-      "Author": "Ngô Tất Tố",
-      "OriginalPublishYear": 1939,
-      "CategoryId": "00000000-0000-0000-0000-000000000502",
-      "CreatedAt": "2026-01-07T00:00:00Z"
+      "SeriesId": "00000000-0000-0000-0000-000000000551",
+      "Name": "Harry Potter và Phòng chứa Bí mật",
+      "VolumeLabel": "Tập 2",
+      "Author": "J. K. Rowling",
+      "OriginalPublishYear": 1998,
+      "CategoryId": "00000000-0000-0000-0000-000000000503",
+      "CreatedAt": "2026-01-07T00:00:00Z",
+      "IsActive": true
     },
     {
       "Id": "00000000-0000-0000-0000-000000000603",
@@ -204,7 +220,8 @@
       "Author": "Nguyễn Nhật Ánh",
       "OriginalPublishYear": 2008,
       "CategoryId": "00000000-0000-0000-0000-000000000503",
-      "CreatedAt": "2026-01-08T00:00:00Z"
+      "CreatedAt": "2026-01-08T00:00:00Z",
+      "IsActive": true
     },
     {
       "Id": "00000000-0000-0000-0000-000000000604",
@@ -212,7 +229,8 @@
       "Author": "Dale Carnegie",
       "OriginalPublishYear": 1936,
       "CategoryId": "00000000-0000-0000-0000-000000000504",
-      "CreatedAt": "2026-01-09T00:00:00Z"
+      "CreatedAt": "2026-01-09T00:00:00Z",
+      "IsActive": true
     },
     {
       "Id": "00000000-0000-0000-0000-000000000605",
@@ -220,7 +238,8 @@
       "Author": "Paulo Coelho",
       "OriginalPublishYear": 1988,
       "CategoryId": "00000000-0000-0000-0000-000000000502",
-      "CreatedAt": "2026-01-10T00:00:00Z"
+      "CreatedAt": "2026-01-10T00:00:00Z",
+      "IsActive": true
     }
   ],
   "edition": [
@@ -228,65 +247,102 @@
       "Id": "00000000-0000-0000-0000-000000000701",
       "Isbn": "9786041234567",
       "TitleId": "00000000-0000-0000-0000-000000000601",
-      "Publisher": "Kim Đồng",
+      "EditionStatement": "Ấn bản tiếng Việt",
+      "PrintingStatement": "Tái bản 2025",
+      "Format": "Bìa mềm",
+      "Publisher": "Trẻ",
       "PublishYear": 2025,
       "CoverPrice": 65000,
-      "DefaultRentPrice": 5000,
       "MinStockSale": 2,
       "MinStockRental": 1,
       "MetadataSource": "MANUAL",
+      "MetadataConfirmedBy": "00000000-0000-0000-0000-000000000012",
+      "MetadataConfirmedAt": "2026-01-01T00:00:00Z",
       "IsActive": true
     },
     {
       "Id": "00000000-0000-0000-0000-000000000702",
       "Isbn": "9786049876543",
       "TitleId": "00000000-0000-0000-0000-000000000602",
-      "Publisher": "Văn Học",
+      "EditionStatement": "Ấn bản tiếng Việt",
+      "PrintingStatement": "Tái bản 2023",
+      "Format": "Bìa mềm",
+      "Publisher": "Trẻ",
       "PublishYear": 2023,
       "CoverPrice": 78000,
-      "DefaultRentPrice": 6000,
       "MinStockSale": 2,
       "MinStockRental": 1,
       "MetadataSource": "MANUAL",
+      "MetadataConfirmedBy": "00000000-0000-0000-0000-000000000012",
+      "MetadataConfirmedAt": "2026-01-07T00:00:00Z",
       "IsActive": true
     },
     {
       "Id": "00000000-0000-0000-0000-000000000703",
       "Isbn": "9786049876544",
       "TitleId": "00000000-0000-0000-0000-000000000603",
+      "EditionStatement": "Ấn bản phổ thông",
+      "PrintingStatement": "Tái bản 2024",
+      "Format": "Bìa mềm",
       "Publisher": "Trẻ",
       "PublishYear": 2024,
       "CoverPrice": 92000,
-      "DefaultRentPrice": 7000,
       "MinStockSale": 2,
       "MinStockRental": 2,
       "MetadataSource": "MANUAL",
+      "MetadataConfirmedBy": "00000000-0000-0000-0000-000000000012",
+      "MetadataConfirmedAt": "2026-01-08T00:00:00Z",
       "IsActive": true
     },
     {
       "Id": "00000000-0000-0000-0000-000000000704",
       "Isbn": "9786049876545",
       "TitleId": "00000000-0000-0000-0000-000000000604",
+      "EditionStatement": "Ấn bản tiếng Việt",
+      "PrintingStatement": "Tái bản 2022",
+      "Format": "Bìa mềm",
       "Publisher": "Tổng Hợp TP. Hồ Chí Minh",
       "PublishYear": 2022,
       "CoverPrice": 86000,
-      "DefaultRentPrice": 7000,
       "MinStockSale": 2,
       "MinStockRental": 1,
       "MetadataSource": "MANUAL",
+      "MetadataConfirmedBy": "00000000-0000-0000-0000-000000000012",
+      "MetadataConfirmedAt": "2026-01-09T00:00:00Z",
       "IsActive": true
     },
     {
       "Id": "00000000-0000-0000-0000-000000000705",
       "Isbn": "9786049876546",
       "TitleId": "00000000-0000-0000-0000-000000000605",
+      "EditionStatement": "Ấn bản tiếng Việt",
+      "PrintingStatement": "Tái bản 2025",
+      "Format": "Bìa mềm",
       "Publisher": "Nhã Nam",
       "PublishYear": 2025,
       "CoverPrice": 99000,
-      "DefaultRentPrice": 8000,
       "MinStockSale": 2,
       "MinStockRental": 2,
       "MetadataSource": "MANUAL",
+      "MetadataConfirmedBy": "00000000-0000-0000-0000-000000000012",
+      "MetadataConfirmedAt": "2026-01-10T00:00:00Z",
+      "IsActive": true
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000706",
+      "Isbn": "9786041234567",
+      "TitleId": "00000000-0000-0000-0000-000000000601",
+      "EditionStatement": "Ấn bản tiếng Việt",
+      "PrintingStatement": "Tái bản 2020",
+      "Format": "Bìa mềm",
+      "Publisher": "Trẻ",
+      "PublishYear": 2020,
+      "CoverPrice": 60000,
+      "MinStockSale": 0,
+      "MinStockRental": 0,
+      "MetadataSource": "MANUAL",
+      "MetadataConfirmedBy": "00000000-0000-0000-0000-000000000012",
+      "MetadataConfirmedAt": "2026-01-10T00:00:00Z",
       "IsActive": true
     }
   ],
@@ -405,6 +461,7 @@
       "ConditionGrade": "A",
       "CostPrice": 45000,
       "SellingPrice": 65000,
+      "RentalRate": 5000,
       "ReceiptLineId": "00000000-0000-0000-0000-000000001001",
       "CreatedAt": "2026-01-03T01:00:00Z"
     },
@@ -417,6 +474,7 @@
       "ConditionGrade": "A",
       "CostPrice": 55000,
       "SellingPrice": 78000,
+      "RentalRate": 6000,
       "ReceiptLineId": "00000000-0000-0000-0000-000000001002",
       "CreatedAt": "2026-01-07T09:00:00Z"
     },
@@ -429,6 +487,7 @@
       "ConditionGrade": "A",
       "CostPrice": 55000,
       "SellingPrice": 78000,
+      "RentalRate": 6000,
       "ReceiptLineId": "00000000-0000-0000-0000-000000001002",
       "CreatedAt": "2026-01-07T09:00:00Z"
     },
@@ -441,6 +500,7 @@
       "ConditionGrade": "A",
       "CostPrice": 58000,
       "SellingPrice": 92000,
+      "RentalRate": 7000,
       "ReceiptLineId": "00000000-0000-0000-0000-000000001003",
       "CreatedAt": "2026-01-07T09:00:00Z"
     },
@@ -453,6 +513,7 @@
       "ConditionGrade": "A",
       "CostPrice": 58000,
       "SellingPrice": 92000,
+      "RentalRate": 7000,
       "ReceiptLineId": "00000000-0000-0000-0000-000000001003",
       "CreatedAt": "2026-01-07T09:00:00Z"
     },
@@ -477,6 +538,7 @@
       "ConditionGrade": "A",
       "CostPrice": 79000,
       "SellingPrice": 99000,
+      "RentalRate": 8000,
       "ReceiptLineId": "00000000-0000-0000-0000-000000001005",
       "CreatedAt": "2026-01-08T09:00:00Z"
     }
@@ -533,7 +595,11 @@
       "OpenedBy": "00000000-0000-0000-0000-000000000010",
       "OpenedAt": "2026-01-05T00:00:00Z",
       "OpeningBalance": 500000,
-      "Status": "OPEN"
+      "Status": "CLOSED",
+      "ClosingExpected": 565000,
+      "ClosingCounted": 565000,
+      "ClosedBy": "00000000-0000-0000-0000-000000000010",
+      "ClosedAt": "2026-01-05T18:00:00Z"
     },
     {
       "Id": "00000000-0000-0000-0000-000000001402",
