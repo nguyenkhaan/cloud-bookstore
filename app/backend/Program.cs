@@ -91,7 +91,8 @@ builder.Services.AddScoped<ICsrfTokenStore, RedisCsrfTokenStore>();
 builder.Services.AddScoped<CsrfTokenService>();
 builder.Services
     .AddHealthChecks()
-    .AddCheck<RedisReadinessHealthCheck>("redis", tags: ["ready"]);
+    .AddCheck<RedisReadinessHealthCheck>("redis", tags: ["ready"])
+    .AddCheck<MinioReadinessHealthCheck>("minio", tags: ["ready"]);
 
 string connectionString = builder.Configuration["ConnectionStrings:DefaultConnection"] 
     ?? throw new InvalidDataException("Cannot connect to database. Please check your connection string");
@@ -228,6 +229,14 @@ builder.Services
         "Email:FrontendBaseUrl must be an absolute URL.")
     .ValidateOnStart();
 
+builder.Services
+    .AddOptions<MinioSettings>()
+    .BindConfiguration(MinioSettings.SectionName)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+builder.Services.AddSingleton<IMinioService, MinioService>();
+builder.Services.AddHostedService<MinioBucketInitializer>();
+
 //Dependency Injection
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<SettingService>();
@@ -235,6 +244,7 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<EmployeeService>();
 builder.Services.AddScoped<AuditLogService>();
+builder.Services.AddScoped<AttachmentService>();
 //Dependency Injection -> builder.Services.AddScoped<AuthService>();
 var app = builder.Build();
 
