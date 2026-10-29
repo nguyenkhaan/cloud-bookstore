@@ -238,19 +238,22 @@ public class AuthService(
         return new BrowserAuthenticationSession(accessToken, nextRefreshToken, nextCsrfToken);
     }
 
-    public async Task Logout(string refreshToken, string? csrfToken)
+    public async Task LogoutByRefreshTokenAsync(string refreshToken, string authenticatedAccessJti)
     {
         var refreshPrincipal = ValidateRefreshToken(refreshToken);
         var refreshJti = refreshPrincipal.FindFirstValue(JwtRegisteredClaimNames.Jti)!;
 
         var accessJti = await tokenJtiStore.GetAccessJtiForRefreshAsync(refreshJti);
-        if (string.IsNullOrWhiteSpace(accessJti))
+        if (!string.Equals(accessJti, authenticatedAccessJti, StringComparison.Ordinal))
             throw new UnauthorizedException("Invalid or expired refresh token");
 
-        if (!await csrfTokenService.IsValidAsync(accessJti, csrfToken))
-            throw new ForbiddenException("Invalid CSRF token");
+        await tokenJtiStore.RevokeLoginAsync(authenticatedAccessJti, refreshJti);
+        await csrfTokenService.RevokeAsync(authenticatedAccessJti);
+    }
 
-        await tokenJtiStore.RevokeLoginAsync(accessJti, refreshJti);
+    public async Task LogoutByAccessTokenAsync(string accessJti)
+    {
+        await tokenJtiStore.RevokeLoginByAccessAsync(accessJti);
         await csrfTokenService.RevokeAsync(accessJti);
     }
 

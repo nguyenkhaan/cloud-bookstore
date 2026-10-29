@@ -11,6 +11,12 @@ public static class AuthTokenSelector
 
     public static AuthTokenSelection Select(HttpRequest request, string accessCookieName)
     {
+        if (AuthenticationHeaderValue.TryParse(request.Headers.Authorization, out var authorization) &&
+            string.Equals(authorization.Scheme, "Bearer", StringComparison.OrdinalIgnoreCase))
+        {
+            return new AuthTokenSelection(false, authorization.Parameter);
+        }
+
         if (request.Cookies.TryGetValue(accessCookieName, out var accessCookie))
         {
             return new AuthTokenSelection(true, accessCookie);
@@ -19,12 +25,6 @@ public static class AuthTokenSelector
         if (HasCookieNamed(request.Headers.Cookie.ToString(), accessCookieName))
         {
             return new AuthTokenSelection(true, null);
-        }
-
-        if (AuthenticationHeaderValue.TryParse(request.Headers.Authorization, out var authorization) &&
-            string.Equals(authorization.Scheme, "Bearer", StringComparison.OrdinalIgnoreCase))
-        {
-            return new AuthTokenSelection(false, authorization.Parameter);
         }
 
         return new AuthTokenSelection(false, null);

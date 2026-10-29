@@ -8,9 +8,10 @@ public sealed class CsrfProtectionMiddleware(RequestDelegate next, AuthCookieSet
 {
     public async Task InvokeAsync(HttpContext context, CsrfTokenService csrfTokenService)
     {
+        Console.WriteLine(context.User.Identity?.IsAuthenticated);
         if (IsSafeMethod(context.Request.Method) ||
             !IsCookieAuthenticated(context) ||
-            context.User.Identity?.IsAuthenticated != true)
+            context.User.Identity?.IsAuthenticated is not true)
         {
             await next(context);
             return;
@@ -45,7 +46,8 @@ public sealed class CsrfProtectionMiddleware(RequestDelegate next, AuthCookieSet
     private static bool IsCookieAuthenticated(HttpContext context)
         => context.Items.TryGetValue(AuthTokenSelector.CookieAuthenticationItem, out var source) &&
             source is true;
-
+    //endpoint -> unsafe method -> thuc hien kiem tra request co hop le khong (POST, PUT, PATCH, DELETE)
+    //endpoint -> safe method -> Cho bypass middleware 
     private static bool IsSafeMethod(string method)
         => HttpMethods.IsGet(method) ||
             HttpMethods.IsHead(method) ||

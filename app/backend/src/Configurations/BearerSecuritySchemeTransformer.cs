@@ -1,4 +1,3 @@
-
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
@@ -15,31 +14,33 @@ internal sealed class BearerSecuritySchemeTransformer(
         OpenApiDocumentTransformerContext context,
         CancellationToken cancellationToken)
     {
-        var schemes = await authenticationSchemeProvider
-            .GetAllSchemesAsync();
-
-        if (!schemes.Any(scheme => scheme.Name == "Bearer"))
-            return;
+        var schemes = await authenticationSchemeProvider.GetAllSchemesAsync();
 
         var components = document.Components ??= new OpenApiComponents();
-        components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+        components.SecuritySchemes ??=
+            new Dictionary<string, IOpenApiSecurityScheme>();
 
-        components.SecuritySchemes["Bearer"] =
-            new OpenApiSecurityScheme
-            {
-                Type = SecuritySchemeType.Http,
-                Scheme = "bearer",
-                BearerFormat = "JWT",
-                In = ParameterLocation.Header,
-                Description = "Temporary fallback for non-browser callers that send an access JWT."
-            };
-        components.SecuritySchemes["CookieAuth"] =
+        if (schemes.Any(scheme => scheme.Name == "Bearer"))
+        {
+            components.SecuritySchemes["Bearer"] =
+                new OpenApiSecurityScheme
+                {
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    Description =
+                        "Temporary fallback for non-browser callers that send an access JWT."
+                };
+        }
+
+        components.SecuritySchemes["CsrfToken"] =
             new OpenApiSecurityScheme
             {
                 Type = SecuritySchemeType.ApiKey,
-                In = ParameterLocation.Cookie,
-                Name = authCookieSettings.AccessCookieName,
-                Description = "Browser authentication through an HttpOnly access-token cookie. Unsafe requests also require X-CSRF-Token."
+                In = ParameterLocation.Header,
+                Name = authCookieSettings.CsrfHeaderName,
+                Description =
+                    "CSRF token returned by login, session, or refresh."
             };
     }
 }

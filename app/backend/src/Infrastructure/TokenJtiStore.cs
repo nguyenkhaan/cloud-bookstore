@@ -31,7 +31,7 @@ public sealed class TokenJtiStore(RedisService redisService)
             throw new InvalidOperationException("Login tokens have different subjects.");
         }
 
-        await StoreAsync(access, TokenType.ACCESS, access.Subject, cancellationToken);
+        await StoreAsync(access, TokenType.ACCESS, refresh.Id, cancellationToken);
         await StoreAsync(refresh, TokenType.REFRESH, access.Id, cancellationToken);
         return access.Id;
     }
@@ -91,6 +91,22 @@ public sealed class TokenJtiStore(RedisService redisService)
 
     public Task<bool> RevokeAccessAsync(string accessJti, CancellationToken cancellationToken = default)
         => redisService.DeleteAsync(RedisKeyManager.ForToken(TokenType.ACCESS, accessJti), cancellationToken);
+
+    public async Task RevokeLoginByAccessAsync(string accessJti, CancellationToken cancellationToken = default)
+    {
+        var refreshJti = await redisService.GetAsync<string>(
+            RedisKeyManager.ForToken(TokenType.ACCESS, accessJti),
+            cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(refreshJti) &&
+            await IsActiveAsync(refreshJti, TokenType.REFRESH, cancellationToken))
+        {
+            await RevokeLoginAsync(accessJti, refreshJti, cancellationToken);
+            return;
+        }
+
+        await RevokeAccessAsync(accessJti, cancellationToken);
+    }
 
     private static TimeSpan GetRemainingLifetime(JwtSecurityToken jwt)
     {

@@ -2,6 +2,8 @@
 //dotnet ef database update
 // Run: dotnet watch run 
 using backend.src.Data;
+using System.Text.Json;
+using Microsoft.Extensions.Options;
 using backend.src.Exceptions;
 using backend.src.Configurations;
 using backend.src.Infrastructure;
@@ -248,10 +250,45 @@ app.UseMiddleware<UnsafeOriginValidationMiddleware>();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+
+    var csrfHeaderName = app.Services
+        .GetRequiredService<IOptions<AuthCookieSettings>>()
+        .Value.CsrfHeaderName;
+
     app.UseSwaggerUI(options =>
     {
-        options.SwaggerEndpoint("/openapi/v1.json", "Cloud Bookstore API v1");
+        options.SwaggerEndpoint(
+            "/openapi/v1.json",
+            "Cloud Bookstore API v1"
+        );
+
         options.RoutePrefix = "docs";
+
+
+        options.UseRequestInterceptor(
+    $$"""
+    (request) => {
+        const authorized =
+            window.ui?.authSelectors?.authorized()?.toJS?.() ?? {};
+
+        console.log("Swagger authorized:", authorized);
+
+        const csrfToken = authorized["CsrfToken"]?.value;
+
+        console.log("CSRF token found:", Boolean(csrfToken));
+
+        if (csrfToken) {
+            request.headers = request.headers || {};
+            request.headers[{{JsonSerializer.Serialize(csrfHeaderName)}}] = csrfToken;
+        }
+
+        return request;
+    }
+    """
+);
+
+
+
     });
 }
 if (args.Contains("--seed", StringComparer.OrdinalIgnoreCase))

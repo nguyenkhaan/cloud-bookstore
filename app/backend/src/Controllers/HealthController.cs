@@ -37,6 +37,7 @@ public class HealthController(EmailService emailService) : ControllerBase
         throw new BadRequestException("This is an exception for testing");
     }
 
+    [AllowAnonymous]
     [HttpPost("health/email")]
     [ProducesResponseType<EmailTestResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<EmailTestResponse>(StatusCodes.Status503ServiceUnavailable)]
@@ -51,7 +52,7 @@ public class HealthController(EmailService emailService) : ControllerBase
             ? Ok(response)
             : StatusCode(StatusCodes.Status503ServiceUnavailable, response);
     }
-    [Authorize(Roles ="ADMIN")]
+    [Authorize(Roles ="CASHIER")]
     [HttpGet("health/authorization")]
     public async Task<IActionResult> TestAuthorization()
     {

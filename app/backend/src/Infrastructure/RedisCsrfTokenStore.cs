@@ -1,5 +1,5 @@
 namespace backend.src.Infrastructure;
-
+//Lưu trữ csrf token vào trong redis. Phục vụ cho việc đối chiếu dữ liệu 
 public sealed class RedisCsrfTokenStore(RedisService redisService) : ICsrfTokenStore
 {
     public Task StoreAsync(
