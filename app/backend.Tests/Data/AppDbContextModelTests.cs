@@ -108,12 +108,16 @@ public sealed class AppDbContextModelTests
     {
         var model = BuildModel();
 
+        AssertDatabaseDefault(model, "backend.src.Models.CategoryModel", "IsActive", true);
+        AssertDatabaseDefault(model, "backend.src.Models.SupplierModel", "IsActive", true);
         AssertDatabaseDefault(model, "backend.src.Models.BookCopyModel", "Status", BookCopyStatus.PENDING_RECEIPT);
         AssertDatabaseDefault(model, "backend.src.Models.StockReceiptLineModel", "Availability", BookChannelAvailability.BOTH);
         AssertDatabaseDefault(model, "backend.src.Models.StockReceiptModel", "Status", ApprovalStatus.DRAFT);
         AssertDatabaseDefault(model, "backend.src.Models.InventoryAdjustmentRequestModel", "Status", InventoryAdjustmentStatus.PENDING_APPROVAL);
         AssertDatabaseDefault(model, "backend.src.Models.PaymentModel", "Status", PaymentStatus.PENDING);
         AssertDatabaseDefault(model, "backend.src.Models.NotificationOutboxModel", "Status", NotificationStatus.PENDING);
+        AssertDatabaseDefaultSql(model, "backend.src.Models.CustomerModel", "CreatedAt", "now()");
+        AssertDatabaseDefaultSql(model, "backend.src.Models.SystemSettingModel", "UpdatedAt", "now()");
     }
 
     [Fact]
@@ -146,6 +150,14 @@ public sealed class AppDbContextModelTests
     {
         var property = AssertProperty(model.FindEntityType(entityName), propertyName);
         var annotation = property.FindAnnotation(RelationalAnnotationNames.DefaultValue);
+        Assert.NotNull(annotation);
+        Assert.Equal(expected, annotation.Value);
+    }
+
+    private static void AssertDatabaseDefaultSql(IModel model, string entityName, string propertyName, string expected)
+    {
+        var property = AssertProperty(model.FindEntityType(entityName), propertyName);
+        var annotation = property.FindAnnotation(RelationalAnnotationNames.DefaultValueSql);
         Assert.NotNull(annotation);
         Assert.Equal(expected, annotation.Value);
     }

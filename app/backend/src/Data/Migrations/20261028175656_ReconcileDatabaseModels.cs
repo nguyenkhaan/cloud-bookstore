@@ -19,6 +19,42 @@ namespace backend.src.Data.Migrations
                 name: "FK_employee_roles_RoleId",
                 table: "employee");
 
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "UpdatedAt",
+                table: "system_settings",
+                type: "timestamp with time zone",
+                nullable: false,
+                defaultValueSql: "now()",
+                oldClrType: typeof(DateTime),
+                oldType: "timestamp with time zone");
+
+            migrationBuilder.AlterColumn<bool>(
+                name: "IsActive",
+                table: "suppliers",
+                type: "boolean",
+                nullable: false,
+                defaultValue: true,
+                oldClrType: typeof(bool),
+                oldType: "boolean");
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "CreatedAt",
+                table: "customers",
+                type: "timestamp with time zone",
+                nullable: false,
+                defaultValueSql: "now()",
+                oldClrType: typeof(DateTime),
+                oldType: "timestamp with time zone");
+
+            migrationBuilder.AlterColumn<bool>(
+                name: "IsActive",
+                table: "categories",
+                type: "boolean",
+                nullable: false,
+                defaultValue: true,
+                oldClrType: typeof(bool),
+                oldType: "boolean");
+
             migrationBuilder.DropColumn(
                 name: "DefaultRentPrice",
                 table: "edition");
@@ -427,13 +463,10 @@ namespace backend.src.Data.Migrations
                 oldClrType: typeof(DateTime),
                 oldType: "timestamp with time zone");
 
-            migrationBuilder.AlterColumn<string>(
-                name: "Content",
-                table: "notification_outbox",
-                type: "jsonb",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "text");
+            migrationBuilder.Sql("""
+                ALTER TABLE notification_outbox
+                ALTER COLUMN "Content" TYPE jsonb USING "Content"::jsonb;
+                """);
 
             migrationBuilder.AlterColumn<short>(
                 name: "AttemptCount",
@@ -781,23 +814,11 @@ namespace backend.src.Data.Migrations
                 oldClrType: typeof(DateTime),
                 oldType: "timestamp with time zone");
 
-            migrationBuilder.AlterColumn<string>(
-                name: "BeforeData",
-                table: "audit_logs",
-                type: "jsonb",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "text",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<string>(
-                name: "AfterData",
-                table: "audit_logs",
-                type: "jsonb",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "text",
-                oldNullable: true);
+            migrationBuilder.Sql("""
+                ALTER TABLE audit_logs
+                ALTER COLUMN "BeforeData" TYPE jsonb USING "BeforeData"::jsonb,
+                ALTER COLUMN "AfterData" TYPE jsonb USING "AfterData"::jsonb;
+                """);
 
             migrationBuilder.CreateTable(
                 name: "book_series",
@@ -1152,12 +1173,11 @@ namespace backend.src.Data.Migrations
                 table: "cash_sessions",
                 column: "VarianceApprovedBy");
 
-            migrationBuilder.CreateIndex(
-                name: "uq_cash_single_open",
-                table: "cash_sessions",
-                column: "Status",
-                unique: true,
-                filter: "\"Status\" <> 'CLOSED'");
+            migrationBuilder.Sql("""
+                CREATE UNIQUE INDEX uq_cash_single_open
+                ON cash_sessions ((true))
+                WHERE "Status" <> 'CLOSED';
+                """);
 
             migrationBuilder.CreateIndex(
                 name: "IX_book_copies_CopyBarcode",
@@ -1541,6 +1561,42 @@ namespace backend.src.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "UpdatedAt",
+                table: "system_settings",
+                type: "timestamp with time zone",
+                nullable: false,
+                oldClrType: typeof(DateTime),
+                oldType: "timestamp with time zone",
+                oldDefaultValueSql: "now()");
+
+            migrationBuilder.AlterColumn<bool>(
+                name: "IsActive",
+                table: "suppliers",
+                type: "boolean",
+                nullable: false,
+                oldClrType: typeof(bool),
+                oldType: "boolean",
+                oldDefaultValue: true);
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "CreatedAt",
+                table: "customers",
+                type: "timestamp with time zone",
+                nullable: false,
+                oldClrType: typeof(DateTime),
+                oldType: "timestamp with time zone",
+                oldDefaultValueSql: "now()");
+
+            migrationBuilder.AlterColumn<bool>(
+                name: "IsActive",
+                table: "categories",
+                type: "boolean",
+                nullable: false,
+                oldClrType: typeof(bool),
+                oldType: "boolean",
+                oldDefaultValue: true);
+
             migrationBuilder.DropForeignKey(
                 name: "FK_audit_logs_employee_ActorId",
                 table: "audit_logs");
@@ -2425,13 +2481,10 @@ namespace backend.src.Data.Migrations
                 oldType: "timestamp with time zone",
                 oldDefaultValueSql: "now()");
 
-            migrationBuilder.AlterColumn<string>(
-                name: "Content",
-                table: "notification_outbox",
-                type: "text",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "jsonb");
+            migrationBuilder.Sql("""
+                ALTER TABLE notification_outbox
+                ALTER COLUMN "Content" TYPE text USING "Content"::text;
+                """);
 
             migrationBuilder.AlterColumn<short>(
                 name: "AttemptCount",
@@ -2787,23 +2840,11 @@ namespace backend.src.Data.Migrations
                 oldType: "timestamp with time zone",
                 oldDefaultValueSql: "now()");
 
-            migrationBuilder.AlterColumn<string>(
-                name: "BeforeData",
-                table: "audit_logs",
-                type: "text",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "jsonb",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<string>(
-                name: "AfterData",
-                table: "audit_logs",
-                type: "text",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "jsonb",
-                oldNullable: true);
+            migrationBuilder.Sql("""
+                ALTER TABLE audit_logs
+                ALTER COLUMN "BeforeData" TYPE text USING "BeforeData"::text,
+                ALTER COLUMN "AfterData" TYPE text USING "AfterData"::text;
+                """);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_customers_membership_tiers_TierId",

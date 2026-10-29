@@ -104,13 +104,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         var customer = modelBuilder.Entity<CustomerModel>();
         customer.Property(x => x.EligibleSpend).HasDefaultValue(0L);
         customer.Property(x => x.IsFlagged).HasDefaultValue(false);
+        customer.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
 
-        modelBuilder.Entity<SystemSettingModel>().Property(x => x.Value).HasPrecision(18, 4);
+        var systemSetting = modelBuilder.Entity<SystemSettingModel>();
+        systemSetting.Property(x => x.Value).HasPrecision(18, 4);
+        systemSetting.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
         var damageLevel = modelBuilder.Entity<DamageLevelModel>();
         damageLevel.Property(x => x.PenaltyPct).HasPrecision(5, 2);
         damageLevel.Property(x => x.CopyStatusAfter)
             .HasDefaultValue(BookCopyStatus.DAMAGED)
             .HasSentinel((BookCopyStatus)(-1));
+
+        modelBuilder.Entity<CategoryModel>().Property(x => x.IsActive).HasDefaultValue(true);
 
         var bookSeries = modelBuilder.Entity<BookSeriesModel>();
         bookSeries.Property(x => x.IsActive).HasDefaultValue(true);
@@ -124,6 +129,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         edition.Property(x => x.MinStockSale).HasDefaultValue(0);
         edition.Property(x => x.MinStockRental).HasDefaultValue(0);
         edition.Property(x => x.IsActive).HasDefaultValue(true);
+
+        modelBuilder.Entity<SupplierModel>().Property(x => x.IsActive).HasDefaultValue(true);
 
         var stockReceipt = modelBuilder.Entity<StockReceiptModel>();
         stockReceipt.Property(x => x.Status).HasDefaultValue(ApprovalStatus.DRAFT);
