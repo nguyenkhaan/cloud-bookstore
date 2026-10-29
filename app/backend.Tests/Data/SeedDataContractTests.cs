@@ -1,10 +1,23 @@
 using System.Text.Json;
+using System.Xml.Linq;
 using Xunit;
 
 namespace backend.Tests.Data;
 
 public sealed class SeedDataContractTests
 {
+    [Fact]
+    public void SeedData_IsIncludedInBuildAndPublishOutputs()
+    {
+        var projectFile = XDocument.Load(Path.Combine(FindRepositoryRoot(), "app", "backend", "backend.csproj"));
+        var seedItem = projectFile.Descendants("None")
+            .SingleOrDefault(element => (string?)element.Attribute("Update") == "src/Data/data.json");
+
+        Assert.NotNull(seedItem);
+        Assert.Equal("PreserveNewest", seedItem.Element("CopyToOutputDirectory")?.Value);
+        Assert.Equal("PreserveNewest", seedItem.Element("CopyToPublishDirectory")?.Value);
+    }
+
     [Fact]
     public void CatalogData_CoversSeriesIndependentTitlesAndEditionVariants()
     {
@@ -137,13 +150,18 @@ public sealed class SeedDataContractTests
 
     private static JsonDocument LoadSeed()
     {
+        var path = Path.Combine(FindRepositoryRoot(), "app", "backend", "src", "Data", "data.json");
+        return JsonDocument.Parse(File.ReadAllText(path));
+    }
+
+    private static string FindRepositoryRoot()
+    {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "backend.sln")))
             directory = directory.Parent;
 
         Assert.NotNull(directory);
-        var path = Path.Combine(directory.FullName, "app", "backend", "src", "Data", "data.json");
-        return JsonDocument.Parse(File.ReadAllText(path));
+        return directory.FullName;
     }
 
     private static bool HasNonNullSeriesId(JsonElement title) =>

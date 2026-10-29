@@ -38,10 +38,10 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("AfterData")
-                        .HasColumnType("text");
+                        .HasColumnType("jsonb");
 
                     b.Property<string>("BeforeData")
-                        .HasColumnType("text");
+                        .HasColumnType("jsonb");
 
                     b.Property<Guid>("EntityId")
                         .HasColumnType("uuid");
@@ -55,12 +55,16 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("inet");
 
                     b.Property<DateTime>("OccurredAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<string>("Reason")
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ActorId");
 
                     b.ToTable("audit_logs", (string)null);
                 });
@@ -73,7 +77,9 @@ namespace backend.src.Data.Migrations
 
                     b.Property<string>("Availability")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("BOTH");
 
                     b.Property<string>("ConditionGrade")
                         .IsRequired()
@@ -91,13 +97,18 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("bigint");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<Guid>("EditionId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("ReceiptLineId")
                         .HasColumnType("uuid");
+
+                    b.Property<long?>("RentalRate")
+                        .HasColumnType("bigint");
 
                     b.Property<long?>("SellingPrice")
                         .HasColumnType("bigint");
@@ -108,11 +119,49 @@ namespace backend.src.Data.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("PENDING_RECEIPT");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CopyBarcode")
+                        .IsUnique();
+
+                    b.HasIndex("EditionId");
+
+                    b.HasIndex("ReceiptLineId");
+
                     b.ToTable("book_copies", (string)null);
+                });
+
+            modelBuilder.Entity("backend.src.Models.BookSeriesModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("book_series", (string)null);
                 });
 
             modelBuilder.Entity("backend.src.Models.CashSessionModel", b =>
@@ -134,7 +183,9 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("bigint");
 
                     b.Property<DateTime>("OpenedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<Guid>("OpenedBy")
                         .HasColumnType("uuid");
@@ -144,7 +195,9 @@ namespace backend.src.Data.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("OPEN");
 
                     b.Property<Guid?>("VarianceApprovedBy")
                         .HasColumnType("uuid");
@@ -153,6 +206,17 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ClosedBy");
+
+                    b.HasIndex("OpenedBy");
+
+                    b.HasIndex("Status")
+                        .IsUnique()
+                        .HasDatabaseName("uq_cash_single_open")
+                        .HasFilter("\"Status\" <> 'CLOSED'");
+
+                    b.HasIndex("VarianceApprovedBy");
 
                     b.ToTable("cash_sessions", (string)null);
                 });
@@ -176,6 +240,8 @@ namespace backend.src.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ParentId");
+
                     b.ToTable("categories", (string)null);
                 });
 
@@ -186,44 +252,49 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("Address")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("EligibleSpend")
-                        .HasColumnType("integer");
+                    b.Property<long>("EligibleSpend")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
 
                     b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<string>("FlagReason")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("FullName")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
 
                     b.Property<bool>("IsFlagged")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("NationalId")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("Phone")
                         .IsRequired()
-                        .HasMaxLength(12)
-                        .HasColumnType("character varying(12)");
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)");
 
                     b.Property<Guid>("TierId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Phone")
+                        .IsUnique();
 
                     b.HasIndex("TierId");
 
@@ -238,14 +309,17 @@ namespace backend.src.Data.Migrations
 
                     b.Property<string>("CopyStatusAfter")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("DAMAGED");
 
                     b.Property<string>("Level")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<decimal>("PenaltyPct")
-                        .HasColumnType("numeric");
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
 
                     b.HasKey("Id");
 
@@ -264,9 +338,6 @@ namespace backend.src.Data.Migrations
                     b.Property<long>("CoverPrice")
                         .HasColumnType("bigint");
 
-                    b.Property<long?>("DefaultRentPrice")
-                        .HasColumnType("bigint");
-
                     b.Property<string>("EditionStatement")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -276,7 +347,9 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
 
                     b.Property<string>("Isbn")
                         .HasMaxLength(20)
@@ -292,10 +365,14 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("text");
 
                     b.Property<int>("MinStockRental")
-                        .HasColumnType("integer");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<int>("MinStockSale")
-                        .HasColumnType("integer");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<string>("PrintingStatement")
                         .HasMaxLength(100)
@@ -312,6 +389,13 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Isbn")
+                        .HasDatabaseName("ix_edition_isbn");
+
+                    b.HasIndex("MetadataConfirmedBy");
+
+                    b.HasIndex("TitleId");
 
                     b.ToTable("edition", (string)null);
                 });
@@ -358,6 +442,7 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("character varying(12)");
 
                     b.Property<Guid>("RoleId")
+                        .IsConcurrencyToken()
                         .HasColumnType("uuid");
 
                     b.Property<string>("Status")
@@ -365,6 +450,9 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
 
                     b.HasIndex("RoleId");
 
@@ -388,7 +476,9 @@ namespace backend.src.Data.Migrations
 
                     b.Property<string>("AttendanceStatus")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("PRESENT");
 
                     b.Property<DateTime?>("CheckInAt")
                         .HasColumnType("timestamp with time zone");
@@ -397,34 +487,53 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<Guid>("EmployeeId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("OvertimeMinutes")
-                        .HasColumnType("integer");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<string>("PaymentStatus")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("UNPAID");
 
                     b.Property<short>("ShiftNo")
-                        .HasColumnType("smallint");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint")
+                        .HasDefaultValue((short)1);
 
                     b.Property<long>("ShiftSalary")
-                        .HasColumnType("bigint");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<DateOnly>("WorkDate")
                         .HasColumnType("date");
 
                     b.Property<int>("WorkedMinutes")
-                        .HasColumnType("integer");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApprovedBy");
+
+                    b.HasIndex("EmployeeId", "WorkDate", "ShiftNo")
+                        .IsUnique();
 
                     b.ToTable("employee_work_records", (string)null);
                 });
@@ -455,7 +564,9 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime>("RequestedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<Guid>("RequestedBy")
                         .HasColumnType("uuid");
@@ -466,9 +577,17 @@ namespace backend.src.Data.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("PENDING_APPROVAL");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApprovedBy");
+
+                    b.HasIndex("InventoryCheckId");
+
+                    b.HasIndex("RequestedBy");
 
                     b.ToTable("inventory_adjustment_requests", (string)null);
                 });
@@ -485,7 +604,9 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("character varying(20)");
 
                     b.Property<DateTime>("CheckedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<Guid>("CheckedBy")
                         .HasColumnType("uuid");
@@ -498,7 +619,9 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("text");
 
                     b.Property<bool>("IsFound")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("Note")
                         .HasColumnType("text");
@@ -511,6 +634,13 @@ namespace backend.src.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CheckedBy");
+
+                    b.HasIndex("CopyId");
+
+                    b.HasIndex("CheckCode", "CopyId")
+                        .IsUnique();
+
                     b.ToTable("inventory_checks", (string)null);
                 });
 
@@ -520,31 +650,43 @@ namespace backend.src.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<int>("MaxBooks")
-                        .HasColumnType("integer");
+                    b.Property<short>("MaxBooks")
+                        .HasColumnType("smallint");
 
                     b.Property<short>("MaxRentalDays")
                         .HasColumnType("smallint");
 
                     b.Property<long>("MinSpend")
-                        .HasColumnType("bigint");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<long>("RankOrder")
-                        .HasColumnType("bigint");
+                    b.Property<short>("RankOrder")
+                        .HasColumnType("smallint");
 
                     b.Property<decimal>("RentDiscountPct")
+                        .ValueGeneratedOnAdd()
                         .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)");
+                        .HasColumnType("numeric(5,2)")
+                        .HasDefaultValue(0m);
 
                     b.Property<decimal>("SaleDiscountPct")
+                        .ValueGeneratedOnAdd()
                         .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)");
+                        .HasColumnType("numeric(5,2)")
+                        .HasDefaultValue(0m);
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.HasIndex("RankOrder")
+                        .IsUnique();
 
                     b.ToTable("membership_tiers", (string)null);
                 });
@@ -556,7 +698,9 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<short>("AttemptCount")
-                        .HasColumnType("smallint");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint")
+                        .HasDefaultValue((short)0);
 
                     b.Property<string>("Channel")
                         .IsRequired()
@@ -564,10 +708,12 @@ namespace backend.src.Data.Migrations
 
                     b.Property<string>("Content")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("jsonb");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<string>("LastError")
                         .HasColumnType("text");
@@ -601,7 +747,9 @@ namespace backend.src.Data.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("PENDING");
 
                     b.Property<string>("TemplateCode")
                         .HasMaxLength(80)
@@ -628,11 +776,13 @@ namespace backend.src.Data.Migrations
                     b.Property<long?>("CashReceived")
                         .HasColumnType("bigint");
 
-                    b.Property<Guid>("CashSessionId")
+                    b.Property<Guid?>("CashSessionId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uuid");
@@ -680,7 +830,9 @@ namespace backend.src.Data.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("PENDING");
 
                     b.Property<Guid?>("StockReceiptId")
                         .HasColumnType("uuid");
@@ -689,6 +841,29 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CashSessionId");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("PaymentNo")
+                        .IsUnique();
+
+                    b.HasIndex("QrReference")
+                        .IsUnique();
+
+                    b.HasIndex("RentalSlipId");
+
+                    b.HasIndex("ReturnId");
+
+                    b.HasIndex("SaleInvoiceId");
+
+                    b.HasIndex("StockReceiptId");
+
+                    b.HasIndex("WorkRecordId");
 
                     b.ToTable("payments", (string)null);
                 });
@@ -703,13 +878,17 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("smallint");
 
                     b.Property<DateTime>("ExtendedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<long>("ExtensionFee")
                         .HasColumnType("bigint");
 
                     b.Property<long>("LatePenaltyLocked")
-                        .HasColumnType("bigint");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
 
                     b.Property<DateTime>("NewDueAt")
                         .HasColumnType("timestamp with time zone");
@@ -728,6 +907,11 @@ namespace backend.src.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("PerformedBy");
+
+                    b.HasIndex("RentalLineId", "Seq")
+                        .IsUnique();
+
                     b.ToTable("rental_extensions", (string)null);
                 });
 
@@ -738,10 +922,14 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<long>("AdditionalAmountDue")
-                        .HasColumnType("bigint");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
 
                     b.Property<long>("AdditionalAmountPaid")
-                        .HasColumnType("bigint");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
 
                     b.Property<long>("BaseRentFee")
                         .HasColumnType("bigint");
@@ -750,16 +938,24 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("bigint");
 
                     b.Property<long>("ChargedDamagePenalty")
-                        .HasColumnType("bigint");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
 
                     b.Property<long>("ChargedExtensionFee")
-                        .HasColumnType("bigint");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
 
                     b.Property<long>("ChargedLatePenalty")
-                        .HasColumnType("bigint");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
 
                     b.Property<long>("ChargedRentFee")
-                        .HasColumnType("bigint");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
 
                     b.Property<string>("CopyCondition")
                         .HasColumnType("text");
@@ -780,7 +976,9 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<bool>("DamageNeedsApproval")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("DamageNote")
                         .HasColumnType("text");
@@ -792,28 +990,43 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<short>("ExtensionCount")
-                        .HasColumnType("smallint");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint")
+                        .HasDefaultValue((short)0);
 
                     b.Property<long>("ExtensionFeeTotal")
-                        .HasColumnType("bigint");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
 
                     b.Property<short>("InitialDays")
                         .HasColumnType("smallint");
 
                     b.Property<short>("LateDays")
-                        .HasColumnType("smallint");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint")
+                        .HasDefaultValue((short)0);
 
                     b.Property<long>("LockedLatePenalty")
-                        .HasColumnType("bigint");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
 
                     b.Property<long>("LostRetainedAmount")
-                        .HasColumnType("bigint");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
 
                     b.Property<long>("RefundAmount")
-                        .HasColumnType("bigint");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
 
                     b.Property<decimal>("RentDiscountPct")
-                        .HasColumnType("numeric");
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)")
+                        .HasDefaultValue(0m);
 
                     b.Property<Guid?>("ReturnId")
                         .HasColumnType("uuid");
@@ -823,12 +1036,31 @@ namespace backend.src.Data.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("PENDING_DEPOSIT");
 
                     b.Property<short>("TotalDays")
                         .HasColumnType("smallint");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CopyId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_rental_line_active_copy")
+                        .HasFilter("\"Status\" IN ('PENDING_DEPOSIT', 'RENTING')");
+
+                    b.HasIndex("DamageApprovedBy");
+
+                    b.HasIndex("DamageLevelId");
+
+                    b.HasIndex("DueAt")
+                        .HasDatabaseName("ix_rental_lines_due")
+                        .HasFilter("\"Status\" = 'RENTING'");
+
+                    b.HasIndex("ReturnId");
+
+                    b.HasIndex("SlipId");
 
                     b.ToTable("rental_lines", (string)null);
                 });
@@ -846,7 +1078,9 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uuid");
@@ -864,12 +1098,23 @@ namespace backend.src.Data.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("DRAFT");
 
                     b.Property<Guid>("TierId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("SlipNo")
+                        .IsUnique();
+
+                    b.HasIndex("TierId");
 
                     b.ToTable("rental_slips", (string)null);
                 });
@@ -889,7 +1134,9 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("character varying(20)");
 
                     b.Property<DateTime>("ReturnedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<DateTime?>("SettledAt")
                         .HasColumnType("timestamp with time zone");
@@ -899,9 +1146,19 @@ namespace backend.src.Data.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("DRAFT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("ReturnNo")
+                        .IsUnique();
+
+                    b.HasIndex("SlipId")
+                        .IsUnique();
 
                     b.ToTable("returns", (string)null);
                 });
@@ -913,13 +1170,18 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
 
                     b.Property<string>("RoleName")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("RoleName")
+                        .IsUnique();
 
                     b.ToTable("roles", (string)null);
                 });
@@ -934,10 +1196,15 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<long>("DiscountAmount")
-                        .HasColumnType("bigint");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
 
                     b.Property<decimal>("DiscountPct")
-                        .HasColumnType("numeric");
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)")
+                        .HasDefaultValue(0m);
 
                     b.Property<long>("FinalPrice")
                         .HasColumnType("bigint");
@@ -950,9 +1217,18 @@ namespace backend.src.Data.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("ACTIVE");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CopyId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_sale_line_active_copy")
+                        .HasFilter("\"Status\" = 'ACTIVE'");
+
+                    b.HasIndex("InvoiceId");
 
                     b.ToTable("sale_invoice_lines", (string)null);
                 });
@@ -967,7 +1243,9 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uuid");
@@ -976,7 +1254,9 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<long>("DiscountTotal")
-                        .HasColumnType("bigint");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
 
                     b.Property<string>("InvoiceNo")
                         .HasMaxLength(20)
@@ -987,15 +1267,30 @@ namespace backend.src.Data.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("DRAFT");
 
                     b.Property<long>("Subtotal")
-                        .HasColumnType("bigint");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
 
                     b.Property<long>("TotalPayable")
-                        .HasColumnType("bigint");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CashSessionId");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("InvoiceNo")
+                        .IsUnique();
 
                     b.ToTable("sale_invoices", (string)null);
                 });
@@ -1008,7 +1303,9 @@ namespace backend.src.Data.Migrations
 
                     b.Property<string>("Availability")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("BOTH");
 
                     b.Property<string>("ConditionGrade")
                         .IsRequired()
@@ -1021,7 +1318,9 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<int>("Quantity")
-                        .HasColumnType("integer");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
 
                     b.Property<Guid>("ReceiptId")
                         .HasColumnType("uuid");
@@ -1030,6 +1329,10 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("bigint");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("EditionId");
+
+                    b.HasIndex("ReceiptId");
 
                     b.ToTable("stock_receipt_lines", (string)null);
                 });
@@ -1055,13 +1358,17 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uuid");
 
                     b.Property<bool>("NeedsApproval")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("Note")
                         .HasColumnType("text");
@@ -1078,15 +1385,30 @@ namespace backend.src.Data.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("DRAFT");
 
                     b.Property<Guid?>("SupplierId")
                         .HasColumnType("uuid");
 
                     b.Property<long>("TotalAmount")
-                        .HasColumnType("bigint");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApprovedBy");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("SellerId");
+
+                    b.HasIndex("SupplierId");
 
                     b.ToTable("stock_receipts", (string)null);
                 });
@@ -1118,6 +1440,9 @@ namespace backend.src.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TaxCode")
+                        .IsUnique();
+
                     b.ToTable("suppliers", (string)null);
                 });
 
@@ -1146,9 +1471,15 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("Value")
-                        .HasColumnType("numeric");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.HasIndex("UpdatedBy");
 
                     b.ToTable("system_settings", (string)null);
                 });
@@ -1167,10 +1498,17 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
 
                     b.Property<string>("Description")
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -1180,13 +1518,70 @@ namespace backend.src.Data.Migrations
                     b.Property<short?>("OriginalPublishYear")
                         .HasColumnType("smallint");
 
+                    b.Property<Guid?>("SeriesId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("VolumeLabel")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("SeriesId");
+
                     b.ToTable("titles", (string)null);
+                });
+
+            modelBuilder.Entity("backend.src.Models.AuditLogModel", b =>
+                {
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("ActorId")
+                        .OnDelete(DeleteBehavior.NoAction);
+                });
+
+            modelBuilder.Entity("backend.src.Models.BookCopyModel", b =>
+                {
+                    b.HasOne("backend.src.Models.EditionModel", null)
+                        .WithMany()
+                        .HasForeignKey("EditionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("backend.src.Models.StockReceiptLineModel", null)
+                        .WithMany()
+                        .HasForeignKey("ReceiptLineId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("backend.src.Models.CashSessionModel", b =>
+                {
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("ClosedBy")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("OpenedBy")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("VarianceApprovedBy")
+                        .OnDelete(DeleteBehavior.NoAction);
+                });
+
+            modelBuilder.Entity("backend.src.Models.CategoryModel", b =>
+                {
+                    b.HasOne("backend.src.Models.CategoryModel", null)
+                        .WithMany()
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.NoAction);
                 });
 
             modelBuilder.Entity("backend.src.Models.CustomerModel", b =>
@@ -1194,10 +1589,24 @@ namespace backend.src.Data.Migrations
                     b.HasOne("backend.src.Models.MembershipTierModel", "MembershipTier")
                         .WithMany()
                         .HasForeignKey("TierId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("MembershipTier");
+                });
+
+            modelBuilder.Entity("backend.src.Models.EditionModel", b =>
+                {
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("MetadataConfirmedBy")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("backend.src.Models.TitleModel", null)
+                        .WithMany()
+                        .HasForeignKey("TitleId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("backend.src.Models.EmployeeModel", b =>
@@ -1205,10 +1614,274 @@ namespace backend.src.Data.Migrations
                     b.HasOne("backend.src.Models.RoleModel", "Role")
                         .WithMany()
                         .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("backend.src.Models.EmployeeWorkRecordModel", b =>
+                {
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("ApprovedBy")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("backend.src.Models.InventoryAdjustmentRequestModel", b =>
+                {
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("ApprovedBy")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("backend.src.Models.InventoryCheckModel", null)
+                        .WithMany()
+                        .HasForeignKey("InventoryCheckId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("RequestedBy")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("backend.src.Models.InventoryCheckModel", b =>
+                {
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("CheckedBy")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("backend.src.Models.BookCopyModel", null)
+                        .WithMany()
+                        .HasForeignKey("CopyId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("backend.src.Models.PaymentModel", b =>
+                {
+                    b.HasOne("backend.src.Models.CashSessionModel", null)
+                        .WithMany()
+                        .HasForeignKey("CashSessionId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("backend.src.Models.RentalSlipModel", null)
+                        .WithMany()
+                        .HasForeignKey("RentalSlipId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("backend.src.Models.ReturnModel", null)
+                        .WithMany()
+                        .HasForeignKey("ReturnId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("backend.src.Models.SaleInvoiceModel", null)
+                        .WithMany()
+                        .HasForeignKey("SaleInvoiceId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("backend.src.Models.StockReceiptModel", null)
+                        .WithMany()
+                        .HasForeignKey("StockReceiptId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("backend.src.Models.EmployeeWorkRecordModel", null)
+                        .WithMany()
+                        .HasForeignKey("WorkRecordId")
+                        .OnDelete(DeleteBehavior.NoAction);
+                });
+
+            modelBuilder.Entity("backend.src.Models.RentalExtensionModel", b =>
+                {
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("PerformedBy")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("backend.src.Models.RentalLineModel", null)
+                        .WithMany()
+                        .HasForeignKey("RentalLineId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("backend.src.Models.RentalLineModel", b =>
+                {
+                    b.HasOne("backend.src.Models.BookCopyModel", null)
+                        .WithMany()
+                        .HasForeignKey("CopyId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("DamageApprovedBy")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("backend.src.Models.DamageLevelModel", null)
+                        .WithMany()
+                        .HasForeignKey("DamageLevelId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("backend.src.Models.ReturnModel", null)
+                        .WithMany()
+                        .HasForeignKey("ReturnId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("backend.src.Models.RentalSlipModel", null)
+                        .WithMany()
+                        .HasForeignKey("SlipId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("backend.src.Models.RentalSlipModel", b =>
+                {
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("backend.src.Models.CustomerModel", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("backend.src.Models.MembershipTierModel", null)
+                        .WithMany()
+                        .HasForeignKey("TierId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("backend.src.Models.ReturnModel", b =>
+                {
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("backend.src.Models.RentalSlipModel", null)
+                        .WithMany()
+                        .HasForeignKey("SlipId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("backend.src.Models.SaleInvoiceLineModel", b =>
+                {
+                    b.HasOne("backend.src.Models.BookCopyModel", null)
+                        .WithMany()
+                        .HasForeignKey("CopyId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("backend.src.Models.SaleInvoiceModel", null)
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("backend.src.Models.SaleInvoiceModel", b =>
+                {
+                    b.HasOne("backend.src.Models.CashSessionModel", null)
+                        .WithMany()
+                        .HasForeignKey("CashSessionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("backend.src.Models.CustomerModel", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.NoAction);
+                });
+
+            modelBuilder.Entity("backend.src.Models.StockReceiptLineModel", b =>
+                {
+                    b.HasOne("backend.src.Models.EditionModel", null)
+                        .WithMany()
+                        .HasForeignKey("EditionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("backend.src.Models.StockReceiptModel", null)
+                        .WithMany()
+                        .HasForeignKey("ReceiptId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("backend.src.Models.StockReceiptModel", b =>
+                {
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("ApprovedBy")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("backend.src.Models.CustomerModel", null)
+                        .WithMany()
+                        .HasForeignKey("SellerId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("backend.src.Models.SupplierModel", null)
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.NoAction);
+                });
+
+            modelBuilder.Entity("backend.src.Models.SystemSettingModel", b =>
+                {
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy")
+                        .OnDelete(DeleteBehavior.NoAction);
+                });
+
+            modelBuilder.Entity("backend.src.Models.TitleModel", b =>
+                {
+                    b.HasOne("backend.src.Models.CategoryModel", null)
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("backend.src.Models.BookSeriesModel", null)
+                        .WithMany()
+                        .HasForeignKey("SeriesId")
+                        .OnDelete(DeleteBehavior.NoAction);
                 });
 #pragma warning restore 612, 618
         }
