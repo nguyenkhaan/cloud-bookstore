@@ -235,6 +235,7 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<EmployeeService>();
 builder.Services.AddScoped<AuditLogService>();
+builder.Services.AddScoped<CategoryService>();
 //Dependency Injection -> builder.Services.AddScoped<AuthService>();
 var app = builder.Build();
 
