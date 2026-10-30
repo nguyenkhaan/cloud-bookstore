@@ -2,6 +2,7 @@ using backend.src.Data;
 using backend.src.Dto.CategoryDto;
 using backend.src.Dto.Common;
 using backend.src.Exceptions;
+using backend.src.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.src.Services;
@@ -92,5 +93,61 @@ public class CategoryService(AppDbContext dbContext)
             category.Name,
             category.IsActive,
             subCategories);
+    }
+
+    public async Task<CategoryResponse> CreateCategoryAsync(
+        CreateCategoryRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            throw new BadRequestException("Tên thể loại không được để trống.");
+        }
+
+        var trimmedName = request.Name.Trim();
+        if (trimmedName.Length > 100)
+        {
+            throw new BadRequestException("Tên thể loại không được vượt quá 100 ký tự.");
+        }
+
+        string? parentName = null;
+        if (request.ParentId.HasValue)
+        {
+            var parent = await dbContext.Categories.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == request.ParentId.Value, cancellationToken);
+            if (parent == null)
+            {
+                throw new NotFoundException($"Thể loại cha với ID '{request.ParentId}' không tồn tại.");
+            }
+            parentName = parent.Name;
+        }
+
+        var exists = await dbContext.Categories.AnyAsync(
+            c => c.ParentId == request.ParentId && c.Name.ToLower() == trimmedName.ToLower(),
+            cancellationToken);
+
+        if (exists)
+        {
+            throw new ConflictException("Thể loại cùng tên đã tồn tại trong cùng cấp phân loại.");
+        }
+
+        var category = new CategoryModel
+        {
+            Id = Guid.NewGuid(),
+            Name = trimmedName,
+            ParentId = request.ParentId,
+            IsActive = request.IsActive
+        };
+
+        dbContext.Categories.Add(category);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new CategoryResponse(
+            category.Id,
+            category.ParentId,
+            parentName,
+            category.Name,
+            category.IsActive
+        );
     }
 }
