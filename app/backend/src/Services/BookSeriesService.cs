@@ -178,4 +178,43 @@ public class BookSeriesService(AppDbContext dbContext)
             titlesCount
         );
     }
+
+    public async Task<BookSeriesResponse> UpdateBookSeriesStatusAsync(
+        Guid id,
+        UpdateBookSeriesStatusRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var series = await dbContext.BookSeries.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+        if (series == null)
+        {
+            throw new NotFoundException($"Book series with ID '{id}' was not found.");
+        }
+
+        series.IsActive = request.IsActive;
+
+        if (!request.IsActive)
+        {
+            var activeTitles = await dbContext.Titles
+                .Where(t => t.SeriesId == id && t.IsActive)
+                .ToListAsync(cancellationToken);
+
+            foreach (var title in activeTitles)
+            {
+                title.IsActive = false;
+            }
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var titlesCount = await dbContext.Titles.CountAsync(t => t.SeriesId == id, cancellationToken);
+
+        return new BookSeriesResponse(
+            series.Id,
+            series.Name,
+            series.Description,
+            series.IsActive,
+            series.CreatedAt,
+            titlesCount
+        );
+    }
 }

@@ -61,4 +61,18 @@ public class BookSeriesController(BookSeriesService bookSeriesService) : Control
         var result = await bookSeriesService.UpdateBookSeriesAsync(id, request, cancellationToken);
         return Ok(result);
     }
+
+    [HttpPatch("{id:guid}/status")]
+    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [ProducesResponseType<BookSeriesResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<BookSeriesResponse>> UpdateBookSeriesStatus(
+        [FromRoute] Guid id,
+        [FromBody] UpdateBookSeriesStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await bookSeriesService.UpdateBookSeriesStatusAsync(id, request, cancellationToken);
+        return Ok(result);
+    }
 }
