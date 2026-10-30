@@ -33,4 +33,18 @@ public class BookTitlesController(TitleService titleService) : ControllerBase
         var result = await titleService.GetTitleByIdAsync(id, cancellationToken);
         return Ok(result);
     }
+
+    [HttpPost]
+    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [ProducesResponseType<TitleResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<TitleResponse>> CreateTitle(
+        [FromBody] CreateTitleRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await titleService.CreateTitleAsync(request, cancellationToken);
+        return CreatedAtAction(nameof(GetTitleById), new { id = result.Id }, result);
+    }
 }

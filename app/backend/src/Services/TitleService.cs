@@ -2,6 +2,7 @@ using backend.src.Data;
 using backend.src.Dto.Common;
 using backend.src.Dto.TitleDto;
 using backend.src.Exceptions;
+using backend.src.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.src.Services;
@@ -136,6 +137,99 @@ public class TitleService(AppDbContext dbContext)
             title.IsActive,
             title.CreatedAt,
             editions
+        );
+    }
+
+    public async Task<TitleResponse> CreateTitleAsync(
+        CreateTitleRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            throw new BadRequestException("Tên đầu sách không được để trống.");
+        }
+
+        var trimmedName = request.Name.Trim();
+        if (trimmedName.Length > 255)
+        {
+            throw new BadRequestException("Tên đầu sách không được vượt quá 255 ký tự.");
+        }
+
+        string? seriesName = null;
+        if (request.SeriesId.HasValue)
+        {
+            var series = await dbContext.BookSeries.AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == request.SeriesId.Value, cancellationToken);
+            if (series == null)
+            {
+                throw new NotFoundException($"Bộ sách với ID '{request.SeriesId}' không tồn tại.");
+            }
+            if (!series.IsActive)
+            {
+                throw new BadRequestException("Không thể thêm đầu sách vào bộ sách đang bị ngừng sử dụng.");
+            }
+            seriesName = series.Name;
+        }
+
+        string? categoryName = null;
+        if (request.CategoryId.HasValue)
+        {
+            var category = await dbContext.Categories.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == request.CategoryId.Value, cancellationToken);
+            if (category == null)
+            {
+                throw new NotFoundException($"Thể loại với ID '{request.CategoryId}' không tồn tại.");
+            }
+            if (!category.IsActive)
+            {
+                throw new BadRequestException("Không thể chọn thể loại đang bị ngừng sử dụng.");
+            }
+            categoryName = category.Name;
+        }
+
+        var trimmedVolumeLabel = string.IsNullOrWhiteSpace(request.VolumeLabel) ? null : request.VolumeLabel.Trim();
+        var duplicateExists = await dbContext.Titles.AnyAsync(
+            t => t.SeriesId == request.SeriesId &&
+                 t.Name.ToLower() == trimmedName.ToLower() &&
+                 t.VolumeLabel == trimmedVolumeLabel,
+            cancellationToken);
+
+        if (duplicateExists)
+        {
+            throw new ConflictException("Đầu sách hoặc tập cùng tên đã tồn tại trong cùng bộ sách.");
+        }
+
+        var title = new TitleModel
+        {
+            Id = Guid.NewGuid(),
+            SeriesId = request.SeriesId,
+            Name = trimmedName,
+            VolumeLabel = trimmedVolumeLabel,
+            Author = string.IsNullOrWhiteSpace(request.Author) ? null : request.Author.Trim(),
+            OriginalPublishYear = request.OriginalPublishYear,
+            Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
+            CategoryId = request.CategoryId,
+            IsActive = request.IsActive,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        dbContext.Titles.Add(title);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new TitleResponse(
+            title.Id,
+            title.Name,
+            title.VolumeLabel,
+            title.Author,
+            title.OriginalPublishYear,
+            title.Description,
+            title.SeriesId,
+            seriesName,
+            title.CategoryId,
+            categoryName,
+            title.IsActive,
+            title.CreatedAt,
+            EditionsCount: 0
         );
     }
 }
