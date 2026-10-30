@@ -2,6 +2,7 @@ using backend.src.Data;
 using backend.src.Dto.CategoryDto;
 using backend.src.Dto.Common;
 using backend.src.Exceptions;
+using backend.src.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.src.Services;
@@ -92,5 +93,212 @@ public class CategoryService(AppDbContext dbContext)
             category.Name,
             category.IsActive,
             subCategories);
+    }
+
+    public async Task<CategoryResponse> CreateCategoryAsync(
+        CreateCategoryRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            throw new BadRequestException("Tên thể loại không được để trống.");
+        }
+
+        var trimmedName = request.Name.Trim();
+        if (trimmedName.Length > 100)
+        {
+            throw new BadRequestException("Tên thể loại không được vượt quá 100 ký tự.");
+        }
+
+        string? parentName = null;
+        if (request.ParentId.HasValue)
+        {
+            var parent = await dbContext.Categories.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == request.ParentId.Value, cancellationToken);
+            if (parent == null)
+            {
+                throw new NotFoundException($"Thể loại cha với ID '{request.ParentId}' không tồn tại.");
+            }
+            parentName = parent.Name;
+        }
+
+        var exists = await dbContext.Categories.AnyAsync(
+            c => c.ParentId == request.ParentId && c.Name.ToLower() == trimmedName.ToLower(),
+            cancellationToken);
+
+        if (exists)
+        {
+            throw new ConflictException("Thể loại cùng tên đã tồn tại trong cùng cấp phân loại.");
+        }
+
+        var category = new CategoryModel
+        {
+            Id = Guid.NewGuid(),
+            Name = trimmedName,
+            ParentId = request.ParentId,
+            IsActive = request.IsActive
+        };
+
+        dbContext.Categories.Add(category);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new CategoryResponse(
+            category.Id,
+            category.ParentId,
+            parentName,
+            category.Name,
+            category.IsActive
+        );
+    }
+
+    public async Task<CategoryResponse> UpdateCategoryAsync(
+        Guid id,
+        UpdateCategoryRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var category = await dbContext.Categories.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        if (category == null)
+        {
+            throw new NotFoundException($"Category with ID '{id}' was not found.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            throw new BadRequestException("Tên thể loại không được để trống.");
+        }
+
+        var trimmedName = request.Name.Trim();
+        if (trimmedName.Length > 100)
+        {
+            throw new BadRequestException("Tên thể loại không được vượt quá 100 ký tự.");
+        }
+
+        string? parentName = null;
+        if (request.ParentId.HasValue)
+        {
+            if (request.ParentId.Value == id)
+            {
+                throw new BadRequestException("Thể loại không thể chọn chính nó làm thể loại cha.");
+            }
+
+            var parent = await dbContext.Categories.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == request.ParentId.Value, cancellationToken);
+            if (parent == null)
+            {
+                throw new NotFoundException($"Thể loại cha với ID '{request.ParentId}' không tồn tại.");
+            }
+            parentName = parent.Name;
+
+            var currentAncestorId = parent.ParentId;
+            while (currentAncestorId.HasValue)
+            {
+                if (currentAncestorId.Value == id)
+                {
+                    throw new BadRequestException("Không thể chọn thể loại con làm thể loại cha (tạo vòng lặp phân cấp).");
+                }
+                var ancestor = await dbContext.Categories.AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.Id == currentAncestorId.Value, cancellationToken);
+                currentAncestorId = ancestor?.ParentId;
+            }
+        }
+
+        var duplicateExists = await dbContext.Categories.AnyAsync(
+            c => c.Id != id && c.ParentId == request.ParentId && c.Name.ToLower() == trimmedName.ToLower(),
+            cancellationToken);
+
+        if (duplicateExists)
+        {
+            throw new ConflictException("Thể loại cùng tên đã tồn tại trong cùng cấp phân loại.");
+        }
+
+        category.Name = trimmedName;
+        category.ParentId = request.ParentId;
+        if (request.IsActive.HasValue)
+        {
+            category.IsActive = request.IsActive.Value;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new CategoryResponse(
+            category.Id,
+            category.ParentId,
+            parentName,
+            category.Name,
+            category.IsActive
+        );
+    }
+
+    public async Task<CategoryResponse> UpdateCategoryStatusAsync(
+        Guid id,
+        UpdateCategoryStatusRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var category = await dbContext.Categories.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        if (category == null)
+        {
+            throw new NotFoundException($"Category with ID '{id}' was not found.");
+        }
+
+        string? parentName = null;
+        if (category.ParentId.HasValue)
+        {
+            var parent = await dbContext.Categories.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == category.ParentId.Value, cancellationToken);
+            parentName = parent?.Name;
+
+            if (request.IsActive && parent != null && !parent.IsActive)
+            {
+                throw new BadRequestException("Không thể kích hoạt thể loại con khi thể loại cha đang bị ngừng sử dụng.");
+            }
+        }
+
+        category.IsActive = request.IsActive;
+
+        if (!request.IsActive)
+        {
+            var directChildren = await dbContext.Categories
+                .Where(c => c.ParentId == id && c.IsActive)
+                .ToListAsync(cancellationToken);
+
+            foreach (var child in directChildren)
+            {
+                child.IsActive = false;
+            }
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new CategoryResponse(
+            category.Id,
+            category.ParentId,
+            parentName,
+            category.Name,
+            category.IsActive
+        );
+    }
+
+    public async Task DeleteCategoryAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var category = await dbContext.Categories.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        if (category == null)
+        {
+            throw new NotFoundException($"Category with ID '{id}' was not found.");
+        }
+
+        var hasSubCategories = await dbContext.Categories.AnyAsync(c => c.ParentId == id, cancellationToken);
+        if (hasSubCategories)
+        {
+            throw new BadRequestException("Không thể xóa thể loại này vì đang có thể loại con trực thuộc. Vui lòng xóa hoặc di chuyển các thể loại con trước.");
+        }
+
+        var hasBookTitles = await dbContext.Titles.AnyAsync(t => t.CategoryId == id, cancellationToken);
+        if (hasBookTitles)
+        {
+            throw new BadRequestException("Không thể xóa thể loại này vì đã có đầu sách tham chiếu. Vui lòng chuyển trạng thái sang ngừng sử dụng thay vì xóa.");
+        }
+
+        dbContext.Categories.Remove(category);
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

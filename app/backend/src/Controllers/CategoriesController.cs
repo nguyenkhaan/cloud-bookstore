@@ -33,4 +33,60 @@ public class CategoriesController(CategoryService categoryService) : ControllerB
         var result = await categoryService.GetCategoryByIdAsync(id, cancellationToken);
         return Ok(result);
     }
+
+    [HttpPost]
+    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [ProducesResponseType<CategoryResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<CategoryResponse>> CreateCategory(
+        [FromBody] CreateCategoryRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await categoryService.CreateCategoryAsync(request, cancellationToken);
+        return CreatedAtAction(nameof(GetCategoryById), new { id = result.Id }, result);
+    }
+
+    [HttpPut("{id:guid}")]
+    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [ProducesResponseType<CategoryResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<CategoryResponse>> UpdateCategory(
+        [FromRoute] Guid id,
+        [FromBody] UpdateCategoryRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await categoryService.UpdateCategoryAsync(id, request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPatch("{id:guid}/status")]
+    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [ProducesResponseType<CategoryResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<CategoryResponse>> UpdateCategoryStatus(
+        [FromRoute] Guid id,
+        [FromBody] UpdateCategoryStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await categoryService.UpdateCategoryStatusAsync(id, request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpDelete("{id:guid}")]
+    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteCategory(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken)
+    {
+        await categoryService.DeleteCategoryAsync(id, cancellationToken);
+        return NoContent();
+    }
 }
