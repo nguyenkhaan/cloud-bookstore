@@ -78,4 +78,18 @@ public class EditionsController(EditionService editionService) : ControllerBase
         var result = await editionService.UpdateEditionAsync(id, request, actorId, cancellationToken);
         return Ok(result);
     }
+
+    [HttpPatch("{id:guid}/status")]
+    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [ProducesResponseType<EditionResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<EditionResponse>> UpdateEditionStatus(
+        [FromRoute] Guid id,
+        [FromBody] UpdateEditionStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await editionService.UpdateEditionStatusAsync(id, request, cancellationToken);
+        return Ok(result);
+    }
 }

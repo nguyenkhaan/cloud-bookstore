@@ -454,4 +454,59 @@ public class EditionService(AppDbContext dbContext)
             copiesCount
         );
     }
+
+    public async Task<EditionResponse> UpdateEditionStatusAsync(
+        Guid id,
+        UpdateEditionStatusRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var edition = await dbContext.Editions.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+        if (edition == null)
+        {
+            throw new NotFoundException($"Edition with ID '{id}' was not found.");
+        }
+
+        var title = await dbContext.Titles.AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == edition.TitleId, cancellationToken);
+
+        if (request.IsActive && title != null && !title.IsActive)
+        {
+            throw new BadRequestException("Không thể kích hoạt ấn bản khi đầu sách trực thuộc đang bị ngừng sử dụng.");
+        }
+
+        edition.IsActive = request.IsActive;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        string? confirmedByName = null;
+        if (edition.MetadataConfirmedBy.HasValue)
+        {
+            var emp = await dbContext.Employees.AsNoTracking()
+                .FirstOrDefaultAsync(e => e.Id == edition.MetadataConfirmedBy.Value, cancellationToken);
+            confirmedByName = emp?.FullName;
+        }
+
+        var copiesCount = await dbContext.BookCopies.CountAsync(c => c.EditionId == id, cancellationToken);
+
+        return new EditionResponse(
+            edition.Id,
+            edition.Isbn,
+            edition.TitleId,
+            title?.Name,
+            edition.EditionStatement,
+            edition.PrintingStatement,
+            edition.Format,
+            edition.Publisher,
+            edition.PublishYear,
+            edition.CoverPrice,
+            edition.MinStockSale,
+            edition.MinStockRental,
+            edition.CoverImageUrl,
+            edition.MetadataSource,
+            edition.MetadataConfirmedBy,
+            confirmedByName,
+            edition.MetadataConfirmedAt,
+            edition.IsActive,
+            copiesCount
+        );
+    }
 }
