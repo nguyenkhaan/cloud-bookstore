@@ -1,6 +1,7 @@
 using backend.src.Data;
 using backend.src.Dto.Common;
 using backend.src.Dto.EditionDto;
+using backend.src.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.src.Services;
@@ -76,5 +77,81 @@ public class EditionService(AppDbContext dbContext)
             .ToListAsync(cancellationToken);
 
         return new PagedResult<EditionResponse>(items, totalCount, query.Page, query.PageSize);
+    }
+
+    public async Task<EditionDetailResponse> GetEditionByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var edition = await (from e in dbContext.Editions.AsNoTracking()
+                             where e.Id == id
+                             join t in dbContext.Titles.AsNoTracking() on e.TitleId equals t.Id into titles
+                             from t in titles.DefaultIfEmpty()
+                             join emp in dbContext.Employees.AsNoTracking() on e.MetadataConfirmedBy equals emp.Id into employees
+                             from emp in employees.DefaultIfEmpty()
+                             select new
+                             {
+                                 e.Id,
+                                 e.Isbn,
+                                 e.TitleId,
+                                 TitleName = t != null ? t.Name : null,
+                                 e.EditionStatement,
+                                 e.PrintingStatement,
+                                 e.Format,
+                                 e.Publisher,
+                                 e.PublishYear,
+                                 e.CoverPrice,
+                                 e.MinStockSale,
+                                 e.MinStockRental,
+                                 e.CoverImageUrl,
+                                 e.MetadataSource,
+                                 e.MetadataConfirmedBy,
+                                 MetadataConfirmedByName = emp != null ? emp.FullName : null,
+                                 e.MetadataConfirmedAt,
+                                 e.IsActive
+                             }).FirstOrDefaultAsync(cancellationToken);
+
+        if (edition == null)
+        {
+            throw new NotFoundException($"Edition with ID '{id}' was not found.");
+        }
+
+        var copies = await dbContext.BookCopies.AsNoTracking()
+            .Where(c => c.EditionId == id)
+            .OrderBy(c => c.CopyBarcode)
+            .Select(c => new EditionCopySummary(
+                c.Id,
+                c.CopyBarcode,
+                c.ConditionGrade,
+                c.Status,
+                c.Availability,
+                c.SellingPrice,
+                c.RentalRate,
+                c.ShelfCode,
+                c.CreatedAt
+            ))
+            .ToListAsync(cancellationToken);
+
+        return new EditionDetailResponse(
+            edition.Id,
+            edition.Isbn,
+            edition.TitleId,
+            edition.TitleName,
+            edition.EditionStatement,
+            edition.PrintingStatement,
+            edition.Format,
+            edition.Publisher,
+            edition.PublishYear,
+            edition.CoverPrice,
+            edition.MinStockSale,
+            edition.MinStockRental,
+            edition.CoverImageUrl,
+            edition.MetadataSource,
+            edition.MetadataConfirmedBy,
+            edition.MetadataConfirmedByName,
+            edition.MetadataConfirmedAt,
+            edition.IsActive,
+            copies
+        );
     }
 }
