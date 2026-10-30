@@ -126,4 +126,56 @@ public class BookSeriesService(AppDbContext dbContext)
             TitlesCount: 0
         );
     }
+
+    public async Task<BookSeriesResponse> UpdateBookSeriesAsync(
+        Guid id,
+        UpdateBookSeriesRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var series = await dbContext.BookSeries.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+        if (series == null)
+        {
+            throw new NotFoundException($"Book series with ID '{id}' was not found.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            throw new BadRequestException("Tên bộ sách không được để trống.");
+        }
+
+        var trimmedName = request.Name.Trim();
+        if (trimmedName.Length > 255)
+        {
+            throw new BadRequestException("Tên bộ sách không được vượt quá 255 ký tự.");
+        }
+
+        var duplicateExists = await dbContext.BookSeries.AnyAsync(
+            s => s.Id != id && s.Name.ToLower() == trimmedName.ToLower(),
+            cancellationToken);
+
+        if (duplicateExists)
+        {
+            throw new ConflictException("Bộ sách cùng tên đã tồn tại.");
+        }
+
+        series.Name = trimmedName;
+        series.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
+        if (request.IsActive.HasValue)
+        {
+            series.IsActive = request.IsActive.Value;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var titlesCount = await dbContext.Titles.CountAsync(t => t.SeriesId == id, cancellationToken);
+
+        return new BookSeriesResponse(
+            series.Id,
+            series.Name,
+            series.Description,
+            series.IsActive,
+            series.CreatedAt,
+            titlesCount
+        );
+    }
 }

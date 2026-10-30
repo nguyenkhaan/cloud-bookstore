@@ -46,4 +46,19 @@ public class BookSeriesController(BookSeriesService bookSeriesService) : Control
         var result = await bookSeriesService.CreateBookSeriesAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetBookSeriesById), new { id = result.Id }, result);
     }
+
+    [HttpPut("{id:guid}")]
+    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [ProducesResponseType<BookSeriesResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<BookSeriesResponse>> UpdateBookSeries(
+        [FromRoute] Guid id,
+        [FromBody] UpdateBookSeriesRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await bookSeriesService.UpdateBookSeriesAsync(id, request, cancellationToken);
+        return Ok(result);
+    }
 }
