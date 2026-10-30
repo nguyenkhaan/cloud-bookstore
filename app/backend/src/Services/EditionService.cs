@@ -2,6 +2,7 @@ using backend.src.Data;
 using backend.src.Dto.Common;
 using backend.src.Dto.EditionDto;
 using backend.src.Exceptions;
+using backend.src.Helpers;
 using backend.src.Models;
 using backend.src.Models.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -162,114 +163,34 @@ public class EditionService(AppDbContext dbContext)
         Guid? actorId = null,
         CancellationToken cancellationToken = default)
     {
-        if (request.TitleId == Guid.Empty)
-        {
-            throw new BadRequestException("TitleId không hợp lệ.");
-        }
+        var title = await EditionValidator.EnsureTitleValidForEditionAsync(
+            dbContext, request.TitleId, request.IsActive, cancellationToken);
 
-        var title = await dbContext.Titles.AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Id == request.TitleId, cancellationToken);
-        if (title == null)
-        {
-            throw new NotFoundException($"Đầu sách với ID '{request.TitleId}' không tồn tại.");
-        }
+        var meta = EditionValidator.NormalizeAndValidate(
+            request.Isbn, request.EditionStatement, request.PrintingStatement,
+            request.Format, request.Publisher, request.CoverImageUrl,
+            request.CoverPrice, request.MinStockSale, request.MinStockRental);
 
-        if (!title.IsActive)
-        {
-            throw new BadRequestException("Không thể tạo ấn bản cho đầu sách đang bị ngừng sử dụng.");
-        }
+        await EditionValidator.EnsureNoDuplicateAsync(
+            dbContext, request.TitleId, meta, request.PublishYear, cancellationToken: cancellationToken);
 
-        if (request.CoverPrice < 0)
-        {
-            throw new BadRequestException("Giá bìa phải lớn hơn hoặc bằng 0.");
-        }
-
-        if (request.MinStockSale < 0)
-        {
-            throw new BadRequestException("Ngưỡng tồn tối thiểu kênh bán phải lớn hơn hoặc bằng 0.");
-        }
-
-        if (request.MinStockRental < 0)
-        {
-            throw new BadRequestException("Ngưỡng tồn tối thiểu kênh thuê phải lớn hơn hoặc bằng 0.");
-        }
-
-        var trimmedIsbn = string.IsNullOrWhiteSpace(request.Isbn) ? null : request.Isbn.Trim();
-        if (trimmedIsbn?.Length > 20)
-        {
-            throw new BadRequestException("ISBN không được vượt quá 20 ký tự.");
-        }
-
-        var trimmedEditionStatement = string.IsNullOrWhiteSpace(request.EditionStatement) ? null : request.EditionStatement.Trim();
-        if (trimmedEditionStatement?.Length > 100)
-        {
-            throw new BadRequestException("Thông tin ấn bản không được vượt quá 100 ký tự.");
-        }
-
-        var trimmedPrintingStatement = string.IsNullOrWhiteSpace(request.PrintingStatement) ? null : request.PrintingStatement.Trim();
-        if (trimmedPrintingStatement?.Length > 100)
-        {
-            throw new BadRequestException("Thông tin lần in không được vượt quá 100 ký tự.");
-        }
-
-        var trimmedFormat = string.IsNullOrWhiteSpace(request.Format) ? null : request.Format.Trim();
-        if (trimmedFormat?.Length > 100)
-        {
-            throw new BadRequestException("Định dạng không được vượt quá 100 ký tự.");
-        }
-
-        var trimmedPublisher = string.IsNullOrWhiteSpace(request.Publisher) ? null : request.Publisher.Trim();
-        if (trimmedPublisher?.Length > 255)
-        {
-            throw new BadRequestException("Nhà xuất bản không được vượt quá 255 ký tự.");
-        }
-
-        var trimmedCoverImageUrl = string.IsNullOrWhiteSpace(request.CoverImageUrl) ? null : request.CoverImageUrl.Trim();
-
-        var duplicateExists = await dbContext.Editions.AnyAsync(
-            e => e.TitleId == request.TitleId &&
-                 e.Isbn == trimmedIsbn &&
-                 e.EditionStatement == trimmedEditionStatement &&
-                 e.PrintingStatement == trimmedPrintingStatement &&
-                 e.Format == trimmedFormat &&
-                 e.PublishYear == request.PublishYear,
-            cancellationToken);
-
-        if (duplicateExists)
-        {
-            throw new ConflictException("Ấn bản tương tự của đầu sách này đã tồn tại trong hệ thống.");
-        }
-
-        Guid? confirmedBy = request.MetadataConfirmedBy ?? actorId;
-        string? confirmedByName = null;
-        DateTime? confirmedAt = null;
-
-        if (confirmedBy.HasValue)
-        {
-            var employee = await dbContext.Employees.AsNoTracking()
-                .FirstOrDefaultAsync(e => e.Id == confirmedBy.Value, cancellationToken);
-            if (employee == null)
-            {
-                throw new NotFoundException($"Nhân viên với ID '{confirmedBy.Value}' không tồn tại.");
-            }
-            confirmedByName = employee.FullName;
-            confirmedAt = DateTime.UtcNow;
-        }
+        var (confirmedBy, confirmedByName, confirmedAt) = await EditionValidator.ResolveConfirmationAsync(
+            dbContext, request.MetadataConfirmedBy ?? actorId, cancellationToken: cancellationToken);
 
         var edition = new EditionModel
         {
             Id = Guid.NewGuid(),
             TitleId = request.TitleId,
-            Isbn = trimmedIsbn,
-            EditionStatement = trimmedEditionStatement,
-            PrintingStatement = trimmedPrintingStatement,
-            Format = trimmedFormat,
-            Publisher = trimmedPublisher,
+            Isbn = meta.Isbn,
+            EditionStatement = meta.EditionStatement,
+            PrintingStatement = meta.PrintingStatement,
+            Format = meta.Format,
+            Publisher = meta.Publisher,
             PublishYear = request.PublishYear,
-            CoverPrice = request.CoverPrice,
-            MinStockSale = request.MinStockSale,
-            MinStockRental = request.MinStockRental,
-            CoverImageUrl = trimmedCoverImageUrl,
+            CoverPrice = meta.CoverPrice,
+            MinStockSale = meta.MinStockSale,
+            MinStockRental = meta.MinStockRental,
+            CoverImageUrl = meta.CoverImageUrl,
             MetadataSource = request.MetadataSource ?? MetadataSource.MANUAL,
             MetadataConfirmedBy = confirmedBy,
             MetadataConfirmedAt = confirmedAt,
@@ -279,27 +200,7 @@ public class EditionService(AppDbContext dbContext)
         dbContext.Editions.Add(edition);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return new EditionResponse(
-            edition.Id,
-            edition.Isbn,
-            edition.TitleId,
-            title.Name,
-            edition.EditionStatement,
-            edition.PrintingStatement,
-            edition.Format,
-            edition.Publisher,
-            edition.PublishYear,
-            edition.CoverPrice,
-            edition.MinStockSale,
-            edition.MinStockRental,
-            edition.CoverImageUrl,
-            edition.MetadataSource,
-            edition.MetadataConfirmedBy,
-            confirmedByName,
-            edition.MetadataConfirmedAt,
-            edition.IsActive,
-            0
-        );
+        return edition.ToResponse(title.Name, confirmedByName, copiesCount: 0);
     }
 
     public async Task<EditionResponse> UpdateEditionAsync(
@@ -308,115 +209,38 @@ public class EditionService(AppDbContext dbContext)
         Guid? actorId = null,
         CancellationToken cancellationToken = default)
     {
-        var edition = await dbContext.Editions.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
-        if (edition == null)
-        {
-            throw new NotFoundException($"Edition with ID '{id}' was not found.");
-        }
+        var edition = await dbContext.Editions.FirstOrDefaultAsync(e => e.Id == id, cancellationToken)
+            ?? throw new NotFoundException($"Edition with ID '{id}' was not found.");
 
         var targetTitleId = request.TitleId ?? edition.TitleId;
-        var title = await dbContext.Titles.AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Id == targetTitleId, cancellationToken);
-        if (title == null)
-        {
-            throw new NotFoundException($"Đầu sách với ID '{targetTitleId}' không tồn tại.");
-        }
-
         var nextActive = request.IsActive ?? edition.IsActive;
-        if (!title.IsActive && nextActive)
-        {
-            throw new BadRequestException("Không thể gán ấn bản hoạt động cho đầu sách đang bị ngừng sử dụng.");
-        }
 
-        if (request.CoverPrice < 0)
-        {
-            throw new BadRequestException("Giá bìa phải lớn hơn hoặc bằng 0.");
-        }
+        var title = await EditionValidator.EnsureTitleValidForEditionAsync(
+            dbContext, targetTitleId, nextActive, cancellationToken);
 
-        if (request.MinStockSale < 0)
-        {
-            throw new BadRequestException("Ngưỡng tồn tối thiểu kênh bán phải lớn hơn hoặc bằng 0.");
-        }
+        var meta = EditionValidator.NormalizeAndValidate(
+            request.Isbn, request.EditionStatement, request.PrintingStatement,
+            request.Format, request.Publisher, request.CoverImageUrl,
+            request.CoverPrice, request.MinStockSale, request.MinStockRental);
 
-        if (request.MinStockRental < 0)
-        {
-            throw new BadRequestException("Ngưỡng tồn tối thiểu kênh thuê phải lớn hơn hoặc bằng 0.");
-        }
+        await EditionValidator.EnsureNoDuplicateAsync(
+            dbContext, targetTitleId, meta, request.PublishYear, excludeEditionId: id, cancellationToken: cancellationToken);
 
-        var trimmedIsbn = string.IsNullOrWhiteSpace(request.Isbn) ? null : request.Isbn.Trim();
-        if (trimmedIsbn?.Length > 20)
-        {
-            throw new BadRequestException("ISBN không được vượt quá 20 ký tự.");
-        }
-
-        var trimmedEditionStatement = string.IsNullOrWhiteSpace(request.EditionStatement) ? null : request.EditionStatement.Trim();
-        if (trimmedEditionStatement?.Length > 100)
-        {
-            throw new BadRequestException("Thông tin ấn bản không được vượt quá 100 ký tự.");
-        }
-
-        var trimmedPrintingStatement = string.IsNullOrWhiteSpace(request.PrintingStatement) ? null : request.PrintingStatement.Trim();
-        if (trimmedPrintingStatement?.Length > 100)
-        {
-            throw new BadRequestException("Thông tin lần in không được vượt quá 100 ký tự.");
-        }
-
-        var trimmedFormat = string.IsNullOrWhiteSpace(request.Format) ? null : request.Format.Trim();
-        if (trimmedFormat?.Length > 100)
-        {
-            throw new BadRequestException("Định dạng không được vượt quá 100 ký tự.");
-        }
-
-        var trimmedPublisher = string.IsNullOrWhiteSpace(request.Publisher) ? null : request.Publisher.Trim();
-        if (trimmedPublisher?.Length > 255)
-        {
-            throw new BadRequestException("Nhà xuất bản không được vượt quá 255 ký tự.");
-        }
-
-        var trimmedCoverImageUrl = string.IsNullOrWhiteSpace(request.CoverImageUrl) ? null : request.CoverImageUrl.Trim();
-
-        var duplicateExists = await dbContext.Editions.AnyAsync(
-            e => e.Id != id &&
-                 e.TitleId == targetTitleId &&
-                 e.Isbn == trimmedIsbn &&
-                 e.EditionStatement == trimmedEditionStatement &&
-                 e.PrintingStatement == trimmedPrintingStatement &&
-                 e.Format == trimmedFormat &&
-                 e.PublishYear == request.PublishYear,
-            cancellationToken);
-
-        if (duplicateExists)
-        {
-            throw new ConflictException("Ấn bản tương tự của đầu sách này đã tồn tại trong hệ thống.");
-        }
-
-        Guid? confirmedBy = request.MetadataConfirmedBy ?? actorId ?? edition.MetadataConfirmedBy;
-        string? confirmedByName = null;
-        DateTime? confirmedAt = edition.MetadataConfirmedAt;
-
-        if (confirmedBy.HasValue)
-        {
-            var employee = await dbContext.Employees.AsNoTracking()
-                .FirstOrDefaultAsync(e => e.Id == confirmedBy.Value, cancellationToken);
-            if (employee == null)
-            {
-                throw new NotFoundException($"Nhân viên với ID '{confirmedBy.Value}' không tồn tại.");
-            }
-            confirmedByName = employee.FullName;
-            confirmedAt = DateTime.UtcNow;
-        }
+        var targetConfirmedBy = request.MetadataConfirmedBy ?? actorId ?? edition.MetadataConfirmedBy;
+        var (confirmedBy, confirmedByName, confirmedAt) = await EditionValidator.ResolveConfirmationAsync(
+            dbContext, targetConfirmedBy, existingConfirmedAt: (request.MetadataConfirmedBy == null && actorId == null) ? edition.MetadataConfirmedAt : DateTime.UtcNow, cancellationToken: cancellationToken);
 
         edition.TitleId = targetTitleId;
-        edition.Isbn = trimmedIsbn;
-        edition.EditionStatement = trimmedEditionStatement;
-        edition.PrintingStatement = trimmedPrintingStatement;
-        edition.Format = trimmedFormat;
-        edition.Publisher = trimmedPublisher;
+        edition.Isbn = meta.Isbn;
+        edition.EditionStatement = meta.EditionStatement;
+        edition.PrintingStatement = meta.PrintingStatement;
+        edition.Format = meta.Format;
+        edition.Publisher = meta.Publisher;
         edition.PublishYear = request.PublishYear;
-        edition.CoverPrice = request.CoverPrice;
-        edition.MinStockSale = request.MinStockSale;
-        edition.MinStockRental = request.MinStockRental;
-        edition.CoverImageUrl = trimmedCoverImageUrl;
+        edition.CoverPrice = meta.CoverPrice;
+        edition.MinStockSale = meta.MinStockSale;
+        edition.MinStockRental = meta.MinStockRental;
+        edition.CoverImageUrl = meta.CoverImageUrl;
         if (request.MetadataSource.HasValue)
         {
             edition.MetadataSource = request.MetadataSource.Value;
@@ -431,28 +255,7 @@ public class EditionService(AppDbContext dbContext)
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var copiesCount = await dbContext.BookCopies.CountAsync(c => c.EditionId == id, cancellationToken);
-
-        return new EditionResponse(
-            edition.Id,
-            edition.Isbn,
-            edition.TitleId,
-            title.Name,
-            edition.EditionStatement,
-            edition.PrintingStatement,
-            edition.Format,
-            edition.Publisher,
-            edition.PublishYear,
-            edition.CoverPrice,
-            edition.MinStockSale,
-            edition.MinStockRental,
-            edition.CoverImageUrl,
-            edition.MetadataSource,
-            edition.MetadataConfirmedBy,
-            confirmedByName,
-            edition.MetadataConfirmedAt,
-            edition.IsActive,
-            copiesCount
-        );
+        return edition.ToResponse(title.Name, confirmedByName, copiesCount);
     }
 
     public async Task<EditionResponse> UpdateEditionStatusAsync(
@@ -460,11 +263,8 @@ public class EditionService(AppDbContext dbContext)
         UpdateEditionStatusRequest request,
         CancellationToken cancellationToken = default)
     {
-        var edition = await dbContext.Editions.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
-        if (edition == null)
-        {
-            throw new NotFoundException($"Edition with ID '{id}' was not found.");
-        }
+        var edition = await dbContext.Editions.FirstOrDefaultAsync(e => e.Id == id, cancellationToken)
+            ?? throw new NotFoundException($"Edition with ID '{id}' was not found.");
 
         var title = await dbContext.Titles.AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == edition.TitleId, cancellationToken);
@@ -477,58 +277,19 @@ public class EditionService(AppDbContext dbContext)
         edition.IsActive = request.IsActive;
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        string? confirmedByName = null;
-        if (edition.MetadataConfirmedBy.HasValue)
-        {
-            var emp = await dbContext.Employees.AsNoTracking()
-                .FirstOrDefaultAsync(e => e.Id == edition.MetadataConfirmedBy.Value, cancellationToken);
-            confirmedByName = emp?.FullName;
-        }
+        var (_, confirmedByName, _) = await EditionValidator.ResolveConfirmationAsync(
+            dbContext, edition.MetadataConfirmedBy, existingConfirmedAt: edition.MetadataConfirmedAt, cancellationToken: cancellationToken);
 
         var copiesCount = await dbContext.BookCopies.CountAsync(c => c.EditionId == id, cancellationToken);
-
-        return new EditionResponse(
-            edition.Id,
-            edition.Isbn,
-            edition.TitleId,
-            title?.Name,
-            edition.EditionStatement,
-            edition.PrintingStatement,
-            edition.Format,
-            edition.Publisher,
-            edition.PublishYear,
-            edition.CoverPrice,
-            edition.MinStockSale,
-            edition.MinStockRental,
-            edition.CoverImageUrl,
-            edition.MetadataSource,
-            edition.MetadataConfirmedBy,
-            confirmedByName,
-            edition.MetadataConfirmedAt,
-            edition.IsActive,
-            copiesCount
-        );
+        return edition.ToResponse(title?.Name, confirmedByName, copiesCount);
     }
 
     public async Task DeleteEditionAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var edition = await dbContext.Editions.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
-        if (edition == null)
-        {
-            throw new NotFoundException($"Edition with ID '{id}' was not found.");
-        }
+        var edition = await dbContext.Editions.FirstOrDefaultAsync(e => e.Id == id, cancellationToken)
+            ?? throw new NotFoundException($"Edition with ID '{id}' was not found.");
 
-        var hasCopies = await dbContext.BookCopies.AnyAsync(c => c.EditionId == id, cancellationToken);
-        if (hasCopies)
-        {
-            throw new BadRequestException("Không thể xóa ấn bản này vì đã có các bản sách vật lý liên kết. Vui lòng chuyển trạng thái sang ngừng sử dụng thay vì xóa.");
-        }
-
-        var hasReceiptLines = await dbContext.StockReceiptLines.AnyAsync(s => s.EditionId == id, cancellationToken);
-        if (hasReceiptLines)
-        {
-            throw new BadRequestException("Không thể xóa ấn bản này vì đã phát sinh dòng phiếu nhập kho liên kết. Vui lòng chuyển trạng thái sang ngừng sử dụng thay vì xóa.");
-        }
+        await EditionValidator.EnsureDeletableAsync(dbContext, id, cancellationToken);
 
         dbContext.Editions.Remove(edition);
         await dbContext.SaveChangesAsync(cancellationToken);
