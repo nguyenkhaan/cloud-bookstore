@@ -1,6 +1,7 @@
 using backend.src.Data;
 using backend.src.Dto.BookSeriesDto;
 using backend.src.Dto.Common;
+using backend.src.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.src.Services;
@@ -41,5 +42,41 @@ public class BookSeriesService(AppDbContext dbContext)
             .ToListAsync(cancellationToken);
 
         return new PagedResult<BookSeriesResponse>(items, totalCount, query.Page, query.PageSize);
+    }
+
+    public async Task<BookSeriesDetailResponse> GetBookSeriesByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var series = await dbContext.BookSeries.AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+
+        if (series == null)
+        {
+            throw new NotFoundException($"Book series with ID '{id}' was not found.");
+        }
+
+        var titles = await dbContext.Titles.AsNoTracking()
+            .Where(t => t.SeriesId == id)
+            .OrderBy(t => t.VolumeLabel)
+            .ThenBy(t => t.Name)
+            .Select(t => new BookSeriesTitleSummary(
+                t.Id,
+                t.Name,
+                t.VolumeLabel,
+                t.Author,
+                t.OriginalPublishYear,
+                t.IsActive
+            ))
+            .ToListAsync(cancellationToken);
+
+        return new BookSeriesDetailResponse(
+            series.Id,
+            series.Name,
+            series.Description,
+            series.IsActive,
+            series.CreatedAt,
+            titles
+        );
     }
 }
