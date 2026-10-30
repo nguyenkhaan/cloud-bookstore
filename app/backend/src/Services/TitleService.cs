@@ -1,6 +1,7 @@
 using backend.src.Data;
 using backend.src.Dto.Common;
 using backend.src.Dto.TitleDto;
+using backend.src.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.src.Services;
@@ -70,5 +71,71 @@ public class TitleService(AppDbContext dbContext)
             .ToListAsync(cancellationToken);
 
         return new PagedResult<TitleResponse>(items, totalCount, query.Page, query.PageSize);
+    }
+
+    public async Task<TitleDetailResponse> GetTitleByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var title = await (from t in dbContext.Titles.AsNoTracking()
+                           where t.Id == id
+                           join s in dbContext.BookSeries.AsNoTracking() on t.SeriesId equals s.Id into series
+                           from s in series.DefaultIfEmpty()
+                           join c in dbContext.Categories.AsNoTracking() on t.CategoryId equals c.Id into categories
+                           from c in categories.DefaultIfEmpty()
+                           select new
+                           {
+                               t.Id,
+                               t.Name,
+                               t.VolumeLabel,
+                               t.Author,
+                               t.OriginalPublishYear,
+                               t.Description,
+                               t.SeriesId,
+                               SeriesName = s != null ? s.Name : null,
+                               t.CategoryId,
+                               CategoryName = c != null ? c.Name : null,
+                               t.IsActive,
+                               t.CreatedAt
+                           }).FirstOrDefaultAsync(cancellationToken);
+
+        if (title == null)
+        {
+            throw new NotFoundException($"Book title with ID '{id}' was not found.");
+        }
+
+        var editions = await dbContext.Editions.AsNoTracking()
+            .Where(e => e.TitleId == id)
+            .OrderBy(e => e.PublishYear)
+            .ThenBy(e => e.EditionStatement)
+            .Select(e => new TitleEditionSummary(
+                e.Id,
+                e.Isbn,
+                e.Publisher,
+                e.PublishYear,
+                e.EditionStatement,
+                e.PrintingStatement,
+                e.Format,
+                e.CoverPrice,
+                e.CoverImageUrl,
+                e.IsActive
+            ))
+            .ToListAsync(cancellationToken);
+
+        return new TitleDetailResponse(
+            title.Id,
+            title.Name,
+            title.VolumeLabel,
+            title.Author,
+            title.OriginalPublishYear,
+            title.Description,
+            title.SeriesId,
+            title.SeriesName,
+            title.CategoryId,
+            title.CategoryName,
+            title.IsActive,
+            title.CreatedAt,
+            editions
+        );
     }
 }

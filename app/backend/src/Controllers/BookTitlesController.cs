@@ -21,4 +21,16 @@ public class BookTitlesController(TitleService titleService) : ControllerBase
         var result = await titleService.GetTitlesAsync(query, cancellationToken);
         return Ok(result);
     }
+
+    [HttpGet("{id:guid}")]
+    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)},{nameof(RoleName.CASHIER)}")]
+    [ProducesResponseType<TitleDetailResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<TitleDetailResponse>> GetTitleById(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken)
+    {
+        var result = await titleService.GetTitleByIdAsync(id, cancellationToken);
+        return Ok(result);
+    }
 }
