@@ -76,4 +76,17 @@ public class BookTitlesController(TitleService titleService) : ControllerBase
         var result = await titleService.UpdateTitleStatusAsync(id, request, cancellationToken);
         return Ok(result);
     }
+
+    [HttpDelete("{id:guid}")]
+    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteTitle(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken)
+    {
+        await titleService.DeleteTitleAsync(id, cancellationToken);
+        return NoContent();
+    }
 }

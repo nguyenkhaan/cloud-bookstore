@@ -402,4 +402,22 @@ public class TitleService(AppDbContext dbContext)
             editionsCount
         );
     }
+
+    public async Task DeleteTitleAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var title = await dbContext.Titles.FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+        if (title == null)
+        {
+            throw new NotFoundException($"Book title with ID '{id}' was not found.");
+        }
+
+        var hasEditions = await dbContext.Editions.AnyAsync(e => e.TitleId == id, cancellationToken);
+        if (hasEditions)
+        {
+            throw new BadRequestException("Không thể xóa đầu sách này vì đang có các ấn bản trực thuộc. Vui lòng chuyển trạng thái sang ngừng sử dụng thay vì xóa.");
+        }
+
+        dbContext.Titles.Remove(title);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
 }
