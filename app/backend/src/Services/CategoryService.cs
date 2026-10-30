@@ -1,0 +1,96 @@
+using backend.src.Data;
+using backend.src.Dto.CategoryDto;
+using backend.src.Dto.Common;
+using backend.src.Exceptions;
+using Microsoft.EntityFrameworkCore;
+
+namespace backend.src.Services;
+
+public class CategoryService(AppDbContext dbContext)
+{
+    public async Task<PagedResult<CategoryResponse>> GetCategoriesAsync(
+        CategoryQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        var baseQuery = dbContext.Categories.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(query.Name))
+        {
+            var trimmedName = query.Name.Trim().ToLower();
+            baseQuery = baseQuery.Where(c => c.Name.ToLower().Contains(trimmedName));
+        }
+
+        if (query.ParentId.HasValue)
+        {
+            baseQuery = baseQuery.Where(c => c.ParentId == query.ParentId.Value);
+        }
+
+        if (query.IsActive.HasValue)
+        {
+            baseQuery = baseQuery.Where(c => c.IsActive == query.IsActive.Value);
+        }
+
+        var totalCount = await baseQuery.CountAsync(cancellationToken);
+
+        var queryWithParent = from c in baseQuery
+                              join p in dbContext.Categories.AsNoTracking() on c.ParentId equals p.Id into parents
+                              from p in parents.DefaultIfEmpty()
+                              orderby c.Name
+                              select new CategoryResponse(
+                                  c.Id,
+                                  c.ParentId,
+                                  p != null ? p.Name : null,
+                                  c.Name,
+                                  c.IsActive
+                              );
+
+        var items = await queryWithParent
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
+            .ToListAsync(cancellationToken);
+
+        return new PagedResult<CategoryResponse>(items, totalCount, query.Page, query.PageSize);
+    }
+
+    public async Task<CategoryDetailResponse> GetCategoryByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var category = await (from c in dbContext.Categories.AsNoTracking()
+                              where c.Id == id
+                              join p in dbContext.Categories.AsNoTracking() on c.ParentId equals p.Id into parents
+                              from p in parents.DefaultIfEmpty()
+                              select new
+                              {
+                                  c.Id,
+                                  c.ParentId,
+                                  ParentName = p != null ? p.Name : null,
+                                  c.Name,
+                                  c.IsActive
+                              }).FirstOrDefaultAsync(cancellationToken);
+
+        if (category == null)
+        {
+            throw new NotFoundException($"Category with ID '{id}' was not found.");
+        }
+
+        var subCategories = await dbContext.Categories.AsNoTracking()
+            .Where(c => c.ParentId == id)
+            .OrderBy(c => c.Name)
+            .Select(c => new CategoryResponse(
+                c.Id,
+                c.ParentId,
+                category.Name,
+                c.Name,
+                c.IsActive))
+            .ToListAsync(cancellationToken);
+
+        return new CategoryDetailResponse(
+            category.Id,
+            category.ParentId,
+            category.ParentName,
+            category.Name,
+            category.IsActive,
+            subCategories);
+    }
+}
