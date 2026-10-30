@@ -2,6 +2,7 @@ using backend.src.Data;
 using backend.src.Dto.BookSeriesDto;
 using backend.src.Dto.Common;
 using backend.src.Exceptions;
+using backend.src.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.src.Services;
@@ -77,6 +78,52 @@ public class BookSeriesService(AppDbContext dbContext)
             series.IsActive,
             series.CreatedAt,
             titles
+        );
+    }
+
+    public async Task<BookSeriesResponse> CreateBookSeriesAsync(
+        CreateBookSeriesRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            throw new BadRequestException("Tên bộ sách không được để trống.");
+        }
+
+        var trimmedName = request.Name.Trim();
+        if (trimmedName.Length > 255)
+        {
+            throw new BadRequestException("Tên bộ sách không được vượt quá 255 ký tự.");
+        }
+
+        var exists = await dbContext.BookSeries.AnyAsync(
+            s => s.Name.ToLower() == trimmedName.ToLower(),
+            cancellationToken);
+
+        if (exists)
+        {
+            throw new ConflictException("Bộ sách cùng tên đã tồn tại.");
+        }
+
+        var series = new BookSeriesModel
+        {
+            Id = Guid.NewGuid(),
+            Name = trimmedName,
+            Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
+            IsActive = request.IsActive,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        dbContext.BookSeries.Add(series);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new BookSeriesResponse(
+            series.Id,
+            series.Name,
+            series.Description,
+            series.IsActive,
+            series.CreatedAt,
+            TitlesCount: 0
         );
     }
 }

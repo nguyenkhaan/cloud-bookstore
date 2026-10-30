@@ -33,4 +33,17 @@ public class BookSeriesController(BookSeriesService bookSeriesService) : Control
         var result = await bookSeriesService.GetBookSeriesByIdAsync(id, cancellationToken);
         return Ok(result);
     }
+
+    [HttpPost]
+    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [ProducesResponseType<BookSeriesResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<BookSeriesResponse>> CreateBookSeries(
+        [FromBody] CreateBookSeriesRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await bookSeriesService.CreateBookSeriesAsync(request, cancellationToken);
+        return CreatedAtAction(nameof(GetBookSeriesById), new { id = result.Id }, result);
+    }
 }
