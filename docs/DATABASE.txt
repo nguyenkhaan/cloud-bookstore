@@ -628,3 +628,29 @@ table audit_logs {
   reason text
   Note: 'Nhật ký thao tác nhạy cảm, chỉ ghi thêm (đổi giá, đổi trạng thái sách, duyệt phạt, đổi vai trò...).'
 }
+
+enum AttachmentOwnerType {
+  EDITION_COVER
+  RENTAL_LINE_DAMAGE
+  STOCK_RECEIPT
+}
+
+table attachments {
+  id uuid [pk]
+  owner_type AttachmentOwnerType [not null]
+  owner_id uuid [not null, note: 'Quan hệ đa hình theo owner_type, không có FK; BE kiểm tra tồn tại khi upload']
+  object_key varchar(300) [not null, unique, note: 'Đường dẫn object trong bucket MinIO']
+  original_file_name varchar(255) [not null]
+  content_type varchar(100) [not null]
+  size_bytes bigint [not null]
+  uploaded_by uuid [not null]
+  uploaded_at timestamptz [not null, default: `now()`]
+  is_deleted boolean [not null, default: false]
+  deleted_at timestamptz
+  deleted_by uuid
+
+  Indexes {
+    (owner_type, owner_id) [name: 'ix_attachments_owner']
+  }
+  Note: 'Metadata file đính kèm. File thật nằm trên MinIO. Xoá mềm; object được dọn sau bằng job riêng.'
+}
