@@ -1,6 +1,7 @@
 using backend.src.Data;
 using backend.src.Dto.CategoryDto;
 using backend.src.Dto.Common;
+using backend.src.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.src.Services;
@@ -49,5 +50,47 @@ public class CategoryService(AppDbContext dbContext)
             .ToListAsync(cancellationToken);
 
         return new PagedResult<CategoryResponse>(items, totalCount, query.Page, query.PageSize);
+    }
+
+    public async Task<CategoryDetailResponse> GetCategoryByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var category = await (from c in dbContext.Categories.AsNoTracking()
+                              where c.Id == id
+                              join p in dbContext.Categories.AsNoTracking() on c.ParentId equals p.Id into parents
+                              from p in parents.DefaultIfEmpty()
+                              select new
+                              {
+                                  c.Id,
+                                  c.ParentId,
+                                  ParentName = p != null ? p.Name : null,
+                                  c.Name,
+                                  c.IsActive
+                              }).FirstOrDefaultAsync(cancellationToken);
+
+        if (category == null)
+        {
+            throw new NotFoundException($"Category with ID '{id}' was not found.");
+        }
+
+        var subCategories = await dbContext.Categories.AsNoTracking()
+            .Where(c => c.ParentId == id)
+            .OrderBy(c => c.Name)
+            .Select(c => new CategoryResponse(
+                c.Id,
+                c.ParentId,
+                category.Name,
+                c.Name,
+                c.IsActive))
+            .ToListAsync(cancellationToken);
+
+        return new CategoryDetailResponse(
+            category.Id,
+            category.ParentId,
+            category.ParentName,
+            category.Name,
+            category.IsActive,
+            subCategories);
     }
 }
