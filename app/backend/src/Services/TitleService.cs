@@ -332,4 +332,74 @@ public class TitleService(AppDbContext dbContext)
             editionsCount
         );
     }
+
+    public async Task<TitleResponse> UpdateTitleStatusAsync(
+        Guid id,
+        UpdateTitleStatusRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var title = await dbContext.Titles.FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+        if (title == null)
+        {
+            throw new NotFoundException($"Book title with ID '{id}' was not found.");
+        }
+
+        string? seriesName = null;
+        if (title.SeriesId.HasValue)
+        {
+            var series = await dbContext.BookSeries.AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == title.SeriesId.Value, cancellationToken);
+            if (request.IsActive && series != null && !series.IsActive)
+            {
+                throw new BadRequestException("Không thể kích hoạt đầu sách khi bộ sách trực thuộc đang bị ngừng sử dụng.");
+            }
+            seriesName = series?.Name;
+        }
+
+        string? categoryName = null;
+        if (title.CategoryId.HasValue)
+        {
+            var category = await dbContext.Categories.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == title.CategoryId.Value, cancellationToken);
+            if (request.IsActive && category != null && !category.IsActive)
+            {
+                throw new BadRequestException("Không thể kích hoạt đầu sách khi thể loại trực thuộc đang bị ngừng sử dụng.");
+            }
+            categoryName = category?.Name;
+        }
+
+        title.IsActive = request.IsActive;
+
+        if (!request.IsActive)
+        {
+            var activeEditions = await dbContext.Editions
+                .Where(e => e.TitleId == id && e.IsActive)
+                .ToListAsync(cancellationToken);
+
+            foreach (var edition in activeEditions)
+            {
+                edition.IsActive = false;
+            }
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var editionsCount = await dbContext.Editions.CountAsync(e => e.TitleId == id, cancellationToken);
+
+        return new TitleResponse(
+            title.Id,
+            title.Name,
+            title.VolumeLabel,
+            title.Author,
+            title.OriginalPublishYear,
+            title.Description,
+            title.SeriesId,
+            seriesName,
+            title.CategoryId,
+            categoryName,
+            title.IsActive,
+            title.CreatedAt,
+            editionsCount
+        );
+    }
 }

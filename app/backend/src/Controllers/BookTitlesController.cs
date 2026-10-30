@@ -62,4 +62,18 @@ public class BookTitlesController(TitleService titleService) : ControllerBase
         var result = await titleService.UpdateTitleAsync(id, request, cancellationToken);
         return Ok(result);
     }
+
+    [HttpPatch("{id:guid}/status")]
+    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [ProducesResponseType<TitleResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<TitleResponse>> UpdateTitleStatus(
+        [FromRoute] Guid id,
+        [FromBody] UpdateTitleStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await titleService.UpdateTitleStatusAsync(id, request, cancellationToken);
+        return Ok(result);
+    }
 }
