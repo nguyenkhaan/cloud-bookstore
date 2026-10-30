@@ -150,4 +150,82 @@ public class CategoryService(AppDbContext dbContext)
             category.IsActive
         );
     }
+
+    public async Task<CategoryResponse> UpdateCategoryAsync(
+        Guid id,
+        UpdateCategoryRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var category = await dbContext.Categories.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        if (category == null)
+        {
+            throw new NotFoundException($"Category with ID '{id}' was not found.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            throw new BadRequestException("Tên thể loại không được để trống.");
+        }
+
+        var trimmedName = request.Name.Trim();
+        if (trimmedName.Length > 100)
+        {
+            throw new BadRequestException("Tên thể loại không được vượt quá 100 ký tự.");
+        }
+
+        string? parentName = null;
+        if (request.ParentId.HasValue)
+        {
+            if (request.ParentId.Value == id)
+            {
+                throw new BadRequestException("Thể loại không thể chọn chính nó làm thể loại cha.");
+            }
+
+            var parent = await dbContext.Categories.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == request.ParentId.Value, cancellationToken);
+            if (parent == null)
+            {
+                throw new NotFoundException($"Thể loại cha với ID '{request.ParentId}' không tồn tại.");
+            }
+            parentName = parent.Name;
+
+            var currentAncestorId = parent.ParentId;
+            while (currentAncestorId.HasValue)
+            {
+                if (currentAncestorId.Value == id)
+                {
+                    throw new BadRequestException("Không thể chọn thể loại con làm thể loại cha (tạo vòng lặp phân cấp).");
+                }
+                var ancestor = await dbContext.Categories.AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.Id == currentAncestorId.Value, cancellationToken);
+                currentAncestorId = ancestor?.ParentId;
+            }
+        }
+
+        var duplicateExists = await dbContext.Categories.AnyAsync(
+            c => c.Id != id && c.ParentId == request.ParentId && c.Name.ToLower() == trimmedName.ToLower(),
+            cancellationToken);
+
+        if (duplicateExists)
+        {
+            throw new ConflictException("Thể loại cùng tên đã tồn tại trong cùng cấp phân loại.");
+        }
+
+        category.Name = trimmedName;
+        category.ParentId = request.ParentId;
+        if (request.IsActive.HasValue)
+        {
+            category.IsActive = request.IsActive.Value;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new CategoryResponse(
+            category.Id,
+            category.ParentId,
+            parentName,
+            category.Name,
+            category.IsActive
+        );
+    }
 }

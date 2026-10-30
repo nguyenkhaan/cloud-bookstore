@@ -47,4 +47,19 @@ public class CategoriesController(CategoryService categoryService) : ControllerB
         var result = await categoryService.CreateCategoryAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetCategoryById), new { id = result.Id }, result);
     }
+
+    [HttpPut("{id:guid}")]
+    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [ProducesResponseType<CategoryResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<CategoryResponse>> UpdateCategory(
+        [FromRoute] Guid id,
+        [FromBody] UpdateCategoryRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await categoryService.UpdateCategoryAsync(id, request, cancellationToken);
+        return Ok(result);
+    }
 }
