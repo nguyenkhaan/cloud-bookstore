@@ -509,4 +509,28 @@ public class EditionService(AppDbContext dbContext)
             copiesCount
         );
     }
+
+    public async Task DeleteEditionAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var edition = await dbContext.Editions.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+        if (edition == null)
+        {
+            throw new NotFoundException($"Edition with ID '{id}' was not found.");
+        }
+
+        var hasCopies = await dbContext.BookCopies.AnyAsync(c => c.EditionId == id, cancellationToken);
+        if (hasCopies)
+        {
+            throw new BadRequestException("Không thể xóa ấn bản này vì đã có các bản sách vật lý liên kết. Vui lòng chuyển trạng thái sang ngừng sử dụng thay vì xóa.");
+        }
+
+        var hasReceiptLines = await dbContext.StockReceiptLines.AnyAsync(s => s.EditionId == id, cancellationToken);
+        if (hasReceiptLines)
+        {
+            throw new BadRequestException("Không thể xóa ấn bản này vì đã phát sinh dòng phiếu nhập kho liên kết. Vui lòng chuyển trạng thái sang ngừng sử dụng thay vì xóa.");
+        }
+
+        dbContext.Editions.Remove(edition);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
 }
