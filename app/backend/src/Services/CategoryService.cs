@@ -277,4 +277,28 @@ public class CategoryService(AppDbContext dbContext)
             category.IsActive
         );
     }
+
+    public async Task DeleteCategoryAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var category = await dbContext.Categories.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        if (category == null)
+        {
+            throw new NotFoundException($"Category with ID '{id}' was not found.");
+        }
+
+        var hasSubCategories = await dbContext.Categories.AnyAsync(c => c.ParentId == id, cancellationToken);
+        if (hasSubCategories)
+        {
+            throw new BadRequestException("Không thể xóa thể loại này vì đang có thể loại con trực thuộc. Vui lòng xóa hoặc di chuyển các thể loại con trước.");
+        }
+
+        var hasBookTitles = await dbContext.Titles.AnyAsync(t => t.CategoryId == id, cancellationToken);
+        if (hasBookTitles)
+        {
+            throw new BadRequestException("Không thể xóa thể loại này vì đã có đầu sách tham chiếu. Vui lòng chuyển trạng thái sang ngừng sử dụng thay vì xóa.");
+        }
+
+        dbContext.Categories.Remove(category);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
 }

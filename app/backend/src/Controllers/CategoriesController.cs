@@ -76,4 +76,17 @@ public class CategoriesController(CategoryService categoryService) : ControllerB
         var result = await categoryService.UpdateCategoryStatusAsync(id, request, cancellationToken);
         return Ok(result);
     }
+
+    [HttpDelete("{id:guid}")]
+    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteCategory(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken)
+    {
+        await categoryService.DeleteCategoryAsync(id, cancellationToken);
+        return NoContent();
+    }
 }
