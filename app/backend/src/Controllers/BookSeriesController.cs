@@ -75,4 +75,17 @@ public class BookSeriesController(BookSeriesService bookSeriesService) : Control
         var result = await bookSeriesService.UpdateBookSeriesStatusAsync(id, request, cancellationToken);
         return Ok(result);
     }
+
+    [HttpDelete("{id:guid}")]
+    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteBookSeries(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken)
+    {
+        await bookSeriesService.DeleteBookSeriesAsync(id, cancellationToken);
+        return NoContent();
+    }
 }

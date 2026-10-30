@@ -247,6 +247,7 @@ builder.Services.AddScoped<AuditLogService>();
 builder.Services.AddScoped<AttachmentService>();
 builder.Services.AddScoped<CategoryService>();
 builder.Services.AddScoped<BookSeriesService>();
+builder.Services.AddScoped<TitleService>();
 //Dependency Injection -> builder.Services.AddScoped<AuthService>();
 var app = builder.Build();
 

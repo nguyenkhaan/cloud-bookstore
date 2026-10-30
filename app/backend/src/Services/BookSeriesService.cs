@@ -217,4 +217,22 @@ public class BookSeriesService(AppDbContext dbContext)
             titlesCount
         );
     }
+
+    public async Task DeleteBookSeriesAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var series = await dbContext.BookSeries.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+        if (series == null)
+        {
+            throw new NotFoundException($"Book series with ID '{id}' was not found.");
+        }
+
+        var hasTitles = await dbContext.Titles.AnyAsync(t => t.SeriesId == id, cancellationToken);
+        if (hasTitles)
+        {
+            throw new BadRequestException("Không thể xóa bộ sách này vì đang có các đầu sách/tập trực thuộc. Vui lòng chuyển trạng thái sang ngừng sử dụng thay vì xóa.");
+        }
+
+        dbContext.BookSeries.Remove(series);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
 }
