@@ -228,4 +228,53 @@ public class CategoryService(AppDbContext dbContext)
             category.IsActive
         );
     }
+
+    public async Task<CategoryResponse> UpdateCategoryStatusAsync(
+        Guid id,
+        UpdateCategoryStatusRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var category = await dbContext.Categories.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        if (category == null)
+        {
+            throw new NotFoundException($"Category with ID '{id}' was not found.");
+        }
+
+        string? parentName = null;
+        if (category.ParentId.HasValue)
+        {
+            var parent = await dbContext.Categories.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == category.ParentId.Value, cancellationToken);
+            parentName = parent?.Name;
+
+            if (request.IsActive && parent != null && !parent.IsActive)
+            {
+                throw new BadRequestException("Không thể kích hoạt thể loại con khi thể loại cha đang bị ngừng sử dụng.");
+            }
+        }
+
+        category.IsActive = request.IsActive;
+
+        if (!request.IsActive)
+        {
+            var directChildren = await dbContext.Categories
+                .Where(c => c.ParentId == id && c.IsActive)
+                .ToListAsync(cancellationToken);
+
+            foreach (var child in directChildren)
+            {
+                child.IsActive = false;
+            }
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new CategoryResponse(
+            category.Id,
+            category.ParentId,
+            parentName,
+            category.Name,
+            category.IsActive
+        );
+    }
 }
