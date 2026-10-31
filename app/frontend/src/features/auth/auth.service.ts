@@ -12,8 +12,7 @@ import type {
   BrowserSessionResponse,
   ForgotPasswordRequest,
   LoginRequest,
-  RegisterRequest,
-  RegisterResponse,
+  ResendVerificationRequest,
   ResetPasswordRequest,
   VerifyRequest,
 } from './auth.type'
@@ -31,8 +30,8 @@ export class ApiError extends Error {
 const AUTH_ENDPOINTS = {
   login: '/auth/login',
   refresh: '/auth/refresh',
-  register: '/auth/register',
   verify: '/auth/verify',
+  verificationResends: '/auth/verification-resends',
   passwordResetRequests: '/auth/password-reset-requests',
   passwordResets: '/auth/password-resets',
   logout: '/auth/logout',
@@ -99,12 +98,12 @@ setSessionRecovery(async () => {
   await refreshSession()
 })
 
-export async function register(request: RegisterRequest): Promise<RegisterResponse> {
-  return requestData(() => publicClient.post<RegisterResponse>(AUTH_ENDPOINTS.register, request))
-}
-
 export async function verify(request: VerifyRequest): Promise<void> {
   await requestData(() => publicClient.post<void>(AUTH_ENDPOINTS.verify, request))
+}
+
+export async function resendVerification(request: ResendVerificationRequest): Promise<void> {
+  await requestData(() => publicClient.post<void>(AUTH_ENDPOINTS.verificationResends, request))
 }
 
 export async function requestPasswordReset(request: ForgotPasswordRequest): Promise<void> {

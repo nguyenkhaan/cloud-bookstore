@@ -1,7 +1,7 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
 import LoginPage from '@/features/auth/pages/LoginPage'
-import ActivateAccountPage from '@/features/auth/pages/ActivateAccountPage'
+import VerifyRegisterPage from '@/features/auth/pages/VerifyRegisterPage'
 import DashboardPage from '@/features/dashboard/pages/DashboardPage'
 import { useAuth } from '@/features/auth/auth.hook'
 
@@ -10,9 +10,9 @@ function LoginRoute() {
   return <LoginPage search={search} />
 }
 
-function ActivateAccountRoute() {
+function VerifyRegisterRoute() {
   const { search } = useLocation()
-  return <ActivateAccountPage search={search} />
+  return <VerifyRegisterPage search={search} />
 }
 
 function DashboardRoute() {
@@ -34,8 +34,7 @@ export default function AppRoutes() {
     <Routes>
       <Route path="/" element={<Navigate replace to="/login" />} />
       <Route path="/login" element={<LoginRoute />} />
-      <Route path="/activate" element={<ActivateAccountRoute />} />
-      <Route path="/verify-email" element={<ActivateAccountRoute />} />
+      <Route path="/verify-register" element={<VerifyRegisterRoute />} />
       <Route path="/dashboard" element={<DashboardRoute />} />
       <Route path="*" element={<Navigate replace to="/login" />} />
     </Routes>

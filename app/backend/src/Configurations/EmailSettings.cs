@@ -26,7 +26,7 @@ public sealed class EmailSettings
     public string FrontendBaseUrl { get; init; } = string.Empty;
 
     [Required]
-    public string VerifyEmailPath { get; init; } = "/verify-email";
+    public string VerifyEmailPath { get; init; } = "/verify-register";
 
     [Required]
     public string ResetPasswordPath { get; init; } = "/reset-password";

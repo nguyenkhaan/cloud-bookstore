@@ -1,25 +1,19 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { extractActivationToken } from '../src/features/auth/activation.ts'
+import { getVerificationToken } from '../src/features/auth/verification.ts'
 
 const token = 'aaa.bbb-1.ccc_2'
 
-test('a raw token is accepted as is', () => {
-  assert.equal(extractActivationToken(`  ${token}\n`), token)
+test('the verification token is read from the email-link query string', () => {
+  assert.equal(getVerificationToken(`?token=${token}`), token)
 })
 
-test('the token is extracted from a full activation link', () => {
-  assert.equal(extractActivationToken(`http://localhost:5173/verify-email?token=${token}`), token)
+test('the verification token is URL-decoded from the email-link query string', () => {
+  assert.equal(getVerificationToken(`?token=${encodeURIComponent(token)}`), token)
 })
 
-test('the token is extracted from a relative path or a bare query', () => {
-  assert.equal(extractActivationToken(`/verify-email?token=${token}`), token)
-  assert.equal(extractActivationToken(`token=${token}`), token)
-})
-
-test('input without a well formed token is rejected', () => {
-  assert.equal(extractActivationToken(''), null)
-  assert.equal(extractActivationToken('xin chào'), null)
-  assert.equal(extractActivationToken('http://localhost:5173/verify-email?token=abc'), null)
-  assert.equal(extractActivationToken(undefined), null)
+test('missing or malformed query tokens never trigger verification', () => {
+  assert.equal(getVerificationToken(''), null)
+  assert.equal(getVerificationToken('?token=abc'), null)
+  assert.equal(getVerificationToken('?token=invalid token'), null)
 })

@@ -96,11 +96,6 @@ export function LoginPage({ search }: { search: string }) {
           </Button>
           {notice && <Banner tone={notice.tone}>{notice.message}</Banner>}
         </form>
-
-        <p className="mb-3 mt-6 text-center text-[13px] text-slate-500">Bạn là nhân viên mới?</p>
-        <Button className="min-h-11" fullWidth onClick={() => navigate('/activate')} size="lg" type="button" variant="outline">
-          Kích hoạt tài khoản nhân viên mới
-        </Button>
       </Card>
     </SplitLayout>
   )

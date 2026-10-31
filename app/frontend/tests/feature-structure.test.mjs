@@ -11,7 +11,7 @@ test('auth and dashboard UI are organized as feature modules', () => {
   const expectedFiles = [
     ['components', 'common', 'TextField', 'TextField.tsx'],
     ['features', 'auth', 'pages', 'LoginPage.tsx'],
-    ['features', 'auth', 'pages', 'ActivateAccountPage.tsx'],
+    ['features', 'auth', 'pages', 'VerifyRegisterPage.tsx'],
     ['features', 'auth', 'components', 'PasswordField.tsx'],
     ['features', 'auth', 'auth.hook.ts'],
     ['features', 'auth', 'auth.service.ts'],
@@ -29,6 +29,7 @@ test('auth and dashboard UI are organized as feature modules', () => {
 
   assert.ok(!existsSync(src('tmp', 'pages', 'Login', 'LoginPage.tsx')))
   assert.ok(!existsSync(src('tmp', 'pages', 'Dashboard', 'DashboardPage.tsx')))
+  assert.ok(!existsSync(src('features', 'auth', 'pages', 'ActivateAccountPage.tsx')))
 
   const routes = readFileSync(src('routes', 'AppRoutes.tsx'), 'utf8')
   assert.match(routes, /from ['"]react-router-dom['"]/)

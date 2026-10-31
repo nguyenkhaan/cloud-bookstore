@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { AuthContext } from '@/context/AuthProvider'
 import {
@@ -6,7 +6,7 @@ import {
   getSession,
   login,
   logout,
-  register,
+  resendVerification,
   requestPasswordReset,
   resetPassword,
   verify,
@@ -14,7 +14,7 @@ import {
 import type {
   ForgotPasswordRequest,
   LoginRequest,
-  RegisterRequest,
+  ResendVerificationRequest,
   ResetPasswordRequest,
   ServerStatus,
   VerifyRequest,
@@ -27,17 +27,17 @@ export function useLoginMutation() {
   })
 }
 
-export function useRegisterMutation() {
-  return useMutation({
-    mutationKey: ['auth', 'register'],
-    mutationFn: (request: RegisterRequest) => register(request),
-  })
-}
-
 export function useVerifyMutation() {
   return useMutation({
     mutationKey: ['auth', 'verify'],
     mutationFn: (request: VerifyRequest) => verify(request),
+  })
+}
+
+export function useResendVerificationMutation() {
+  return useMutation({
+    mutationKey: ['auth', 'verification-resend'],
+    mutationFn: (request: ResendVerificationRequest) => resendVerification(request),
   })
 }
 
@@ -74,19 +74,6 @@ export function useAuth() {
   const value = useContext(AuthContext)
   if (!value) throw new Error('useAuth phải được dùng bên trong AuthProvider')
   return value
-}
-
-export function useCountdown() {
-  const [remaining, setRemaining] = useState(0)
-
-  useEffect(() => {
-    if (remaining <= 0) return
-    const timer = window.setTimeout(() => setRemaining((value) => value - 1), 1000)
-    return () => window.clearTimeout(timer)
-  }, [remaining])
-
-  const start = useCallback((seconds: number) => setRemaining(seconds), [])
-  return { remaining, start }
 }
 
 export function useServerStatus(intervalMs = 30_000): ServerStatus {

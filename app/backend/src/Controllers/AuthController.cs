@@ -47,6 +47,14 @@ public class AuthController(
         return NoContent();
     }
 
+    [HttpPost("verification-resends")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> ResendVerification([FromBody] ResendVerificationRequest request)
+    {
+        await authService.ResendVerificationAsync(request.Email);
+        return NoContent();
+    }
+
     // [AllowAnonymous]
     [HttpPost("password-reset-requests")]
     public async Task<IActionResult> RequestPasswordReset([FromBody] ForgotPasswordRequest request)

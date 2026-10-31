@@ -137,12 +137,28 @@ public class AuthService(
             await transaction.RollbackAsync();
             throw;
         }
-
         await emailService.SendAccountVerificationEmailAsync(
             newEmployee.Email,
             newEmployee.FullName,
             newEmployeeVerificationToken);
         return new RegisterResponse(Email: newEmployee.Email, FullName: newEmployee.FullName);
+    }
+
+    public async Task ResendVerificationAsync(string email)
+    {
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+        var employee = await dbContext.Employees
+            .SingleOrDefaultAsync(item => item.Email.ToLower() == normalizedEmail);
+        if (employee is null || employee.Status != EmployeeStatus.PENDING_OTP)
+        {
+            return;
+        }
+
+        var verificationToken = await CreateRegistrationVerificationTokenAsync(employee);
+        await emailService.SendAccountVerificationEmailAsync(
+            employee.Email,
+            employee.FullName,
+            verificationToken);
     }
 
     private async Task<string> CreateRegistrationVerificationTokenAsync(EmployeeModel employee)

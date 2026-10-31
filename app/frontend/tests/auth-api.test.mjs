@@ -6,7 +6,6 @@ const requests = []
 
 let apiClient
 let authApi
-let activationPage
 let failures
 let loginPage
 let onSessionExpiredCalls
@@ -33,8 +32,8 @@ const browserWindow = {
 const responseData = {
   '/auth/login': { csrfToken: 'csrf-token' },
   '/auth/refresh': { csrfToken: 'refreshed-csrf-token' },
-  '/auth/register': { email: 'reader@example.com', fullName: 'Reader' },
   '/auth/session': { csrfToken: 'session-csrf-token' },
+  '/auth/verification-resends': undefined,
 }
 
 function recordRequest(client) {
@@ -86,7 +85,6 @@ describe('auth service', { concurrency: false }, () => {
 
     authApi = await server.ssrLoadModule('/src/features/auth/auth.service.ts')
     loginPage = await server.ssrLoadModule('/src/features/auth/pages/LoginPage.tsx')
-    activationPage = await server.ssrLoadModule('/src/features/auth/pages/ActivateAccountPage.tsx')
     apiClient = await server.ssrLoadModule('/src/api/client.ts')
     apiClient.publicClient.defaults.adapter = recordRequest('public')
     apiClient.privateClient.defaults.adapter = recordRequest('private')
@@ -113,17 +111,11 @@ describe('auth service', { concurrency: false }, () => {
     else globalThis.window = originalWindow
   })
 
-  test('register exchanges the generated request and response at the auth endpoint', async () => {
-    const request = {
-      email: 'reader@example.com',
-      fullName: 'Reader',
-      password: 'password-123',
-      phone: '0123456789',
-    }
+  test('resend verification sends only the recipient email to the privacy-safe endpoint', async () => {
+    const request = { email: 'reader@example.com' }
 
-    const result = await authApi.register(request)
+    await authApi.resendVerification(request)
 
-    assert.deepEqual(result, { email: 'reader@example.com', fullName: 'Reader' })
     assert.deepEqual(requests, [
       {
         authorization: undefined,
@@ -131,7 +123,7 @@ describe('auth service', { concurrency: false }, () => {
         csrfToken: undefined,
         data: request,
         method: 'post',
-        url: '/auth/register',
+        url: '/auth/verification-resends',
         withCredentials: true,
       },
     ])
@@ -296,25 +288,6 @@ describe('auth service', { concurrency: false }, () => {
     assert.equal(apiClient.getCsrfToken(), null)
   })
 
-  test('HTTP failures keep the backend status and message in ApiError', async () => {
-    failures = [{ status: 409, message: 'User has been registered' }]
-
-    await assert.rejects(
-      authApi.register({
-        email: 'reader@example.com',
-        fullName: 'Reader',
-        password: 'password-123',
-        phone: '0123456789',
-      }),
-      (error) => {
-        assert.equal(error.constructor.name, 'ApiError')
-        assert.equal(error.status, 409)
-        assert.equal(error.message, 'User has been registered')
-        return true
-      },
-    )
-  })
-
   test('network failures use status zero in ApiError', async () => {
     failures = [{}]
 
@@ -342,16 +315,12 @@ describe('auth service', { concurrency: false }, () => {
     const expected = { tone: 'error', message: 'Có lỗi không mong muốn. Hãy thử lại sau.' }
 
     assert.deepEqual(loginPage.describeLoginError(new Error()), expected)
-    assert.deepEqual(activationPage.describeRegisterError(new Error()), expected)
-    assert.deepEqual(activationPage.describeVerifyError(new Error()), expected)
   })
 
   test('network API errors use the common connection notice', () => {
     const expected = { tone: 'error', message: 'Không thể kết nối tới máy chủ. Hãy kiểm tra mạng và thử lại.' }
 
     assert.deepEqual(loginPage.describeLoginError(new authApi.ApiError(0, '')), expected)
-    assert.deepEqual(activationPage.describeRegisterError(new authApi.ApiError(0, '')), expected)
-    assert.deepEqual(activationPage.describeVerifyError(new authApi.ApiError(0, '')), expected)
   })
 
   test('login errors distinguish invalid credentials and locked accounts', () => {
@@ -369,33 +338,4 @@ describe('auth service', { concurrency: false }, () => {
     })
   })
 
-  test('register errors preserve their specific recovery guidance', () => {
-    assert.deepEqual(activationPage.describeRegisterError(new authApi.ApiError(409, '')), {
-      tone: 'error',
-      message: 'Email này đã được đăng ký và kích hoạt. Hãy đăng nhập hoặc dùng Quên mật khẩu.',
-    })
-    assert.deepEqual(activationPage.describeRegisterError(new authApi.ApiError(400, 'Email domain is not allowed')), {
-      tone: 'error',
-      message: 'Email chưa được cấp quyền bởi Quản trị viên.',
-    })
-    assert.deepEqual(activationPage.describeRegisterError(new authApi.ApiError(400, 'Invalid email')), {
-      tone: 'error',
-      message: 'Email không hợp lệ.',
-    })
-    assert.deepEqual(activationPage.describeRegisterError(new authApi.ApiError(400, '')), {
-      tone: 'error',
-      message: 'Thông tin chưa hợp lệ. Hãy kiểm tra lại email, họ tên, số điện thoại và mật khẩu.',
-    })
-  })
-
-  test('verification errors distinguish forbidden accounts from invalid links', () => {
-    assert.deepEqual(activationPage.describeVerifyError(new authApi.ApiError(403, '')), {
-      tone: 'error',
-      message: 'Tài khoản này không thể kích hoạt. Hãy liên hệ Quản trị viên.',
-    })
-    assert.deepEqual(activationPage.describeVerifyError(new authApi.ApiError(400, '')), {
-      tone: 'error',
-      message: 'Liên kết kích hoạt không hợp lệ hoặc đã hết hạn. Hãy gửi lại liên kết mới.',
-    })
-  })
 })

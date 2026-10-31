@@ -1,14 +1,11 @@
 import type { components } from '@/contract/api-contract'
 
 export type LoginRequest = components['schemas']['LoginRequest']
-export type RegisterRequest = components['schemas']['RegisterRequest']
 export type VerifyRequest = components['schemas']['VerifyRequest']
+export type ResendVerificationRequest = components['schemas']['ResendVerificationRequest']
 export type ForgotPasswordRequest = components['schemas']['ForgotPasswordRequest']
 export type ResetPasswordRequest = components['schemas']['ResetPasswordRequest']
 export type BrowserSessionResponse = components['schemas']['BrowserSessionResponse']
-export type RegisterResponse = { email: string; fullName: string }
-
-export type AccountInfo = { fullName: string; email: string; phone: string }
 
 export type NoticeTone = 'warning' | 'error' | 'success' | 'info'
 

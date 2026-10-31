@@ -305,6 +305,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/verification-resends": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ResendVerificationRequest"];
+                    "text/json": components["schemas"]["ResendVerificationRequest"];
+                    "application/*+json": components["schemas"]["ResendVerificationRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/password-reset-requests": {
         parameters: {
             query?: never;
@@ -2289,6 +2328,9 @@ export interface components {
             fullName: string;
             password: string;
             phone: string;
+        };
+        ResendVerificationRequest: {
+            email: string;
         };
         ResetPasswordRequest: {
             token: string;
