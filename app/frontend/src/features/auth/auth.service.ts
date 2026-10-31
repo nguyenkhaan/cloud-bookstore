@@ -39,6 +39,8 @@ const AUTH_ENDPOINTS = {
   session: '/auth/session',
 } as const
 
+let sessionRequestInFlight: Promise<BrowserSessionResponse> | null = null
+
 function getErrorMessage(error: AxiosError<unknown>): string {
   const data = error.response?.data
   if (
@@ -76,8 +78,9 @@ function storeCsrfToken(response: unknown): BrowserSessionResponse {
     throw new ApiError(502, 'Unexpected authentication response')
   }
 
-  setCsrfToken(response.csrfToken)
-  return response
+  const session = { csrfToken: response.csrfToken }
+  setCsrfToken(session.csrfToken)
+  return session
 }
 
 export async function login(request: LoginRequest): Promise<BrowserSessionResponse> {
@@ -122,10 +125,14 @@ export async function logout(csrfToken = getCsrfToken()): Promise<void> {
   }
 }
 
-export async function getSession(): Promise<BrowserSessionResponse> {
-  return storeCsrfToken(
-    await requestData(() => privateClient.get<unknown>(AUTH_ENDPOINTS.session)),
-  )
+export function getSession(): Promise<BrowserSessionResponse> {
+  sessionRequestInFlight ??= requestData(() => privateClient.get<unknown>(AUTH_ENDPOINTS.session))
+    .then(storeCsrfToken)
+    .finally(() => {
+      sessionRequestInFlight = null
+    })
+
+  return sessionRequestInFlight
 }
 
 export async function checkServerReady(signal?: AbortSignal): Promise<boolean> {

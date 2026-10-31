@@ -11,6 +11,24 @@ let failures
 let loginPage
 let onSessionExpiredCalls
 let server
+let storageWriteFails = false
+
+const csrfStorage = new Map()
+const originalWindow = globalThis.window
+const browserWindow = {
+  sessionStorage: {
+    getItem(key) {
+      return csrfStorage.get(key) ?? null
+    },
+    removeItem(key) {
+      csrfStorage.delete(key)
+    },
+    setItem(key, value) {
+      if (storageWriteFails) throw new Error('Session storage unavailable')
+      csrfStorage.set(key, value)
+    },
+  },
+}
 
 const responseData = {
   '/auth/login': { csrfToken: 'csrf-token' },
@@ -60,6 +78,7 @@ function recordRequest(client) {
 
 describe('auth service', { concurrency: false }, () => {
   before(async () => {
+    globalThis.window = browserWindow
     server = await createServer({
       appType: 'custom',
       server: { hmr: false, middlewareMode: true },
@@ -76,6 +95,8 @@ describe('auth service', { concurrency: false }, () => {
   beforeEach(() => {
     requests.length = 0
     failures = []
+    csrfStorage.clear()
+    storageWriteFails = false
     onSessionExpiredCalls = 0
     responseData['/auth/login'] = { csrfToken: 'csrf-token' }
     responseData['/auth/refresh'] = { csrfToken: 'refreshed-csrf-token' }
@@ -88,6 +109,8 @@ describe('auth service', { concurrency: false }, () => {
 
   after(async () => {
     await server?.close()
+    if (originalWindow === undefined) delete globalThis.window
+    else globalThis.window = originalWindow
   })
 
   test('register exchanges the generated request and response at the auth endpoint', async () => {
@@ -114,12 +137,19 @@ describe('auth service', { concurrency: false }, () => {
     ])
   })
 
-  test('login accepts only an in-memory CSRF response and never reads a JWT', async () => {
+  test('login keeps only CSRF and ignores temporary JWT response fields', async () => {
     const request = { email: 'reader@example.com', password: 'password-123' }
+    responseData['/auth/login'] = {
+      accessToken: 'manual-test-access-token',
+      csrfToken: 'csrf-token',
+      refreshToken: 'manual-test-refresh-token',
+    }
 
     const result = await authApi.login(request)
 
     assert.deepEqual(result, { csrfToken: 'csrf-token' })
+    assert.equal('accessToken' in result, false)
+    assert.equal('refreshToken' in result, false)
     assert.deepEqual(requests, [
       {
         authorization: undefined,
@@ -166,6 +196,46 @@ describe('auth service', { concurrency: false }, () => {
         withCredentials: true,
       },
     ])
+  })
+
+  test('CSRF state is retained in session storage without retaining JWTs', () => {
+    apiClient.setCsrfToken('csrf-token')
+
+    assert.equal(csrfStorage.get('cloud-bookstore.csrf-token'), 'csrf-token')
+    assert.equal(csrfStorage.has('accessToken'), false)
+    assert.equal(csrfStorage.has('refreshToken'), false)
+
+    apiClient.clearCsrfToken()
+
+    assert.equal(csrfStorage.has('cloud-bookstore.csrf-token'), false)
+  })
+
+  test('a successful login keeps in-memory CSRF when session storage rejects writes', async () => {
+    storageWriteFails = true
+
+    const session = await authApi.login({ email: 'reader@example.com', password: 'password-123' })
+
+    assert.deepEqual(session, { csrfToken: 'csrf-token' })
+    assert.equal(apiClient.getCsrfToken(), 'csrf-token')
+  })
+
+  test('an unauthenticated session check does not attempt refresh without CSRF state', async () => {
+    failures = [{ status: 401, message: 'No active session' }]
+
+    await assert.rejects(authApi.getSession(), (error) => {
+      assert.equal(error.constructor.name, 'ApiError')
+      assert.equal(error.status, 401)
+      return true
+    })
+
+    assert.deepEqual(requests.map((request) => request.url), ['/auth/session'])
+    assert.equal(onSessionExpiredCalls, 0)
+  })
+
+  test('concurrent session checks share one CSRF-issuing request', async () => {
+    await Promise.all([authApi.getSession(), authApi.getSession()])
+
+    assert.equal(requests.filter((request) => request.url === '/auth/session').length, 1)
   })
 
   test('a 401 refreshes once and retries the original request with the new CSRF token', async () => {

@@ -26,6 +26,12 @@ test('the dashboard route waits for AuthProvider and redirects unauthenticated u
   assert.match(routes, /\/login\?next=\$\{next\}/)
 })
 
+test('the application root does not opt into StrictMode effect replay', () => {
+  const main = readFileSync(src('main.tsx'), 'utf8')
+
+  assert.doesNotMatch(main, /<StrictMode>/)
+})
+
 test('only local application paths are accepted as a post-login destination', () => {
   assert.equal(loginPage.getSafeNextPath('/dashboard?tab=today'), '/dashboard?tab=today')
   assert.equal(loginPage.getSafeNextPath('https://example.com/phishing'), '/dashboard')

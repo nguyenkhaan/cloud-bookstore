@@ -6,6 +6,7 @@ const API_BASE_URL = backendUrl.endsWith('/api')
   ? backendUrl
   : `${backendUrl}/api`
 const CSRF_HEADER = 'X-CSRF-Token'
+const CSRF_STORAGE_KEY = 'cloud-bookstore.csrf-token'
 const UNSAFE_METHODS = new Set(['delete', 'patch', 'post', 'put'])
 const AUTH_ENDPOINTS = new Set(['/auth/login', '/auth/logout', '/auth/refresh'])
 
@@ -13,13 +14,48 @@ type RetryableRequest = InternalAxiosRequestConfig & { _sessionRetried?: boolean
 type SessionRecovery = () => Promise<void>
 type SessionExpiredHandler = () => void
 
-let csrfToken: string | null = null
+function getSessionStorage(): Storage | null {
+  if (typeof window === 'undefined') return null
+
+  try {
+    return window.sessionStorage
+  } catch {
+    return null
+  }
+}
+
+function readStoredCsrfToken(): string | null {
+  try {
+    return getSessionStorage()?.getItem(CSRF_STORAGE_KEY) || null
+  } catch {
+    return null
+  }
+}
+
+function persistCsrfToken(token: string): void {
+  try {
+    getSessionStorage()?.setItem(CSRF_STORAGE_KEY, token)
+  } catch {
+    // Keep the in-memory token when browser storage is unavailable.
+  }
+}
+
+function removeStoredCsrfToken(): void {
+  try {
+    getSessionStorage()?.removeItem(CSRF_STORAGE_KEY)
+  } catch {
+    // The in-memory token has already been cleared.
+  }
+}
+
+let csrfToken: string | null = readStoredCsrfToken()
 let refreshInFlight: Promise<void> | null = null
 let sessionRecovery: SessionRecovery | null = null
 let sessionExpiredHandler: SessionExpiredHandler | null = null
 
 export function setCsrfToken(token: string): void {
   csrfToken = token
+  persistCsrfToken(token)
 }
 
 export function getCsrfToken(): string | null {
@@ -28,6 +64,7 @@ export function getCsrfToken(): string | null {
 
 export function clearCsrfToken(): void {
   csrfToken = null
+  removeStoredCsrfToken()
 }
 
 export function setSessionRecovery(recovery: SessionRecovery | null): void {
@@ -80,6 +117,7 @@ privateClient.interceptors.response.use(
     if (
       error.response?.status !== 401 ||
       !request ||
+      !csrfToken ||
       request._sessionRetried ||
       isAuthenticationEndpoint
     ) {

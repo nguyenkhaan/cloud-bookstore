@@ -4,6 +4,144 @@
  */
 
 export interface paths {
+    "/api/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    OwnerType?: components["schemas"]["AttachmentOwnerType"];
+                    OwnerId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        OwnerType?: components["schemas"]["AttachmentOwnerType"];
+                        /** Format: uuid */
+                        OwnerId?: string;
+                        File?: components["schemas"]["IFormFile"];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/attachments/{attachmentId}/download-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    attachmentId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/attachments/{attachmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    attachmentId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DeleteAttachmentRequest"];
+                    "text/json": components["schemas"]["DeleteAttachmentRequest"];
+                    "application/*+json": components["schemas"]["DeleteAttachmentRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/audit": {
         parameters: {
             query?: never;
@@ -76,9 +214,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["BrowserSessionResponse"];
-                        "application/json": components["schemas"]["BrowserSessionResponse"];
-                        "text/json": components["schemas"]["BrowserSessionResponse"];
+                        "text/plain": components["schemas"]["AuthenticationResponse"];
+                        "application/json": components["schemas"]["AuthenticationResponse"];
+                        "text/json": components["schemas"]["AuthenticationResponse"];
                     };
                 };
             };
@@ -302,9 +440,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["BrowserSessionResponse"];
-                        "application/json": components["schemas"]["BrowserSessionResponse"];
-                        "text/json": components["schemas"]["BrowserSessionResponse"];
+                        "text/plain": components["schemas"]["AuthenticationResponse"];
+                        "application/json": components["schemas"]["AuthenticationResponse"];
+                        "text/json": components["schemas"]["AuthenticationResponse"];
                     };
                 };
             };
@@ -350,6 +488,1290 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/book-series": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Name?: string;
+                    IsActive?: boolean;
+                    Page?: number | string;
+                    PageSize?: number | string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfBookSeriesResponse"];
+                        "application/json": components["schemas"]["PagedResultOfBookSeriesResponse"];
+                        "text/json": components["schemas"]["PagedResultOfBookSeriesResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateBookSeriesRequest"];
+                    "text/json": components["schemas"]["CreateBookSeriesRequest"];
+                    "application/*+json": components["schemas"]["CreateBookSeriesRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BookSeriesResponse"];
+                        "application/json": components["schemas"]["BookSeriesResponse"];
+                        "text/json": components["schemas"]["BookSeriesResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/book-series/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BookSeriesDetailResponse"];
+                        "application/json": components["schemas"]["BookSeriesDetailResponse"];
+                        "text/json": components["schemas"]["BookSeriesDetailResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateBookSeriesRequest"];
+                    "text/json": components["schemas"]["UpdateBookSeriesRequest"];
+                    "application/*+json": components["schemas"]["UpdateBookSeriesRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BookSeriesResponse"];
+                        "application/json": components["schemas"]["BookSeriesResponse"];
+                        "text/json": components["schemas"]["BookSeriesResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/book-series/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateBookSeriesStatusRequest"];
+                    "text/json": components["schemas"]["UpdateBookSeriesStatusRequest"];
+                    "application/*+json": components["schemas"]["UpdateBookSeriesStatusRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BookSeriesResponse"];
+                        "application/json": components["schemas"]["BookSeriesResponse"];
+                        "text/json": components["schemas"]["BookSeriesResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/book-titles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Name?: string;
+                    SeriesId?: string;
+                    CategoryId?: string;
+                    Author?: string;
+                    IsActive?: boolean;
+                    Page?: number | string;
+                    PageSize?: number | string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfTitleResponse"];
+                        "application/json": components["schemas"]["PagedResultOfTitleResponse"];
+                        "text/json": components["schemas"]["PagedResultOfTitleResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateTitleRequest"];
+                    "text/json": components["schemas"]["CreateTitleRequest"];
+                    "application/*+json": components["schemas"]["CreateTitleRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["TitleResponse"];
+                        "application/json": components["schemas"]["TitleResponse"];
+                        "text/json": components["schemas"]["TitleResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/book-titles/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["TitleDetailResponse"];
+                        "application/json": components["schemas"]["TitleDetailResponse"];
+                        "text/json": components["schemas"]["TitleDetailResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateTitleRequest"];
+                    "text/json": components["schemas"]["UpdateTitleRequest"];
+                    "application/*+json": components["schemas"]["UpdateTitleRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["TitleResponse"];
+                        "application/json": components["schemas"]["TitleResponse"];
+                        "text/json": components["schemas"]["TitleResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/book-titles/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateTitleStatusRequest"];
+                    "text/json": components["schemas"]["UpdateTitleStatusRequest"];
+                    "application/*+json": components["schemas"]["UpdateTitleStatusRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["TitleResponse"];
+                        "application/json": components["schemas"]["TitleResponse"];
+                        "text/json": components["schemas"]["TitleResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Name?: string;
+                    ParentId?: string;
+                    IsActive?: boolean;
+                    Page?: number | string;
+                    PageSize?: number | string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfCategoryResponse"];
+                        "application/json": components["schemas"]["PagedResultOfCategoryResponse"];
+                        "text/json": components["schemas"]["PagedResultOfCategoryResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateCategoryRequest"];
+                    "text/json": components["schemas"]["CreateCategoryRequest"];
+                    "application/*+json": components["schemas"]["CreateCategoryRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CategoryResponse"];
+                        "application/json": components["schemas"]["CategoryResponse"];
+                        "text/json": components["schemas"]["CategoryResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/categories/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CategoryDetailResponse"];
+                        "application/json": components["schemas"]["CategoryDetailResponse"];
+                        "text/json": components["schemas"]["CategoryDetailResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateCategoryRequest"];
+                    "text/json": components["schemas"]["UpdateCategoryRequest"];
+                    "application/*+json": components["schemas"]["UpdateCategoryRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CategoryResponse"];
+                        "application/json": components["schemas"]["CategoryResponse"];
+                        "text/json": components["schemas"]["CategoryResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/categories/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateCategoryStatusRequest"];
+                    "text/json": components["schemas"]["UpdateCategoryStatusRequest"];
+                    "application/*+json": components["schemas"]["UpdateCategoryStatusRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CategoryResponse"];
+                        "application/json": components["schemas"]["CategoryResponse"];
+                        "text/json": components["schemas"]["CategoryResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/editions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Isbn?: string;
+                    TitleId?: string;
+                    Publisher?: string;
+                    PublishYear?: number | string;
+                    IsActive?: boolean;
+                    Page?: number | string;
+                    PageSize?: number | string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfEditionResponse"];
+                        "application/json": components["schemas"]["PagedResultOfEditionResponse"];
+                        "text/json": components["schemas"]["PagedResultOfEditionResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateEditionRequest"];
+                    "text/json": components["schemas"]["CreateEditionRequest"];
+                    "application/*+json": components["schemas"]["CreateEditionRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EditionResponse"];
+                        "application/json": components["schemas"]["EditionResponse"];
+                        "text/json": components["schemas"]["EditionResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/editions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EditionDetailResponse"];
+                        "application/json": components["schemas"]["EditionDetailResponse"];
+                        "text/json": components["schemas"]["EditionDetailResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateEditionRequest"];
+                    "text/json": components["schemas"]["UpdateEditionRequest"];
+                    "application/*+json": components["schemas"]["UpdateEditionRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EditionResponse"];
+                        "application/json": components["schemas"]["EditionResponse"];
+                        "text/json": components["schemas"]["EditionResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/editions/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateEditionStatusRequest"];
+                    "text/json": components["schemas"]["UpdateEditionStatusRequest"];
+                    "application/*+json": components["schemas"]["UpdateEditionStatusRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EditionResponse"];
+                        "application/json": components["schemas"]["EditionResponse"];
+                        "text/json": components["schemas"]["EditionResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         trace?: never;
     };
     "/api/employee/{employeeId}/role": {
@@ -587,12 +2009,207 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AttachmentOwnerType: number;
+        AuthenticationResponse: {
+            accessToken: string;
+            refreshToken: string;
+            csrfToken: string;
+        };
+        BookChannelAvailability: number;
+        BookCopyStatus: number;
+        BookSeriesDetailResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description: null | string;
+            isActive: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            titles: components["schemas"]["BookSeriesTitleSummary"][];
+        };
+        BookSeriesResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description: null | string;
+            isActive: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: int32 */
+            titlesCount: number | string;
+        };
+        BookSeriesTitleSummary: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            volumeLabel: null | string;
+            author: null | string;
+            /** Format: int16 */
+            originalPublishYear: null | number | string;
+            isActive: boolean;
+        };
         BrowserSessionResponse: {
             csrfToken: string;
+        };
+        CategoryDetailResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            parentId: null | string;
+            parentName: null | string;
+            name: string;
+            isActive: boolean;
+            subCategories: components["schemas"]["CategoryResponse"][];
+        };
+        CategoryResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            parentId: null | string;
+            parentName: null | string;
+            name: string;
+            isActive: boolean;
         };
         ChangeEmployeeRequest: {
             roleName: components["schemas"]["RoleName"];
             reason: string;
+        };
+        ConditionGrade: number;
+        CreateBookSeriesRequest: {
+            name: string;
+            description?: null | string;
+            /** @default true */
+            isActive: boolean;
+        };
+        CreateCategoryRequest: {
+            name: string;
+            /** Format: uuid */
+            parentId?: null | string;
+            /** @default true */
+            isActive: boolean;
+        };
+        CreateEditionRequest: {
+            /** Format: uuid */
+            titleId: string;
+            isbn?: null | string;
+            editionStatement?: null | string;
+            printingStatement?: null | string;
+            format?: null | string;
+            publisher?: null | string;
+            /** Format: int16 */
+            publishYear?: null | number | string;
+            /**
+             * Format: int64
+             * @default 0
+             */
+            coverPrice: number | string;
+            /**
+             * Format: int32
+             * @default 0
+             */
+            minStockSale: number | string;
+            /**
+             * Format: int32
+             * @default 0
+             */
+            minStockRental: number | string;
+            coverImageUrl?: null | string;
+            metadataSource?: null | components["schemas"]["MetadataSource"];
+            /** Format: uuid */
+            metadataConfirmedBy?: null | string;
+            /** @default true */
+            isActive: boolean;
+        };
+        CreateTitleRequest: {
+            name: string;
+            /** Format: uuid */
+            seriesId?: null | string;
+            volumeLabel?: null | string;
+            /** Format: uuid */
+            categoryId?: null | string;
+            author?: null | string;
+            /** Format: int16 */
+            originalPublishYear?: null | number | string;
+            description?: null | string;
+            /** @default true */
+            isActive: boolean;
+        };
+        DeleteAttachmentRequest: {
+            reason: string;
+        };
+        EditionCopySummary: {
+            /** Format: uuid */
+            id: string;
+            copyBarcode: string;
+            conditionGrade: null | components["schemas"]["ConditionGrade"];
+            status: components["schemas"]["BookCopyStatus"];
+            availability: components["schemas"]["BookChannelAvailability"];
+            /** Format: int64 */
+            sellingPrice: null | number | string;
+            /** Format: int64 */
+            rentalRate: null | number | string;
+            shelfCode: null | string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        EditionDetailResponse: {
+            /** Format: uuid */
+            id: string;
+            isbn: null | string;
+            /** Format: uuid */
+            titleId: string;
+            titleName: null | string;
+            editionStatement: null | string;
+            printingStatement: null | string;
+            format: null | string;
+            publisher: null | string;
+            /** Format: int16 */
+            publishYear: null | number | string;
+            /** Format: int64 */
+            coverPrice: number | string;
+            /** Format: int32 */
+            minStockSale: number | string;
+            /** Format: int32 */
+            minStockRental: number | string;
+            coverImageUrl: null | string;
+            metadataSource: null | components["schemas"]["MetadataSource"];
+            /** Format: uuid */
+            metadataConfirmedBy: null | string;
+            metadataConfirmedByName: null | string;
+            /** Format: date-time */
+            metadataConfirmedAt: null | string;
+            isActive: boolean;
+            copies: components["schemas"]["EditionCopySummary"][];
+        };
+        EditionResponse: {
+            /** Format: uuid */
+            id: string;
+            isbn: null | string;
+            /** Format: uuid */
+            titleId: string;
+            titleName: null | string;
+            editionStatement: null | string;
+            printingStatement: null | string;
+            format: null | string;
+            publisher: null | string;
+            /** Format: int16 */
+            publishYear: null | number | string;
+            /** Format: int64 */
+            coverPrice: number | string;
+            /** Format: int32 */
+            minStockSale: number | string;
+            /** Format: int32 */
+            minStockRental: number | string;
+            coverImageUrl: null | string;
+            metadataSource: null | components["schemas"]["MetadataSource"];
+            /** Format: uuid */
+            metadataConfirmedBy: null | string;
+            metadataConfirmedByName: null | string;
+            /** Format: date-time */
+            metadataConfirmedAt: null | string;
+            isActive: boolean;
+            /** Format: int32 */
+            copiesCount: number | string;
         };
         EmailTestResponse: {
             status: string;
@@ -600,9 +2217,72 @@ export interface components {
         ForgotPasswordRequest: {
             email: string;
         };
+        /** Format: binary */
+        IFormFile: string;
         LoginRequest: {
             email: string;
             password: string;
+        };
+        MetadataSource: number;
+        PagedResultOfBookSeriesResponse: {
+            items: components["schemas"]["BookSeriesResponse"][];
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
+        PagedResultOfCategoryResponse: {
+            items: components["schemas"]["CategoryResponse"][];
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
+        PagedResultOfEditionResponse: {
+            items: components["schemas"]["EditionResponse"][];
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
+        PagedResultOfTitleResponse: {
+            items: components["schemas"]["TitleResponse"][];
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
+        ProblemDetails: {
+            type?: null | string;
+            title?: null | string;
+            /** Format: int32 */
+            status?: null | number | string;
+            detail?: null | string;
+            instance?: null | string;
         };
         RegisterRequest: {
             email: string;
@@ -617,6 +2297,129 @@ export interface components {
         RoleName: number;
         SendTestEmailRequest: {
             recipientEmail: string;
+        };
+        TitleDetailResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            volumeLabel: null | string;
+            author: null | string;
+            /** Format: int16 */
+            originalPublishYear: null | number | string;
+            description: null | string;
+            /** Format: uuid */
+            seriesId: null | string;
+            seriesName: null | string;
+            /** Format: uuid */
+            categoryId: null | string;
+            categoryName: null | string;
+            isActive: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            editions: components["schemas"]["TitleEditionSummary"][];
+        };
+        TitleEditionSummary: {
+            /** Format: uuid */
+            id: string;
+            isbn: null | string;
+            publisher: null | string;
+            /** Format: int16 */
+            publishYear: null | number | string;
+            editionStatement: null | string;
+            printingStatement: null | string;
+            format: null | string;
+            /** Format: int64 */
+            coverPrice: number | string;
+            coverImageUrl: null | string;
+            isActive: boolean;
+        };
+        TitleResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            volumeLabel: null | string;
+            author: null | string;
+            /** Format: int16 */
+            originalPublishYear: null | number | string;
+            description: null | string;
+            /** Format: uuid */
+            seriesId: null | string;
+            seriesName: null | string;
+            /** Format: uuid */
+            categoryId: null | string;
+            categoryName: null | string;
+            isActive: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: int32 */
+            editionsCount: number | string;
+        };
+        UpdateBookSeriesRequest: {
+            name: string;
+            description?: null | string;
+            isActive?: null | boolean;
+        };
+        UpdateBookSeriesStatusRequest: {
+            isActive: boolean;
+        };
+        UpdateCategoryRequest: {
+            name: string;
+            /** Format: uuid */
+            parentId?: null | string;
+            isActive?: null | boolean;
+        };
+        UpdateCategoryStatusRequest: {
+            isActive: boolean;
+        };
+        UpdateEditionRequest: {
+            /** Format: uuid */
+            titleId?: null | string;
+            isbn?: null | string;
+            editionStatement?: null | string;
+            printingStatement?: null | string;
+            format?: null | string;
+            publisher?: null | string;
+            /** Format: int16 */
+            publishYear?: null | number | string;
+            /**
+             * Format: int64
+             * @default 0
+             */
+            coverPrice: number | string;
+            /**
+             * Format: int32
+             * @default 0
+             */
+            minStockSale: number | string;
+            /**
+             * Format: int32
+             * @default 0
+             */
+            minStockRental: number | string;
+            coverImageUrl?: null | string;
+            metadataSource?: null | components["schemas"]["MetadataSource"];
+            /** Format: uuid */
+            metadataConfirmedBy?: null | string;
+            isActive?: null | boolean;
+        };
+        UpdateEditionStatusRequest: {
+            isActive: boolean;
+        };
+        UpdateTitleRequest: {
+            name: string;
+            /** Format: uuid */
+            seriesId?: null | string;
+            volumeLabel?: null | string;
+            /** Format: uuid */
+            categoryId?: null | string;
+            author?: null | string;
+            /** Format: int16 */
+            originalPublishYear?: null | number | string;
+            description?: null | string;
+            isActive?: null | boolean;
+        };
+        UpdateTitleStatusRequest: {
+            isActive: boolean;
         };
         VerifyRequest: {
             token: string;
