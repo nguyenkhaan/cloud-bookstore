@@ -55,6 +55,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     {
         base.OnModelCreating(modelBuilder);
 
+        modelBuilder.HasSequence<long>("seq_copy_barcode").StartsAt(1).IncrementsBy(1);
+
         ConfigureTables(modelBuilder);
         ConfigureProperties(modelBuilder);
         ConfigureRelationships(modelBuilder);

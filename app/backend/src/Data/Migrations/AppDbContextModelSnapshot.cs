@@ -23,6 +23,8 @@ namespace backend.src.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.HasSequence("seq_copy_barcode");
+
             modelBuilder.Entity("backend.src.Models.AttachmentModel", b =>
                 {
                     b.Property<Guid>("Id")
