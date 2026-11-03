@@ -23,7 +23,7 @@ public static class EditionMappingExtensions
             edition.CoverPrice,
             edition.MinStockSale,
             edition.MinStockRental,
-            edition.CoverImageUrl,
+            edition.PublicImageId,
             edition.MetadataSource,
             edition.MetadataConfirmedBy,
             confirmedByName,

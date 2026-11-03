@@ -65,7 +65,7 @@ public class EditionService(AppDbContext dbContext)
                                  e.CoverPrice,
                                  e.MinStockSale,
                                  e.MinStockRental,
-                                 e.CoverImageUrl,
+                                 e.PublicImageId,
                                  e.MetadataSource,
                                  e.MetadataConfirmedBy,
                                  emp != null ? emp.FullName : null,
@@ -106,7 +106,7 @@ public class EditionService(AppDbContext dbContext)
                                  e.CoverPrice,
                                  e.MinStockSale,
                                  e.MinStockRental,
-                                 e.CoverImageUrl,
+                                 e.PublicImageId,
                                  e.MetadataSource,
                                  e.MetadataConfirmedBy,
                                  MetadataConfirmedByName = emp != null ? emp.FullName : null,
@@ -148,7 +148,7 @@ public class EditionService(AppDbContext dbContext)
             edition.CoverPrice,
             edition.MinStockSale,
             edition.MinStockRental,
-            edition.CoverImageUrl,
+            edition.PublicImageId,
             edition.MetadataSource,
             edition.MetadataConfirmedBy,
             edition.MetadataConfirmedByName,
@@ -190,7 +190,7 @@ public class EditionService(AppDbContext dbContext)
             CoverPrice = meta.CoverPrice,
             MinStockSale = meta.MinStockSale,
             MinStockRental = meta.MinStockRental,
-            CoverImageUrl = meta.CoverImageUrl,
+            PublicImageId = meta.CoverImageUrl,
             MetadataSource = request.MetadataSource ?? MetadataSource.MANUAL,
             MetadataConfirmedBy = confirmedBy,
             MetadataConfirmedAt = confirmedAt,
@@ -240,7 +240,7 @@ public class EditionService(AppDbContext dbContext)
         edition.CoverPrice = meta.CoverPrice;
         edition.MinStockSale = meta.MinStockSale;
         edition.MinStockRental = meta.MinStockRental;
-        edition.CoverImageUrl = meta.CoverImageUrl;
+        edition.PublicImageId = meta.CoverImageUrl;
         if (request.MetadataSource.HasValue)
         {
             edition.MetadataSource = request.MetadataSource.Value;

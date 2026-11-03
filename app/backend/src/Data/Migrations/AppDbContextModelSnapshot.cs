@@ -25,71 +25,6 @@ namespace backend.src.Data.Migrations
 
             modelBuilder.HasSequence("seq_copy_barcode");
 
-            modelBuilder.Entity("backend.src.Models.AttachmentModel", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ContentType")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("DeletedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.Property<string>("ObjectKey")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
-
-                    b.Property<string>("OriginalFileName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<Guid>("OwnerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("OwnerType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<long>("SizeBytes")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("UploadedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<Guid>("UploadedBy")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DeletedBy");
-
-                    b.HasIndex("ObjectKey")
-                        .IsUnique();
-
-                    b.HasIndex("UploadedBy");
-
-                    b.HasIndex("OwnerType", "OwnerId")
-                        .HasDatabaseName("ix_attachments_owner");
-
-                    b.ToTable("attachments", (string)null);
-                });
-
             modelBuilder.Entity("backend.src.Models.AuditLogModel", b =>
                 {
                     b.Property<Guid>("Id")
@@ -171,6 +106,10 @@ namespace backend.src.Data.Migrations
                     b.Property<Guid>("EditionId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("PublicImageId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
                     b.Property<Guid>("ReceiptLineId")
                         .HasColumnType("uuid");
 
@@ -223,6 +162,10 @@ namespace backend.src.Data.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("PublicImageId")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
@@ -403,9 +346,6 @@ namespace backend.src.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("CoverImageUrl")
-                        .HasColumnType("text");
-
                     b.Property<long>("CoverPrice")
                         .HasColumnType("bigint");
 
@@ -448,6 +388,10 @@ namespace backend.src.Data.Migrations
                     b.Property<string>("PrintingStatement")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<string>("PublicImageId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<short?>("PublishYear")
                         .HasColumnType("smallint");
@@ -986,6 +930,35 @@ namespace backend.src.Data.Migrations
                     b.ToTable("rental_extensions", (string)null);
                 });
 
+            modelBuilder.Entity("backend.src.Models.RentalLineImageModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("PublicImageId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Guid>("RentalLineId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PublicImageId")
+                        .IsUnique();
+
+                    b.HasIndex("RentalLineId");
+
+                    b.ToTable("rental_line_images", (string)null);
+                });
+
             modelBuilder.Entity("backend.src.Models.RentalLineModel", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1366,6 +1339,35 @@ namespace backend.src.Data.Migrations
                     b.ToTable("sale_invoices", (string)null);
                 });
 
+            modelBuilder.Entity("backend.src.Models.StockReceiptImageModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("PublicImageId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Guid>("StockReceiptId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PublicImageId")
+                        .IsUnique();
+
+                    b.HasIndex("StockReceiptId");
+
+                    b.ToTable("stock_receipt_images", (string)null);
+                });
+
             modelBuilder.Entity("backend.src.Models.StockReceiptLineModel", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1593,6 +1595,10 @@ namespace backend.src.Data.Migrations
                     b.Property<short?>("OriginalPublishYear")
                         .HasColumnType("smallint");
 
+                    b.Property<string>("PublicImageId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
                     b.Property<Guid?>("SeriesId")
                         .HasColumnType("uuid");
 
@@ -1609,18 +1615,57 @@ namespace backend.src.Data.Migrations
                     b.ToTable("titles", (string)null);
                 });
 
-            modelBuilder.Entity("backend.src.Models.AttachmentModel", b =>
+            modelBuilder.Entity("backend.src.Models.UploadIntentModel", b =>
                 {
-                    b.HasOne("backend.src.Models.EmployeeModel", null)
-                        .WithMany()
-                        .HasForeignKey("DeletedBy")
-                        .OnDelete(DeleteBehavior.NoAction);
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
 
-                    b.HasOne("backend.src.Models.EmployeeModel", null)
-                        .WithMany()
-                        .HasForeignKey("UploadedBy")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                    b.Property<string>("AssetId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<long?>("Bytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Format")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("OwnerType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PublicImageId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("PENDING");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("PublicImageId")
+                        .IsUnique();
+
+                    b.ToTable("upload_intents", (string)null);
                 });
 
             modelBuilder.Entity("backend.src.Models.AuditLogModel", b =>
@@ -1812,6 +1857,15 @@ namespace backend.src.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("backend.src.Models.RentalLineImageModel", b =>
+                {
+                    b.HasOne("backend.src.Models.RentalLineModel", null)
+                        .WithMany()
+                        .HasForeignKey("RentalLineId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("backend.src.Models.RentalLineModel", b =>
                 {
                     b.HasOne("backend.src.Models.BookCopyModel", null)
@@ -1913,6 +1967,15 @@ namespace backend.src.Data.Migrations
                         .OnDelete(DeleteBehavior.NoAction);
                 });
 
+            modelBuilder.Entity("backend.src.Models.StockReceiptImageModel", b =>
+                {
+                    b.HasOne("backend.src.Models.StockReceiptModel", null)
+                        .WithMany()
+                        .HasForeignKey("StockReceiptId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("backend.src.Models.StockReceiptLineModel", b =>
                 {
                     b.HasOne("backend.src.Models.EditionModel", null)
@@ -1971,6 +2034,15 @@ namespace backend.src.Data.Migrations
                         .WithMany()
                         .HasForeignKey("SeriesId")
                         .OnDelete(DeleteBehavior.NoAction);
+                });
+
+            modelBuilder.Entity("backend.src.Models.UploadIntentModel", b =>
+                {
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

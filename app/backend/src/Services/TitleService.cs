@@ -118,7 +118,7 @@ public class TitleService(AppDbContext dbContext)
                 e.PrintingStatement,
                 e.Format,
                 e.CoverPrice,
-                e.CoverImageUrl,
+                e.PublicImageId,
                 e.IsActive
             ))
             .ToListAsync(cancellationToken);

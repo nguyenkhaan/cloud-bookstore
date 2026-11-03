@@ -585,7 +585,7 @@ public class BookCopyService(AppDbContext dbContext, AuditLogService auditLogSer
             row.e.Publisher,
             row.e.PublishYear,
             row.e.CoverPrice,
-            row.e.CoverImageUrl,
+            row.e.PublicImageId,
             row.e.IsActive,
             row.t.Id,
             row.t.Name,
