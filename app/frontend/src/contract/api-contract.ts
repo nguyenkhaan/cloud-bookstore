@@ -4,144 +4,6 @@
  */
 
 export interface paths {
-    "/api/attachments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: {
-                    OwnerType?: components["schemas"]["AttachmentOwnerType"];
-                    OwnerId?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "multipart/form-data": {
-                        OwnerType?: components["schemas"]["AttachmentOwnerType"];
-                        /** Format: uuid */
-                        OwnerId?: string;
-                        File?: components["schemas"]["IFormFile"];
-                    };
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/attachments/{attachmentId}/download-url": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    attachmentId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/attachments/{attachmentId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    attachmentId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["DeleteAttachmentRequest"];
-                    "text/json": components["schemas"]["DeleteAttachmentRequest"];
-                    "application/*+json": components["schemas"]["DeleteAttachmentRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/audit": {
         parameters: {
             query?: never;
@@ -529,6 +391,616 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/book-copies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    CopyBarcode?: string;
+                    Isbn?: string;
+                    Name?: string;
+                    TitleId?: string;
+                    EditionId?: string;
+                    SeriesId?: string;
+                    VolumeLabel?: string;
+                    Author?: string;
+                    CategoryId?: string;
+                    ConditionGrade?: components["schemas"]["ConditionGrade"];
+                    Status?: components["schemas"]["BookCopyStatus"];
+                    Availability?: components["schemas"]["BookChannelAvailability"];
+                    Page?: number | string;
+                    PageSize?: number | string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfBookCopyResponse"];
+                        "application/json": components["schemas"]["PagedResultOfBookCopyResponse"];
+                        "text/json": components["schemas"]["PagedResultOfBookCopyResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateBookCopyRequest"];
+                    "text/json": components["schemas"]["CreateBookCopyRequest"];
+                    "application/*+json": components["schemas"]["CreateBookCopyRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BookCopyDetailResponse"];
+                        "application/json": components["schemas"]["BookCopyDetailResponse"];
+                        "text/json": components["schemas"]["BookCopyDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/book-copies/by-barcode/{copyBarcode}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    copyBarcode: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BookCopyDetailResponse"];
+                        "application/json": components["schemas"]["BookCopyDetailResponse"];
+                        "text/json": components["schemas"]["BookCopyDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/book-copies/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BookCopyDetailResponse"];
+                        "application/json": components["schemas"]["BookCopyDetailResponse"];
+                        "text/json": components["schemas"]["BookCopyDetailResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateBookCopyRequest"];
+                    "text/json": components["schemas"]["UpdateBookCopyRequest"];
+                    "application/*+json": components["schemas"]["UpdateBookCopyRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BookCopyDetailResponse"];
+                        "application/json": components["schemas"]["BookCopyDetailResponse"];
+                        "text/json": components["schemas"]["BookCopyDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/book-copies/{id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BookCopyHistoryItem"][];
+                        "application/json": components["schemas"]["BookCopyHistoryItem"][];
+                        "text/json": components["schemas"]["BookCopyHistoryItem"][];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/book-copies/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateBookCopyStatusRequest"];
+                    "text/json": components["schemas"]["UpdateBookCopyStatusRequest"];
+                    "application/*+json": components["schemas"]["UpdateBookCopyStatusRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BookCopyDetailResponse"];
+                        "application/json": components["schemas"]["BookCopyDetailResponse"];
+                        "text/json": components["schemas"]["BookCopyDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/book-copies/{id}/label": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": null | components["schemas"]["BookCopyLabelRequest"];
+                    "text/json": null | components["schemas"]["BookCopyLabelRequest"];
+                    "application/*+json": null | components["schemas"]["BookCopyLabelRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BookCopyLabelResponse"];
+                        "application/json": components["schemas"]["BookCopyLabelResponse"];
+                        "text/json": components["schemas"]["BookCopyLabelResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/book-copies/{id}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CloudinaryUploadResultRequest"];
+                    "text/json": components["schemas"]["CloudinaryUploadResultRequest"];
+                    "application/*+json": components["schemas"]["CloudinaryUploadResultRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BookCopyDetailResponse"];
+                        "application/json": components["schemas"]["BookCopyDetailResponse"];
+                        "text/json": components["schemas"]["BookCopyDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/book-series": {
         parameters: {
             query?: never;
@@ -838,6 +1310,136 @@ export interface paths {
                 };
             };
         };
+        trace?: never;
+    };
+    "/api/book-series/{id}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CloudinaryUploadResultRequest"];
+                    "text/json": components["schemas"]["CloudinaryUploadResultRequest"];
+                    "application/*+json": components["schemas"]["CloudinaryUploadResultRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BookSeriesResponse"];
+                        "application/json": components["schemas"]["BookSeriesResponse"];
+                        "text/json": components["schemas"]["BookSeriesResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/book-titles": {
@@ -1163,6 +1765,136 @@ export interface paths {
                 };
             };
         };
+        trace?: never;
+    };
+    "/api/book-titles/{id}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CloudinaryUploadResultRequest"];
+                    "text/json": components["schemas"]["CloudinaryUploadResultRequest"];
+                    "application/*+json": components["schemas"]["CloudinaryUploadResultRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["TitleResponse"];
+                        "application/json": components["schemas"]["TitleResponse"];
+                        "text/json": components["schemas"]["TitleResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/categories": {
@@ -1813,6 +2545,136 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/editions/{id}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CloudinaryUploadResultRequest"];
+                    "text/json": components["schemas"]["CloudinaryUploadResultRequest"];
+                    "application/*+json": components["schemas"]["CloudinaryUploadResultRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EditionResponse"];
+                        "application/json": components["schemas"]["EditionResponse"];
+                        "text/json": components["schemas"]["EditionResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/employee/{employeeId}/role": {
         parameters: {
             query?: never;
@@ -2044,18 +2906,219 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/uploads/signature": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UploadSignatureRequest"];
+                    "text/json": components["schemas"]["UploadSignatureRequest"];
+                    "application/*+json": components["schemas"]["UploadSignatureRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["UploadSignatureResponse"];
+                        "application/json": components["schemas"]["UploadSignatureResponse"];
+                        "text/json": components["schemas"]["UploadSignatureResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        AttachmentOwnerType: number;
         AuthenticationResponse: {
             accessToken: string;
             refreshToken: string;
             csrfToken: string;
         };
-        BookChannelAvailability: number;
-        BookCopyStatus: number;
+        /** @enum {unknown} */
+        BookChannelAvailability: "BOTH" | "SALE_ONLY" | "RENTAL_ONLY";
+        BookCopyDetailResponse: {
+            /** Format: uuid */
+            id: string;
+            copyBarcode: string;
+            /** Format: uuid */
+            editionId: string;
+            isbn: null | string;
+            editionStatement: null | string;
+            printingStatement: null | string;
+            format: null | string;
+            publisher: null | string;
+            /** Format: int16 */
+            publishYear: null | number | string;
+            /** Format: int64 */
+            coverPrice: number | string;
+            editionImageUrl: null | string;
+            editionIsActive: boolean;
+            /** Format: uuid */
+            titleId: string;
+            titleName: string;
+            volumeLabel: null | string;
+            author: null | string;
+            /** Format: uuid */
+            seriesId: null | string;
+            seriesName: null | string;
+            /** Format: uuid */
+            categoryId: null | string;
+            categoryName: null | string;
+            conditionGrade: components["schemas"]["ConditionGrade"];
+            conditionNote: null | string;
+            status: components["schemas"]["BookCopyStatus"];
+            availability: components["schemas"]["BookChannelAvailability"];
+            /** Format: int64 */
+            costPrice: null | number | string;
+            /** Format: int64 */
+            sellingPrice: null | number | string;
+            /** Format: int64 */
+            rentalRate: null | number | string;
+            shelfCode: null | string;
+            /** Format: date-time */
+            createdAt: string;
+            imageUrl: null | string;
+            /** Format: uuid */
+            receiptLineId: string;
+            /** Format: uuid */
+            receiptId: string;
+            receiptCode: string;
+            sourceType: components["schemas"]["StockReceiptSourceType"];
+            /** Format: uuid */
+            supplierId: null | string;
+            supplierName: null | string;
+            /** Format: uuid */
+            sellerId: null | string;
+            /** Format: date-time */
+            receiptCompletedAt: null | string;
+        };
+        BookCopyHistoryItem: {
+            /** Format: date-time */
+            occurredAt: string;
+            source: string;
+            eventType: string;
+            summary: string;
+            /** Format: uuid */
+            referenceId: null | string;
+            referenceCode: null | string;
+            /** Format: uuid */
+            actorId: null | string;
+            actorName: null | string;
+            beforeData: null | string;
+            afterData: null | string;
+            reason: null | string;
+        };
+        BookCopyLabelRequest: {
+            reason?: null | string;
+        };
+        BookCopyLabelResponse: {
+            /** Format: uuid */
+            copyId: string;
+            copyBarcode: string;
+            isbn: null | string;
+            titleName: string;
+            volumeLabel: null | string;
+            seriesName: null | string;
+            author: null | string;
+            publisher: null | string;
+            /** Format: int16 */
+            publishYear: null | number | string;
+            conditionGrade: components["schemas"]["ConditionGrade"];
+            availability: components["schemas"]["BookChannelAvailability"];
+            /** Format: int64 */
+            sellingPrice: null | number | string;
+            /** Format: int64 */
+            rentalRate: null | number | string;
+            shelfCode: null | string;
+            isReprint: boolean;
+            /** Format: int32 */
+            printCount: number | string;
+            /** Format: date-time */
+            generatedAt: string;
+        };
+        BookCopyResponse: {
+            /** Format: uuid */
+            id: string;
+            copyBarcode: string;
+            /** Format: uuid */
+            editionId: string;
+            isbn: null | string;
+            editionStatement: null | string;
+            printingStatement: null | string;
+            publisher: null | string;
+            /** Format: int16 */
+            publishYear: null | number | string;
+            /** Format: uuid */
+            titleId: string;
+            titleName: string;
+            volumeLabel: null | string;
+            author: null | string;
+            /** Format: uuid */
+            seriesId: null | string;
+            seriesName: null | string;
+            /** Format: uuid */
+            categoryId: null | string;
+            categoryName: null | string;
+            conditionGrade: components["schemas"]["ConditionGrade"];
+            status: components["schemas"]["BookCopyStatus"];
+            availability: components["schemas"]["BookChannelAvailability"];
+            /** Format: int64 */
+            sellingPrice: null | number | string;
+            /** Format: int64 */
+            rentalRate: null | number | string;
+            shelfCode: null | string;
+            /** Format: date-time */
+            createdAt: string;
+            imageUrl: null | string;
+        };
+        /** @enum {unknown} */
+        BookCopyStatus: "PENDING_RECEIPT" | "AVAILABLE" | "RENTED" | "SOLD" | "INVENTORY_LOCKED" | "DAMAGED" | "LOST" | "DISPOSED" | "DISCONTINUED";
         BookSeriesDetailResponse: {
             /** Format: uuid */
             id: string;
@@ -2064,6 +3127,7 @@ export interface components {
             isActive: boolean;
             /** Format: date-time */
             createdAt: string;
+            imageUrl: null | string;
             titles: components["schemas"]["BookSeriesTitleSummary"][];
         };
         BookSeriesResponse: {
@@ -2076,6 +3140,7 @@ export interface components {
             createdAt: string;
             /** Format: int32 */
             titlesCount: number | string;
+            imageUrl: null | string;
         };
         BookSeriesTitleSummary: {
             /** Format: uuid */
@@ -2086,6 +3151,7 @@ export interface components {
             /** Format: int16 */
             originalPublishYear: null | number | string;
             isActive: boolean;
+            imageUrl: null | string;
         };
         BrowserSessionResponse: {
             csrfToken: string;
@@ -2113,12 +3179,42 @@ export interface components {
             roleName: components["schemas"]["RoleName"];
             reason: string;
         };
-        ConditionGrade: number;
+        CloudinaryUploadResultRequest: {
+            /** Format: uuid */
+            uploadIntentId: string;
+            publicId: string;
+            /** Format: int64 */
+            version: number | string;
+            signature: string;
+            assetId: null | string;
+            format: null | string;
+            /** Format: int64 */
+            bytes: null | number | string;
+        };
+        /** @enum {unknown} */
+        ConditionGrade: "A" | "B" | "C" | "D";
+        CreateBookCopyRequest: {
+            /** Format: uuid */
+            editionId: string;
+            /** Format: uuid */
+            receiptLineId: string;
+            conditionGrade?: null | components["schemas"]["ConditionGrade"];
+            availability?: null | components["schemas"]["BookChannelAvailability"];
+            conditionNote?: null | string;
+            /** Format: int64 */
+            sellingPrice?: null | number | string;
+            /** Format: int64 */
+            rentalRate?: null | number | string;
+            shelfCode?: null | string;
+            reason?: null | string;
+            imageUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
+        };
         CreateBookSeriesRequest: {
             name: string;
             description?: null | string;
             /** @default true */
             isActive: boolean;
+            imageUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
         };
         CreateCategoryRequest: {
             name: string;
@@ -2152,12 +3248,12 @@ export interface components {
              * @default 0
              */
             minStockRental: number | string;
-            coverImageUrl?: null | string;
             metadataSource?: null | components["schemas"]["MetadataSource"];
             /** Format: uuid */
             metadataConfirmedBy?: null | string;
             /** @default true */
             isActive: boolean;
+            imageUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
         };
         CreateTitleRequest: {
             name: string;
@@ -2172,9 +3268,7 @@ export interface components {
             description?: null | string;
             /** @default true */
             isActive: boolean;
-        };
-        DeleteAttachmentRequest: {
-            reason: string;
+            imageUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
         };
         EditionCopySummary: {
             /** Format: uuid */
@@ -2210,7 +3304,7 @@ export interface components {
             minStockSale: number | string;
             /** Format: int32 */
             minStockRental: number | string;
-            coverImageUrl: null | string;
+            imageUrl: null | string;
             metadataSource: null | components["schemas"]["MetadataSource"];
             /** Format: uuid */
             metadataConfirmedBy: null | string;
@@ -2239,7 +3333,7 @@ export interface components {
             minStockSale: number | string;
             /** Format: int32 */
             minStockRental: number | string;
-            coverImageUrl: null | string;
+            imageUrl: null | string;
             metadataSource: null | components["schemas"]["MetadataSource"];
             /** Format: uuid */
             metadataConfirmedBy: null | string;
@@ -2256,13 +3350,25 @@ export interface components {
         ForgotPasswordRequest: {
             email: string;
         };
-        /** Format: binary */
-        IFormFile: string;
         LoginRequest: {
             email: string;
             password: string;
         };
-        MetadataSource: number;
+        /** @enum {unknown} */
+        MetadataSource: "MANUAL" | "GOOGLE_BOOKS" | "OPEN_LIBRARY" | null;
+        PagedResultOfBookCopyResponse: {
+            items: components["schemas"]["BookCopyResponse"][];
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
         PagedResultOfBookSeriesResponse: {
             items: components["schemas"]["BookSeriesResponse"][];
             /** Format: int32 */
@@ -2336,10 +3442,13 @@ export interface components {
             token: string;
             newPassword: string;
         };
-        RoleName: number;
+        /** @enum {unknown} */
+        RoleName: "ADMIN" | "CASHIER" | "INVENTORY_MANAGER";
         SendTestEmailRequest: {
             recipientEmail: string;
         };
+        /** @enum {unknown} */
+        StockReceiptSourceType: "SUPPLIER" | "CUSTOMER_BUYBACK";
         TitleDetailResponse: {
             /** Format: uuid */
             id: string;
@@ -2358,6 +3467,7 @@ export interface components {
             isActive: boolean;
             /** Format: date-time */
             createdAt: string;
+            imageUrl: null | string;
             editions: components["schemas"]["TitleEditionSummary"][];
         };
         TitleEditionSummary: {
@@ -2372,7 +3482,7 @@ export interface components {
             format: null | string;
             /** Format: int64 */
             coverPrice: number | string;
-            coverImageUrl: null | string;
+            imageUrl: null | string;
             isActive: boolean;
         };
         TitleResponse: {
@@ -2395,11 +3505,29 @@ export interface components {
             createdAt: string;
             /** Format: int32 */
             editionsCount: number | string;
+            imageUrl: null | string;
+        };
+        UpdateBookCopyRequest: {
+            conditionGrade: null | components["schemas"]["ConditionGrade"];
+            availability: null | components["schemas"]["BookChannelAvailability"];
+            reason: string;
+            conditionNote?: null | string;
+            /** Format: int64 */
+            sellingPrice?: null | number | string;
+            /** Format: int64 */
+            rentalRate?: null | number | string;
+            shelfCode?: null | string;
+            imageUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
+        };
+        UpdateBookCopyStatusRequest: {
+            status: null | components["schemas"]["BookCopyStatus"];
+            reason: string;
         };
         UpdateBookSeriesRequest: {
             name: string;
             description?: null | string;
             isActive?: null | boolean;
+            imageUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
         };
         UpdateBookSeriesStatusRequest: {
             isActive: boolean;
@@ -2438,11 +3566,11 @@ export interface components {
              * @default 0
              */
             minStockRental: number | string;
-            coverImageUrl?: null | string;
             metadataSource?: null | components["schemas"]["MetadataSource"];
             /** Format: uuid */
             metadataConfirmedBy?: null | string;
             isActive?: null | boolean;
+            imageUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
         };
         UpdateEditionStatusRequest: {
             isActive: boolean;
@@ -2459,9 +3587,29 @@ export interface components {
             originalPublishYear?: null | number | string;
             description?: null | string;
             isActive?: null | boolean;
+            imageUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
         };
         UpdateTitleStatusRequest: {
             isActive: boolean;
+        };
+        /** @enum {unknown} */
+        UploadOwnerType: "BOOK_SERIES_IMAGE" | "TITLE_IMAGE" | "EDITION_IMAGE" | "BOOK_COPY_IMAGE" | "RENTAL_LINE_IMAGE" | "STOCK_RECEIPT_IMAGE" | null;
+        UploadSignatureRequest: {
+            ownerType: null | components["schemas"]["UploadOwnerType"];
+        };
+        UploadSignatureResponse: {
+            /** Format: uuid */
+            uploadIntentId: string;
+            apiKey: string;
+            uploadUrl: string;
+            publicId: string;
+            assetFolder: null | string;
+            uploadPreset: string;
+            deliveryType: string;
+            overwrite: boolean;
+            /** Format: int64 */
+            timestamp: number | string;
+            signature: string;
         };
         VerifyRequest: {
             token: string;

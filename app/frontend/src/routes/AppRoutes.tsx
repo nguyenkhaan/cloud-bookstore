@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import LoginPage from '@/features/auth/pages/LoginPage'
 import VerifyRegisterPage from '@/features/auth/pages/VerifyRegisterPage'
 import DashboardPage from '@/features/dashboard/pages/DashboardPage'
+import BookSeriesPage from '@/features/bookseries/pages/BookSeriesPage'
 import { useAuth } from '@/features/auth/auth.hook'
 
 function LoginRoute() {
@@ -29,6 +30,20 @@ function DashboardRoute() {
   return <DashboardPage onSignOut={signOut} />
 }
 
+function BookSeriesRoute() {
+  const { pathname, search } = useLocation()
+  const { session, isInitializing } = useAuth()
+
+  if (isInitializing) return null
+
+  if (!session) {
+    const next = encodeURIComponent(`${pathname}${search}`)
+    return <Navigate replace to={`/login?next=${next}`} />
+  }
+
+  return <BookSeriesPage />
+}
+
 export default function AppRoutes() {
   return (
     <Routes>
@@ -36,6 +51,7 @@ export default function AppRoutes() {
       <Route path="/login" element={<LoginRoute />} />
       <Route path="/verify-register" element={<VerifyRegisterRoute />} />
       <Route path="/dashboard" element={<DashboardRoute />} />
+      <Route path="/book-series" element={<BookSeriesRoute />} />
       <Route path="*" element={<Navigate replace to="/login" />} />
     </Routes>
   )
