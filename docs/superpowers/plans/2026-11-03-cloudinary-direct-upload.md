@@ -503,7 +503,7 @@ git commit -m "feat: replace attachments and MinIO with Cloudinary uploads"
 - Verify no runtime Attachment/MinIO route, registration, configuration, package, health check, or source reference remains; historical migrations are excluded from this scan.
 - Verify deferred RentalLine/StockReceipt image tables have no prematurely exposed service/controller surface.
 
-- [ ] **Step 1: Establish the audit evidence set**
+- [x] **Step 1: Establish the audit evidence set**
 
 Run full test/build and targeted source searches:
 
@@ -516,19 +516,19 @@ rg -n 'UploadIntent|UploadOwnerType|DestroyAsync|BuildImageUrl|CREATE_UPLOAD_INT
 
 Record command output, the migration's `Up`/`Down`, and controller authorization attributes as audit evidence.
 
-- [ ] **Step 2: Trace each critical data path across boundaries**
+- [x] **Step 2: Trace each critical data path across boundaries**
 
 Review the signature endpoint, `UploadIntentService`, `CloudinaryService`, and each BookSeries/Title/Edition/BookCopy Create/Update/Delete/image operation. Trace actor ID, owner type, public ID, Cloudinary response signature, DB transaction, audit action, and old-asset destroy behavior; flag any client-controlled security field or out-of-transaction intent mutation.
 
-- [ ] **Step 3: Inspect runtime cleanup and deferred-scope boundaries**
+- [x] **Step 3: Inspect runtime cleanup and deferred-scope boundaries**
 
 Verify DI/configuration/Docker no longer initialize MinIO and the old routes return no reachable endpoint. Verify RentalLineImage/StockReceiptImage remain only persistence mappings with no accidental controller/service exposure.
 
-- [ ] **Step 4: Write and triage the audit report**
+- [x] **Step 4: Write and triage the audit report**
 
 Create `docs/audits/2026-11-03-cloudinary-backend-audit.md` with scope, evidence, findings sorted by severity, affected paths, exploitation/operational impact, and the smallest recommended remediation plus test. If no defects are found, explicitly document the checks performed and remaining deferred risks (cleanup worker and evidence APIs).
 
-- [ ] **Step 5: Commit the audit artifact**
+- [x] **Step 5: Commit the audit artifact**
 
 ```bash
 git add docs/audits/2026-11-03-cloudinary-backend-audit.md
