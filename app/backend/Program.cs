@@ -230,6 +230,13 @@ builder.Services
     .ValidateOnStart();
 
 builder.Services
+    .AddOptions<CloudinarySettings>()
+    .BindConfiguration(CloudinarySettings.SectionName)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+builder.Services.AddSingleton<ICloudinaryService, CloudinaryService>();
+
+builder.Services
     .AddOptions<MinioSettings>()
     .BindConfiguration(MinioSettings.SectionName)
     .ValidateDataAnnotations()

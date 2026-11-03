@@ -14,7 +14,7 @@
 
 - Do not create a generic Attachment or MediaAsset replacement table.
 - `UploadIntentModel` contains only `Id`, `OwnerType`, `PublicImageId`, `Status`, `CreatedBy`, `CreatedAt`, `CompletedAt`, `AssetId`, `Format`, and `Bytes`; it must not persist OwnerId, Version, DeliveryType, Width, or Height.
-- `CloudinaryService` is the sole holder of `ApiSecret` and must derive access policy exclusively from `UploadOwnerType`.
+- `CloudinaryService` is the sole holder of `ApiSecret` and must derive access policy, public ID, and Cloudinary folder exclusively from `UploadOwnerType` and the configured `RootFolder`.
 - Only JPEG, PNG, and WebP uploads up to 10 MB are accepted through Cloudinary signed upload presets; PDF is unsupported.
 - BookSeries, Title, Edition, and BookCopy each store one nullable `PublicImageId` and return `ImageUrl`, never their public ID, in normal read DTOs.
 - RentalLineImage and StockReceiptImage schema/mappings are in scope, but their API and services are explicitly deferred; the signature endpoint rejects their owner types in this release.
@@ -169,32 +169,32 @@ git commit -m "feat: add cloud image persistence model"
 **Acceptance Criteria:**
 
 - The provider maps the four book owner types to `upload` and the two evidence owner types to `authenticated` without accepting client-controlled delivery type.
-- It generates IDs as `<owner-segment>/<intent-id>`, signs only backend-owned upload parameters, and can verify a deterministic response signature with test credentials.
+- It generates IDs as `<RootFolder>/<visibility>/<owner-segment>/<intent-id>`, signs only backend-owned upload parameters, and can verify a deterministic response signature with test credentials. In dynamic folder mode it signs the matching `asset_folder`; fixed-folder mode relies on the path embedded in `public_id`.
 - App startup validates all Cloudinary settings without requiring network access.
 
-- [ ] **Step 1: Write failing provider tests in `CloudinaryServiceTests.cs`**
+- [x] **Step 1: Write failing provider tests in `CloudinaryServiceTests.cs`**
 
-Cover `GetPolicy_maps_book_images_to_public_upload`, `GetPolicy_maps_evidence_to_authenticated`, `CreateUploadSignature_uses_backend_owned_public_id`, and `VerifyUploadResponse_rejects_a_signature_for_another_public_id` using a fixed test account/secret in test configuration only.
+Cover `GetPolicy_maps_book_images_to_public_upload`, `GetPolicy_maps_evidence_to_authenticated`, `CreateUploadSignature_uses_backend_owned_public_id`, `BuildImageUrl_uses_https_and_signs_authenticated_evidence_urls`, and `VerifyUploadResponse_rejects_a_signature_for_another_public_id` using a fixed test account/secret in test configuration only.
 
-- [ ] **Step 2: Run the provider tests to verify they fail**
+- [x] **Step 2: Run the provider tests to verify they fail**
 
 Run: `dotnet test app/backend.Tests/backend.Tests.csproj --filter FullyQualifiedName~CloudinaryServiceTests`
 
 Expected: FAIL because the provider/configuration contract does not exist.
 
-- [ ] **Step 3: Add Cloudinary settings, SDK package, interface, and implementation**
+- [x] **Step 3: Add Cloudinary settings, SDK package, interface, and implementation**
 
-Add CloudinaryDotNet to `backend.csproj`. Implement validated `CloudinarySettings` containing `CloudName`, `ApiKey`, `ApiSecret`, `PublicUploadPreset`, and `AuthenticatedUploadPreset`; bind it in `Program.cs` and register `ICloudinaryService` as a singleton.
+Add CloudinaryDotNet to `backend.csproj`. Implement validated `CloudinarySettings` containing `CloudName`, `ApiKey`, `ApiSecret`, `RootFolder`, `FolderMode`, `PublicUploadPreset`, and `AuthenticatedUploadPreset`; bind it in `Program.cs` and register `ICloudinaryService` as a singleton. `FolderMode` defaults to `DYNAMIC`; use `FIXED` only for Cloudinary legacy fixed-folder product environments.
 
-Implement the exact interface in `CloudinaryService`. Use a switch expression as the one owner-type-to-policy function. The signed upload payload includes the server-generated `public_id`, selected signed preset, `timestamp`, resource type `image`, and server-derived delivery type. Never accept a client parameter dictionary for signing.
+Implement the exact interface in `CloudinaryService`. Use a switch expression as the one owner-type-to-policy function. The signed upload payload includes the server-generated `public_id`, selected signed preset, `timestamp`, resource type `image`, server-derived delivery type, and `asset_folder` in `DYNAMIC` mode. Use a `SortedDictionary` for all signing inputs. Never accept a client parameter dictionary for signing.
 
-- [ ] **Step 4: Run provider tests and build**
+- [x] **Step 4: Run provider tests and build**
 
 Run: `dotnet test app/backend.Tests/backend.Tests.csproj --filter FullyQualifiedName~CloudinaryServiceTests && dotnet build backend.sln`
 
 Expected: PASS; generated URLs are HTTPS and evidence URLs are signed authenticated delivery URLs.
 
-- [ ] **Step 5: Commit the Cloudinary provider boundary**
+- [x] **Step 5: Commit the Cloudinary provider boundary**
 
 ```bash
 git add app/backend/backend.csproj app/backend/Program.cs app/backend/appsettings.example.json app/backend/appsettings.Development.json app/backend/src/Configurations app/backend/src/Infrastructure app/backend/src/Dto/UploadDto app/backend.Tests/Infrastructure/CloudinaryServiceTests.cs

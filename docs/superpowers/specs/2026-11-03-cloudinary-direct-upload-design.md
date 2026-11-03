@@ -135,17 +135,19 @@ Only `public_id` and `version` are covered by Cloudinary's upload response signa
 The backend generates every public ID. A stable scheme is:
 
 ```text
-<owner-type-segment>/<upload-intent-id>
+<RootFolder>/<visibility>/<owner-type-segment>/<upload-intent-id>
 ```
 
 For example:
 
 ```text
-edition/7d13d8f578b145a298c2f54c613dbf57
-rental-line/16dba65bf81d4372ab8800896325ba6f
+cloud-bookstore/public/editions/7d13d8f578b145a298c2f54c613dbf57
+cloud-bookstore/private/rental-lines/16dba65bf81d4372ab8800896325ba6f
 ```
 
 Using the intent ID avoids requiring a domain owner ID before a Create request and makes collisions impractical. The frontend cannot provide or alter the public ID.
+
+For Cloudinary product environments using dynamic folders, the backend also signs `asset_folder` as `<RootFolder>/<visibility>/<owner-type-segment>` so the asset appears in that Media Library folder. `public_id` paths alone do not choose a dynamic-folder location. For legacy fixed-folder environments, configure `FolderMode: FIXED`; the path embedded in `public_id` creates the folder hierarchy and no `asset_folder` is sent.
 
 ## API design
 
@@ -176,7 +178,8 @@ Response:
   "apiKey": "public-api-key",
   "timestamp": 1793650000,
   "signature": "signature",
-  "publicId": "edition/intent-id",
+  "publicId": "cloud-bookstore/public/editions/intent-id",
+  "assetFolder": "cloud-bookstore/public/editions",
   "resourceType": "image",
   "deliveryType": "upload",
   "uploadPreset": "configured-signed-preset"
@@ -243,7 +246,7 @@ Responsibilities:
 
 - Exhaustively map `UploadOwnerType` to `upload` or `authenticated`.
 - Select the corresponding signed upload preset.
-- Generate backend-owned public IDs.
+- Generate backend-owned public IDs and the corresponding Cloudinary folder.
 - Generate upload request signatures from an exact server-owned parameter set.
 - Verify the upload response signature using `public_id` and `version`.
 - Build secure public delivery URLs.
@@ -288,7 +291,7 @@ The first version accepts last-write-wins behavior for simultaneous replacements
 - Maximum file size is 10 MB.
 - PDF is no longer supported.
 - Configure signed Cloudinary upload presets for public and authenticated images with the same format and size restrictions.
-- The backend signs and returns only the selected preset and server-owned parameters.
+- The backend signs and returns only the selected preset and server-owned parameters, including `asset_folder` in dynamic-folder mode.
 - Frontend validation is for user experience only and is not a security boundary.
 
 Add validated backend settings for at least:
@@ -296,6 +299,8 @@ Add validated backend settings for at least:
 - `CloudName`
 - `ApiKey`
 - `ApiSecret`
+- `RootFolder`
+- `FolderMode` (`DYNAMIC` by default; `FIXED` only for a legacy fixed-folder environment)
 - Public signed upload preset name
 - Authenticated signed upload preset name
 
