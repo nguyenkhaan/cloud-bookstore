@@ -2,6 +2,8 @@ using backend.src.Configurations;
 using backend.src.Dto.UploadDto;
 using backend.src.Infrastructure;
 using backend.src.Models.Enums;
+using System.Security.Cryptography;
+using System.Text;
 using CloudinaryDotNet;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -52,17 +54,20 @@ public sealed class CloudinaryServiceTests
         Assert.Equal("cloud-bookstore/public/editions", signature.AssetFolder);
         Assert.Equal("123456789012345", signature.ApiKey);
         Assert.Equal("https://api.cloudinary.com/v1_1/test-cloud/image/upload", signature.UploadUrl);
-        Assert.Equal(
-            CreateCloudinary().Api.SignParameters(new SortedDictionary<string, object>
-            {
-                ["public_id"] = signature.PublicId,
-                ["asset_folder"] = signature.AssetFolder!,
-                ["timestamp"] = signature.Timestamp,
-                ["type"] = signature.DeliveryType,
-                ["upload_preset"] = signature.UploadPreset,
-                ["overwrite"] = false
-            }),
-            signature.Signature);
+
+        // Hand-written string to sign, exactly as Cloudinary rebuilds it from the form values the
+        // frontend posts (lowercase "false"). Not computed through the SDK so serialization bugs show up.
+        var stringToSign =
+            "asset_folder=cloud-bookstore/public/editions" +
+            "&overwrite=false" +
+            "&public_id=cloud-bookstore/public/editions/d6d6bd89a5074e6f82bf7e78d35fdb1e" +
+            $"&timestamp={signature.Timestamp}" +
+            "&type=upload" +
+            "&upload_preset=book-images-signed";
+        var expectedSignature = Convert.ToHexStringLower(
+            SHA1.HashData(Encoding.UTF8.GetBytes(stringToSign + Settings.ApiSecret)));
+
+        Assert.Equal(expectedSignature, signature.Signature);
     }
 
     [Fact]

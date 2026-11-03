@@ -50,7 +50,8 @@ public sealed class CloudinaryService : ICloudinaryService
             ["timestamp"] = timestamp,
             ["type"] = policy.DeliveryType,
             ["upload_preset"] = policy.UploadPreset,
-            ["overwrite"] = false
+            // Must be the string "false": a bool is signed as "False" and Cloudinary rejects the signature.
+            ["overwrite"] = "false"
         };
         if (assetFolder is not null)
         {

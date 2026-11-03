@@ -31,6 +31,15 @@ builder.Services.AddControllers()
             allowIntegerValues: false
         ));
     });
+// Microsoft.AspNetCore.OpenApi builds schemas from the HTTP JSON options, not the MVC ones above.
+// Without this, every enum is documented as an integer although the API only accepts names.
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(
+        namingPolicy: null,
+        allowIntegerValues: false
+    ));
+});
 //CORS configuration
 builder.Services.AddCors(options =>
 {
