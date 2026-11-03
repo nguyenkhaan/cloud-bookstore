@@ -320,7 +320,7 @@ Run: `dotnet test app/backend.Tests/backend.Tests.csproj --filter FullyQualified
 
 Expected: PASS; BookSeries/Title creation, read mapping, replacement, removal, and parent deletion meet the direct-image rules.
 
-- [ ] **Step 7: Commit BookSeries/Title image support**
+- [x] **Step 7: Commit BookSeries/Title image support**
 
 ```bash
 git add app/backend/src/Dto/BookSeriesDto app/backend/src/Dto/TitleDto app/backend/src/Services/BookSeriesService.cs app/backend/src/Services/TitleService.cs app/backend/src/Controllers/BookSeriesController.cs app/backend/src/Controllers/BookTitlesController.cs app/backend.Tests/Services/BookHierarchyImageServiceTests.cs
@@ -361,35 +361,35 @@ git commit -m "feat: add book series and title images"
 - Title edition summaries expose an Edition `ImageUrl`; BookCopy detail distinguishes its own `ImageUrl` from related `EditionImageUrl` rather than exposing a misleading generic cover URL.
 - Parent/image deletion follows database-first then Cloudinary behavior and uses the public policy.
 
-- [ ] **Step 1: Write failing Edition/BookCopy image tests**
+- [x] **Step 1: Write failing Edition/BookCopy image tests**
 
 Add `CreateEdition_consumes_edition_image_intent`, `GetBookCopyDetail_resolves_copy_and_edition_image_urls`, and `DeleteBookCopy_removes_public_asset_after_database_commit` using fixed IDs and a fake Cloudinary provider.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `dotnet test app/backend.Tests/backend.Tests.csproj --filter FullyQualifiedName~EditionAndCopyImageServiceTests`
 
 Expected: FAIL because Edition still accepts/returns CoverImageUrl and BookCopy lacks its own image contract.
 
-- [ ] **Step 3: Replace Edition CoverImageUrl throughout DTOs, validation, mappings, and projections**
+- [x] **Step 3: Replace Edition CoverImageUrl throughout DTOs, validation, mappings, and projections**
 
 Remove URL input from `EditionValidator`. Add optional image-upload result to Edition Create/Update request DTOs, consume `EDITION_IMAGE` intents in the service, and return `ImageUrl` derived after materialization. Rename `TitleEditionSummary.CoverImageUrl` to `ImageUrl`.
 
-- [ ] **Step 4: Add BookCopy image request/response/service behavior**
+- [x] **Step 4: Add BookCopy image request/response/service behavior**
 
 Append optional image-upload result to BookCopy Create/Update requests and consume `BOOK_COPY_IMAGE` intents. Add `ImageUrl` to BookCopy list/detail responses. In the detail response, rename the old related Edition field to `EditionImageUrl`, populate it from Edition's direct public ID, and keep copy image and edition image unambiguous.
 
-- [ ] **Step 5: Add image-specific controller routes and post-commit deletion behavior**
+- [x] **Step 5: Add image-specific controller routes and post-commit deletion behavior**
 
 Add PUT/DELETE image routes under `/api/editions/{id}/image` and `/api/book-copies/{id}/image`, authorize all staff roles for those routes, and retain current roles for unrelated record mutation. On replacement/removal/parent deletion, commit database/audit state before the public Cloudinary destroy call and log destroy failures.
 
-- [ ] **Step 6: Run tests, ensure CoverImageUrl is eliminated, and build**
+- [x] **Step 6: Run tests, ensure CoverImageUrl is eliminated, and build**
 
 Run: `dotnet test app/backend.Tests/backend.Tests.csproj --filter FullyQualifiedName~EditionAndCopyImageServiceTests && ! rg -n --glob '!src/Data/Migrations/**' 'CoverImageUrl' app/backend/src && dotnet build backend.sln`
 
 Expected: PASS; the search emits no matches and all image responses use resolved URLs.
 
-- [ ] **Step 7: Commit Edition/BookCopy image support**
+- [x] **Step 7: Commit Edition/BookCopy image support**
 
 ```bash
 git add app/backend/src/Helpers/EditionValidator.cs app/backend/src/Dto/EditionDto app/backend/src/Dto/TitleDto/TitleDetailResponse.cs app/backend/src/Dto/BookCopyDto app/backend/src/Services/EditionService.cs app/backend/src/Services/BookCopyService.cs app/backend/src/Services/TitleService.cs app/backend/src/Controllers/EditionsController.cs app/backend/src/Controllers/BookCopiesController.cs app/backend.Tests/Services/EditionAndCopyImageServiceTests.cs

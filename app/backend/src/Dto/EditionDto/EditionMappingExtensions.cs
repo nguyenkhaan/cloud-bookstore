@@ -8,7 +8,8 @@ public static class EditionMappingExtensions
         this EditionModel edition,
         string? titleName,
         string? confirmedByName,
-        int copiesCount)
+        int copiesCount,
+        string? imageUrl)
     {
         return new EditionResponse(
             edition.Id,
@@ -23,7 +24,7 @@ public static class EditionMappingExtensions
             edition.CoverPrice,
             edition.MinStockSale,
             edition.MinStockRental,
-            edition.PublicImageId,
+            imageUrl,
             edition.MetadataSource,
             edition.MetadataConfirmedBy,
             confirmedByName,

@@ -134,23 +134,34 @@ public class TitleService(
             throw new NotFoundException($"Book title with ID '{id}' was not found.");
         }
 
-        var editions = await dbContext.Editions.AsNoTracking()
+        var editionRows = await dbContext.Editions.AsNoTracking()
             .Where(e => e.TitleId == id)
             .OrderBy(e => e.PublishYear)
             .ThenBy(e => e.EditionStatement)
-            .Select(e => new TitleEditionSummary(
-                e.Id,
-                e.Isbn,
-                e.Publisher,
-                e.PublishYear,
-                e.EditionStatement,
-                e.PrintingStatement,
-                e.Format,
-                e.CoverPrice,
-                e.PublicImageId,
-                e.IsActive
-            ))
+            .Select(e => new
+            {
+                Summary = new TitleEditionSummary(
+                    e.Id,
+                    e.Isbn,
+                    e.Publisher,
+                    e.PublishYear,
+                    e.EditionStatement,
+                    e.PrintingStatement,
+                    e.Format,
+                    e.CoverPrice,
+                    null,
+                    e.IsActive
+                ),
+                e.PublicImageId
+            })
             .ToListAsync(cancellationToken);
+
+        var editions = editionRows
+            .Select(row => row.Summary with
+            {
+                ImageUrl = cloudinaryService.BuildImageUrlOrNull(row.PublicImageId, UploadOwnerType.EDITION_IMAGE)
+            })
+            .ToList();
 
         return new TitleDetailResponse(
             title.Id,

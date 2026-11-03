@@ -11,7 +11,6 @@ public record NormalizedEditionMetadata(
     string? PrintingStatement,
     string? Format,
     string? Publisher,
-    string? CoverImageUrl,
     long CoverPrice,
     int MinStockSale,
     int MinStockRental
@@ -25,7 +24,6 @@ public static class EditionValidator
         string? printingStatement,
         string? format,
         string? publisher,
-        string? coverImageUrl,
         long coverPrice,
         int minStockSale,
         int minStockRental)
@@ -75,15 +73,12 @@ public static class EditionValidator
             throw new BadRequestException("Nhà xuất bản không được vượt quá 255 ký tự.");
         }
 
-        var trimmedCoverImageUrl = string.IsNullOrWhiteSpace(coverImageUrl) ? null : coverImageUrl.Trim();
-
         return new NormalizedEditionMetadata(
             trimmedIsbn,
             trimmedEditionStatement,
             trimmedPrintingStatement,
             trimmedFormat,
             trimmedPublisher,
-            trimmedCoverImageUrl,
             coverPrice,
             minStockSale,
             minStockRental

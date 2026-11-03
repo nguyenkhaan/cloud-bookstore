@@ -9,7 +9,7 @@ public record TitleEditionSummary(
     string? PrintingStatement,
     string? Format,
     long CoverPrice,
-    string? CoverImageUrl,
+    string? ImageUrl,
     bool IsActive
 );
 

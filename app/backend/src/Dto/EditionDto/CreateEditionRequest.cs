@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using backend.src.Dto.UploadDto;
 using backend.src.Models.Enums;
 
 namespace backend.src.Dto.EditionDto;
@@ -34,11 +35,11 @@ public record CreateEditionRequest(
     [Range(0, int.MaxValue, ErrorMessage = "Ngưỡng tồn tối thiểu kênh thuê phải lớn hơn hoặc bằng 0.")]
     int MinStockRental = 0,
 
-    string? CoverImageUrl = null,
-
     MetadataSource? MetadataSource = null,
 
     Guid? MetadataConfirmedBy = null,
 
-    bool IsActive = true
+    bool IsActive = true,
+
+    CloudinaryUploadResultRequest? ImageUpload = null
 );

@@ -15,7 +15,7 @@ public record EditionResponse(
     long CoverPrice,
     int MinStockSale,
     int MinStockRental,
-    string? CoverImageUrl,
+    string? ImageUrl,
     MetadataSource? MetadataSource,
     Guid? MetadataConfirmedBy,
     string? MetadataConfirmedByName,
