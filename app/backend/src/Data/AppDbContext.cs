@@ -35,7 +35,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<EmployeeWorkRecordModel> EmployeeWorkRecords => Set<EmployeeWorkRecordModel>();
     public DbSet<NotificationOutboxModel> NotificationOutbox => Set<NotificationOutboxModel>();
     public DbSet<AuditLogModel> AuditLogs => Set<AuditLogModel>();
-    public DbSet<AttachmentModel> Attachments => Set<AttachmentModel>();
     public DbSet<UploadIntentModel> UploadIntents => Set<UploadIntentModel>();
     public DbSet<RentalLineImageModel> RentalLineImages => Set<RentalLineImageModel>();
     public DbSet<StockReceiptImageModel> StockReceiptImages => Set<StockReceiptImageModel>();
@@ -57,8 +56,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-
-        modelBuilder.Ignore<AttachmentModel>();
 
         modelBuilder.HasSequence<long>("seq_copy_barcode").StartsAt(1).IncrementsBy(1);
 

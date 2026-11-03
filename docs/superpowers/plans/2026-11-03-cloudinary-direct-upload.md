@@ -436,22 +436,22 @@ git commit -m "feat: add edition and book copy images"
 - Docker Compose no longer starts or retains a MinIO service/volume.
 - Full test/build/migration checks pass before a human chooses whether to apply the destructive database migration.
 
-- [ ] **Step 1: Write failing architecture-removal tests**
+- [x] **Step 1: Write failing architecture-removal tests**
 
 In `RemovedAttachmentAndMinioTests.cs`, assert that the compiled AppDbContext model does not contain `AttachmentModel`, contains all replacement entity types, and has no Attachment DbSet/mapping. Provider registration is verified by the normal backend build and the final source search, without starting the production host or requiring real Cloudinary configuration.
 
-- [ ] **Step 2: Run the architecture test to verify it fails**
+- [x] **Step 2: Run the architecture test to verify it fails**
 
 Run: `dotnet test app/backend.Tests/backend.Tests.csproj --filter FullyQualifiedName~RemovedAttachmentAndMinioTests`
 
 Expected: FAIL while Attachment and MinIO registrations still exist.
 
-- [ ] **Step 3: Remove Attachment and MinIO runtime code/configuration**
+- [x] **Step 3: Remove Attachment and MinIO runtime code/configuration**
 
 Delete the exact files above; remove Attachment mapping/DbSet/indexes/relationships/enum conversion; remove MinIO health checks, options, DI, hosted initializer, package reference, appsettings sections, Docker service/volume, and all using directives. Preserve AuditLog itself and historical attachment audit rows.
 
 
-- [ ] **Step 4: Reinspect the Task 1 migration and generate a deploy-review script**
+- [x] **Step 4: Reinspect the Task 1 migration and generate a deploy-review script**
 
 Run:
 
@@ -461,7 +461,7 @@ dotnet ef migrations script --idempotent --project app/backend/backend.csproj --
 
 Verify the Task 1 migration adds `PublicImageId` columns, UploadIntent/RentalLineImage/StockReceiptImage tables plus expected indexes/FKs, and drops `attachments`. Do not run `dotnet ef database update` automatically because this is destructive.
 
-- [ ] **Step 5: Update schema documentation and run complete verification**
+- [x] **Step 5: Update schema documentation and run complete verification**
 
 Replace Attachment/MinIO schema documentation with UploadIntent, direct public-image fields, and deferred evidence tables in `docs/DATABASE.txt`.
 
@@ -476,7 +476,7 @@ git diff --check
 
 Expected: all commands pass; the final search emits no runtime matches.
 
-- [ ] **Step 6: Commit the replacement and destructive migration**
+- [x] **Step 6: Commit the replacement and destructive migration**
 
 ```bash
 git add -A app/backend docker-compose.yaml docs/DATABASE.txt backend.sln
