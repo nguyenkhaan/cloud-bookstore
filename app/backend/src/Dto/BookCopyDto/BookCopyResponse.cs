@@ -25,5 +25,6 @@ public record BookCopyResponse(
     long? SellingPrice,
     long? RentalRate,
     string? ShelfCode,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    string? ImageUrl
 );

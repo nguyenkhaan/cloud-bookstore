@@ -4,16 +4,28 @@ using backend.src.Data;
 using backend.src.Dto.AuditLogDto;
 using backend.src.Dto.BookCopyDto;
 using backend.src.Dto.Common;
+using backend.src.Dto.UploadDto;
 using backend.src.Exceptions;
 using backend.src.Helpers;
+using backend.src.Infrastructure;
 using backend.src.Models;
 using backend.src.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.src.Services;
 
-public class BookCopyService(AppDbContext dbContext, AuditLogService auditLogService)
+public class BookCopyService(
+    AppDbContext dbContext,
+    AuditLogService auditLogService,
+    UploadIntentService uploadIntentService,
+    ICloudinaryService cloudinaryService,
+    ILogger<BookCopyService> logger)
 {
+    private const UploadOwnerType CopyImageOwner = UploadOwnerType.BOOK_COPY_IMAGE;
+    private const UploadOwnerType EditionImageOwner = UploadOwnerType.EDITION_IMAGE;
+    private const string ActionAttachImage = "ATTACH_IMAGE";
+    private const string ActionReplaceImage = "REPLACE_IMAGE";
+    private const string ActionDeleteImage = "DELETE_IMAGE";
     private const string AuditEntityType = "BookCopy";
     private const string ActionCreate = "BOOK_COPY_CREATE";
     private const string ActionUpdate = "BOOK_COPY_UPDATE";
@@ -112,12 +124,14 @@ public class BookCopyService(AppDbContext dbContext, AuditLogService auditLogSer
 
         var totalCount = await rows.CountAsync(cancellationToken);
 
-        var items = await rows
+        var pageRows = await rows
             .OrderBy(x => x.t.Name)
             .ThenBy(x => x.c.CopyBarcode)
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
-            .Select(x => new BookCopyResponse(
+            .Select(x => new
+            {
+                Response = new BookCopyResponse(
                 x.c.Id,
                 x.c.CopyBarcode,
                 x.e.Id,
@@ -140,8 +154,19 @@ public class BookCopyService(AppDbContext dbContext, AuditLogService auditLogSer
                 x.c.SellingPrice,
                 x.c.RentalRate,
                 x.c.ShelfCode,
-                x.c.CreatedAt))
+                x.c.CreatedAt,
+                null),
+                x.c.PublicImageId
+            })
             .ToListAsync(cancellationToken);
+
+        // Image URLs are resolved in memory, never inside the EF projection.
+        var items = pageRows
+            .Select(row => row.Response with
+            {
+                ImageUrl = cloudinaryService.BuildImageUrlOrNull(row.PublicImageId, CopyImageOwner)
+            })
+            .ToList();
 
         return new PagedResult<BookCopyResponse>(items, totalCount, query.Page, query.PageSize);
     }
@@ -353,6 +378,13 @@ public class BookCopyService(AppDbContext dbContext, AuditLogService auditLogSer
                 $"Dòng phiếu nhập đã tạo đủ {line.Quantity} bản sách, không thể tạo thêm.");
         }
 
+        // Domain validation is complete; consume the intent inside the same transaction.
+        string? publicImageId = null;
+        if (request.ImageUpload is not null)
+        {
+            publicImageId = await ConsumeImageAsync(request.ImageUpload, auditContext, cancellationToken);
+        }
+
         var copy = new BookCopyModel
         {
             Id = Guid.NewGuid(),
@@ -367,6 +399,7 @@ public class BookCopyService(AppDbContext dbContext, AuditLogService auditLogSer
             SellingPrice = data.SellingPrice,
             RentalRate = data.RentalRate,
             ShelfCode = data.ShelfCode,
+            PublicImageId = publicImageId,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -376,6 +409,14 @@ public class BookCopyService(AppDbContext dbContext, AuditLogService auditLogSer
         await auditLogService.CreateAuditLogEntryAsync(
             new CreateAuditLogEntry(ActionCreate, AuditEntityType, copy.Id, null, copy.ToAuditSnapshot(), reason, auditContext),
             cancellationToken);
+
+        if (request.ImageUpload is not null)
+        {
+            await auditLogService.CreateAuditLogEntryAsync(
+                BuildImageAudit(ActionAttachImage, copy.Id, null, request.ImageUpload.UploadIntentId, publicImageId,
+                    "Attached image to book copy.", auditContext),
+                cancellationToken);
+        }
 
         await transaction.CommitAsync(cancellationToken);
 
@@ -422,12 +463,34 @@ public class BookCopyService(AppDbContext dbContext, AuditLogService auditLogSer
         }
 
         var after = copy.ToAuditSnapshot();
-        if (beforeJson == JsonSerializer.Serialize(after))
+        var fieldsChanged = beforeJson != JsonSerializer.Serialize(after);
+        if (!fieldsChanged && request.ImageUpload is null)
         {
             return await GetBookCopyByIdAsync(id, canViewCost: true, cancellationToken);
         }
 
-        await SaveWithAuditAsync(copy, ActionUpdate, before, after, reason, auditContext, cancellationToken);
+        var audits = new List<CreateAuditLogEntry>();
+        if (fieldsChanged)
+        {
+            audits.Add(new CreateAuditLogEntry(ActionUpdate, AuditEntityType, copy.Id, before, after, reason, auditContext));
+        }
+
+        // The image only changes through a verified upload intent; omitting it keeps the current image.
+        string? replacedImageId = null;
+        if (request.ImageUpload is not null)
+        {
+            var newImageId = await ConsumeImageAsync(request.ImageUpload, auditContext, cancellationToken);
+            replacedImageId = copy.PublicImageId;
+            copy.PublicImageId = newImageId;
+            audits.Add(BuildImageAudit(
+                replacedImageId is null ? ActionAttachImage : ActionReplaceImage,
+                copy.Id, replacedImageId, request.ImageUpload.UploadIntentId, newImageId,
+                replacedImageId is null ? "Attached image to book copy." : "Replaced book copy image.",
+                auditContext));
+        }
+
+        await SaveWithAuditsAsync(audits, cancellationToken);
+        await cloudinaryService.TryDestroyAfterCommitAsync(replacedImageId, CopyImageOwner, logger);
         return await GetBookCopyByIdAsync(id, canViewCost: true, cancellationToken);
     }
 
@@ -504,7 +567,7 @@ public class BookCopyService(AppDbContext dbContext, AuditLogService auditLogSer
             GeneratedAt: DateTime.UtcNow);
     }
 
-    private async Task SaveWithAuditAsync(
+    private Task SaveWithAuditAsync(
         BookCopyModel copy,
         string action,
         object before,
@@ -512,14 +575,105 @@ public class BookCopyService(AppDbContext dbContext, AuditLogService auditLogSer
         string reason,
         AuditLogContext auditContext,
         CancellationToken cancellationToken)
+        => SaveWithAuditsAsync(
+            [new CreateAuditLogEntry(action, AuditEntityType, copy.Id, before, after, reason, auditContext)],
+            cancellationToken);
+
+    private async Task SaveWithAuditsAsync(
+        IReadOnlyList<CreateAuditLogEntry> audits,
+        CancellationToken cancellationToken)
     {
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-        await auditLogService.CreateAuditLogEntryAsync(
-            new CreateAuditLogEntry(action, AuditEntityType, copy.Id, before, after, reason, auditContext),
-            cancellationToken);
+        foreach (var audit in audits)
+        {
+            await auditLogService.CreateAuditLogEntryAsync(audit, cancellationToken);
+        }
         await transaction.CommitAsync(cancellationToken);
     }
+
+    public async Task<BookCopyDetailResponse> UpdateBookCopyImageAsync(
+        Guid id,
+        CloudinaryUploadResultRequest imageUpload,
+        AuditLogContext auditContext,
+        CancellationToken cancellationToken = default)
+    {
+        if (imageUpload is null)
+        {
+            throw new BadRequestException("Image upload result is required.");
+        }
+
+        var copy = await dbContext.BookCopies.FirstOrDefaultAsync(c => c.Id == id, cancellationToken)
+            ?? throw new NotFoundException($"Bản sách với ID '{id}' không tồn tại.");
+
+        var newImageId = await ConsumeImageAsync(imageUpload, auditContext, cancellationToken);
+        var oldImageId = copy.PublicImageId;
+        copy.PublicImageId = newImageId;
+
+        // Single SaveChanges inside the audit write: copy + consumed intent + audit commit together.
+        await auditLogService.CreateAuditLogEntryAsync(
+            BuildImageAudit(
+                oldImageId is null ? ActionAttachImage : ActionReplaceImage,
+                copy.Id, oldImageId, imageUpload.UploadIntentId, newImageId,
+                oldImageId is null ? "Attached image to book copy." : "Replaced book copy image.",
+                auditContext),
+            cancellationToken);
+
+        await cloudinaryService.TryDestroyAfterCommitAsync(oldImageId, CopyImageOwner, logger);
+        return await GetBookCopyByIdAsync(id, canViewCost: true, cancellationToken);
+    }
+
+    public async Task DeleteBookCopyImageAsync(
+        Guid id,
+        AuditLogContext auditContext,
+        CancellationToken cancellationToken = default)
+    {
+        var copy = await dbContext.BookCopies.FirstOrDefaultAsync(c => c.Id == id, cancellationToken)
+            ?? throw new NotFoundException($"Bản sách với ID '{id}' không tồn tại.");
+
+        var oldImageId = copy.PublicImageId;
+        if (oldImageId is null)
+        {
+            return;
+        }
+
+        copy.PublicImageId = null;
+        await auditLogService.CreateAuditLogEntryAsync(
+            BuildImageAudit(ActionDeleteImage, copy.Id, oldImageId, null, null, "Removed book copy image.", auditContext),
+            cancellationToken);
+
+        await cloudinaryService.TryDestroyAfterCommitAsync(oldImageId, CopyImageOwner, logger);
+    }
+
+    private Task<string> ConsumeImageAsync(
+        CloudinaryUploadResultRequest imageUpload,
+        AuditLogContext auditContext,
+        CancellationToken cancellationToken)
+    {
+        if (auditContext?.ActorId is not { } actorId || actorId == Guid.Empty)
+        {
+            throw new UnauthorizedException("Authenticated user is required to attach an image.");
+        }
+
+        return uploadIntentService.ConsumeAsync(actorId, CopyImageOwner, imageUpload, cancellationToken);
+    }
+
+    private static CreateAuditLogEntry BuildImageAudit(
+        string action,
+        Guid copyId,
+        string? oldPublicImageId,
+        Guid? uploadIntentId,
+        string? newPublicImageId,
+        string reason,
+        AuditLogContext auditContext)
+        => new(
+            action,
+            AuditEntityType,
+            copyId,
+            oldPublicImageId is null ? null : new { PublicImageId = oldPublicImageId },
+            newPublicImageId is null ? null : new { UploadIntentId = uploadIntentId, PublicImageId = newPublicImageId },
+            reason,
+            auditContext);
 
     private async Task<string> NextBarcodeAsync(CancellationToken cancellationToken)
     {
@@ -585,7 +739,7 @@ public class BookCopyService(AppDbContext dbContext, AuditLogService auditLogSer
             row.e.Publisher,
             row.e.PublishYear,
             row.e.CoverPrice,
-            row.e.CoverImageUrl,
+            cloudinaryService.BuildImageUrlOrNull(row.e.PublicImageId, EditionImageOwner),
             row.e.IsActive,
             row.t.Id,
             row.t.Name,
@@ -604,6 +758,7 @@ public class BookCopyService(AppDbContext dbContext, AuditLogService auditLogSer
             row.c.RentalRate,
             row.c.ShelfCode,
             row.c.CreatedAt,
+            cloudinaryService.BuildImageUrlOrNull(row.c.PublicImageId, CopyImageOwner),
             row.c.ReceiptLineId,
             row.r.Id,
             row.r.Code,
@@ -620,6 +775,9 @@ public class BookCopyService(AppDbContext dbContext, AuditLogService auditLogSer
         ActionUpdate => "Cập nhật thông tin bản sách (Grade, tình trạng, giá, kệ hoặc kênh Bán/Thuê).",
         ActionStatusChange => "Chuyển trạng thái vòng đời của bản sách.",
         ActionLabelReprint => "In/tái in tem CopyBarcode.",
+        ActionAttachImage => "Gắn ảnh cho bản sách.",
+        ActionReplaceImage => "Thay ảnh của bản sách.",
+        ActionDeleteImage => "Xóa ảnh của bản sách.",
         _ => action
     };
 }

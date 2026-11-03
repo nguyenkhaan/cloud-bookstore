@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using backend.src.Dto.UploadDto;
 using backend.src.Models.Enums;
 
 namespace backend.src.Dto.BookCopyDto;
@@ -23,5 +24,7 @@ public record UpdateBookCopyRequest(
     long? RentalRate = null,
 
     [MaxLength(30, ErrorMessage = "Vị trí kệ không được vượt quá 30 ký tự.")]
-    string? ShelfCode = null
+    string? ShelfCode = null,
+
+    CloudinaryUploadResultRequest? ImageUpload = null
 );

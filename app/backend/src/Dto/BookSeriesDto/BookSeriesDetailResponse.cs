@@ -6,7 +6,8 @@ public record BookSeriesTitleSummary(
     string? VolumeLabel,
     string? Author,
     short? OriginalPublishYear,
-    bool IsActive
+    bool IsActive,
+    string? ImageUrl
 );
 
 public record BookSeriesDetailResponse(
@@ -15,5 +16,6 @@ public record BookSeriesDetailResponse(
     string? Description,
     bool IsActive,
     DateTime CreatedAt,
+    string? ImageUrl,
     IReadOnlyList<BookSeriesTitleSummary> Titles
 );

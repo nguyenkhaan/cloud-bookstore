@@ -1,5 +1,9 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using backend.src.Dto.AuditLogDto;
 using backend.src.Dto.Common;
 using backend.src.Dto.TitleDto;
+using backend.src.Dto.UploadDto;
 using backend.src.Models.Enums;
 using backend.src.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -11,6 +15,9 @@ namespace backend.src.Controllers;
 [Route("api/book-titles")]
 public class BookTitlesController(TitleService titleService) : ControllerBase
 {
+    private const string StaffRoles =
+        $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)},{nameof(RoleName.CASHIER)}";
+
     [HttpGet]
     [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)},{nameof(RoleName.CASHIER)}")]
     [ProducesResponseType<PagedResult<TitleResponse>>(StatusCodes.Status200OK)]
@@ -44,7 +51,7 @@ public class BookTitlesController(TitleService titleService) : ControllerBase
         [FromBody] CreateTitleRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await titleService.CreateTitleAsync(request, cancellationToken);
+        var result = await titleService.CreateTitleAsync(request, BuildAuditContext(), cancellationToken);
         return CreatedAtAction(nameof(GetTitleById), new { id = result.Id }, result);
     }
 
@@ -59,7 +66,7 @@ public class BookTitlesController(TitleService titleService) : ControllerBase
         [FromBody] UpdateTitleRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await titleService.UpdateTitleAsync(id, request, cancellationToken);
+        var result = await titleService.UpdateTitleAsync(id, request, BuildAuditContext(), cancellationToken);
         return Ok(result);
     }
 
@@ -86,7 +93,44 @@ public class BookTitlesController(TitleService titleService) : ControllerBase
         [FromRoute] Guid id,
         CancellationToken cancellationToken)
     {
-        await titleService.DeleteTitleAsync(id, cancellationToken);
+        await titleService.DeleteTitleAsync(id, BuildAuditContext(), cancellationToken);
         return NoContent();
+    }
+
+    [HttpPut("{id:guid}/image")]
+    [Authorize(Roles = StaffRoles)]
+    [ProducesResponseType<TitleResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<TitleResponse>> UpdateTitleImage(
+        [FromRoute] Guid id,
+        [FromBody] CloudinaryUploadResultRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await titleService.UpdateTitleImageAsync(id, request, BuildAuditContext(), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpDelete("{id:guid}/image")]
+    [Authorize(Roles = StaffRoles)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteTitleImage(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken)
+    {
+        await titleService.DeleteTitleImageAsync(id, BuildAuditContext(), cancellationToken);
+        return NoContent();
+    }
+
+    private AuditLogContext BuildAuditContext()
+    {
+        var actorClaim = User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return new AuditLogContext(
+            Guid.TryParse(actorClaim, out var actorId) ? actorId : null,
+            HttpContext.Connection.RemoteIpAddress);
     }
 }

@@ -3,6 +3,7 @@ using System.Security.Claims;
 using backend.src.Dto.AuditLogDto;
 using backend.src.Dto.BookCopyDto;
 using backend.src.Dto.Common;
+using backend.src.Dto.UploadDto;
 using backend.src.Models.Enums;
 using backend.src.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -125,6 +126,35 @@ public class BookCopiesController(BookCopyService bookCopyService) : ControllerB
     {
         var result = await bookCopyService.CreateLabelAsync(id, request, BuildAuditContext(), cancellationToken);
         return Ok(result);
+    }
+
+    [HttpPut("{id:guid}/image")]
+    [Authorize(Roles = ReadRoles)]
+    [ProducesResponseType<BookCopyDetailResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<BookCopyDetailResponse>> UpdateBookCopyImage(
+        [FromRoute] Guid id,
+        [FromBody] CloudinaryUploadResultRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await bookCopyService.UpdateBookCopyImageAsync(id, request, BuildAuditContext(), cancellationToken);
+        return Ok(CanViewCost() ? result : result with { CostPrice = null });
+    }
+
+    [HttpDelete("{id:guid}/image")]
+    [Authorize(Roles = ReadRoles)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteBookCopyImage(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken)
+    {
+        await bookCopyService.DeleteBookCopyImageAsync(id, BuildAuditContext(), cancellationToken);
+        return NoContent();
     }
 
     private bool CanViewCost()

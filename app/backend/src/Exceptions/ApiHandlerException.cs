@@ -1,5 +1,7 @@
 //https://towardsdev.com/configuring-custom-exception-handlers-in-asp-net-core-8-8106501e2303
+using backend.src.Models;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.EntityFrameworkCore;
 
 namespace backend.src.Exceptions;
 
@@ -30,6 +32,14 @@ public sealed class ApiHandlerException(ILogger<ApiHandlerException> logger) : I
             ),
             UnauthorizedException => (
                 StatusCodes.Status401Unauthorized, exception.Message
+            ),
+            DbUpdateConcurrencyException concurrency when concurrency.Entries.Any(e => e.Entity is UploadIntentModel) => (
+                StatusCodes.Status409Conflict,
+                "Upload intent has already been consumed."
+            ),
+            DbUpdateConcurrencyException => (
+                StatusCodes.Status409Conflict,
+                "The data was modified by another request. Please reload and try again."
             ),
             _ => (
                 StatusCodes.Status500InternalServerError,

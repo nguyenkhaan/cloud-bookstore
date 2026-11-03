@@ -1,3 +1,4 @@
+using backend.src.Dto.UploadDto;
 using System.ComponentModel.DataAnnotations;
 
 namespace backend.src.Dto.BookSeriesDto;
@@ -9,5 +10,7 @@ public record UpdateBookSeriesRequest(
 
     string? Description = null,
 
-    bool? IsActive = null
+    bool? IsActive = null,
+
+    CloudinaryUploadResultRequest? ImageUpload = null
 );

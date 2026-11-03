@@ -1,14 +1,29 @@
 using backend.src.Data;
+using backend.src.Dto.AuditLogDto;
 using backend.src.Dto.Common;
 using backend.src.Dto.TitleDto;
+using backend.src.Dto.UploadDto;
 using backend.src.Exceptions;
+using backend.src.Infrastructure;
 using backend.src.Models;
+using backend.src.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.src.Services;
 
-public class TitleService(AppDbContext dbContext)
+public class TitleService(
+    AppDbContext dbContext,
+    UploadIntentService uploadIntentService,
+    ICloudinaryService cloudinaryService,
+    AuditLogService auditLogService,
+    ILogger<TitleService> logger)
 {
+    private const UploadOwnerType TitleImageOwner = UploadOwnerType.TITLE_IMAGE;
+    private const string AuditEntityType = "Title";
+    private const string ActionAttachImage = "ATTACH_IMAGE";
+    private const string ActionReplaceImage = "REPLACE_IMAGE";
+    private const string ActionDeleteImage = "DELETE_IMAGE";
+
     public async Task<PagedResult<TitleResponse>> GetTitlesAsync(
         TitleQuery query,
         CancellationToken cancellationToken = default)
@@ -50,7 +65,9 @@ public class TitleService(AppDbContext dbContext)
                              join c in dbContext.Categories.AsNoTracking() on t.CategoryId equals c.Id into categories
                              from c in categories.DefaultIfEmpty()
                              orderby t.Name
-                             select new TitleResponse(
+                             select new
+                             {
+                                 Response = new TitleResponse(
                                  t.Id,
                                  t.Name,
                                  t.VolumeLabel,
@@ -63,13 +80,24 @@ public class TitleService(AppDbContext dbContext)
                                  c != null ? c.Name : null,
                                  t.IsActive,
                                  t.CreatedAt,
-                                 dbContext.Editions.Count(e => e.TitleId == t.Id)
-                             );
+                                 dbContext.Editions.Count(e => e.TitleId == t.Id),
+                                 null
+                                 ),
+                                 t.PublicImageId
+                             };
 
-        var items = await queryWithJoins
+        var rows = await queryWithJoins
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
             .ToListAsync(cancellationToken);
+
+        // Image URLs are resolved in memory, never inside the EF projection.
+        var items = rows
+            .Select(row => row.Response with
+            {
+                ImageUrl = cloudinaryService.BuildImageUrlOrNull(row.PublicImageId, TitleImageOwner)
+            })
+            .ToList();
 
         return new PagedResult<TitleResponse>(items, totalCount, query.Page, query.PageSize);
     }
@@ -97,7 +125,8 @@ public class TitleService(AppDbContext dbContext)
                                t.CategoryId,
                                CategoryName = c != null ? c.Name : null,
                                t.IsActive,
-                               t.CreatedAt
+                               t.CreatedAt,
+                               t.PublicImageId
                            }).FirstOrDefaultAsync(cancellationToken);
 
         if (title == null)
@@ -105,23 +134,34 @@ public class TitleService(AppDbContext dbContext)
             throw new NotFoundException($"Book title with ID '{id}' was not found.");
         }
 
-        var editions = await dbContext.Editions.AsNoTracking()
+        var editionRows = await dbContext.Editions.AsNoTracking()
             .Where(e => e.TitleId == id)
             .OrderBy(e => e.PublishYear)
             .ThenBy(e => e.EditionStatement)
-            .Select(e => new TitleEditionSummary(
-                e.Id,
-                e.Isbn,
-                e.Publisher,
-                e.PublishYear,
-                e.EditionStatement,
-                e.PrintingStatement,
-                e.Format,
-                e.CoverPrice,
-                e.CoverImageUrl,
-                e.IsActive
-            ))
+            .Select(e => new
+            {
+                Summary = new TitleEditionSummary(
+                    e.Id,
+                    e.Isbn,
+                    e.Publisher,
+                    e.PublishYear,
+                    e.EditionStatement,
+                    e.PrintingStatement,
+                    e.Format,
+                    e.CoverPrice,
+                    null,
+                    e.IsActive
+                ),
+                e.PublicImageId
+            })
             .ToListAsync(cancellationToken);
+
+        var editions = editionRows
+            .Select(row => row.Summary with
+            {
+                ImageUrl = cloudinaryService.BuildImageUrlOrNull(row.PublicImageId, UploadOwnerType.EDITION_IMAGE)
+            })
+            .ToList();
 
         return new TitleDetailResponse(
             title.Id,
@@ -136,12 +176,14 @@ public class TitleService(AppDbContext dbContext)
             title.CategoryName,
             title.IsActive,
             title.CreatedAt,
+            cloudinaryService.BuildImageUrlOrNull(title.PublicImageId, TitleImageOwner),
             editions
         );
     }
 
     public async Task<TitleResponse> CreateTitleAsync(
         CreateTitleRequest request,
+        AuditLogContext auditContext,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
@@ -199,6 +241,13 @@ public class TitleService(AppDbContext dbContext)
             throw new ConflictException("Đầu sách hoặc tập cùng tên đã tồn tại trong cùng bộ sách.");
         }
 
+        // Domain validation is complete; consume the intent before tracking the new entity.
+        string? publicImageId = null;
+        if (request.ImageUpload is not null)
+        {
+            publicImageId = await ConsumeImageAsync(request.ImageUpload, auditContext, cancellationToken);
+        }
+
         var title = new TitleModel
         {
             Id = Guid.NewGuid(),
@@ -209,33 +258,31 @@ public class TitleService(AppDbContext dbContext)
             OriginalPublishYear = request.OriginalPublishYear,
             Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
             CategoryId = request.CategoryId,
+            PublicImageId = publicImageId,
             IsActive = request.IsActive,
             CreatedAt = DateTime.UtcNow
         };
 
         dbContext.Titles.Add(title);
-        await dbContext.SaveChangesAsync(cancellationToken);
 
-        return new TitleResponse(
-            title.Id,
-            title.Name,
-            title.VolumeLabel,
-            title.Author,
-            title.OriginalPublishYear,
-            title.Description,
-            title.SeriesId,
-            seriesName,
-            title.CategoryId,
-            categoryName,
-            title.IsActive,
-            title.CreatedAt,
-            EditionsCount: 0
-        );
+        if (request.ImageUpload is not null)
+        {
+            // Persists the entity, consumed intent, and audit entry in one SaveChanges.
+            await WriteImageAuditAsync(ActionAttachImage, title.Id, null, request.ImageUpload.UploadIntentId,
+                publicImageId, "Attached image to title.", auditContext, cancellationToken);
+        }
+        else
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        return ToResponse(title, seriesName, categoryName, editionsCount: 0);
     }
 
     public async Task<TitleResponse> UpdateTitleAsync(
         Guid id,
         UpdateTitleRequest request,
+        AuditLogContext auditContext,
         CancellationToken cancellationToken = default)
     {
         var title = await dbContext.Titles.FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
@@ -312,25 +359,20 @@ public class TitleService(AppDbContext dbContext)
             title.IsActive = request.IsActive.Value;
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        string? replacedImageId = null;
+        if (request.ImageUpload is not null)
+        {
+            replacedImageId = await ApplyImageAsync(title, request.ImageUpload, auditContext, cancellationToken);
+        }
+        else
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        await cloudinaryService.TryDestroyAfterCommitAsync(replacedImageId, TitleImageOwner, logger);
 
         var editionsCount = await dbContext.Editions.CountAsync(e => e.TitleId == id, cancellationToken);
-
-        return new TitleResponse(
-            title.Id,
-            title.Name,
-            title.VolumeLabel,
-            title.Author,
-            title.OriginalPublishYear,
-            title.Description,
-            title.SeriesId,
-            seriesName,
-            title.CategoryId,
-            categoryName,
-            title.IsActive,
-            title.CreatedAt,
-            editionsCount
-        );
+        return ToResponse(title, seriesName, categoryName, editionsCount);
     }
 
     public async Task<TitleResponse> UpdateTitleStatusAsync(
@@ -385,25 +427,13 @@ public class TitleService(AppDbContext dbContext)
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var editionsCount = await dbContext.Editions.CountAsync(e => e.TitleId == id, cancellationToken);
-
-        return new TitleResponse(
-            title.Id,
-            title.Name,
-            title.VolumeLabel,
-            title.Author,
-            title.OriginalPublishYear,
-            title.Description,
-            title.SeriesId,
-            seriesName,
-            title.CategoryId,
-            categoryName,
-            title.IsActive,
-            title.CreatedAt,
-            editionsCount
-        );
+        return ToResponse(title, seriesName, categoryName, editionsCount);
     }
 
-    public async Task DeleteTitleAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task DeleteTitleAsync(
+        Guid id,
+        AuditLogContext auditContext,
+        CancellationToken cancellationToken = default)
     {
         var title = await dbContext.Titles.FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
         if (title == null)
@@ -417,7 +447,158 @@ public class TitleService(AppDbContext dbContext)
             throw new BadRequestException("Không thể xóa đầu sách này vì đang có các ấn bản trực thuộc. Vui lòng chuyển trạng thái sang ngừng sử dụng thay vì xóa.");
         }
 
+        var oldImageId = title.PublicImageId;
         dbContext.Titles.Remove(title);
-        await dbContext.SaveChangesAsync(cancellationToken);
+
+        if (oldImageId is not null)
+        {
+            await WriteImageAuditAsync(ActionDeleteImage, title.Id, oldImageId, null, null,
+                "Removed image together with deleted title.", auditContext, cancellationToken);
+        }
+        else
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        await cloudinaryService.TryDestroyAfterCommitAsync(oldImageId, TitleImageOwner, logger);
     }
+
+    public async Task<TitleResponse> UpdateTitleImageAsync(
+        Guid id,
+        CloudinaryUploadResultRequest imageUpload,
+        AuditLogContext auditContext,
+        CancellationToken cancellationToken = default)
+    {
+        if (imageUpload is null)
+        {
+            throw new BadRequestException("Image upload result is required.");
+        }
+
+        var title = await dbContext.Titles.FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+        if (title == null)
+        {
+            throw new NotFoundException($"Book title with ID '{id}' was not found.");
+        }
+
+        var replacedImageId = await ApplyImageAsync(title, imageUpload, auditContext, cancellationToken);
+        await cloudinaryService.TryDestroyAfterCommitAsync(replacedImageId, TitleImageOwner, logger);
+
+        return await BuildResponseAsync(title, cancellationToken);
+    }
+
+    public async Task DeleteTitleImageAsync(
+        Guid id,
+        AuditLogContext auditContext,
+        CancellationToken cancellationToken = default)
+    {
+        var title = await dbContext.Titles.FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+        if (title == null)
+        {
+            throw new NotFoundException($"Book title with ID '{id}' was not found.");
+        }
+
+        var oldImageId = title.PublicImageId;
+        if (oldImageId is null)
+        {
+            return;
+        }
+
+        title.PublicImageId = null;
+        await WriteImageAuditAsync(ActionDeleteImage, title.Id, oldImageId, null, null,
+            "Removed title image.", auditContext, cancellationToken);
+
+        await cloudinaryService.TryDestroyAfterCommitAsync(oldImageId, TitleImageOwner, logger);
+    }
+
+    /// <summary>
+    /// Consumes the intent, sets the new direct image ID, and commits entity + intent + audit together.
+    /// Returns the previous public ID that must be destroyed after the commit, if any.
+    /// </summary>
+    private async Task<string?> ApplyImageAsync(
+        TitleModel title,
+        CloudinaryUploadResultRequest imageUpload,
+        AuditLogContext auditContext,
+        CancellationToken cancellationToken)
+    {
+        var newImageId = await ConsumeImageAsync(imageUpload, auditContext, cancellationToken);
+        var oldImageId = title.PublicImageId;
+        title.PublicImageId = newImageId;
+
+        var action = oldImageId is null ? ActionAttachImage : ActionReplaceImage;
+        await WriteImageAuditAsync(action, title.Id, oldImageId, imageUpload.UploadIntentId, newImageId,
+            oldImageId is null ? "Attached image to title." : "Replaced title image.",
+            auditContext, cancellationToken);
+
+        return oldImageId == newImageId ? null : oldImageId;
+    }
+
+    private Task<string> ConsumeImageAsync(
+        CloudinaryUploadResultRequest imageUpload,
+        AuditLogContext auditContext,
+        CancellationToken cancellationToken)
+    {
+        if (auditContext?.ActorId is not { } actorId || actorId == Guid.Empty)
+        {
+            throw new UnauthorizedException("Authenticated user is required to attach an image.");
+        }
+
+        return uploadIntentService.ConsumeAsync(actorId, TitleImageOwner, imageUpload, cancellationToken);
+    }
+
+    private Task WriteImageAuditAsync(
+        string action,
+        Guid titleId,
+        string? oldPublicImageId,
+        Guid? uploadIntentId,
+        string? newPublicImageId,
+        string reason,
+        AuditLogContext auditContext,
+        CancellationToken cancellationToken)
+        => auditLogService.CreateAuditLogEntryAsync(
+            new CreateAuditLogEntry(
+                action,
+                AuditEntityType,
+                titleId,
+                oldPublicImageId is null ? null : new { PublicImageId = oldPublicImageId },
+                newPublicImageId is null ? null : new { UploadIntentId = uploadIntentId, PublicImageId = newPublicImageId },
+                reason,
+                auditContext),
+            cancellationToken);
+
+    private async Task<TitleResponse> BuildResponseAsync(TitleModel title, CancellationToken cancellationToken)
+    {
+        var seriesName = title.SeriesId.HasValue
+            ? await dbContext.BookSeries.AsNoTracking()
+                .Where(s => s.Id == title.SeriesId.Value)
+                .Select(s => s.Name)
+                .FirstOrDefaultAsync(cancellationToken)
+            : null;
+        var categoryName = title.CategoryId.HasValue
+            ? await dbContext.Categories.AsNoTracking()
+                .Where(c => c.Id == title.CategoryId.Value)
+                .Select(c => c.Name)
+                .FirstOrDefaultAsync(cancellationToken)
+            : null;
+        var editionsCount = await dbContext.Editions.CountAsync(e => e.TitleId == title.Id, cancellationToken);
+
+        return ToResponse(title, seriesName, categoryName, editionsCount);
+    }
+
+    private TitleResponse ToResponse(TitleModel title, string? seriesName, string? categoryName, int editionsCount)
+        => new(
+            title.Id,
+            title.Name,
+            title.VolumeLabel,
+            title.Author,
+            title.OriginalPublishYear,
+            title.Description,
+            title.SeriesId,
+            seriesName,
+            title.CategoryId,
+            categoryName,
+            title.IsActive,
+            title.CreatedAt,
+            editionsCount,
+            cloudinaryService.BuildImageUrlOrNull(title.PublicImageId, TitleImageOwner)
+        );
 }

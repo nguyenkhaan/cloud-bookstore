@@ -9,7 +9,7 @@ public record TitleEditionSummary(
     string? PrintingStatement,
     string? Format,
     long CoverPrice,
-    string? CoverImageUrl,
+    string? ImageUrl,
     bool IsActive
 );
 
@@ -26,5 +26,6 @@ public record TitleDetailResponse(
     string? CategoryName,
     bool IsActive,
     DateTime CreatedAt,
+    string? ImageUrl,
     IReadOnlyList<TitleEditionSummary> Editions
 );

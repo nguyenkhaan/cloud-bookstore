@@ -267,6 +267,7 @@ table book_series {
   id uuid [pk]
   name varchar(255) [not null]
   description text
+  public_image_id varchar(255) [note: 'Cloudinary public_id ảnh công khai (delivery type upload); API trả ImageUrl, không trả public_id']
   is_active boolean [not null, default: true]
   created_at timestamptz [not null, default: `now()`]
   Note: 'Bộ sách gồm nhiều đầu sách/tập; sách độc lập có thể không thuộc bộ.'
@@ -280,6 +281,7 @@ table titles {
   author varchar(255)
   original_publish_year smallint [note: 'Năm công bố tác phẩm gốc nếu có; khác năm xuất bản của ấn bản']
   description text
+  public_image_id varchar(255) [note: 'Cloudinary public_id ảnh công khai (delivery type upload); API trả ImageUrl, không trả public_id']
   created_at timestamptz [not null, default: `now()`]
   category_id uuid
   is_active boolean [not null, default: true]
@@ -298,7 +300,7 @@ table edition {
   cover_price bigint [not null, note: 'Giá bìa ước tính - cơ sở đề xuất giá thu mua']
   min_stock_sale integer [not null, default: 0, note: 'Ngưỡng cảnh báo tồn khả dụng của ấn bản cho nhóm bán']
   min_stock_rental integer [not null, default: 0, note: 'Ngưỡng cảnh báo tồn khả dụng của ấn bản cho nhóm thuê']
-  cover_image_url text
+  public_image_id varchar(255) [note: 'Cloudinary public_id ảnh công khai (delivery type upload); API trả ImageUrl, không trả public_id']
   metadata_source MetadataSource
   metadata_confirmed_by uuid
   metadata_confirmed_at timestamptz
@@ -363,6 +365,7 @@ table book_copies {
   selling_price bigint [note: 'Giá bán thực tế; cũng là cơ sở tính cọc. Bắt buộc có trước khi sang available']
   rental_rate bigint [note: 'Đơn giá thuê/ngày của bản sách; được snapshot vào rental_lines.daily_rate khi thuê']
   shelf_code varchar(30) [note: 'Vị trí kệ (văn bản ở bản lõi)']
+  public_image_id varchar(255) [note: 'Cloudinary public_id ảnh riêng của bản vật lý, công khai (delivery type upload); API trả ImageUrl, không trả public_id']
   receipt_line_id uuid [not null, note: 'Truy nguồn gốc: dòng phiếu nhập hoặc thu mua']
   created_at timestamptz [not null, default: `now()`]
   Note: 'Bản sách vật lý - trung tâm của kho. Tồn kho = đếm theo status, không có bảng tồn kho riêng.'
@@ -629,28 +632,47 @@ table audit_logs {
   Note: 'Nhật ký thao tác nhạy cảm, chỉ ghi thêm (đổi giá, đổi trạng thái sách, duyệt phạt, đổi vai trò...).'
 }
 
-enum AttachmentOwnerType {
-  EDITION_COVER
-  RENTAL_LINE_DAMAGE
-  STOCK_RECEIPT
+// ------------------------- 10. ẢNH CLOUDINARY -------------------------
+enum UploadOwnerType {
+  BOOK_SERIES_IMAGE
+  TITLE_IMAGE
+  EDITION_IMAGE
+  BOOK_COPY_IMAGE
+  RENTAL_LINE_IMAGE [note: 'Ảnh bằng chứng riêng tư (authenticated); chưa cấp chữ ký ở giai đoạn này']
+  STOCK_RECEIPT_IMAGE [note: 'Ảnh bằng chứng riêng tư (authenticated); chưa cấp chữ ký ở giai đoạn này']
 }
 
-table attachments {
-  id uuid [pk]
-  owner_type AttachmentOwnerType [not null]
-  owner_id uuid [not null, note: 'Quan hệ đa hình theo owner_type, không có FK; BE kiểm tra tồn tại khi upload']
-  object_key varchar(300) [not null, unique, note: 'Đường dẫn object trong bucket MinIO']
-  original_file_name varchar(255) [not null]
-  content_type varchar(100) [not null]
-  size_bytes bigint [not null]
-  uploaded_by uuid [not null]
-  uploaded_at timestamptz [not null, default: `now()`]
-  is_deleted boolean [not null, default: false]
-  deleted_at timestamptz
-  deleted_by uuid
+enum UploadIntentStatus {
+  PENDING
+  COMPLETED
+}
 
-  Indexes {
-    (owner_type, owner_id) [name: 'ix_attachments_owner']
-  }
-  Note: 'Metadata file đính kèm. File thật nằm trên MinIO. Xoá mềm; object được dọn sau bằng job riêng.'
+table upload_intents {
+  id uuid [pk]
+  owner_type UploadOwnerType [not null]
+  public_image_id varchar(255) [not null, unique, note: 'Do BE sinh: <RootFolder>/<visibility>/<owner-segment>/<intent-id>']
+  status UploadIntentStatus [not null, default: 'PENDING', note: 'Concurrency token: chỉ một request được chuyển PENDING -> COMPLETED']
+  created_by uuid [not null, note: 'FK employee (NoAction); chỉ người tạo được dùng intent']
+  created_at timestamptz [not null, default: `now()`]
+  completed_at timestamptz
+  asset_id varchar(64) [note: 'Metadata Cloudinary, chỉ mang tính thông tin']
+  format varchar(20) [note: 'Metadata Cloudinary, chỉ mang tính thông tin']
+  bytes bigint [note: 'Metadata Cloudinary, chỉ mang tính thông tin']
+  Note: 'Vé ủy quyền upload dùng một lần + bản ghi audit upload. Không entity nào FK tới bảng này; giữ lại vĩnh viễn làm danh mục cho job dọn asset mồ côi sau này.'
+}
+
+table rental_line_images {
+  id uuid [pk]
+  rental_line_id uuid [not null, note: 'FK rental_lines (NoAction): phải xoá ảnh trước khi xoá dòng thuê']
+  public_image_id varchar(255) [not null, unique]
+  created_at timestamptz [not null, default: `now()`]
+  Note: 'Ảnh bằng chứng hư hỏng (authenticated, URL ký). Chỉ có schema; API/service để giai đoạn sau.'
+}
+
+table stock_receipt_images {
+  id uuid [pk]
+  stock_receipt_id uuid [not null, note: 'FK stock_receipts (NoAction): phải xoá ảnh trước khi xoá phiếu nhập']
+  public_image_id varchar(255) [not null, unique]
+  created_at timestamptz [not null, default: `now()`]
+  Note: 'Ảnh chứng từ phiếu nhập (authenticated, URL ký). Chỉ có schema; API/service để giai đoạn sau.'
 }

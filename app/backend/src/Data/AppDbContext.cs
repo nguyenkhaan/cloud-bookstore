@@ -35,7 +35,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<EmployeeWorkRecordModel> EmployeeWorkRecords => Set<EmployeeWorkRecordModel>();
     public DbSet<NotificationOutboxModel> NotificationOutbox => Set<NotificationOutboxModel>();
     public DbSet<AuditLogModel> AuditLogs => Set<AuditLogModel>();
-    public DbSet<AttachmentModel> Attachments => Set<AttachmentModel>();
+    public DbSet<UploadIntentModel> UploadIntents => Set<UploadIntentModel>();
+    public DbSet<RentalLineImageModel> RentalLineImages => Set<RentalLineImageModel>();
+    public DbSet<StockReceiptImageModel> StockReceiptImages => Set<StockReceiptImageModel>();
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
@@ -93,7 +95,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<EmployeeWorkRecordModel>().ToTable("employee_work_records");
         modelBuilder.Entity<NotificationOutboxModel>().ToTable("notification_outbox");
         modelBuilder.Entity<AuditLogModel>().ToTable("audit_logs");
-        modelBuilder.Entity<AttachmentModel>().ToTable("attachments");
+        modelBuilder.Entity<UploadIntentModel>().ToTable("upload_intents");
+        modelBuilder.Entity<RentalLineImageModel>().ToTable("rental_line_images");
+        modelBuilder.Entity<StockReceiptImageModel>().ToTable("stock_receipt_images");
     }
 
     private static void ConfigureProperties(ModelBuilder modelBuilder)
@@ -229,9 +233,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         auditLog.Property(x => x.AfterData).HasColumnType("jsonb");
         auditLog.Property(x => x.OccurredAt).HasDefaultValueSql("now()");
 
-        var attachment = modelBuilder.Entity<AttachmentModel>();
-        attachment.Property(x => x.UploadedAt).HasDefaultValueSql("now()");
-        attachment.Property(x => x.IsDeleted).HasDefaultValue(false);
+        var uploadIntent = modelBuilder.Entity<UploadIntentModel>();
+        uploadIntent.Property(x => x.Status).HasDefaultValue(UploadIntentStatus.PENDING);
+        // Single-use guard: consumption UPDATE carries WHERE Status = <original>, so a concurrent
+        // second consumer of the same intent affects 0 rows and fails with DbUpdateConcurrencyException.
+        uploadIntent.Property(x => x.Status).IsConcurrencyToken();
+        uploadIntent.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+
+        modelBuilder.Entity<RentalLineImageModel>().Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+        modelBuilder.Entity<StockReceiptImageModel>().Property(x => x.CreatedAt).HasDefaultValueSql("now()");
     }
 
     private static void ConfigureRelationships(ModelBuilder modelBuilder)
@@ -297,8 +307,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         Reference<EmployeeWorkRecordModel, EmployeeModel, Guid>(modelBuilder, x => x.EmployeeId);
         Reference<EmployeeWorkRecordModel, EmployeeModel, Guid?>(modelBuilder, x => x.ApprovedBy, false);
         Reference<AuditLogModel, EmployeeModel, Guid?>(modelBuilder, x => x.ActorId, false);
-        Reference<AttachmentModel, EmployeeModel, Guid>(modelBuilder, x => x.UploadedBy);
-        Reference<AttachmentModel, EmployeeModel, Guid?>(modelBuilder, x => x.DeletedBy, false);
+        Reference<UploadIntentModel, EmployeeModel, Guid>(modelBuilder, x => x.CreatedBy);
+        Reference<RentalLineImageModel, RentalLineModel, Guid>(modelBuilder, x => x.RentalLineId);
+        Reference<StockReceiptImageModel, StockReceiptModel, Guid>(modelBuilder, x => x.StockReceiptId);
     }
 
     private static void ConfigureIndexes(ModelBuilder modelBuilder)
@@ -335,15 +346,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<PaymentModel>().HasIndex(x => x.IdempotencyKey).IsUnique();
         modelBuilder.Entity<PaymentModel>().HasIndex(x => x.QrReference).IsUnique();
         modelBuilder.Entity<EmployeeWorkRecordModel>().HasIndex(x => new { x.EmployeeId, x.WorkDate, x.ShiftNo }).IsUnique();
-        modelBuilder.Entity<AttachmentModel>().HasIndex(x => x.ObjectKey).IsUnique();
-        modelBuilder.Entity<AttachmentModel>().HasIndex(x => new { x.OwnerType, x.OwnerId })
-            .HasDatabaseName("ix_attachments_owner");
+        modelBuilder.Entity<UploadIntentModel>().HasIndex(x => x.PublicImageId).IsUnique();
+        modelBuilder.Entity<RentalLineImageModel>().HasIndex(x => x.PublicImageId).IsUnique();
+        modelBuilder.Entity<StockReceiptImageModel>().HasIndex(x => x.PublicImageId).IsUnique();
     }
 
     private static void ConfigureEnumConversions(ModelBuilder modelBuilder)
     {
         EnumAsString(modelBuilder.Entity<RoleModel>(), x => x.RoleName); EnumAsString(modelBuilder.Entity<EmployeeModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<MembershipTierModel>(), x => x.Name); EnumAsString(modelBuilder.Entity<DamageLevelModel>(), x => x.Level); EnumAsString(modelBuilder.Entity<DamageLevelModel>(), x => x.CopyStatusAfter); EnumAsString(modelBuilder.Entity<EditionModel>(), x => x.MetadataSource); EnumAsString(modelBuilder.Entity<StockReceiptModel>(), x => x.SourceType); EnumAsString(modelBuilder.Entity<StockReceiptModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<StockReceiptLineModel>(), x => x.Availability); EnumAsString(modelBuilder.Entity<StockReceiptLineModel>(), x => x.ConditionGrade); EnumAsString(modelBuilder.Entity<BookCopyModel>(), x => x.Availability); EnumAsString(modelBuilder.Entity<BookCopyModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<BookCopyModel>(), x => x.ConditionGrade); EnumAsString(modelBuilder.Entity<InventoryCheckModel>(), x => x.ExpectedStatus); EnumAsString(modelBuilder.Entity<InventoryCheckModel>(), x => x.ObservedStatus); EnumAsString(modelBuilder.Entity<InventoryCheckModel>(), x => x.VarianceType); EnumAsString(modelBuilder.Entity<InventoryAdjustmentRequestModel>(), x => x.RequestedStatus); EnumAsString(modelBuilder.Entity<InventoryAdjustmentRequestModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<SaleInvoiceModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<SaleInvoiceLineModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<RentalSlipModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<ReturnModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<RentalLineModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<RentalLineModel>(), x => x.CopyCondition); EnumAsString(modelBuilder.Entity<CashSessionModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<PaymentModel>(), x => x.Direction); EnumAsString(modelBuilder.Entity<PaymentModel>(), x => x.PaymentType); EnumAsString(modelBuilder.Entity<PaymentModel>(), x => x.Method); EnumAsString(modelBuilder.Entity<PaymentModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<EmployeeWorkRecordModel>(), x => x.AttendanceStatus); EnumAsString(modelBuilder.Entity<EmployeeWorkRecordModel>(), x => x.PaymentStatus); EnumAsString(modelBuilder.Entity<NotificationOutboxModel>(), x => x.Channel); EnumAsString(modelBuilder.Entity<NotificationOutboxModel>(), x => x.RecipientType); EnumAsString(modelBuilder.Entity<NotificationOutboxModel>(), x => x.Status);
-        EnumAsString(modelBuilder.Entity<AttachmentModel>(), x => x.OwnerType);
+        EnumAsString(modelBuilder.Entity<UploadIntentModel>(), x => x.OwnerType);
+        EnumAsString(modelBuilder.Entity<UploadIntentModel>(), x => x.Status);
     }
 
     private static void Reference<TDependent, TPrincipal, TKey>(

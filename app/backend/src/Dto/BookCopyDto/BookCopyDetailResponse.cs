@@ -14,7 +14,8 @@ public record BookCopyDetailResponse(
     string? Publisher,
     short? PublishYear,
     long CoverPrice,
-    string? CoverImageUrl,
+    // Ảnh của ấn bản liên quan (không phải ảnh của bản sách vật lý)
+    string? EditionImageUrl,
     bool EditionIsActive,
     // Đầu sách / bộ / thể loại
     Guid TitleId,
@@ -35,6 +36,8 @@ public record BookCopyDetailResponse(
     long? RentalRate,
     string? ShelfCode,
     DateTime CreatedAt,
+    // Ảnh riêng của bản sách vật lý
+    string? ImageUrl,
     // Nguồn nhập
     Guid ReceiptLineId,
     Guid ReceiptId,

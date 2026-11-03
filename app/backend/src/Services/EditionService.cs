@@ -1,16 +1,30 @@
 using backend.src.Data;
+using backend.src.Dto.AuditLogDto;
 using backend.src.Dto.Common;
 using backend.src.Dto.EditionDto;
+using backend.src.Dto.UploadDto;
 using backend.src.Exceptions;
 using backend.src.Helpers;
+using backend.src.Infrastructure;
 using backend.src.Models;
 using backend.src.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.src.Services;
 
-public class EditionService(AppDbContext dbContext)
+public class EditionService(
+    AppDbContext dbContext,
+    UploadIntentService uploadIntentService,
+    ICloudinaryService cloudinaryService,
+    AuditLogService auditLogService,
+    ILogger<EditionService> logger)
 {
+    private const UploadOwnerType EditionImageOwner = UploadOwnerType.EDITION_IMAGE;
+    private const string AuditEntityType = "Edition";
+    private const string ActionAttachImage = "ATTACH_IMAGE";
+    private const string ActionReplaceImage = "REPLACE_IMAGE";
+    private const string ActionDeleteImage = "DELETE_IMAGE";
+
     public async Task<PagedResult<EditionResponse>> GetEditionsAsync(
         EditionQuery query,
         CancellationToken cancellationToken = default)
@@ -52,7 +66,9 @@ public class EditionService(AppDbContext dbContext)
                              join emp in dbContext.Employees.AsNoTracking() on e.MetadataConfirmedBy equals emp.Id into employees
                              from emp in employees.DefaultIfEmpty()
                              orderby t != null ? t.Name : "", e.PublishYear descending
-                             select new EditionResponse(
+                             select new
+                             {
+                                 Response = new EditionResponse(
                                  e.Id,
                                  e.Isbn,
                                  e.TitleId,
@@ -65,19 +81,29 @@ public class EditionService(AppDbContext dbContext)
                                  e.CoverPrice,
                                  e.MinStockSale,
                                  e.MinStockRental,
-                                 e.CoverImageUrl,
+                                 null,
                                  e.MetadataSource,
                                  e.MetadataConfirmedBy,
                                  emp != null ? emp.FullName : null,
                                  e.MetadataConfirmedAt,
                                  e.IsActive,
                                  dbContext.BookCopies.Count(c => c.EditionId == e.Id)
-                             );
+                                 ),
+                                 e.PublicImageId
+                             };
 
-        var items = await queryWithJoins
+        var rows = await queryWithJoins
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
             .ToListAsync(cancellationToken);
+
+        // Image URLs are resolved in memory, never inside the EF projection.
+        var items = rows
+            .Select(row => row.Response with
+            {
+                ImageUrl = cloudinaryService.BuildImageUrlOrNull(row.PublicImageId, EditionImageOwner)
+            })
+            .ToList();
 
         return new PagedResult<EditionResponse>(items, totalCount, query.Page, query.PageSize);
     }
@@ -106,7 +132,7 @@ public class EditionService(AppDbContext dbContext)
                                  e.CoverPrice,
                                  e.MinStockSale,
                                  e.MinStockRental,
-                                 e.CoverImageUrl,
+                                 e.PublicImageId,
                                  e.MetadataSource,
                                  e.MetadataConfirmedBy,
                                  MetadataConfirmedByName = emp != null ? emp.FullName : null,
@@ -148,7 +174,7 @@ public class EditionService(AppDbContext dbContext)
             edition.CoverPrice,
             edition.MinStockSale,
             edition.MinStockRental,
-            edition.CoverImageUrl,
+            cloudinaryService.BuildImageUrlOrNull(edition.PublicImageId, EditionImageOwner),
             edition.MetadataSource,
             edition.MetadataConfirmedBy,
             edition.MetadataConfirmedByName,
@@ -160,15 +186,16 @@ public class EditionService(AppDbContext dbContext)
 
     public async Task<EditionResponse> CreateEditionAsync(
         CreateEditionRequest request,
-        Guid? actorId = null,
+        AuditLogContext auditContext,
         CancellationToken cancellationToken = default)
     {
+        var actorId = auditContext?.ActorId;
         var title = await EditionValidator.EnsureTitleValidForEditionAsync(
             dbContext, request.TitleId, request.IsActive, cancellationToken);
 
         var meta = EditionValidator.NormalizeAndValidate(
             request.Isbn, request.EditionStatement, request.PrintingStatement,
-            request.Format, request.Publisher, request.CoverImageUrl,
+            request.Format, request.Publisher,
             request.CoverPrice, request.MinStockSale, request.MinStockRental);
 
         await EditionValidator.EnsureNoDuplicateAsync(
@@ -176,6 +203,13 @@ public class EditionService(AppDbContext dbContext)
 
         var (confirmedBy, confirmedByName, confirmedAt) = await EditionValidator.ResolveConfirmationAsync(
             dbContext, request.MetadataConfirmedBy ?? actorId, cancellationToken: cancellationToken);
+
+        // Domain validation is complete; consume the intent before tracking the new entity.
+        string? publicImageId = null;
+        if (request.ImageUpload is not null)
+        {
+            publicImageId = await ConsumeImageAsync(request.ImageUpload, auditContext, cancellationToken);
+        }
 
         var edition = new EditionModel
         {
@@ -190,7 +224,7 @@ public class EditionService(AppDbContext dbContext)
             CoverPrice = meta.CoverPrice,
             MinStockSale = meta.MinStockSale,
             MinStockRental = meta.MinStockRental,
-            CoverImageUrl = meta.CoverImageUrl,
+            PublicImageId = publicImageId,
             MetadataSource = request.MetadataSource ?? MetadataSource.MANUAL,
             MetadataConfirmedBy = confirmedBy,
             MetadataConfirmedAt = confirmedAt,
@@ -198,17 +232,28 @@ public class EditionService(AppDbContext dbContext)
         };
 
         dbContext.Editions.Add(edition);
-        await dbContext.SaveChangesAsync(cancellationToken);
 
-        return edition.ToResponse(title.Name, confirmedByName, copiesCount: 0);
+        if (request.ImageUpload is not null)
+        {
+            // Persists the entity, consumed intent, and audit entry in one SaveChanges.
+            await WriteImageAuditAsync(ActionAttachImage, edition.Id, null, request.ImageUpload.UploadIntentId,
+                publicImageId, "Attached image to edition.", auditContext, cancellationToken);
+        }
+        else
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        return ToResponse(edition, title.Name, confirmedByName, copiesCount: 0);
     }
 
     public async Task<EditionResponse> UpdateEditionAsync(
         Guid id,
         UpdateEditionRequest request,
-        Guid? actorId = null,
+        AuditLogContext auditContext,
         CancellationToken cancellationToken = default)
     {
+        var actorId = auditContext?.ActorId;
         var edition = await dbContext.Editions.FirstOrDefaultAsync(e => e.Id == id, cancellationToken)
             ?? throw new NotFoundException($"Edition with ID '{id}' was not found.");
 
@@ -220,7 +265,7 @@ public class EditionService(AppDbContext dbContext)
 
         var meta = EditionValidator.NormalizeAndValidate(
             request.Isbn, request.EditionStatement, request.PrintingStatement,
-            request.Format, request.Publisher, request.CoverImageUrl,
+            request.Format, request.Publisher,
             request.CoverPrice, request.MinStockSale, request.MinStockRental);
 
         await EditionValidator.EnsureNoDuplicateAsync(
@@ -240,7 +285,6 @@ public class EditionService(AppDbContext dbContext)
         edition.CoverPrice = meta.CoverPrice;
         edition.MinStockSale = meta.MinStockSale;
         edition.MinStockRental = meta.MinStockRental;
-        edition.CoverImageUrl = meta.CoverImageUrl;
         if (request.MetadataSource.HasValue)
         {
             edition.MetadataSource = request.MetadataSource.Value;
@@ -252,10 +296,21 @@ public class EditionService(AppDbContext dbContext)
             edition.IsActive = request.IsActive.Value;
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        // The image only changes through a verified upload intent; omitting it keeps the current image.
+        string? replacedImageId = null;
+        if (request.ImageUpload is not null)
+        {
+            replacedImageId = await ApplyImageAsync(edition, request.ImageUpload, auditContext, cancellationToken);
+        }
+        else
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        await cloudinaryService.TryDestroyAfterCommitAsync(replacedImageId, EditionImageOwner, logger);
 
         var copiesCount = await dbContext.BookCopies.CountAsync(c => c.EditionId == id, cancellationToken);
-        return edition.ToResponse(title.Name, confirmedByName, copiesCount);
+        return ToResponse(edition, title.Name, confirmedByName, copiesCount);
     }
 
     public async Task<EditionResponse> UpdateEditionStatusAsync(
@@ -281,17 +336,148 @@ public class EditionService(AppDbContext dbContext)
             dbContext, edition.MetadataConfirmedBy, existingConfirmedAt: edition.MetadataConfirmedAt, cancellationToken: cancellationToken);
 
         var copiesCount = await dbContext.BookCopies.CountAsync(c => c.EditionId == id, cancellationToken);
-        return edition.ToResponse(title?.Name, confirmedByName, copiesCount);
+        return ToResponse(edition, title?.Name, confirmedByName, copiesCount);
     }
 
-    public async Task DeleteEditionAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task DeleteEditionAsync(
+        Guid id,
+        AuditLogContext auditContext,
+        CancellationToken cancellationToken = default)
     {
         var edition = await dbContext.Editions.FirstOrDefaultAsync(e => e.Id == id, cancellationToken)
             ?? throw new NotFoundException($"Edition with ID '{id}' was not found.");
 
         await EditionValidator.EnsureDeletableAsync(dbContext, id, cancellationToken);
 
+        var oldImageId = edition.PublicImageId;
         dbContext.Editions.Remove(edition);
-        await dbContext.SaveChangesAsync(cancellationToken);
+
+        if (oldImageId is not null)
+        {
+            await WriteImageAuditAsync(ActionDeleteImage, edition.Id, oldImageId, null, null,
+                "Removed image together with deleted edition.", auditContext, cancellationToken);
+        }
+        else
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        await cloudinaryService.TryDestroyAfterCommitAsync(oldImageId, EditionImageOwner, logger);
     }
+
+    public async Task<EditionResponse> UpdateEditionImageAsync(
+        Guid id,
+        CloudinaryUploadResultRequest imageUpload,
+        AuditLogContext auditContext,
+        CancellationToken cancellationToken = default)
+    {
+        if (imageUpload is null)
+        {
+            throw new BadRequestException("Image upload result is required.");
+        }
+
+        var edition = await dbContext.Editions.FirstOrDefaultAsync(e => e.Id == id, cancellationToken)
+            ?? throw new NotFoundException($"Edition with ID '{id}' was not found.");
+
+        var replacedImageId = await ApplyImageAsync(edition, imageUpload, auditContext, cancellationToken);
+        await cloudinaryService.TryDestroyAfterCommitAsync(replacedImageId, EditionImageOwner, logger);
+
+        return await BuildResponseAsync(edition, cancellationToken);
+    }
+
+    public async Task DeleteEditionImageAsync(
+        Guid id,
+        AuditLogContext auditContext,
+        CancellationToken cancellationToken = default)
+    {
+        var edition = await dbContext.Editions.FirstOrDefaultAsync(e => e.Id == id, cancellationToken)
+            ?? throw new NotFoundException($"Edition with ID '{id}' was not found.");
+
+        var oldImageId = edition.PublicImageId;
+        if (oldImageId is null)
+        {
+            return;
+        }
+
+        edition.PublicImageId = null;
+        await WriteImageAuditAsync(ActionDeleteImage, edition.Id, oldImageId, null, null,
+            "Removed edition image.", auditContext, cancellationToken);
+
+        await cloudinaryService.TryDestroyAfterCommitAsync(oldImageId, EditionImageOwner, logger);
+    }
+
+    /// <summary>
+    /// Consumes the intent, sets the new direct image ID, and commits entity + intent + audit together.
+    /// Returns the previous public ID that must be destroyed after the commit, if any.
+    /// </summary>
+    private async Task<string?> ApplyImageAsync(
+        EditionModel edition,
+        CloudinaryUploadResultRequest imageUpload,
+        AuditLogContext auditContext,
+        CancellationToken cancellationToken)
+    {
+        var newImageId = await ConsumeImageAsync(imageUpload, auditContext, cancellationToken);
+        var oldImageId = edition.PublicImageId;
+        edition.PublicImageId = newImageId;
+
+        var action = oldImageId is null ? ActionAttachImage : ActionReplaceImage;
+        await WriteImageAuditAsync(action, edition.Id, oldImageId, imageUpload.UploadIntentId, newImageId,
+            oldImageId is null ? "Attached image to edition." : "Replaced edition image.",
+            auditContext, cancellationToken);
+
+        return oldImageId == newImageId ? null : oldImageId;
+    }
+
+    private Task<string> ConsumeImageAsync(
+        CloudinaryUploadResultRequest imageUpload,
+        AuditLogContext auditContext,
+        CancellationToken cancellationToken)
+    {
+        if (auditContext?.ActorId is not { } actorId || actorId == Guid.Empty)
+        {
+            throw new UnauthorizedException("Authenticated user is required to attach an image.");
+        }
+
+        return uploadIntentService.ConsumeAsync(actorId, EditionImageOwner, imageUpload, cancellationToken);
+    }
+
+    private Task WriteImageAuditAsync(
+        string action,
+        Guid editionId,
+        string? oldPublicImageId,
+        Guid? uploadIntentId,
+        string? newPublicImageId,
+        string reason,
+        AuditLogContext auditContext,
+        CancellationToken cancellationToken)
+        => auditLogService.CreateAuditLogEntryAsync(
+            new CreateAuditLogEntry(
+                action,
+                AuditEntityType,
+                editionId,
+                oldPublicImageId is null ? null : new { PublicImageId = oldPublicImageId },
+                newPublicImageId is null ? null : new { UploadIntentId = uploadIntentId, PublicImageId = newPublicImageId },
+                reason,
+                auditContext),
+            cancellationToken);
+
+    private async Task<EditionResponse> BuildResponseAsync(EditionModel edition, CancellationToken cancellationToken)
+    {
+        var titleName = await dbContext.Titles.AsNoTracking()
+            .Where(t => t.Id == edition.TitleId)
+            .Select(t => t.Name)
+            .FirstOrDefaultAsync(cancellationToken);
+        var (_, confirmedByName, _) = await EditionValidator.ResolveConfirmationAsync(
+            dbContext, edition.MetadataConfirmedBy, existingConfirmedAt: edition.MetadataConfirmedAt, cancellationToken: cancellationToken);
+        var copiesCount = await dbContext.BookCopies.CountAsync(c => c.EditionId == edition.Id, cancellationToken);
+
+        return ToResponse(edition, titleName, confirmedByName, copiesCount);
+    }
+
+    private EditionResponse ToResponse(EditionModel edition, string? titleName, string? confirmedByName, int copiesCount)
+        => edition.ToResponse(
+            titleName,
+            confirmedByName,
+            copiesCount,
+            cloudinaryService.BuildImageUrlOrNull(edition.PublicImageId, EditionImageOwner));
 }
