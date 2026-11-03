@@ -142,6 +142,29 @@ public sealed class EditionAndCopyImageServiceTests
         Assert.Equal("DELETE_IMAGE", (await verifyContext.AuditLogs.SingleAsync()).Action);
     }
 
+    [Theory]
+    [InlineData(BookCopyStatus.RENTED)]
+    [InlineData(BookCopyStatus.SOLD)]
+    public async Task UpdateBookCopyImage_is_allowed_for_rented_or_sold_copy(BookCopyStatus status)
+    {
+        // Product decision: image routes intentionally skip EnsureEditable (unlike PUT /{id}).
+        var databaseName = NewDatabaseName();
+        var actorId = Guid.NewGuid();
+        await using var dbContext = CreateDbContext(databaseName);
+        var copy = SeedBookCopy(dbContext, editionImageId: null, copyImageId: null);
+        copy.Status = status;
+        var intent = AddPendingIntent(dbContext, UploadOwnerType.BOOK_COPY_IMAGE, actorId);
+        await dbContext.SaveChangesAsync();
+        var service = CreateBookCopyService(dbContext, new FakeCloudinaryService());
+
+        var detail = await service.UpdateBookCopyImageAsync(copy.Id, CreateUploadResult(intent), new AuditLogContext(actorId, null));
+
+        Assert.Equal(UrlPrefix + intent.PublicImageId, detail.ImageUrl);
+        await using var verifyContext = CreateDbContext(databaseName);
+        Assert.Equal(intent.PublicImageId, (await verifyContext.BookCopies.SingleAsync()).PublicImageId);
+        Assert.Equal("ATTACH_IMAGE", (await verifyContext.AuditLogs.SingleAsync()).Action);
+    }
+
     private static string NewDatabaseName() => Guid.NewGuid().ToString("N");
 
     private static AppDbContext CreateDbContext(string databaseName)

@@ -3,7 +3,7 @@
 **Ngày:** 2026-11-03
 **Phạm vi:** Task 1–6 của `docs/superpowers/plans/2026-11-03-cloudinary-direct-upload.md`, các commit `a1ec003` → `f60961a` trên nhánh `feat/cloudianry-storage`
 **Spec:** `docs/superpowers/specs/2026-11-03-cloudinary-direct-upload-design.md`
-**Kết luận:** Không có lỗi mức **blocker** hoặc **high** ở thời điểm audit. Có 3 vấn đề mức **medium** và 4 vấn đề mức **low**. Báo cáo này chỉ ghi nhận, không sửa code production. Việc khắc phục là các task follow-up cần được duyệt riêng.
+**Kết luận:** Không có lỗi mức **blocker** hoặc **high** ở thời điểm audit. Có 3 vấn đề mức **medium**, 3 vấn đề mức **low**, và 1 mục đã được quyết định (L3). Báo cáo này chỉ ghi nhận, không sửa code production. Việc khắc phục là các task follow-up cần được duyệt riêng.
 
 > Lỗi high duy nhất phát hiện trong quá trình làm (một intent bị hai request dùng đồng thời) đã được sửa trước khi audit ở commit `b979f33`. Mục này được ghi lại ở cuối báo cáo.
 
@@ -152,13 +152,12 @@ Giá trị enum lạ ném `ArgumentOutOfRangeException`. Read DTO chỉ trả `I
 - **Khắc phục:** chỉ cần ghi nhận trong changelog hoặc contract.
 - **Test đề xuất:** `DbUpdateConcurrencyException_for_employee_maps_to_409`.
 
-### L3 (Low): Cần xác nhận quyết định sản phẩm cho route ảnh BookCopy
+### L3 (Đã quyết định, không phải lỗi): Route ảnh BookCopy cho phép đổi ảnh bản sách `RENTED`/`SOLD`
 
-- **Vị trí:** `BookCopyService.cs:595` (`UpdateBookCopyImageAsync`), so với `BookCopyService.cs:443` (`EnsureEditable`).
-- **Vấn đề:** `PUT /{id}` chặn sửa bản sách đang `RENTED`/`SOLD`, còn `PUT/DELETE /{id}/image` thì không. CASHIER có quyền ghi ảnh trên mọi entity sách (đúng theo spec). Response của route ảnh BookCopy che `CostPrice` với role không có quyền xem (`BookCopiesController.cs:145`).
-- **Tác động:** nhân viên có thể đổi ảnh của bản sách đã bán hoặc đang cho thuê.
-- **Khắc phục:** nếu không mong muốn, thêm `BookCopyValidator.EnsureEditable(copy)` vào hai route ảnh.
-- **Test đề xuất:** `UpdateBookCopyImage_rejects_sold_copy` (chỉ khi chọn chặn).
+- **Vị trí:** `BookCopyService.UpdateBookCopyImageAsync` và `DeleteBookCopyImageAsync`, so với `BookCopyService.cs:443` (`EnsureEditable`).
+- **Hành vi:** `PUT /{id}` chặn sửa thông tin bản sách đang `RENTED`/`SOLD`, còn `PUT/DELETE /{id}/image` thì không chặn. CASHIER có quyền ghi ảnh trên mọi entity sách (đúng theo spec). Response của route ảnh BookCopy che `CostPrice` với role không có quyền xem (`BookCopiesController.cs:145`).
+- **Quyết định (2026-11-03):** product owner xác nhận **cho phép** đổi ảnh bản sách đang `RENTED`/`SOLD`. Không cần sửa.
+- **Test giữ hành vi:** `UpdateBookCopyImage_is_allowed_for_rented_or_sold_copy` (chạy với cả `RENTED` và `SOLD`).
 
 ### L4 (Low): Lỗi xóa asset chỉ được ghi vào log
 
