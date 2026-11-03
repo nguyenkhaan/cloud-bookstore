@@ -182,6 +182,7 @@ Response:
   "assetFolder": "cloud-bookstore/public/editions",
   "resourceType": "image",
   "deliveryType": "upload",
+  "overwrite": false,
   "uploadPreset": "configured-signed-preset"
 }
 ```

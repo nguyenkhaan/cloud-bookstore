@@ -7,5 +7,6 @@ public sealed record CloudinaryUploadSignature(
     string? AssetFolder,
     string UploadPreset,
     string DeliveryType,
+    bool Overwrite,
     long Timestamp,
     string Signature);

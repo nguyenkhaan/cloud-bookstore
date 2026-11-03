@@ -64,6 +64,7 @@ public sealed class CloudinaryService : ICloudinaryService
             assetFolder,
             policy.UploadPreset,
             policy.DeliveryType,
+            false,
             timestamp,
             cloudinary.Api.SignParameters(parameters));
     }

@@ -48,6 +48,7 @@ public sealed class CloudinaryServiceTests
         Assert.Equal("cloud-bookstore/public/editions/d6d6bd89a5074e6f82bf7e78d35fdb1e", signature.PublicId);
         Assert.Equal("book-images-signed", signature.UploadPreset);
         Assert.Equal("upload", signature.DeliveryType);
+        Assert.False(signature.Overwrite);
         Assert.Equal("cloud-bookstore/public/editions", signature.AssetFolder);
         Assert.Equal("123456789012345", signature.ApiKey);
         Assert.Equal("https://api.cloudinary.com/v1_1/test-cloud/image/upload", signature.UploadUrl);
