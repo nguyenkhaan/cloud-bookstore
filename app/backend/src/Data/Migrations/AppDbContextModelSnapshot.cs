@@ -1653,6 +1653,7 @@ namespace backend.src.Data.Migrations
                         .HasColumnType("character varying(255)");
 
                     b.Property<string>("Status")
+                        .IsConcurrencyToken()
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("text")

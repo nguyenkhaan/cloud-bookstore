@@ -238,6 +238,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         var uploadIntent = modelBuilder.Entity<UploadIntentModel>();
         uploadIntent.Property(x => x.Status).HasDefaultValue(UploadIntentStatus.PENDING);
+        // Single-use guard: consumption UPDATE carries WHERE Status = <original>, so a concurrent
+        // second consumer of the same intent affects 0 rows and fails with DbUpdateConcurrencyException.
+        uploadIntent.Property(x => x.Status).IsConcurrencyToken();
         uploadIntent.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
 
         modelBuilder.Entity<RentalLineImageModel>().Property(x => x.CreatedAt).HasDefaultValueSql("now()");

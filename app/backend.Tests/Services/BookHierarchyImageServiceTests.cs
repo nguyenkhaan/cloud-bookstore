@@ -115,6 +115,39 @@ public sealed class BookHierarchyImageServiceTests
     }
 
     [Fact]
+    public async Task ConcurrentConsume_of_same_intent_assigns_image_to_only_one_title()
+    {
+        var databaseName = NewDatabaseName();
+        var actorId = Guid.NewGuid();
+        await using var setupContext = CreateDbContext(databaseName);
+        var first = new TitleModel { Name = "First" };
+        var second = new TitleModel { Name = "Second" };
+        setupContext.Titles.AddRange(first, second);
+        var intent = AddPendingIntent(setupContext, UploadOwnerType.TITLE_IMAGE, actorId);
+        await setupContext.SaveChangesAsync();
+        var upload = CreateUploadResult(intent);
+
+        await using var firstContext = CreateDbContext(databaseName);
+        await using var secondContext = CreateDbContext(databaseName);
+        // The second request reads the intent while it is still PENDING (before the first commits).
+        Assert.Equal(UploadIntentStatus.PENDING, (await secondContext.UploadIntents.SingleAsync()).Status);
+        var secondCloudinary = new FakeCloudinaryService();
+        var firstService = CreateTitleService(firstContext, new FakeCloudinaryService(), new RecordingLogger<TitleService>());
+        var secondService = CreateTitleService(secondContext, secondCloudinary, new RecordingLogger<TitleService>());
+
+        await firstService.UpdateTitleImageAsync(first.Id, upload, new AuditLogContext(actorId, null));
+        await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() =>
+            secondService.UpdateTitleImageAsync(second.Id, upload, new AuditLogContext(actorId, null)));
+
+        // The InMemory provider has no transactions, so rollback of the losing SaveChanges is not
+        // observable here; on PostgreSQL the whole SaveChanges (title, intent, audit) rolls back.
+        await using var verifyContext = CreateDbContext(databaseName);
+        Assert.Equal(intent.PublicImageId, (await verifyContext.Titles.SingleAsync(t => t.Id == first.Id)).PublicImageId);
+        Assert.Equal(UploadIntentStatus.COMPLETED, (await verifyContext.UploadIntents.SingleAsync()).Status);
+        Assert.Empty(secondCloudinary.DestroyedIds);
+    }
+
+    [Fact]
     public async Task DeleteBookSeries_destroys_public_asset_after_database_commit()
     {
         var databaseName = NewDatabaseName();
