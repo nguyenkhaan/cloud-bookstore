@@ -1,3 +1,4 @@
+using backend.src.Dto.UploadDto;
 using System.ComponentModel.DataAnnotations;
 
 namespace backend.src.Dto.TitleDto;
@@ -21,5 +22,7 @@ public record CreateTitleRequest(
 
     string? Description = null,
 
-    bool IsActive = true
+    bool IsActive = true,
+
+    CloudinaryUploadResultRequest? ImageUpload = null
 );

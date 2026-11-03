@@ -288,17 +288,17 @@ git commit -m "feat: add signed upload intents"
 - Replacing a direct image commits the new ID before destroying the old public Cloudinary asset; failure to destroy logs a warning without reverting DB state.
 - Explicit image update/remove routes are available to all three staff roles without granting Cashier permission to edit unrelated book fields.
 
-- [ ] **Step 1: Write failing BookSeries/Title image tests**
+- [x] **Step 1: Write failing BookSeries/Title image tests**
 
 Add `CreateBookSeries_consumes_verified_image_intent`, `GetTitles_returns_resolved_image_urls_without_public_ids`, and `ReplaceImage_keeps_new_reference_when_destroy_fails`. Use a fake Cloudinary service that records URL/destroy calls and a fake/real in-memory intent service setup.
 
-- [ ] **Step 2: Run the hierarchy tests to verify they fail**
+- [x] **Step 2: Run the hierarchy tests to verify they fail**
 
 Run: `dotnet test app/backend.Tests/backend.Tests.csproj --filter FullyQualifiedName~BookHierarchyImageServiceTests`
 
 Expected: FAIL because DTOs/services have no image-intent integration.
 
-- [ ] **Step 3: Extend BookSeries and Title contracts/services**
+- [x] **Step 3: Extend BookSeries and Title contracts/services**
 
 Append nullable `CloudinaryUploadResultRequest? ImageUpload` to Create/Update requests. Add `ImageUrl` to list and detail responses. Change Create/Update service signatures to receive actor/audit context, consume a supplied intent using `BOOK_SERIES_IMAGE` or `TITLE_IMAGE`, write only the returned public ID, and add image audit entries.
 
@@ -306,15 +306,15 @@ Add `ImageUrl` to `BookSeriesTitleSummary` as well, so the nested Title represen
 
 Materialize page/detail rows containing `PublicImageId`, then call `BuildImageUrl` in memory; do not place SDK URL generation inside an EF LINQ projection.
 
-- [ ] **Step 4: Add domain-specific image operations and controller authorization**
+- [x] **Step 4: Add domain-specific image operations and controller authorization**
 
 Add `PUT /api/book-series/{id}/image`, `DELETE /api/book-series/{id}/image`, `PUT /api/book-titles/{id}/image`, and `DELETE /api/book-titles/{id}/image`. They consume/clear direct IDs and are authorized for all three staff roles; retain existing stricter roles for unrelated Create/Update fields.
 
-- [ ] **Step 5: Implement replacement/deletion post-commit behavior**
+- [x] **Step 5: Implement replacement/deletion post-commit behavior**
 
 Capture an old direct ID, commit entity/intent/audit changes, then call `DestroyAsync` with the book owner type. Log (do not throw/revert) if Cloudinary deletion fails. Apply the same sequence when deleting a BookSeries or Title itself.
 
-- [ ] **Step 6: Run tests and build**
+- [x] **Step 6: Run tests and build**
 
 Run: `dotnet test app/backend.Tests/backend.Tests.csproj --filter FullyQualifiedName~BookHierarchyImageServiceTests && dotnet build backend.sln`
 

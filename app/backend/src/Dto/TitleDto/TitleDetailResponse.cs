@@ -26,5 +26,6 @@ public record TitleDetailResponse(
     string? CategoryName,
     bool IsActive,
     DateTime CreatedAt,
+    string? ImageUrl,
     IReadOnlyList<TitleEditionSummary> Editions
 );

@@ -6,5 +6,6 @@ public record BookSeriesResponse(
     string? Description,
     bool IsActive,
     DateTime CreatedAt,
-    int TitlesCount
+    int TitlesCount,
+    string? ImageUrl
 );

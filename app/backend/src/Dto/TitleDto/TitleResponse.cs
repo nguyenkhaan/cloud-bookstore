@@ -13,5 +13,6 @@ public record TitleResponse(
     string? CategoryName,
     bool IsActive,
     DateTime CreatedAt,
-    int EditionsCount
+    int EditionsCount,
+    string? ImageUrl
 );
