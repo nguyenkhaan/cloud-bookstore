@@ -36,7 +36,8 @@ test('auth and dashboard UI are organized as feature modules', () => {
   assert.match(routes, /path=['"]\/login['"]/)
   assert.match(routes, /path=['"]\/dashboard['"]/)
   assert.doesNotMatch(routes, /@\/tmp\/pages/)
-  assert.doesNotMatch(routes, /path=['"]\/(catalog|checkout|inventory)/)
+  assert.match(routes, /path=['"]\/catalog\/series['"]/)
+  assert.match(routes, /path=['"]\/catalog\/titles['"]/)
 })
 
 test('shared components live outside tmp', () => {

@@ -21,6 +21,19 @@ The API client appends `/api` when needed. Use `VITE_BASE_URL`; `VITE_API_BASE_U
 
 Browser authentication uses cross-site `HttpOnly; Secure; SameSite=None` cookies. For local development, trust the ASP.NET development certificate (`dotnet dev-certs https --trust`) and start the backend with its `https` launch profile. Do not point the frontend at the HTTP backend profile: browsers reject `SameSite=None` cookies unless they are `Secure`.
 
+## Cloudinary: ảnh bìa đầu sách
+
+Frontend tải ảnh trực tiếp lên Cloudinary bằng **signed upload** do Backend cấp. Frontend chỉ cần `VITE_BASE_URL`; không đặt Cloud Name, API key, API secret, hoặc upload preset trong biến `VITE_*`.
+
+Luồng thực hiện:
+
+1. Frontend gọi `POST /api/uploads/signature` với `ownerType`.
+2. Backend tạo upload intent và trả về URL, public ID, preset cùng chữ ký.
+3. Frontend đăng file cùng đúng bộ tham số đã ký tới Cloudinary.
+4. Khi lưu bộ sách/đầu sách, Frontend gửi `imageUpload` trong request; Backend xác minh intent và kết quả upload trước khi lưu.
+
+Preset `book_images_signed` và các Cloudinary secret được cấu hình ở Backend theo `docs/guides/fe-direct-upload.md`.
+
 ## Source structure
 
 ```text

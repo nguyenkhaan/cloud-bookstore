@@ -1,16 +1,24 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout';
 import { Card, StatCard, SearchIcon } from '@/components/common';
 import type { DashboardPageProps } from '@/features/dashboard/dashboard.type';
 
 export function DashboardPage({ onSignOut }: DashboardPageProps) {
   const [currentTab, setCurrentTab] = useState('overview');
+  const navigate = useNavigate();
 
   return (
     <MainLayout
       onSignOut={onSignOut}
       currentPath={currentTab}
-      onNavigate={(id) => setCurrentTab(id)}
+      onNavigate={(id) => {
+        if (id === 'inventory') {
+          navigate('/catalog/series');
+          return;
+        }
+        setCurrentTab(id);
+      }}
       screenCode={currentTab === 'overview' ? 'SCR-REP-01 / TỔNG QUAN' : undefined}
       pageTitle={currentTab === 'overview' ? 'Tổng quan kinh doanh' : undefined}
       user={{

@@ -33,8 +33,8 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleSidebar,
 }) => {
   return (
-    <header className="sticky top-0 z-20 flex h-16 w-full items-center justify-between border-b border-slate-200/80 bg-white/95 px-6 backdrop-blur-sm">
-      <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-20 flex h-16 w-full items-center justify-between border-b border-slate-200/80 bg-white/95 px-3 sm:px-6 backdrop-blur-sm">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
         {onToggleSidebar && (
           <button
             type="button"
@@ -46,7 +46,7 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         )}
 
-        <nav aria-label="Breadcrumb" className="flex items-center space-x-2 text-xs">
+        <nav aria-label="Breadcrumb" className="flex min-w-0 items-center space-x-2 overflow-hidden whitespace-nowrap text-xs">
           {breadcrumbs.map((crumb, idx) => {
             const isLast = idx === breadcrumbs.length - 1;
             const label = typeof crumb === 'string' ? crumb : crumb.label;
@@ -73,13 +73,14 @@ export const Header: React.FC<HeaderProps> = ({
         </nav>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex shrink-0 items-center gap-2 sm:gap-4">
         {shiftName && (
           <Badge
             variant={isShiftOpen ? 'success' : 'neutral'}
             size="md"
             dot
             pulse={isShiftOpen}
+            className="hidden sm:inline-flex"
           >
             {shiftName}
           </Badge>

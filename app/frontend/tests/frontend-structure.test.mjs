@@ -38,3 +38,11 @@ test('frontend uses the staged source structure and a single TypeScript config',
   assert.deepEqual(tsconfig.include, ['src', 'vite.config.ts'])
   assert.equal(tsconfig.references, undefined)
 })
+
+test('the application header uses compact mobile gutters and permits breadcrumb content to shrink', () => {
+  const header = readFileSync(path.join(srcRoot, 'components', 'layout', 'Header', 'Header.tsx'), 'utf8')
+
+  assert.match(header, /px-3 sm:px-6/)
+  assert.match(header, /flex min-w-0 flex-1 items-center gap-3/)
+  assert.match(header, /min-w-0 items-center space-x-2 overflow-hidden whitespace-nowrap/)
+})
