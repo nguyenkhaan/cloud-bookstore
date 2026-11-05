@@ -1,10 +1,11 @@
 import axios from 'axios'
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios'
 
-const backendUrl = import.meta.env.VITE_BASE_URL.replace(/\/+$/, '')
-const API_BASE_URL = backendUrl.endsWith('/api')
-  ? backendUrl
-  : `${backendUrl}/api`
+const rawBaseUrl = (import.meta.env.VITE_BASE_URL ?? '').trim()
+const backendUrl = rawBaseUrl.replace(/\/+$/, '')
+const API_BASE_URL = backendUrl
+  ? (backendUrl.endsWith('/api') ? backendUrl : `${backendUrl}/api`)
+  : '/api'
 const CSRF_HEADER = 'X-CSRF-Token'
 const CSRF_STORAGE_KEY = 'cloud-bookstore.csrf-token'
 const UNSAFE_METHODS = new Set(['delete', 'patch', 'post', 'put'])

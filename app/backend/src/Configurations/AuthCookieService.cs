@@ -33,7 +33,7 @@ public sealed class AuthCookieService(
             IsEssential = true,
             MaxAge = lifetime,
             Path = path,
-            SameSite = SameSiteMode.None,
+            SameSite = settings.RequireSecure ? SameSiteMode.None : SameSiteMode.Lax,
             Secure = settings.RequireSecure
         };
 
@@ -44,7 +44,7 @@ public sealed class AuthCookieService(
             IsEssential = true,
             MaxAge = TimeSpan.Zero,
             Path = path,
-            SameSite = SameSiteMode.None,
+            SameSite = settings.RequireSecure ? SameSiteMode.None : SameSiteMode.Lax,
             Secure = settings.RequireSecure,
             Expires = DateTimeOffset.UnixEpoch
         };
