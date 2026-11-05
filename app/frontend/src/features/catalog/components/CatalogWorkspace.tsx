@@ -14,12 +14,14 @@ type CatalogWorkspaceProps = {
 
 export function CatalogWorkspace({ action, children, description, screenCode, title }: CatalogWorkspaceProps) {
   const navigate = useNavigate()
-  const { signOut } = useAuth()
+  const { session, signOut } = useAuth()
 
   const navigateFromSidebar = (item: string) => {
     if (item === 'overview') navigate('/dashboard')
     if (item === 'inventory') navigate(catalogPaths.seriesList)
   }
+
+  const currentUser = session?.user ?? { name: 'Khách', role: 'Chưa xác thực' }
 
   return (
     <MainLayout
@@ -30,7 +32,7 @@ export function CatalogWorkspace({ action, children, description, screenCode, ti
       onSignOut={signOut}
       pageTitle={title}
       screenCode={screenCode}
-      user={{ name: 'Nguyễn Minh Anh', role: 'Quản trị viên' }}
+      user={currentUser}
     >
       <div className="space-y-5">
         <div className="max-w-3xl text-xs leading-5 text-slate-500">{description}</div>

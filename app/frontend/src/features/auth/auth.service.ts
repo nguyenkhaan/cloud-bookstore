@@ -77,7 +77,10 @@ function storeCsrfToken(response: unknown): BrowserSessionResponse {
     throw new ApiError(502, 'Unexpected authentication response')
   }
 
-  const session = { csrfToken: response.csrfToken }
+  const session: BrowserSessionResponse = { csrfToken: response.csrfToken }
+  if (response.user) {
+    session.user = response.user
+  }
   setCsrfToken(session.csrfToken)
   return session
 }

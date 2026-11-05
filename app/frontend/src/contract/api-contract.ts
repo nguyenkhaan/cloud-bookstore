@@ -2979,6 +2979,7 @@ export interface components {
             accessToken: string;
             refreshToken: string;
             csrfToken: string;
+            user?: null | components["schemas"]["BrowserSessionUser"];
         };
         /** @enum {unknown} */
         BookChannelAvailability: "BOTH" | "SALE_ONLY" | "RENTAL_ONLY";
@@ -3155,6 +3156,14 @@ export interface components {
         };
         BrowserSessionResponse: {
             csrfToken: string;
+            user?: null | components["schemas"]["BrowserSessionUser"];
+        };
+        BrowserSessionUser: {
+            /** Format: uuid */
+            id: string;
+            email: string;
+            fullName: string;
+            role: string;
         };
         CategoryDetailResponse: {
             /** Format: uuid */

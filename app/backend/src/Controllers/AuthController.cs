@@ -27,7 +27,8 @@ public class AuthController(
         return Ok(new AuthenticationResponse(
             session.AccessToken,
             session.RefreshToken,
-            session.CsrfToken));
+            session.CsrfToken,
+            session.User));
     }
     // [AllowAnonymous]
     [HttpPost("register")]
@@ -119,7 +120,8 @@ public class AuthController(
             return Ok(new AuthenticationResponse(
                 session.AccessToken,
                 session.RefreshToken,
-                session.CsrfToken));
+                session.CsrfToken,
+                session.User));
         }
         catch (backend.src.Exceptions.UnauthorizedException)
         {
@@ -139,6 +141,9 @@ public class AuthController(
             return Unauthorized();
         }
 
-        return Ok(await authService.GetBrowserSessionAsync(accessJti));
+        var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        Guid? userId = Guid.TryParse(userIdClaim, out var parsedId) ? parsedId : null;
+
+        return Ok(await authService.GetBrowserSessionAsync(accessJti, userId));
     }
 }
