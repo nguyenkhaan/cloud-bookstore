@@ -99,6 +99,7 @@ public sealed class RedisService(HttpClient httpClient, IConfiguration configura
         {
             Content = new StringContent(JsonSerializer.Serialize(command), Encoding.UTF8, "application/json")
         };
+        request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", restToken);
 
         using var response = await httpClient.SendAsync(request, cancellationToken);

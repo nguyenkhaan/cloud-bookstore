@@ -2,11 +2,15 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout';
 import { Card, StatCard, SearchIcon } from '@/components/common';
+import { useAuth } from '@/features/auth/auth.hook';
 import type { DashboardPageProps } from '@/features/dashboard/dashboard.type';
 
 export function DashboardPage({ onSignOut }: DashboardPageProps) {
   const [currentTab, setCurrentTab] = useState('overview');
   const navigate = useNavigate();
+  const { session } = useAuth();
+
+  const currentUser = session?.user ?? { name: 'Khách', role: 'Chưa xác thực' };
 
   return (
     <MainLayout
@@ -21,15 +25,12 @@ export function DashboardPage({ onSignOut }: DashboardPageProps) {
       }}
       screenCode={currentTab === 'overview' ? 'SCR-REP-01 / TỔNG QUAN' : undefined}
       pageTitle={currentTab === 'overview' ? 'Tổng quan kinh doanh' : undefined}
-      user={{
-        name: 'Nguyễn Minh Anh',
-        role: 'Quản trị viên',
-      }}
+      user={currentUser}
     >
       {currentTab === 'overview' ? (
         <div className="space-y-6">
           <div className="flex items-center justify-between text-xs text-slate-500">
-            <span>Chào Minh Anh, đây là nhịp vận hành Nhà sách Mây hôm nay · Cập nhật 18/10/2026 10:24</span>
+            <span>Chào {currentUser.name}, đây là nhịp vận hành Nhà sách Mây hôm nay</span>
             {onSignOut && (
               <button
                 type="button"

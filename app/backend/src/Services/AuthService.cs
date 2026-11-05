@@ -82,7 +82,12 @@ public class AuthService(
         var csrfToken = await csrfTokenService.IssueAsync(
             accessJti,
             TimeSpan.FromMinutes(securitySettings.RefreshTokenLifetimeMinutes));
-        return new BrowserAuthenticationSession(accessToken, refreshToken, csrfToken);
+        var user = new BrowserSessionUser(
+            employee.Id,
+            employee.Email,
+            employee.FullName,
+            employee.Role.RoleName.ToString());
+        return new BrowserAuthenticationSession(accessToken, refreshToken, csrfToken, user);
     }
     public async Task<RegisterResponse> Register(RegisterRequest request)
     {
@@ -251,7 +256,12 @@ public class AuthService(
         var nextCsrfToken = await csrfTokenService.IssueAsync(
             nextAccessJti,
             TimeSpan.FromMinutes(securitySettings.RefreshTokenLifetimeMinutes));
-        return new BrowserAuthenticationSession(accessToken, nextRefreshToken, nextCsrfToken);
+        var user = new BrowserSessionUser(
+            employee.Id,
+            employee.Email,
+            employee.FullName,
+            employee.Role.RoleName.ToString());
+        return new BrowserAuthenticationSession(accessToken, nextRefreshToken, nextCsrfToken, user);
     }
 
     public async Task LogoutByRefreshTokenAsync(string refreshToken, string authenticatedAccessJti)
@@ -273,12 +283,27 @@ public class AuthService(
         await csrfTokenService.RevokeAsync(accessJti);
     }
 
-    public async Task<BrowserSessionResponse> GetBrowserSessionAsync(string accessJti)
+    public async Task<BrowserSessionResponse> GetBrowserSessionAsync(string accessJti, Guid? userId = null)
     {
         var csrfToken = await csrfTokenService.IssueAsync(
             accessJti,
             TimeSpan.FromMinutes(securitySettings.RefreshTokenLifetimeMinutes));
-        return new BrowserSessionResponse(csrfToken);
+
+        BrowserSessionUser? user = null;
+        if (userId.HasValue)
+        {
+            var employee = await dbContext.Employees.Include(e => e.Role).FirstOrDefaultAsync(e => e.Id == userId.Value);
+            if (employee is not null)
+            {
+                user = new BrowserSessionUser(
+                    employee.Id,
+                    employee.Email,
+                    employee.FullName,
+                    employee.Role.RoleName.ToString());
+            }
+        }
+
+        return new BrowserSessionResponse(csrfToken, user);
     }
 
     public async Task RequestPasswordReset(ForgotPasswordRequest request)

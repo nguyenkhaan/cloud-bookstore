@@ -6,6 +6,7 @@ export type ResendVerificationRequest = components['schemas']['ResendVerificatio
 export type ForgotPasswordRequest = components['schemas']['ForgotPasswordRequest']
 export type ResetPasswordRequest = components['schemas']['ResetPasswordRequest']
 export type BrowserSessionResponse = components['schemas']['BrowserSessionResponse']
+export type BrowserSessionUser = components['schemas']['BrowserSessionUser']
 
 export type NoticeTone = 'warning' | 'error' | 'success' | 'info'
 

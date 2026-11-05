@@ -1,12 +1,14 @@
 import axios from 'axios'
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios'
 
-const backendUrl = import.meta.env.VITE_BASE_URL.replace(/\/+$/, '')
-const API_BASE_URL = backendUrl.endsWith('/api')
-  ? backendUrl
-  : `${backendUrl}/api`
+const rawBaseUrl = (import.meta.env.VITE_BASE_URL ?? '').trim()
+const backendUrl = rawBaseUrl.replace(/\/+$/, '')
+const API_BASE_URL = backendUrl
+  ? (backendUrl.endsWith('/api') ? backendUrl : `${backendUrl}/api`)
+  : '/api'
 const CSRF_HEADER = 'X-CSRF-Token'
 const CSRF_STORAGE_KEY = 'cloud-bookstore.csrf-token'
+const USER_STORAGE_KEY = 'cloud-bookstore.user-info'
 const UNSAFE_METHODS = new Set(['delete', 'patch', 'post', 'put'])
 const AUTH_ENDPOINTS = new Set(['/auth/login', '/auth/logout', '/auth/refresh'])
 
@@ -65,6 +67,38 @@ export function getCsrfToken(): string | null {
 export function clearCsrfToken(): void {
   csrfToken = null
   removeStoredCsrfToken()
+}
+
+export interface StoredUser {
+  name: string
+  role: string
+  email?: string
+}
+
+export function readStoredUser(): StoredUser | null {
+  try {
+    const raw = getSessionStorage()?.getItem(USER_STORAGE_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as StoredUser
+  } catch {
+    return null
+  }
+}
+
+export function persistStoredUser(user: StoredUser): void {
+  try {
+    getSessionStorage()?.setItem(USER_STORAGE_KEY, JSON.stringify(user))
+  } catch {
+    // Keep in-memory when browser storage is unavailable.
+  }
+}
+
+export function removeStoredUser(): void {
+  try {
+    getSessionStorage()?.removeItem(USER_STORAGE_KEY)
+  } catch {
+    // The in-memory user has already been cleared.
+  }
 }
 
 export function setSessionRecovery(recovery: SessionRecovery | null): void {

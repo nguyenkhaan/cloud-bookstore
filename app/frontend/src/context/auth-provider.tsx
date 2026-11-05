@@ -1,16 +1,26 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { PropsWithChildren } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { clearCsrfToken, getCsrfToken, setSessionExpiredHandler } from '@/api/client'
-import { AuthContext } from './AuthProvider'
+import {
+  clearCsrfToken,
+  getCsrfToken,
+  persistStoredUser,
+  readStoredUser,
+  removeStoredUser,
+  setSessionExpiredHandler,
+} from '@/api/client'
+import { AuthContext, formatUser } from './AuthProvider'
 import type { AuthContextValue, AuthSession } from './AuthProvider'
 import { useLoginMutation, useLogoutMutation } from '@/features/auth/auth.hook'
 import { getSession } from '@/features/auth/auth.service'
 
-const authenticatedSession: AuthSession = { authenticated: true }
+
 
 export function AuthProvider({ children }: PropsWithChildren) {
-  const [session, setSession] = useState<AuthSession | null>(null)
+  const [session, setSession] = useState<AuthSession | null>(() => {
+    const stored = readStoredUser()
+    return stored ? { authenticated: true, user: stored } : null
+  })
   const [isInitializing, setIsInitializing] = useState(true)
   const { mutateAsync: requestLogin } = useLoginMutation()
   const { mutate: requestLogout } = useLogoutMutation()
@@ -19,6 +29,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const clearSession = useCallback(() => {
     clearCsrfToken()
+    removeStoredUser()
     setSession(null)
   }, [])
 
@@ -39,8 +50,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
     let active = true
 
     void getSession()
-      .then(() => {
-        if (active) setSession(authenticatedSession)
+      .then((sessionData) => {
+        if (active) {
+          const user = sessionData?.user ? formatUser(sessionData.user) : (readStoredUser() ?? formatUser())
+          persistStoredUser(user)
+          setSession({ authenticated: true, user })
+        }
       })
       .catch(() => {
         if (active) clearSession()
@@ -55,8 +70,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [clearSession])
 
   const login = useCallback(async (email: string, password: string) => {
-    await requestLogin({ email: email.trim(), password })
-    setSession(authenticatedSession)
+    const response = await requestLogin({ email: email.trim(), password })
+    const user = response?.user ? formatUser(response.user) : formatUser({ email: email.trim() })
+    persistStoredUser(user)
+    setSession({ authenticated: true, user })
   }, [requestLogin])
 
   const signOut = useCallback(() => {
