@@ -2,6 +2,8 @@ import axios from 'axios'
 import type { AxiosError, AxiosResponse } from 'axios'
 import {
   clearCsrfToken,
+  isCsrfRejection,
+  setCsrfRecovery,
   getCsrfToken,
   privateClient,
   publicClient,
@@ -101,6 +103,10 @@ setSessionRecovery(async () => {
   await refreshSession()
 })
 
+setCsrfRecovery(async () => {
+  await getSession()
+})
+
 export async function verify(request: VerifyRequest): Promise<void> {
   await requestData(() => publicClient.post<void>(AUTH_ENDPOINTS.verify, request))
 }
@@ -117,11 +123,25 @@ export async function resetPassword(request: ResetPasswordRequest): Promise<void
   await requestData(() => publicClient.post<void>(AUTH_ENDPOINTS.passwordResets, request))
 }
 
+function postLogout(csrfToken: string | null) {
+  return publicClient.post<void>(AUTH_ENDPOINTS.logout, undefined, {
+    headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : undefined,
+  })
+}
+
 export async function logout(csrfToken = getCsrfToken()): Promise<void> {
   try {
-    await requestData(() => publicClient.post<void>(AUTH_ENDPOINTS.logout, undefined, {
-      headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : undefined,
-    }))
+    await requestData(async () => {
+      try {
+        return await postLogout(csrfToken)
+      } catch (error) {
+        // A stale token (another tab read the session, or it was refreshed) would leave the
+        // server session alive; reload the current token and try once more.
+        if (!isCsrfRejection(error)) throw error
+        const session = await getSession()
+        return await postLogout(session.csrfToken)
+      }
+    })
   } finally {
     clearCsrfToken()
   }

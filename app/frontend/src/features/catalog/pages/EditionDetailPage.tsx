@@ -27,7 +27,7 @@ export default function EditionDetailPage() {
   return (
     <CatalogWorkspace
       action={<Button onClick={() => setIsCopyEditorOpen(true)}>+ Thêm bản vật lý</Button>}
-      description="Ấn bản chứa metadata xuất bản và có thể có nhiều cuốn vật lý. Từng cuốn được quản lý độc lập bằng CopyBarcode, giá, vị trí kệ, tình trạng và kênh Bán/Thuê."
+      description=""
       screenCode="SCR-INV-03 / KHO SÁCH"
       title={titleQuery.data?.name || 'Chi tiết ấn bản'}
     >

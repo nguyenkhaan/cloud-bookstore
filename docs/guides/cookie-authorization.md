@@ -9,9 +9,9 @@ Middleware được đặt sau `AuthenticationMiddleware` (`UseAuthentication()`
 Cơ chế xử lý:
 
 - **Safe HTTP methods (`GET`, `HEAD`, `OPTIONS`, `TRACE`):** Bỏ qua kiểm tra CSRF và tiếp tục xử lý request.
-- **Unsafe HTTP methods (`POST`, `PUT`, `PATCH`, `DELETE - các HTTP tạo ra sự thay đổi dữ liệu`):** Kiểm tra CSRF nếu người dùng đã login thành công.
+- **Unsafe HTTP methods (`POST`, `PUT`, `PATCH`, `DELETE - các HTTP tạo ra sự thay đổi dữ liệu`):** Kiểm tra CSRF nếu người dùng đã login thành công **và endpoint yêu cầu đăng nhập** (`[Authorize]`, không có `[AllowAnonymous]`).
 
-**Tóm gọn**: Bạn sẽ bypass qua được middleware nếu request method là (`GET, HEAD, OPTIONS, TRACE`) hoặc không cung cấp cookie trên Header của request.
+**Tóm gọn**: Bạn sẽ bypass qua được middleware nếu request method là (`GET, HEAD, OPTIONS, TRACE`), không cung cấp cookie trên Header của request, hoặc endpoint không cần đăng nhập (login, register, verify, quên/đặt lại mật khẩu, refresh). Xem [`ADR-005`](../decisions/ADR-005-stable-session-csrf-token-and-csrf-scope.md).
 
 ## 2. Cơ chế xác thực và kiểm tra CSRF
 
@@ -37,7 +37,9 @@ Khi gửi request bằng cookie authentication, trình duyệt tự động đí
 2. Đọc CSRF token từ header được cấu hình trong `appsettings.json:CsrfHeaderName`.
 3. Đối chiếu CSRF token với `jti` được lưu trong Redis
 
-Request chỉ được tiếp tục nếu CSRF token hợp lệ. Nếu kiểm tra CSRF thất bại, Backend trả về `403 Forbidden`.
+Request chỉ được tiếp tục nếu CSRF token hợp lệ. Nếu kiểm tra CSRF thất bại, Backend trả về `403 Forbidden` kèm body `{"code":"CSRF_TOKEN_INVALID"}`; frontend dùng mã này để đọc lại token qua `GET /api/auth/session` và gửi lại request đúng một lần.
+
+CSRF token **ổn định trong suốt một phiên**: gọi `GET /api/auth/session` nhiều lần (nhiều tab, tải lại trang) luôn trả cùng một token, không làm token đang giữ ở tab khác hết hiệu lực. Token chỉ đổi khi access token đổi (login hoặc refresh).
 
 Trong API docs, có thể nhập CSRF token vào ô `Authorize` để Swagger tự động gửi CSRF Token này về phía Backend.
 
@@ -71,18 +73,14 @@ Nếu request không có access cookie, hệ thống sẽ sử dụng Bearer tok
 
 ## 3. Một số lưu ý
 
-### 3.1. 403 Forbidden với các endpoint không có ổ khóa (unauthenticated endpoint)
+### 3.1. Endpoint không có ổ khóa (unauthenticated endpoint) không còn bị CSRF chặn
 
-**Vấn đề:**
+Trước `ADR-005`, cookie phiên cũ khiến cả các endpoint không cần đăng nhập (ví dụ `/login`) bị `403` nếu thiếu CSRF token; một lần logout thất bại có thể khiến người dùng không đăng nhập lại được. Từ `ADR-005`, middleware chỉ kiểm tra CSRF với endpoint yêu cầu đăng nhập, nên các endpoint này luôn chạy tới controller (vẫn qua kiểm tra Origin).
 
-Sau khi đăng nhập, trình duyệt lưu các cookie. Khi gửi request đến Backend, trình duyệt tự động đính kèm cookie. Do đó, mọi request sẽ đều hứa cookie.
+**Với endpoint cần đăng nhập** trên API docs:
 
-Vì vậy, với các **unsafe HTTP methods**, request sẽ cần vượt qua bước kiểm tra CSRF của middleware. Nếu bạn chưa cung cấp CSRF Token do endpoint ` /login`trả về => bạn sẽ bị gặp lỗi `403 Forbidden`dù cho endpoint này không có ổ khóa (unauthenticated endpoint).
-
-**Giải quyết**:
-
-- Bạn chỉ cần cung cấp đúng CSRF token do endpoint `login/`trả về vào trong nút `Authorize` của API docs. Swagger sẽ tự động gửi CSRF Token về bên BE nếu được cung cấp.
-- Trong trường hợp đã làm mất CSRF Token, có thể xin cấp lại thông qua 1 SAFE endpoint `GET: /api/auth/session`. Hệ thống sẽ tự động kiểm tra session lưu bên trong redis với `access_cookie`do người dùng gửi về, tiến hành cấp phát lại CSRF Token.
+- Cung cấp đúng CSRF token do endpoint `/login` trả về vào nút `Authorize`. Swagger sẽ tự động gửi CSRF Token về bên BE.
+- Nếu đã làm mất CSRF Token, gọi SAFE endpoint `GET: /api/auth/session` để lấy lại. Endpoint này trả **cùng token** của phiên hiện tại, không cấp token mới.
 
 
 

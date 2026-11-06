@@ -56,7 +56,7 @@ function recordRequest(client) {
       if (failure.status !== undefined) {
         error.response = {
           config,
-          data: { message: failure.message },
+          data: failure.data ?? { message: failure.message },
           headers: {},
           status: failure.status,
           statusText: 'Error',
@@ -267,6 +267,66 @@ describe('auth service', { concurrency: false }, () => {
       },
     ])
     assert.equal(onSessionExpiredCalls, 0)
+  })
+
+  test('a CSRF-rejected unsafe request reloads the session CSRF token and retries once', async () => {
+    await authApi.login({ email: 'reader@example.com', password: 'password-123' })
+    requests.length = 0
+    failures = [{ status: 403, data: { code: 'CSRF_TOKEN_INVALID' } }]
+
+    await apiClient.privateClient.post('/book-series', { name: 'Bộ mới' })
+
+    assert.deepEqual(
+      requests.map(({ client, csrfToken, method, url }) => ({ client, csrfToken, method, url })),
+      [
+        { client: 'private', csrfToken: 'csrf-token', method: 'post', url: '/book-series' },
+        { client: 'private', csrfToken: undefined, method: 'get', url: '/auth/session' },
+        { client: 'private', csrfToken: 'session-csrf-token', method: 'post', url: '/book-series' },
+      ],
+    )
+    assert.equal(apiClient.getCsrfToken(), 'session-csrf-token')
+  })
+
+  test('a role 403 without the CSRF code is not retried', async () => {
+    await authApi.login({ email: 'reader@example.com', password: 'password-123' })
+    requests.length = 0
+    failures = [{ status: 403, message: 'Forbidden' }]
+
+    await assert.rejects(apiClient.privateClient.post('/book-series', { name: 'Bộ mới' }))
+
+    assert.equal(requests.length, 1)
+  })
+
+  test('a second CSRF rejection after the retry is not retried again', async () => {
+    await authApi.login({ email: 'reader@example.com', password: 'password-123' })
+    requests.length = 0
+    failures = [
+      { status: 403, data: { code: 'CSRF_TOKEN_INVALID' } },
+      undefined,
+      { status: 403, data: { code: 'CSRF_TOKEN_INVALID' } },
+    ]
+
+    await assert.rejects(apiClient.privateClient.post('/book-series', { name: 'Bộ mới' }))
+
+    assert.equal(requests.length, 3)
+  })
+
+  test('logout retries once with the current session CSRF token after a CSRF rejection', async () => {
+    await authApi.login({ email: 'reader@example.com', password: 'password-123' })
+    requests.length = 0
+    failures = [{ status: 403, data: { code: 'CSRF_TOKEN_INVALID' } }]
+
+    await authApi.logout()
+
+    assert.deepEqual(
+      requests.map(({ client, csrfToken, method, url }) => ({ client, csrfToken, method, url })),
+      [
+        { client: 'public', csrfToken: 'csrf-token', method: 'post', url: '/auth/logout' },
+        { client: 'private', csrfToken: undefined, method: 'get', url: '/auth/session' },
+        { client: 'public', csrfToken: 'session-csrf-token', method: 'post', url: '/auth/logout' },
+      ],
+    )
+    assert.equal(apiClient.getCsrfToken(), null)
   })
 
   test('failed refresh clears the memory-only session and does not retry recursively', async () => {

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
-import { Button, TextField } from '@/components/common'
+import { Button, SelectBox, TextField } from '@/components/common'
 import type { CloudinaryUploadResultRequest } from '@/features/uploads/upload.type'
 import { uploadBookCover } from '../catalog.service'
 import type { BookSeries, BookTitle, SaveTitleRequest } from '../catalog.type'
@@ -89,13 +89,16 @@ export function TitleEditorDialog({ onClose, onSave, series, title }: TitleEdito
               <TextField label="Tác giả" onChange={(event) => setAuthor(event.target.value)} value={author} />
               <TextField label="Nhãn tập" onChange={(event) => setVolumeLabel(event.target.value)} placeholder="Ví dụ: Tập 1" value={volumeLabel} />
             </div>
-            <label className="block rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 focus-within:border-indigo-600 focus-within:ring-3 focus-within:ring-indigo-600/15">
-              <span className="block text-xs font-semibold text-slate-500">Thuộc bộ sách</span>
-              <select className="mt-1 block w-full bg-transparent text-[15px] text-indigo-950 outline-none" onChange={(event) => setSeriesId(event.target.value)} value={seriesId}>
-                <option value="">Sách độc lập / chưa gắn bộ</option>
-                {series.filter((item) => item.isActive).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-              </select>
-            </label>
+            <SelectBox
+              label="Thuộc bộ sách"
+              onChange={setSeriesId}
+              options={[
+                { value: '', label: 'Sách độc lập / chưa gắn bộ' },
+                ...series.filter((item) => item.isActive).map((item) => ({ value: item.id, label: item.name })),
+              ]}
+              searchPlaceholder="Tìm bộ sách…"
+              value={seriesId}
+            />
           </div>
         </div>
         <label className="block rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 focus-within:border-indigo-600 focus-within:ring-3 focus-within:ring-indigo-600/15">

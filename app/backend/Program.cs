@@ -98,6 +98,7 @@ builder.Services.AddTransient<TokenJtiStore>();
 builder.Services.AddScoped<AuthCookieService>();
 builder.Services.AddScoped<ICsrfTokenStore, RedisCsrfTokenStore>();
 builder.Services.AddScoped<CsrfTokenService>();
+builder.Services.AddSingleton(_ => CsrfTokenSigningKey.FromSecret(builder.Configuration["Jwt:AccessSecret:Key"]));
 builder.Services
     .AddHealthChecks()
     .AddCheck<RedisReadinessHealthCheck>("redis", tags: ["ready"]);

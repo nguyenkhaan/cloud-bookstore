@@ -23,7 +23,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   })
   const [isInitializing, setIsInitializing] = useState(true)
   const { mutateAsync: requestLogin } = useLoginMutation()
-  const { mutate: requestLogout } = useLogoutMutation()
+  const { mutateAsync: requestLogout } = useLogoutMutation()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -76,10 +76,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setSession({ authenticated: true, user })
   }, [requestLogin])
 
-  const signOut = useCallback(() => {
-    requestLogout(getCsrfToken())
-    clearSession()
-    navigate('/login', { replace: true })
+  const signOut = useCallback(async () => {
+    try {
+      await requestLogout(getCsrfToken())
+    } catch {
+      // Local state is cleared regardless; the backend no longer lets a leftover cookie block login.
+    } finally {
+      clearSession()
+      navigate('/login', { replace: true })
+    }
   }, [clearSession, navigate, requestLogout])
 
   const value = useMemo<AuthContextValue>(

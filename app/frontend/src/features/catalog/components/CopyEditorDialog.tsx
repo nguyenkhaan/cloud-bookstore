@@ -1,8 +1,22 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Button, TextField } from '@/components/common'
+import { Button, SelectBox, TextField } from '@/components/common'
+import type { SelectOption } from '@/components/common'
 import type { CopyAvailability, CreateCopyRequest, ConditionGrade } from '../catalog.type'
 import { CatalogDialog } from './CatalogDialog'
+
+const AVAILABILITY_OPTIONS: SelectOption<CopyAvailability>[] = [
+  { value: 'BOTH', label: 'Bán và cho thuê' },
+  { value: 'SALE_ONLY', label: 'Chỉ bán' },
+  { value: 'RENTAL_ONLY', label: 'Chỉ cho thuê' },
+]
+
+const CONDITION_OPTIONS: SelectOption<ConditionGrade>[] = [
+  { value: 'A', label: 'A — Rất tốt' },
+  { value: 'B', label: 'B — Tốt' },
+  { value: 'C', label: 'C — Có hao mòn' },
+  { value: 'D', label: 'D — Kém' },
+]
 
 type CopyEditorDialogProps = {
   editionId: string
@@ -18,6 +32,8 @@ export function CopyEditorDialog({ editionId, onClose, onSave }: CopyEditorDialo
   const [sellingPrice, setSellingPrice] = useState('')
   const [rentalRate, setRentalRate] = useState('')
   const [shelfCode, setShelfCode] = useState('')
+  // Display-only until the stock-receipt flow (phase 05) provides receipt lines; not sent to the API.
+  const [receiptLineId, setReceiptLineId] = useState('')
   const [error, setError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
 
@@ -64,23 +80,18 @@ export function CopyEditorDialog({ editionId, onClose, onSave }: CopyEditorDialo
         <div className="grid gap-3 sm:grid-cols-2">
           <TextField label="CopyBarcode *" onChange={(event) => setCopyBarcode(event.target.value)} placeholder="VD: CB-HP1-0004" required value={copyBarcode} />
           <TextField label="Vị trí kệ" onChange={(event) => setShelfCode(event.target.value)} placeholder="VD: A-03-02" value={shelfCode} />
-          <label className="block rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 focus-within:border-indigo-600 focus-within:ring-3 focus-within:ring-indigo-600/15">
-            <span className="block text-xs font-semibold text-slate-500">Kênh sử dụng</span>
-            <select className="mt-1 block w-full bg-transparent text-[15px] text-indigo-950 outline-none" onChange={(event) => setAvailability(event.target.value as CopyAvailability)} value={availability}>
-              <option value="BOTH">Bán và cho thuê</option>
-              <option value="SALE_ONLY">Chỉ bán</option>
-              <option value="RENTAL_ONLY">Chỉ cho thuê</option>
-            </select>
-          </label>
-          <label className="block rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 focus-within:border-indigo-600 focus-within:ring-3 focus-within:ring-indigo-600/15">
-            <span className="block text-xs font-semibold text-slate-500">Tình trạng</span>
-            <select className="mt-1 block w-full bg-transparent text-[15px] text-indigo-950 outline-none" onChange={(event) => setConditionGrade(event.target.value as ConditionGrade)} value={conditionGrade}>
-              <option value="A">A — Rất tốt</option>
-              <option value="B">B — Tốt</option>
-              <option value="C">C — Có hao mòn</option>
-              <option value="D">D — Kém</option>
-            </select>
-          </label>
+          <SelectBox
+            className="sm:col-span-2"
+            emptyHint="Sẽ có khi hoàn tất luồng nhập kho (phase 05)."
+            emptyMessage="Chưa có dòng phiếu nhập nào."
+            label="Dòng phiếu nhập"
+            onChange={setReceiptLineId}
+            options={[]}
+            placeholder="Chưa có dòng phiếu nhập"
+            value={receiptLineId}
+          />
+          <SelectBox label="Kênh sử dụng" onChange={setAvailability} options={AVAILABILITY_OPTIONS} value={availability} />
+          <SelectBox label="Tình trạng" onChange={setConditionGrade} options={CONDITION_OPTIONS} value={conditionGrade} />
           {availability !== 'RENTAL_ONLY' && <TextField label="Giá bán (đ) *" min="0" onChange={(event) => setSellingPrice(event.target.value)} required type="number" value={sellingPrice} />}
           {availability !== 'SALE_ONLY' && <TextField label="Giá thuê (đ) *" min="0" onChange={(event) => setRentalRate(event.target.value)} required type="number" value={rentalRate} />}
         </div>

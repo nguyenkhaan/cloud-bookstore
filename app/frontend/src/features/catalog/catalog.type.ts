@@ -9,6 +9,7 @@ export type BookSeries = {
   id: string
   name: string
   description: string | null
+  imageUrl: string | null
   isActive: boolean
   titleCount?: number
   expectedVolumeCount?: number | null

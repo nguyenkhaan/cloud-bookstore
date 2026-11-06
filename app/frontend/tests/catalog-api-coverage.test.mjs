@@ -58,6 +58,21 @@ test('catalog hooks export all queries and mutations matching service functions'
   }
 })
 
+test('series cards show the backend image URL instead of a name initial', () => {
+  const catalogType = source('features', 'catalog', 'catalog.type.ts')
+  const seriesListPage = source('features', 'catalog', 'pages', 'SeriesListPage.tsx')
+  const seriesCover = source('features', 'catalog', 'components', 'SeriesCoverStack.tsx')
+
+  assert.match(catalogType, /imageUrl:\s*string\s*\|\s*null/)
+  assert.match(seriesListPage, /<SeriesCoverStack imageUrl=\{item\.imageUrl\} name=\{item\.name\}/)
+  assert.match(seriesCover, /src=\{coverUrl\}/)
+  assert.match(seriesCover, /loading="lazy"/)
+  assert.match(seriesCover, /alt=\{`Ảnh bìa bộ sách \$\{name\}`\}/)
+  assert.match(seriesCover, /aspect-\[2\/3\]/)
+  assert.match(seriesListPage, /grid gap-4 bg-slate-50 p-4 md:grid-cols-2 xl:grid-cols-3/)
+  assert.doesNotMatch(seriesListPage, /item\.name\.charAt\(0\)/)
+})
+
 test('user session from auth context replaces hardcoded user in workspace and dashboard', () => {
   const catalogWorkspace = source('features', 'catalog', 'components', 'CatalogWorkspace.tsx')
   const dashboardPage = source('features', 'dashboard', 'pages', 'DashboardPage.tsx')

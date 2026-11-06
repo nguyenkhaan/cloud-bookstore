@@ -7,6 +7,7 @@ import { useCreateSeriesMutation, useSeriesQuery } from '../catalog.hook'
 import { ActiveBadge } from '../components/CatalogStatusBadge'
 import { CatalogDialog } from '../components/CatalogDialog'
 import { CatalogWorkspace } from '../components/CatalogWorkspace'
+import { SeriesCoverStack } from '../components/SeriesCoverStack'
 
 export default function SeriesListPage() {
   const [search, setSearch] = useState('')
@@ -40,7 +41,7 @@ export default function SeriesListPage() {
   return (
     <CatalogWorkspace
       action={<Button onClick={() => setIsDialogOpen(true)}>+ Tạo bộ sách mới</Button>}
-      description="Theo dõi ma trận tập, mức độ hoàn thiện của từng bộ truyện và đi tiếp đến các đầu sách thuộc bộ. Bộ sách chỉ là lớp tổ chức; ảnh bìa và ISBN thuộc các cấp dưới."
+      description="Theo dõi mức độ hoàn thiện của từng bộ truyện, nhận diện nhanh qua ảnh bìa và đi tiếp đến các đầu sách thuộc bộ."
       screenCode="SCR-INV-10 / KHO SÁCH"
       title="Quản lý Bộ sách & tiến độ đủ bộ"
     >
@@ -61,32 +62,42 @@ export default function SeriesListPage() {
           </div>
         </div>
         {seriesQuery.isLoading ? <LoadingRows /> : seriesQuery.error ? <ErrorState message="Không thể tải danh sách bộ sách." /> : (
-          <div className="grid gap-px bg-slate-100 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 bg-slate-50 p-4 md:grid-cols-2 xl:grid-cols-3">
             {series.map((item) => {
               const expected = item.expectedVolumeCount ?? 0
               const present = item.titleCount ?? 0
               const progress = expected > 0 ? Math.min(100, Math.round((present / expected) * 100)) : 0
               return (
-                <article className="bg-white p-5" key={item.id}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="grid h-10 w-10 place-items-center rounded-xl bg-indigo-50 text-lg font-black text-indigo-700">{item.name.charAt(0)}</div>
-                    <ActiveBadge active={item.isActive} />
-                  </div>
-                  <h3 className="mt-4 text-sm font-bold text-slate-900">{item.name}</h3>
-                  <p className="mt-1 line-clamp-2 min-h-10 text-xs leading-5 text-slate-500">{item.description || 'Chưa có mô tả cho bộ sách này.'}</p>
-                  <div className="mt-4 rounded-xl bg-slate-50 p-3">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-slate-700">{present} / {expected || '—'} tập</span>
-                      <span className="font-bold text-indigo-600">{expected ? `${progress}%` : 'Chưa đặt mục tiêu'}</span>
+                <Link
+                  aria-describedby={`series-${item.id}-status series-${item.id}-details`}
+                  aria-labelledby={`series-${item.id}-name series-${item.id}-cta`}
+                  className="group flex min-w-0 gap-4 rounded-xl border border-transparent bg-white p-4 pt-5 transition-colors hover:border-indigo-200 focus-visible:border-indigo-300 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-indigo-600/30"
+                  key={item.id}
+                  to={catalogPaths.titlesForSeries(item.id)}
+                >
+                  <SeriesCoverStack imageUrl={item.imageUrl} name={item.name} titleCount={item.titleCount} key={item.imageUrl ?? 'no-cover'} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <h3 className="min-w-0 text-sm font-bold text-slate-900" id={`series-${item.id}-name`}>{item.name}</h3>
+                      <span id={`series-${item.id}-status`}><ActiveBadge active={item.isActive} /></span>
                     </div>
-                    <div aria-label={`Tiến độ ${item.name}`} className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200" role="progressbar" aria-valuemax={100} aria-valuemin={0} aria-valuenow={progress}>
-                      <div className="h-full rounded-full bg-indigo-600" style={{ width: `${progress}%` }} />
+                    <div id={`series-${item.id}-details`}>
+                    <p className="mt-1 line-clamp-2 min-h-10 text-xs leading-5 text-slate-500">{item.description || 'Chưa có mô tả cho bộ sách này.'}</p>
+                    <div className="mt-4 rounded-xl bg-slate-50 p-3">
+                      <div className="flex items-center justify-between gap-2 text-xs">
+                        <span className="font-semibold text-slate-700">{present} / {expected || '—'} tập</span>
+                        <span className="text-right font-bold text-indigo-600">{expected ? `${progress}%` : 'Chưa đặt mục tiêu'}</span>
+                      </div>
+                      <div aria-label={`Tiến độ ${item.name}`} className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200" role="progressbar" aria-valuemax={100} aria-valuemin={0} aria-valuenow={progress}>
+                        <div className="h-full rounded-full bg-indigo-600" style={{ width: `${progress}%` }} />
+                      </div>
                     </div>
+                    </div>
+                    <span id={`series-${item.id}-cta`} className="mt-4 inline-flex min-h-11 items-center gap-1 text-xs font-bold text-indigo-600 group-hover:text-indigo-700">
+                      Xem {present} đầu sách <span aria-hidden="true">→</span>
+                    </span>
                   </div>
-                  <Link className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-700" to={catalogPaths.titlesForSeries(item.id)}>
-                    Xem {present} đầu sách <span aria-hidden="true">→</span>
-                  </Link>
-                </article>
+                </Link>
               )
             })}
             {!series.length && <EmptyState />}

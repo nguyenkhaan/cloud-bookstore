@@ -3,14 +3,21 @@ using Microsoft.AspNetCore.WebUtilities;
 
 namespace backend.src.Infrastructure;
 
-public sealed class CsrfTokenService(ICsrfTokenStore tokenStore)
+/// <summary>
+/// Per-session synchronizer CSRF token. The token is an HMAC of the access-token JTI, so every
+/// read of the same session (another tab, a reload) returns the same token instead of rotating
+/// it and invalidating copies held elsewhere. Redis still holds its hash: a session is only
+/// valid while that entry exists, and logout removes it.
+/// </summary>
+public sealed class CsrfTokenService(ICsrfTokenStore tokenStore, CsrfTokenSigningKey signingKey)
 {
     public async Task<string> IssueAsync(
         string accessJti,
         TimeSpan lifetime,
         CancellationToken cancellationToken = default)
     {
-        var token = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(32));
+        var token = WebEncoders.Base64UrlEncode(
+            HMACSHA256.HashData(signingKey.Value, System.Text.Encoding.UTF8.GetBytes(accessJti)));
         await tokenStore.StoreAsync(accessJti, HashToken(token), lifetime, cancellationToken);
         return token;
     }

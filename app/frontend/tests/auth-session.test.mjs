@@ -42,3 +42,12 @@ test('only local application paths are accepted as a post-login destination', ()
 test('route helpers are not kept in a separate session module', () => {
   assert.equal(existsSync(src('features', 'auth', 'session.ts')), false)
 })
+
+test('sign-out waits for the backend logout before leaving the protected area', () => {
+  const provider = readFileSync(src('context', 'auth-provider.tsx'), 'utf8')
+
+  assert.match(provider, /const \{ mutateAsync: requestLogout \} = useLogoutMutation\(\)/)
+  assert.match(provider, /const signOut = useCallback\(async \(\) => \{/)
+  assert.match(provider, /await requestLogout\(getCsrfToken\(\)\)/)
+  assert.match(provider, /finally \{\s*clearSession\(\)\s*navigate\('\/login', \{ replace: true \}\)/)
+})

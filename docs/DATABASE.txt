@@ -99,7 +99,7 @@ enum RentalSlipStatus {
 
 enum ReturnStatus {
   DRAFT
-  PENDING_APPROVAL
+  AWAITING_DEPOSIT
   READY
   SETTLED
   CANCELLED
@@ -183,24 +183,29 @@ enum NotificationStatus {
   CANCELLED
 }
 
+// PostgreSQL sequence: seq_copy_barcode (bigint, START 1, INCREMENT 1)
+
 table roles {
   id uuid [pk]
-  name RoleName [not null, unique]
+  role_name RoleName [not null, unique]
   is_active boolean [not null, default: true]
   Note: 'Vai trò hệ thống (3 vai trò)'
 }
 
 table employee {
   id uuid [pk]
-  email varchar(255) [not null, unique, note: 'Duy nhất, không phân biệt hoa thường. Đồng thời đóng vai trò whitelist.']
-  password varchar(255) [note: 'Chỉ lưu bản băm. NULL khi mới được Admin thêm vào whitelist.']
-  full_name varchar(150) [not null]
-  phone varchar(20)
+  email varchar(200) [not null, unique, note: 'Email đăng nhập duy nhất; đồng thời đóng vai trò whitelist.']
+  full_name varchar(200) [not null]
+  password text [not null, note: 'Chỉ lưu bản băm.']
+  phone varchar(12) [not null]
   avatar_url text
-  role_id uuid [not null]
-  status EmployeeStatus [not null, default: 'INVITED']
-  created_at timestamptz [not null, default: `now()`]
-  Note: 'Tài khoản nhân viên, đồng thời là danh sách email được phép đăng ký và mã OTP.'
+  role_id uuid [not null, note: 'Concurrency token trong EF Core.']
+  status EmployeeStatus [not null]
+  failed_login_attempts integer [not null]
+  lockout_end_utc timestamptz
+  password_reset_token_hash varchar(128)
+  created_at timestamptz [not null]
+  Note: 'Tài khoản nhân viên, danh sách email được phép đăng ký và trạng thái khóa đăng nhập/reset mật khẩu.'
 }
 
 // ------------------------- 2. KHÁCH HÀNG & CẤU HÌNH -------------------------
@@ -676,3 +681,59 @@ table stock_receipt_images {
   created_at timestamptz [not null, default: `now()`]
   Note: 'Ảnh chứng từ phiếu nhập (authenticated, URL ký). Chỉ có schema; API/service để giai đoạn sau.'
 }
+
+// ------------------------- 11. QUAN HỆ (TẤT CẢ FK DÙNG DELETE NO ACTION) -------------------------
+Ref: employee.role_id > roles.id [delete: no action]
+Ref: customers.tier_id > membership_tiers.id [delete: no action]
+Ref: system_settings.updated_by > employee.id [delete: no action]
+Ref: categories.parent_id > categories.id [delete: no action]
+Ref: titles.series_id > book_series.id [delete: no action]
+Ref: titles.category_id > categories.id [delete: no action]
+Ref: edition.title_id > titles.id [delete: no action]
+Ref: edition.metadata_confirmed_by > employee.id [delete: no action]
+Ref: stock_receipts.supplier_id > suppliers.id [delete: no action]
+Ref: stock_receipts.seller_id > customers.id [delete: no action]
+Ref: stock_receipts.approved_by > employee.id [delete: no action]
+Ref: stock_receipts.created_by > employee.id [delete: no action]
+Ref: stock_receipt_lines.receipt_id > stock_receipts.id [delete: no action]
+Ref: stock_receipt_lines.edition_id > edition.id [delete: no action]
+Ref: book_copies.edition_id > edition.id [delete: no action]
+Ref: book_copies.receipt_line_id > stock_receipt_lines.id [delete: no action]
+Ref: inventory_checks.copy_id > book_copies.id [delete: no action]
+Ref: inventory_checks.checked_by > employee.id [delete: no action]
+Ref: inventory_adjustment_requests.inventory_check_id > inventory_checks.id [delete: no action]
+Ref: inventory_adjustment_requests.requested_by > employee.id [delete: no action]
+Ref: inventory_adjustment_requests.approved_by > employee.id [delete: no action]
+Ref: sale_invoices.customer_id > customers.id [delete: no action]
+Ref: sale_invoices.cash_session_id > cash_sessions.id [delete: no action]
+Ref: sale_invoices.created_by > employee.id [delete: no action]
+Ref: sale_invoice_lines.invoice_id > sale_invoices.id [delete: no action]
+Ref: sale_invoice_lines.copy_id > book_copies.id [delete: no action]
+Ref: rental_slips.customer_id > customers.id [delete: no action]
+Ref: rental_slips.tier_id > membership_tiers.id [delete: no action]
+Ref: rental_slips.created_by > employee.id [delete: no action]
+Ref: returns.slip_id > rental_slips.id [delete: no action]
+Ref: returns.created_by > employee.id [delete: no action]
+Ref: rental_lines.slip_id > rental_slips.id [delete: no action]
+Ref: rental_lines.copy_id > book_copies.id [delete: no action]
+Ref: rental_lines.return_id > returns.id [delete: no action]
+Ref: rental_lines.damage_level_id > damage_levels.id [delete: no action]
+Ref: rental_lines.damage_approved_by > employee.id [delete: no action]
+Ref: rental_extensions.rental_line_id > rental_lines.id [delete: no action]
+Ref: rental_extensions.performed_by > employee.id [delete: no action]
+Ref: cash_sessions.opened_by > employee.id [delete: no action]
+Ref: cash_sessions.variance_approved_by > employee.id [delete: no action]
+Ref: cash_sessions.closed_by > employee.id [delete: no action]
+Ref: payments.cash_session_id > cash_sessions.id [delete: no action]
+Ref: payments.sale_invoice_id > sale_invoices.id [delete: no action]
+Ref: payments.rental_slip_id > rental_slips.id [delete: no action]
+Ref: payments.stock_receipt_id > stock_receipts.id [delete: no action]
+Ref: payments.return_id > returns.id [delete: no action]
+Ref: payments.work_record_id > employee_work_records.id [delete: no action]
+Ref: payments.created_by > employee.id [delete: no action]
+Ref: employee_work_records.employee_id > employee.id [delete: no action]
+Ref: employee_work_records.approved_by > employee.id [delete: no action]
+Ref: audit_logs.actor_id > employee.id [delete: no action]
+Ref: upload_intents.created_by > employee.id [delete: no action]
+Ref: rental_line_images.rental_line_id > rental_lines.id [delete: no action]
+Ref: stock_receipt_images.stock_receipt_id > stock_receipts.id [delete: no action]

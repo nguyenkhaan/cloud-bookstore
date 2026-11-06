@@ -5,3 +5,4 @@ export * from './Card';
 export * from './Icons';
 export * from './StatCard';
 export * from './TextField';
+export * from './SelectBox';

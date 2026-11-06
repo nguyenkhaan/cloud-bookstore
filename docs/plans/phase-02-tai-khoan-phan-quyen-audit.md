@@ -12,8 +12,8 @@ Nhân sự nội bộ đăng nhập an toàn, chỉ dùng đúng quyền và m�
 
 **Công việc:**
 
-- [ ] BE seed Admin gốc; tạo API liệt kê, thêm/ngừng cho phép email và khóa/mở khóa tài khoản, chỉ Admin được gọi.
-- [ ] BE từ chối khóa/xóa Admin gốc; chuẩn hóa email trước khi kiểm tra trùng.
+- [ ] BE seed Admin gốc; tạo API liệt kê, thêm/ngừng cho phép email và khóa/mở khóa tài khoản, chỉ Admin được gọi. _(Đã seed Admin qua `data.json`; chưa có API liệt kê nhân viên, quản lý email được phép, khóa/mở khóa. Hiện đăng ký kiểm tra theo **tên miền** email trong cấu hình, không theo danh sách email do Admin quản lý.)_
+- [ ] BE từ chối khóa/xóa Admin gốc; chuẩn hóa email trước khi kiểm tra trùng. _(Đăng nhập đã chuẩn hóa email; đăng ký vẫn so khớp phân biệt hoa/thường; chưa có cơ chế bảo vệ Admin gốc.)_
 - [ ] FE tạo màn hình Admin liệt kê nhân viên, mời email và đổi trạng thái tài khoản; hiển thị lỗi từ API.
 - [ ] Test email trùng khác chữ hoa/thường, thao tác vượt quyền và bảo vệ Admin gốc.
 
@@ -41,8 +41,8 @@ Nhân sự nội bộ đăng nhập an toàn, chỉ dùng đúng quyền và m�
 
 **Công việc:**
 
-- [ ] BE thực hiện luồng đăng ký theo ADR auth, OTP/token băm, hết hạn và giới hạn thử.
-- [ ] FE thực hiện form đăng ký/xác minh với lỗi cụ thể và trạng thái gửi lại.
+- [X] BE thực hiện luồng đăng ký theo ADR auth, OTP/token băm, hết hạn và giới hạn thử. _(Theo `ADR-003-email-authentication-links-and-mailpit`: xác minh bằng link JWT qua email thay cho OTP; có `POST /api/auth/register`, `/verify`, `/verification-resends`.)_
+- [ ] FE thực hiện form đăng ký/xác minh với lỗi cụ thể và trạng thái gửi lại. _(Đã có trang `/verify-register` + gửi lại; chưa có route form đăng ký.)_
 - [ ] Test email không được phép, OTP sai/hết hạn/dùng lại và mật khẩu yếu.
 
 **Acceptance:**
@@ -77,9 +77,9 @@ Nhân sự nội bộ đăng nhập an toàn, chỉ dùng đúng quyền và m�
 
 **Công việc:**
 
-- [ ] BE hỗ trợ đăng nhập, đăng xuất, đổi/quên mật khẩu, timeout và khóa tài khoản theo ADR.
-- [ ] FE có route bảo vệ, khôi phục phiên hợp lệ và đưa về đăng nhập khi phiên hết hạn.
-- [ ] Test token/session hết hạn, tài khoản bị khóa và logout không dùng lại phiên cũ.
+- [ ] BE hỗ trợ đăng nhập, đăng xuất, đổi/quên mật khẩu, timeout và khóa tài khoản theo ADR. _(Đã có login/logout/refresh/session bằng cookie + CSRF (`AUTH-001`), khóa tạm khi sai mật khẩu (`ADR-004`), quên/đặt lại mật khẩu. Chưa có API đổi mật khẩu.)_
+- [X] FE có route bảo vệ, khôi phục phiên hợp lệ và đưa về đăng nhập khi phiên hết hạn. _(`RequireSession`; chưa có trang quên/đặt lại mật khẩu.)_
+- [X] Test token/session hết hạn, tài khoản bị khóa và logout không dùng lại phiên cũ.
 
 **Acceptance:**
 
@@ -104,16 +104,16 @@ Nhân sự nội bộ đăng nhập an toàn, chỉ dùng đúng quyền và m�
 
 **Công việc:**
 
-- [ ] BE tạo API để Admin gán/đổi một trong ba vai trò cho tài khoản; từ chối hạ quyền Admin gốc và người không có quyền.
-- [ ] BE áp ma trận quyền ba vai trò trên mọi API được bảo vệ; trả 403 khi vượt quyền.
-- [ ] BE tạo AuditLog service ghi append-only giá trị trước/sau, lý do, correlation ID và API tra cứu audit theo quyền.
-- [ ] FE cho Admin đổi vai trò, xử lý lỗi 403 và tra cứu audit theo người dùng, hành động, đối tượng, thời gian.
+- [ ] BE tạo API để Admin gán/đổi một trong ba vai trò cho tài khoản; từ chối hạ quyền Admin gốc và người không có quyền. _(`PATCH /api/employees/{id}/role` chỉ Admin, bắt buộc lý do; chưa chặn hạ quyền Admin gốc.)_
+- [ ] BE áp ma trận quyền ba vai trò trên mọi API được bảo vệ; trả 403 khi vượt quyền. _(Các controller hiện có đều gắn `[Authorize(Roles=...)]`; chưa có ma trận quyền được duyệt và test.)_
+- [X] BE tạo AuditLog service ghi append-only giá trị trước/sau, lý do, correlation ID và API tra cứu audit theo quyền. _(`AuditLogService`, `GET /api/audit-logs` chỉ Admin.)_
+- [ ] FE cho Admin đổi vai trò, xử lý lỗi 403 và tra cứu audit theo người dùng, hành động, đối tượng, thời gian. _(Chưa có màn hình.)_
 - [ ] Test ma trận quyền, đổi vai trò, bảo vệ Admin gốc và tính đầy đủ của audit log.
 
 **Acceptance:**
 
 - [ ] Gọi trực tiếp API ngoài quyền bị từ chối và không đổi dữ liệu.
-- [ ] Chỉ Admin đổi được vai trò; mỗi lần đổi lưu vai trò trước/sau trong audit log và không thể hạ quyền Admin gốc.
+- [ ] Chỉ Admin đổi được vai trò; mỗi lần đổi lưu vai trò trước/sau trong audit log và không thể hạ quyền Admin gốc. _(Hai ý đầu đã đạt; còn thiếu bảo vệ Admin gốc.)_
 
 **Verification:**
 

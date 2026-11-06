@@ -26,8 +26,8 @@ File này chỉ theo dõi trạng thái, owner và evidence. Nội dung acceptan
 | --- | --- | --- | --- | --- | --- |
 | 00 | Chưa gán | TODO | Không | `CP00-B` | — |
 | 01 | Chưa gán | BLOCKED | 00 | `CP01-B` | — |
-| 02 | Chưa gán | BLOCKED | 01 | `CP02-B` | — |
-| 03 | Chưa gán | BLOCKED | 02 | `CP03-B` | — |
+| 02 | Chưa gán | IN_PROGRESS | 01 | `CP02-B` | AUTH-001 (xem các dòng `AUTH-001-T*`); `dotnet test backend.sln`: 35 passed; `bun run test`: 43 passed (2026-11-06) |
+| 03 | Chưa gán | IN_PROGRESS | 02 | `CP03-B` | PR #21, #24, #25; `dotnet test backend.sln`: 35 passed; `bun run test`: 43 passed (2026-11-06) |
 | 04 | Chưa gán | BLOCKED | 02 | `CP04-B` | — |
 | 05 | Chưa gán | BLOCKED | 03, 04, 06.1–06.2 | `CP05-B` | — |
 | 06 | Chưa gán | BLOCKED | 02 | `CP06-B` | — |
@@ -52,20 +52,20 @@ File này chỉ theo dõi trạng thái, owner và evidence. Nội dung acceptan
 | `P01-S02` | [Dựng nền backend](./phase-01-setup-nen-tang.md) | Chưa gán | TODO | — |
 | `P01-S03` | [Dựng nền frontend](./phase-01-setup-nen-tang.md) | Chưa gán | TODO | — |
 | `P01-S04` | [Thiết lập cổng chất lượng](./phase-01-setup-nen-tang.md) | Chưa gán | TODO | — |
-| `P02-S01` | [Quản trị email nội bộ](./phase-02-tai-khoan-phan-quyen-audit.md) | Chưa gán | TODO | — |
-| `P02-S02` | [Đăng ký bằng OTP](./phase-02-tai-khoan-phan-quyen-audit.md) | Chưa gán | TODO | — |
-| `P02-S03` | [Quản lý vòng đời phiên](./phase-02-tai-khoan-phan-quyen-audit.md) | Chưa gán | TODO | — |
-| `P02-S04` | [Thực thi RBAC có audit](./phase-02-tai-khoan-phan-quyen-audit.md) | Chưa gán | TODO | — |
+| `P02-S01` | [Quản trị email nội bộ](./phase-02-tai-khoan-phan-quyen-audit.md) | Chưa gán | IN_PROGRESS | Admin đã seed (`data.json`). Còn: API/FE quản lý email được phép, khóa/mở khóa, bảo vệ Admin gốc; đăng ký hiện lọc theo tên miền email |
+| `P02-S02` | [Đăng ký bằng OTP](./phase-02-tai-khoan-phan-quyen-audit.md) | Chưa gán | IN_PROGRESS | BE đăng ký + xác minh bằng link email (ADR-003 email) xong; FE `/verify-register` xong. Còn: form đăng ký FE, test |
+| `P02-S03` | [Quản lý vòng đời phiên](./phase-02-tai-khoan-phan-quyen-audit.md) | Chưa gán | IN_PROGRESS | Cookie/CSRF session (AUTH-001), khóa tạm (ADR-004), quên/đặt lại mật khẩu BE, `RequireSession` FE. Còn: đổi mật khẩu, FE đặt lại mật khẩu, test bảo mật |
+| `P02-S04` | [Thực thi RBAC có audit](./phase-02-tai-khoan-phan-quyen-audit.md) | Chưa gán | IN_PROGRESS | API đổi vai trò có audit + `GET /api/audit-logs` (Admin). Còn: chặn hạ quyền Admin gốc, FE đổi vai trò/tra cứu audit, test ma trận RBAC |
 | `AUTH-001-T01` | [Thiết lập test backend](./AUTH-001-browser-cookie-session.md#task-auth-001-t01-thiết-lập-bề-mặt-test-backend-không-ghi-đè-file-untracked) | Codex | DONE | `dotnet test backend.sln --no-build --no-restore`: 16 passed |
 | `AUTH-001-T02` | [Nền cookie, CSRF và token source](./AUTH-001-browser-cookie-session.md#task-auth-001-t02-dựng-nền-cookie-csrf-và-chọn-nguồn-access-token) | Codex | DONE | Cookie/CSRF/Origin unit tests; backend temporary build passed |
 | `AUTH-001-T03` | [Contract login/session/refresh/logout](./AUTH-001-browser-cookie-session.md#task-auth-001-t03-chuyển-loginsessionrefresh-và-logout-sang-contract-cookie) | Codex | IN_REVIEW | Local OpenAPI verified; browser login flow still needs environment-backed UAT |
 | `AUTH-001-T04` | [Axios credential và CSRF memory state](./AUTH-001-browser-cookie-session.md#task-auth-001-t04-chuyển-axios-sang-credentialed-request-và-csrf-memory-state) | Codex | DONE | `bun run test`, `bun run lint`, `bun run build` passed |
 | `AUTH-001-T05` | [Session in-memory và route guard](./AUTH-001-browser-cookie-session.md#task-auth-001-t05-chuyển-authprovider-và-route-guard-sang-session-in-memory) | Codex | IN_REVIEW | Session/storage/route tests passed; browser UAT still required |
 | `AUTH-001-T06` | [Contract regeneration và regression](./AUTH-001-browser-cookie-session.md#task-auth-001-t06-regenerate-contract-và-chạy-regression-liên-tầng) | Codex | IN_REVIEW | OpenAPI regenerated; backend 16 tests and frontend 34 tests passed |
-| `P03-S01` | [Quản lý phân cấp danh mục](./phase-03-danh-muc-an-ban-ban-sach.md) | Chưa gán | TODO | — |
-| `P03-S02` | [Tra cứu ấn bản bằng ISBN](./phase-03-danh-muc-an-ban-ban-sach.md) | Chưa gán | TODO | — |
-| `P03-S03` | [Quản lý bản vật lý](./phase-03-danh-muc-an-ban-ban-sach.md) | Chưa gán | TODO | — |
-| `P03-S04` | [Tra cứu chi tiết bản sách](./phase-03-danh-muc-an-ban-ban-sach.md) | Chưa gán | TODO | — |
+| `P03-S01` | [Quản lý phân cấp danh mục](./phase-03-danh-muc-an-ban-ban-sach.md) | Chưa gán | IN_PROGRESS | BE CRUD/status/xóa có ràng buộc xong; FE danh sách/form xong. Còn: chế độ chỉ xem theo vai trò, test quan hệ/quyền, E2E |
+| `P03-S02` | [Tra cứu ấn bản bằng ISBN](./phase-03-danh-muc-an-ban-ban-sach.md) | Chưa gán | IN_PROGRESS | ISBN tùy chọn, không unique; FE nhập thủ công. Còn: adapter Google Books/Open Library (INT-BOOK-001), chọn ứng viên, test |
+| `P03-S03` | [Quản lý bản vật lý](./phase-03-danh-muc-an-ban-ban-sach.md) | Chưa gán | IN_PROGRESS | BE barcode/Grade/giá/kênh/trạng thái/audit/in tem xong (PR #21). Còn: UI lịch sử + in tem, constraint test `AVAILABLE`, E2E |
+| `P03-S04` | [Tra cứu chi tiết bản sách](./phase-03-danh-muc-an-ban-ban-sach.md) | Chưa gán | IN_PROGRESS | BE tìm kiếm phân trang + `by-barcode` xong. Còn: UI quét CopyBarcode/ISBN, test không lẫn bản cùng ISBN, E2E |
 | `P04-S01` | [Quản lý hồ sơ khách](./phase-04-khach-hang-thanh-vien.md) | Chưa gán | TODO | — |
 | `P04-S02` | [Tính chính sách thành viên](./phase-04-khach-hang-thanh-vien.md) | Chưa gán | TODO | — |
 | `P04-S03` | [Tra cứu nghĩa vụ khách](./phase-04-khach-hang-thanh-vien.md) | Chưa gán | TODO | — |

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Button, Card, TextField } from '@/components/common'
+import { Button, Card, SelectBox, TextField } from '@/components/common'
 import { catalogPaths } from '../catalog.route'
 import { useCreateTitleMutation, useSeriesQuery, useTitlesQuery } from '../catalog.hook'
 import { ActiveBadge } from '../components/CatalogStatusBadge'
@@ -34,13 +34,13 @@ export default function TitleListPage() {
       <Card className="overflow-hidden" padding="none">
         <div className="grid gap-3 border-b border-slate-100 p-4 lg:grid-cols-[minmax(0,1fr)_280px_220px] lg:items-end">
           <TextField label="Tìm đầu sách" onChange={(event) => setSearch(event.target.value)} placeholder="Tên sách hoặc tác giả…" value={search} />
-          <label className="block rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 focus-within:border-indigo-600 focus-within:ring-3 focus-within:ring-indigo-600/15">
-            <span className="block text-xs font-semibold text-slate-500">Lọc theo bộ sách</span>
-            <select className="mt-1 block w-full bg-transparent text-[15px] text-indigo-950 outline-none" onChange={(event) => setSearchParams(event.target.value ? { seriesId: event.target.value } : {})} value={seriesId}>
-              <option value="">Tất cả đầu sách</option>
-              {series.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-            </select>
-          </label>
+          <SelectBox
+            label="Lọc theo bộ sách"
+            onChange={(value) => setSearchParams(value ? { seriesId: value } : {})}
+            options={[{ value: '', label: 'Tất cả đầu sách' }, ...series.map((item) => ({ value: item.id, label: item.name }))]}
+            searchPlaceholder="Tìm bộ sách…"
+            value={seriesId}
+          />
           <p className="rounded-xl bg-slate-50 px-3 py-3 text-xs leading-5 text-slate-600"><strong className="text-slate-900">{titles.length}</strong> đầu sách phù hợp<br />Sách độc lập vẫn được quản lý đầy đủ.</p>
         </div>
         {titlesQuery.isLoading ? <LoadingRows /> : titlesQuery.error ? <ErrorState message="Không thể tải danh mục đầu sách." /> : (

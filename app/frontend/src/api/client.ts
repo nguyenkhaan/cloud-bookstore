@@ -12,8 +12,12 @@ const USER_STORAGE_KEY = 'cloud-bookstore.user-info'
 const UNSAFE_METHODS = new Set(['delete', 'patch', 'post', 'put'])
 const AUTH_ENDPOINTS = new Set(['/auth/login', '/auth/logout', '/auth/refresh'])
 
-type RetryableRequest = InternalAxiosRequestConfig & { _sessionRetried?: boolean }
+type RetryableRequest = InternalAxiosRequestConfig & { _sessionRetried?: boolean; _csrfRetried?: boolean }
 type SessionRecovery = () => Promise<void>
+type CsrfRecovery = () => Promise<void>
+
+/** Backend code for a 403 caused by a missing/stale CSRF token (not a role/RBAC 403). */
+export const CSRF_REJECTED_CODE = 'CSRF_TOKEN_INVALID'
 type SessionExpiredHandler = () => void
 
 function getSessionStorage(): Storage | null {
@@ -54,6 +58,7 @@ let csrfToken: string | null = readStoredCsrfToken()
 let refreshInFlight: Promise<void> | null = null
 let sessionRecovery: SessionRecovery | null = null
 let sessionExpiredHandler: SessionExpiredHandler | null = null
+let csrfRecovery: CsrfRecovery | null = null
 
 export function setCsrfToken(token: string): void {
   csrfToken = token
@@ -109,6 +114,16 @@ export function setSessionExpiredHandler(handler: SessionExpiredHandler | null):
   sessionExpiredHandler = handler
 }
 
+export function setCsrfRecovery(recovery: CsrfRecovery | null): void {
+  csrfRecovery = recovery
+}
+
+export function isCsrfRejection(error: unknown): boolean {
+  if (!axios.isAxiosError(error) || error.response?.status !== 403) return false
+  const data: unknown = error.response.data
+  return typeof data === 'object' && data !== null && 'code' in data && data.code === CSRF_REJECTED_CODE
+}
+
 function createClient() {
   const client = axios.create({
     baseURL: API_BASE_URL,
@@ -147,6 +162,15 @@ privateClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError<unknown>) => {
     const request = error.config as RetryableRequest | undefined
+
+    // Another tab or a token refresh may have moved this session to a newer CSRF token:
+    // reload it from the session endpoint and replay the request once.
+    if (isCsrfRejection(error) && request && !request._csrfRetried && csrfRecovery) {
+      request._csrfRetried = true
+      await csrfRecovery()
+      return privateClient.request(request)
+    }
+
     const isAuthenticationEndpoint = AUTH_ENDPOINTS.has(String(request?.url))
     if (
       error.response?.status !== 401 ||

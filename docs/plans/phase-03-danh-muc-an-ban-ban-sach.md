@@ -12,15 +12,15 @@ Quản lý đúng mô hình `Bộ sách → Đầu sách/tập → Ấn bản �
 
 **Công việc:**
 
-- [ ] BE tạo migration, API CRUD có phân trang/lọc và quy tắc ngừng sử dụng thay vì xóa dữ liệu đã được tham chiếu.
-- [ ] FE có màn hình danh sách/form cho Quản lý kho và chế độ chỉ xem cho vai trò khác.
+- [x] BE tạo migration, API CRUD có phân trang/lọc và quy tắc ngừng sử dụng thay vì xóa dữ liệu đã được tham chiếu.
+- [ ] FE có màn hình danh sách/form cho Quản lý kho và chế độ chỉ xem cho vai trò khác. _(Đã có danh sách/form bộ, đầu sách, ấn bản, bản sách; chưa ẩn thao tác ghi theo vai trò.)_
 - [ ] Test quan hệ bộ–tập, thể loại và quyền.
 
 **Acceptance:**
 
-- [ ] Sách độc lập không cần bộ.
-- [ ] một bộ có nhiều tập.
-- [ ] dữ liệu đã dùng không bị xóa vật lý.
+- [x] Sách độc lập không cần bộ.
+- [x] một bộ có nhiều tập.
+- [x] dữ liệu đã dùng không bị xóa vật lý. _(API DELETE từ chối khi còn dữ liệu con; dùng PATCH status để ngừng sử dụng.)_
 
 **Verification:**
 
@@ -41,14 +41,14 @@ Quản lý đúng mô hình `Bộ sách → Đầu sách/tập → Ấn bản �
 
 **Công việc:**
 
-- [ ] BE lưu ISBN tùy chọn, không unique; adapter Google Books/Open Library chỉ trả gợi ý.
-- [ ] FE cho phép quét/nhập ISBN, chọn ứng viên, xác nhận metadata hoặc nhập thủ công.
+- [ ] BE lưu ISBN tùy chọn, không unique; adapter Google Books/Open Library chỉ trả gợi ý. _(ISBN tùy chọn + index không unique đã xong; chưa có adapter Google Books/Open Library.)_
+- [ ] FE cho phép quét/nhập ISBN, chọn ứng viên, xác nhận metadata hoặc nhập thủ công. _(Mới có nhập thủ công trong form ấn bản.)_
 - [ ] Test cùng ISBN cho nhiều ấn bản, sách không ISBN và API ngoài lỗi.
 
 **Acceptance:**
 
 - [ ] Nhân viên phải xác nhận NXB/năm/lần in/định dạng trước khi lưu.
-- [ ] lỗi API không chặn nhập thủ công.
+- [x] lỗi API không chặn nhập thủ công. _(Hiện chỉ có luồng nhập thủ công; cần kiểm lại khi thêm adapter.)_
 
 **Verification:**
 
@@ -78,14 +78,14 @@ Quản lý đúng mô hình `Bộ sách → Đầu sách/tập → Ấn bản �
 
 **Công việc:**
 
-- [ ] BE quản lý CopyBarcode unique, Grade, giá, nguồn, trạng thái và khả năng `BOTH/SALE_ONLY/RENTAL_ONLY`.
-- [ ] FE có form tạo/định giá, xem lịch sử trạng thái và in/tái in tem theo quyền.
+- [x] BE quản lý CopyBarcode unique, Grade, giá, nguồn, trạng thái và khả năng `BOTH/SALE_ONLY/RENTAL_ONLY`.
+- [ ] FE có form tạo/định giá, xem lịch sử trạng thái và in/tái in tem theo quyền. _(Form tạo/định giá đã có; service/hook lịch sử và in tem đã có nhưng chưa gắn vào UI.)_
 - [ ] Test không cho `AVAILABLE` khi thiếu ấn bản, tình trạng, CopyBarcode hoặc giá bán.
 
 **Acceptance:**
 
-- [ ] Tái in tem không tạo bản mới.
-- [ ] thay đổi kênh/trạng thái có audit.
+- [x] Tái in tem không tạo bản mới. _(BE `POST /api/book-copies/{id}/label`.)_
+- [x] thay đổi kênh/trạng thái có audit.
 
 **Verification:**
 
@@ -106,13 +106,13 @@ Quản lý đúng mô hình `Bộ sách → Đầu sách/tập → Ấn bản �
 
 **Công việc:**
 
-- [ ] BE tìm theo CopyBarcode, ISBN, tên, tác giả, Grade, trạng thái và kênh; phân trang ở server.
-- [ ] FE tối ưu cho máy quét/bàn phím, hiển thị rõ ấn bản và bản vật lý.
+- [x] BE tìm theo CopyBarcode, ISBN, tên, tác giả, Grade, trạng thái và kênh; phân trang ở server.
+- [ ] FE tối ưu cho máy quét/bàn phím, hiển thị rõ ấn bản và bản vật lý. _(Hook tra theo CopyBarcode đã có; chưa có màn hình quét.)_
 - [ ] Test kết quả không lẫn các bản có cùng ISBN.
 
 **Acceptance:**
 
-- [ ] Quét CopyBarcode mở đúng một bản.
+- [ ] Quét CopyBarcode mở đúng một bản. _(BE `GET /api/book-copies/by-barcode/{copyBarcode}` đã có; chờ UI.)_
 - [ ] quét ISBN trả danh sách ấn bản ứng viên.
 
 **Verification:**
