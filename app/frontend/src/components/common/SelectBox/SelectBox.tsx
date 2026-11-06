@@ -163,7 +163,7 @@ export function SelectBox<T extends string>({
     }
   }
 
-  const resultLabel = options.length === 0 ? emptyMessage : `${visibleOptions.length} kết quả`
+  const resultLabel = `${visibleOptions.length} kết quả`
 
   return (
     <div
@@ -197,6 +197,11 @@ export function SelectBox<T extends string>({
       {isOpen && position && createPortal(
         <div
           className="fixed z-[60] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_12px_28px_-8px_rgba(15,23,42,0.18),0_2px_6px_rgba(15,23,42,0.06)]"
+          // Clicking the scrollbar, footer or empty space must not move focus off the search input,
+          // otherwise Escape would bubble to a surrounding dialog and close it.
+          onMouseDown={(event) => {
+            if (event.target !== searchRef.current) event.preventDefault()
+          }}
           ref={menuRef}
           style={position}
         >
@@ -259,7 +264,8 @@ export function SelectBox<T extends string>({
             <span aria-hidden="true">↑↓ chọn · Enter · Esc</span>
           </div>
         </div>,
-        document.body,
+        // Inside an aria-modal dialog, content outside the dialog is hidden from assistive tech.
+        wrapperRef.current?.closest('[role="dialog"]') ?? document.body,
       )}
     </div>
   )

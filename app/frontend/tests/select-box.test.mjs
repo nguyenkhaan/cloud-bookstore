@@ -61,6 +61,12 @@ describe('select box search and keyboard logic', { concurrency: false }, () => {
     assert.equal(utils.moveActiveIndex('ArrowDown', -1, 0), -1)
     assert.equal(utils.moveActiveIndex('ArrowUp', -1, 3), 2)
   })
+
+  test('decomposed (NFD) Vietnamese input still matches accented labels', () => {
+    const decomposed = 'Kỳ'.normalize('NFD')
+    assert.equal(utils.normalizeSearchText(decomposed), 'ky')
+    assert.deepEqual(utils.filterOptions(opts, decomposed).map((o) => o.value), ['ky'])
+  })
 })
 
 test('SelectBox renders an accessible portal listbox with search and safe Escape handling', () => {
@@ -101,4 +107,19 @@ test('search input is focused only after the portal menu has actually rendered',
   const src = read('components/common/SelectBox/SelectBox.tsx')
   assert.match(src, /const isMenuRendered = isOpen && position !== null/)
   assert.match(src, /if \(isMenuRendered\) searchRef\.current\?\.focus\(\)\s*\}, \[isMenuRendered\]\)/)
+})
+
+test('clicks inside the menu never steal focus from the search input', () => {
+  const src = read('components/common/SelectBox/SelectBox.tsx')
+  assert.match(src, /onMouseDown=\{\(event\) => \{\s*if \(event\.target !== searchRef\.current\) event\.preventDefault\(\)\s*\}\}\s*ref=\{menuRef\}/)
+})
+
+test('menu is portaled inside the surrounding modal dialog so assistive tech can reach it', () => {
+  const src = read('components/common/SelectBox/SelectBox.tsx')
+  assert.match(src, /wrapperRef\.current\?\.closest\('\[role="dialog"\]'\) \?\? document\.body/)
+})
+
+test('empty-list message is not repeated in the footer', () => {
+  const src = read('components/common/SelectBox/SelectBox.tsx')
+  assert.doesNotMatch(src, /options\.length === 0 \? emptyMessage/)
 })

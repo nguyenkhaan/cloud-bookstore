@@ -23,7 +23,8 @@ function foldText(text: string): string {
 }
 
 export function normalizeSearchText(text: string): string {
-  return foldText(text).trim()
+  // Some Vietnamese input methods emit decomposed (NFD) text; compose it before folding.
+  return foldText(text.normalize('NFC')).trim()
 }
 
 export function filterOptions<T extends string>(options: SelectOption<T>[], query: string): SelectOption<T>[] {

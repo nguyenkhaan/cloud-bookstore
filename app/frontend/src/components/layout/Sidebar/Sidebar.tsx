@@ -83,7 +83,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 ComicPOS
               </span>
               <span className="text-[9px] font-semibold tracking-wider text-slate-400 mt-1 uppercase">
-                Old Books • New Stories
+                Cloud Books • New Stories
               </span>
             </div>
           )}
