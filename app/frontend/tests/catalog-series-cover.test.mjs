@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
@@ -49,4 +49,39 @@ test('series card link name comes from visible text and keeps status/progress as
   for (const part of ['name', 'cta', 'status', 'details']) {
     assert.match(page, new RegExp(`id=\\{\`series-\\$\\{item\\.id\\}-${part}\`\\}`))
   }
+})
+
+test('series cards provide separate edit and delete controls without a mutation', () => {
+  const page = source('features', 'catalog', 'pages', 'SeriesListPage.tsx')
+  const actionsPath = path.join(frontendRoot, 'src', 'features', 'catalog', 'components', 'SeriesCardActions.tsx')
+  const confirmationPath = path.join(frontendRoot, 'src', 'components', 'common', 'ConfirmationDialog', 'ConfirmationDialog.tsx')
+
+  assert.ok(existsSync(actionsPath), 'SeriesCardActions should exist')
+  assert.ok(existsSync(confirmationPath), 'ConfirmationDialog should exist as a shared component')
+  const actions = readFileSync(actionsPath, 'utf8')
+  const confirmation = readFileSync(confirmationPath, 'utf8')
+
+  assert.match(page, /import \{ SeriesCardActions \} from '\.\.\/components\/SeriesCardActions'/)
+  assert.match(page, /<SeriesCardActions series=\{item\} \/>/)
+  assert.match(actions, /Pencil/)
+  assert.match(actions, /Trash2/)
+  assert.match(actions, /aria-label=\{`Chỉnh sửa \$\{series\.name\}`\}/)
+  assert.match(actions, /aria-label=\{`Xóa \$\{series\.name\}`\}/)
+  assert.match(actions, /Thông tin chung/)
+  assert.match(actions, /Ảnh bìa/)
+  assert.match(actions, /import \{ Button, ConfirmationDialog, TextField \} from '@\/components\/common'/)
+  assert.match(actions, /<ConfirmationDialog/)
+  assert.match(actions, /message=\{`Chỉ có thể xóa bộ sách/)
+  assert.match(actions, /actions=\{<>/)
+  assert.match(confirmation, /message: string/)
+  assert.match(confirmation, /actions: ReactNode/)
+  assert.doesNotMatch(actions, /useDeleteSeriesMutation|deleteSeries\(/)
+})
+
+test('catalog dialogs restore opener focus and keep the backdrop out of tab order', () => {
+  const dialog = source('features', 'catalog', 'components', 'CatalogDialog.tsx')
+
+  assert.match(dialog, /triggerRef\?: RefObject<HTMLButtonElement \| null>/)
+  assert.match(dialog, /triggerRef\?\.current\?\.focus\(\)/)
+  assert.match(dialog, /aria-label="Đóng hộp thoại"[\s\S]*tabIndex=\{-1\}/)
 })

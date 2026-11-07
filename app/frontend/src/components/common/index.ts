@@ -2,6 +2,7 @@ export * from './Toast';
 export * from './Badge';
 export * from './Button';
 export * from './Card';
+export * from './ConfirmationDialog';
 export * from './Icons';
 export * from './Logo';
 export * from './StatCard';

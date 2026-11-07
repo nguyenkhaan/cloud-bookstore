@@ -7,6 +7,7 @@ import { useCreateSeriesMutation, useSeriesQuery } from '../catalog.hook'
 import { ActiveBadge } from '../components/CatalogStatusBadge'
 import { CatalogDialog } from '../components/CatalogDialog'
 import { CatalogWorkspace } from '../components/CatalogWorkspace'
+import { SeriesCardActions } from '../components/SeriesCardActions'
 import { SeriesCoverStack } from '../components/SeriesCoverStack'
 
 export default function SeriesListPage() {
@@ -68,18 +69,18 @@ export default function SeriesListPage() {
               const present = item.titleCount ?? 0
               const progress = expected > 0 ? Math.min(100, Math.round((present / expected) * 100)) : 0
               return (
+                <div className="relative min-w-0" key={item.id}>
                 <Link
                   aria-describedby={`series-${item.id}-status series-${item.id}-details`}
                   aria-labelledby={`series-${item.id}-name series-${item.id}-cta`}
-                  className="group flex min-w-0 gap-4 rounded-xl border border-transparent bg-white p-4 pt-5 transition-colors hover:border-indigo-200 focus-visible:border-indigo-300 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-indigo-600/30"
-                  key={item.id}
+                  className="group flex min-w-0 gap-4 rounded-xl border border-transparent bg-white p-4 pt-5 pr-24 transition-colors hover:border-indigo-200 focus-visible:border-indigo-300 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-indigo-600/30"
                   to={catalogPaths.titlesForSeries(item.id)}
                 >
                   <SeriesCoverStack imageUrl={item.imageUrl} name={item.name} titleCount={item.titleCount} key={item.imageUrl ?? 'no-cover'} />
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-3">
+                    <div>
                       <h3 className="min-w-0 text-sm font-bold text-slate-900" id={`series-${item.id}-name`}>{item.name}</h3>
-                      <span id={`series-${item.id}-status`}><ActiveBadge active={item.isActive} /></span>
+                      <span className="mt-1 inline-flex" id={`series-${item.id}-status`}><ActiveBadge active={item.isActive} /></span>
                     </div>
                     <div id={`series-${item.id}-details`}>
                     <p className="mt-1 line-clamp-2 min-h-10 text-xs leading-5 text-slate-500">{item.description || 'Chưa có mô tả cho bộ sách này.'}</p>
@@ -98,6 +99,8 @@ export default function SeriesListPage() {
                     </span>
                   </div>
                 </Link>
+                <SeriesCardActions series={item} />
+                </div>
               )
             })}
             {!series.length && <EmptyState />}
