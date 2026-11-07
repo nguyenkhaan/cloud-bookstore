@@ -1,9 +1,14 @@
 import assert from 'node:assert/strict'
 import { after, before, test } from 'node:test'
+import { existsSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import path from 'node:path'
 import { createServer } from 'vite'
 
 let catalogRoutes
+let workspaceRoutes
 let server
+const frontendRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 before(async () => {
   server = await createServer({
@@ -11,6 +16,7 @@ before(async () => {
     server: { hmr: false, middlewareMode: true },
   })
   catalogRoutes = await server.ssrLoadModule('/src/features/catalog/catalog.route.ts')
+  workspaceRoutes = await server.ssrLoadModule('/src/features/workspace/workspace.route.ts')
 })
 
 after(async () => {
@@ -30,4 +36,21 @@ test('catalog list links retain the series filter when moving from a series into
     catalogRoutes.catalogPaths.titlesForSeries('series-24'),
     '/catalog/titles?seriesId=series-24',
   )
+})
+
+test('every sidebar workspace has a route and a feature-owned placeholder page', () => {
+  const expectedModules = {
+    pos: '/pos',
+    customers: '/customers',
+    hr: '/hr',
+    approvals: '/approvals',
+    audit: '/audit',
+    reports: '/reports',
+    settings: '/settings',
+  }
+
+  for (const [module, route] of Object.entries(expectedModules)) {
+    assert.equal(workspaceRoutes.workspacePaths[module], route)
+    assert.ok(existsSync(path.join(frontendRoot, 'src', 'features', module, 'pages')), `${module} needs a feature page`)
+  }
 })

@@ -1,12 +1,12 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout';
 import { Card, StatCard, SearchIcon } from '@/components/common';
 import { useAuth } from '@/features/auth/auth.hook';
+import { workspacePathFor } from '@/features/workspace/workspace.route';
 import type { DashboardPageProps } from '@/features/dashboard/dashboard.type';
 
 export function DashboardPage({ onSignOut }: DashboardPageProps) {
-  const [currentTab, setCurrentTab] = useState('overview');
+  const currentTab = 'overview';
   const navigate = useNavigate();
   const { session } = useAuth();
 
@@ -17,11 +17,8 @@ export function DashboardPage({ onSignOut }: DashboardPageProps) {
       onSignOut={onSignOut}
       currentPath={currentTab}
       onNavigate={(id) => {
-        if (id === 'inventory') {
-          navigate('/catalog/series');
-          return;
-        }
-        setCurrentTab(id);
+        const path = workspacePathFor(id);
+        if (path) navigate(path);
       }}
       screenCode={currentTab === 'overview' ? 'SCR-REP-01 / TỔNG QUAN' : undefined}
       pageTitle={currentTab === 'overview' ? 'Tổng quan kinh doanh' : undefined}
@@ -30,16 +27,7 @@ export function DashboardPage({ onSignOut }: DashboardPageProps) {
       {currentTab === 'overview' ? (
         <div className="space-y-6">
           <div className="flex items-center justify-between text-xs text-slate-500">
-            <span>Chào {currentUser.name}, đây là nhịp vận hành Nhà sách Mây hôm nay</span>
-            {onSignOut && (
-              <button
-                type="button"
-                onClick={onSignOut}
-                className="text-xs font-semibold text-rose-600 hover:text-rose-700 cursor-pointer"
-              >
-                Đăng xuất
-              </button>
-            )}
+            <span className="text-base font-bold text-black">👋 Chúc một ngày tốt lành, {currentUser.name}</span>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -86,7 +74,7 @@ export function DashboardPage({ onSignOut }: DashboardPageProps) {
                 <p className="text-slate-600 mt-1 text-[11px]">5 đầu sách không còn bản khả dụng. Cần tạo phiếu nhập kho.</p>
               </div>
               <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 text-xs">
-                <span className="font-bold text-emerald-700">Đối soát VietQR</span>
+                <span className="font-bold text-emerald-700">VietQR</span>
                 <p className="text-slate-600 mt-1 text-[11px]">Tất cả giao dịch trực tuyến đã khớp lệnh thành công.</p>
               </div>
             </div>

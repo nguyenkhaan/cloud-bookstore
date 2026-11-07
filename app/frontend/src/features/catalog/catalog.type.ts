@@ -1,4 +1,5 @@
 import type { CloudinaryUploadResultRequest } from '@/features/uploads/upload.type'
+import type { components } from '@/contract/api-contract'
 
 export type CatalogStatus = 'ACTIVE' | 'INACTIVE'
 export type CopyStatus = 'PENDING_RECEIPT' | 'AVAILABLE' | 'RENTED' | 'SOLD' | 'DAMAGED'
@@ -59,12 +60,7 @@ export type CreateSeriesRequest = Pick<BookSeries, 'name' | 'description'> & {
   expectedVolumeCount?: number | null
   imageUpload?: CloudinaryUploadResultRequest | null
 }
-export type UpdateSeriesRequest = {
-  name: string
-  description?: string | null
-  expectedVolumeCount?: number | null
-  imageUpload?: CloudinaryUploadResultRequest | null
-}
+export type UpdateSeriesRequest = Pick<components['schemas']['UpdateBookSeriesRequest'], 'name' | 'description'>
 
 export type SaveTitleRequest = Pick<BookTitle, 'name' | 'seriesId' | 'volumeLabel' | 'author' | 'description'> & {
   imageUpload?: CloudinaryUploadResultRequest | null

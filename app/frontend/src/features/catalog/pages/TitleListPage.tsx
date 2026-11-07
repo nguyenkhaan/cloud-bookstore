@@ -41,7 +41,7 @@ export default function TitleListPage() {
             searchPlaceholder="Tìm bộ sách…"
             value={seriesId}
           />
-          <p className="rounded-xl bg-slate-50 px-3 py-3 text-xs leading-5 text-slate-600"><strong className="text-slate-900">{titles.length}</strong> đầu sách phù hợp<br />Sách độc lập vẫn được quản lý đầy đủ.</p>
+          <p className="px-3 py-3 text-xs leading-5 text-slate-600"><strong className="text-slate-900">{titles.length}</strong> đầu sách phù hợp</p>
         </div>
         {titlesQuery.isLoading ? <LoadingRows /> : titlesQuery.error ? <ErrorState message="Không thể tải danh mục đầu sách." /> : (
           <div className="divide-y divide-slate-100">

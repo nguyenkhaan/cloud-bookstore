@@ -48,8 +48,8 @@ export default function SeriesListPage() {
     >
       <section className="grid gap-4 md:grid-cols-3">
         <Metric label="Tổng số bộ sách" tone="indigo" value={String(series.length)} />
-        <Metric label="Đủ bộ theo khai báo" tone="emerald" value={String(completedSeries)} />
-        <Metric label="Cần bổ sung tập" tone="amber" value={String(series.filter((item) => item.expectedVolumeCount && item.titleCount !== item.expectedVolumeCount).length)} />
+        <Metric label="Đang hoạt động" tone="emerald" value={String(completedSeries)} />
+        <Metric label="Cần bổ sung" tone="amber" value={String(series.filter((item) => item.expectedVolumeCount && item.titleCount !== item.expectedVolumeCount).length)} />
       </section>
 
       <Card className="overflow-hidden" padding="none">

@@ -16,6 +16,7 @@ import {
 } from '@/components/common/Icons';
 import { Badge, type BadgeVariant } from '@/components/common/Badge';
 import { Logo } from '@/components/common/Logo';
+import { brand } from '@/lib/brand';
 
 export interface NavItem {
   id: string;
@@ -43,7 +44,7 @@ const DEFAULT_NAV_ITEMS: NavItem[] = [
   { id: 'inventory', label: 'Kho & đầu sách', icon: InventoryIcon },
   { id: 'customers', label: 'Khách hàng', icon: CustomerIcon },
   { id: 'hr', label: 'Nhân sự & tiền lương', icon: StaffIcon },
-  { id: 'approvals', label: 'Phê duyệt', icon: ApprovalIcon, badge: '08', badgeVariant: 'orange' },
+  { id: 'approvals', label: 'Phê duyệt', icon: ApprovalIcon },
   { id: 'audit', label: 'Nhật ký kiểm toán', icon: AuditIcon },
   { id: 'reports', label: 'Báo cáo & thuế', icon: ReportIcon },
   { id: 'settings', label: 'Cấu hình hệ thống', icon: SettingsIcon },
@@ -55,9 +56,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isCollapsed = false,
   onToggleCollapse,
   onSignOut,
-  storeName = 'Nhà sách Mây',
-  branchName = 'Cơ sở 01',
-  storeAddress = 'Quận 3, TP. Hồ Chí Minh',
+  storeName = brand.storeName,
+  storeAddress = brand.address,
 }) => {
   const handleSignOut = () => {
     onSignOut?.();
@@ -76,7 +76,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {!isCollapsed ? (
           <div className="mb-4 rounded-xl border border-slate-200/70 bg-slate-50/80 p-2.5 px-3 transition-colors">
             <div className="text-xs font-semibold text-slate-800">
-              {storeName} • {branchName}
+              {storeName}
             </div>
             <div className="text-[11px] text-slate-500 mt-0.5">{storeAddress}</div>
           </div>
@@ -103,7 +103,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 type="button"
                 onClick={() => onNavigate?.(item.id)}
                 title={isCollapsed ? item.label : undefined}
-                className={`group flex w-full items-center rounded-xl px-3 py-2.5 text-xs font-medium transition-all ${
+                className={`group flex w-full cursor-pointer items-center rounded-xl px-3 py-2.5 text-xs font-medium transition-all ${
                   isActive
                     ? 'bg-indigo-50 text-indigo-600 font-semibold shadow-xs'
                     : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900'
@@ -139,19 +139,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <HeadphonesIcon size={15} />
               </div>
               <div>
-                <div className="text-xs font-semibold text-slate-800">
-                  Luôn sẵn sàng hỗ trợ
-                </div>
-                <div className="text-[11px] leading-relaxed text-slate-500 mt-0.5">
-                  Hướng dẫn nghiệp vụ và phím tắt tại quầy.
-                </div>
-                <a
-                  href="#support"
-                  className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 transition-colors hover:text-indigo-700"
-                >
-                  <span>Mở trung tâm trợ giúp</span>
-                  <ExternalLinkIcon size={11} />
-                </a>
+              <a
+                href="mailto:bookstore@gmail.com"
+                className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 transition-colors hover:text-indigo-700"
+              >
+                <span>Liên hệ trợ giúp</span>
+                <ExternalLinkIcon size={11} />
+              </a>
               </div>
             </div>
           </div>

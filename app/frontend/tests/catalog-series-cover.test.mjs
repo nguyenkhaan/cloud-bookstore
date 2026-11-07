@@ -51,7 +51,7 @@ test('series card link name comes from visible text and keeps status/progress as
   }
 })
 
-test('series cards provide separate edit and delete controls without a mutation', () => {
+test('series cards provide separate edit and delete controls without a delete mutation', () => {
   const page = source('features', 'catalog', 'pages', 'SeriesListPage.tsx')
   const actionsPath = path.join(frontendRoot, 'src', 'features', 'catalog', 'components', 'SeriesCardActions.tsx')
   const confirmationPath = path.join(frontendRoot, 'src', 'components', 'common', 'ConfirmationDialog', 'ConfirmationDialog.tsx')
@@ -76,6 +76,39 @@ test('series cards provide separate edit and delete controls without a mutation'
   assert.match(confirmation, /message: string/)
   assert.match(confirmation, /actions: ReactNode/)
   assert.doesNotMatch(actions, /useDeleteSeriesMutation|deleteSeries\(/)
+})
+
+test('series details submit uses update and status mutations with an explicit pending state', () => {
+  const actions = source('features', 'catalog', 'components', 'SeriesCardActions.tsx')
+
+  assert.match(actions, /useUpdateSeriesMutation, useUpdateSeriesStatusMutation/)
+  assert.match(actions, /const updateSeries = useUpdateSeriesMutation\(\)/)
+  assert.match(actions, /const updateStatus = useUpdateSeriesStatusMutation\(\)/)
+  assert.match(actions, /const handleDetailsSubmit = async \(event: FormEvent<HTMLFormElement>\)/)
+  assert.match(actions, /await updateSeries\.mutateAsync\(\{ seriesId: series\.id, request: \{ name: trimmedName, description: description\.trim\(\) \|\| null \} \}\)/)
+  assert.match(actions, /if \(isActive !== series\.isActive\)/)
+  assert.match(actions, /await updateStatus\.mutateAsync\(\{ seriesId: series\.id, isActive \}\)/)
+  assert.match(actions, /Thông tin chung đã được lưu, nhưng không thể cập nhật trạng thái\./)
+  assert.match(actions, /loading=\{isSaving\}[\s\S]*\{isSaving \? 'Đang lưu…' : 'Lưu thay đổi'\}/)
+  assert.match(actions, /role="alert"/)
+  assert.doesNotMatch(actions, /useDeleteSeriesMutation|deleteSeries\(/)
+})
+
+test('series cover uploads directly, previews the Cloudinary result, and never deletes', () => {
+  const actions = source('features', 'catalog', 'components', 'SeriesCardActions.tsx')
+
+  assert.match(actions, /useReplaceSeriesImageMutation/)
+  assert.match(actions, /uploadImage\('BOOK_SERIES_IMAGE', file\)/)
+  assert.match(actions, /const \[pendingImage, setPendingImage\] = useState<UploadedImage \| null>\(null\)/)
+  assert.match(actions, /const \[uploadedPreviewUrl, setUploadedPreviewUrl\] = useState<string \| null>\(null\)/)
+  assert.match(actions, /const previewUrl = uploadedPreviewUrl \?\? series\.imageUrl/)
+  assert.match(actions, /src=\{previewUrl\}/)
+  assert.match(actions, /type="file"/)
+  assert.match(actions, /loading=\{isImageBusy\}/)
+  assert.match(actions, /isImageUploading \? 'Đang tải ảnh…' : replaceSeriesImage\.isPending \? 'Đang lưu ảnh…'/)
+  assert.match(actions, /if \(error instanceof CatalogApiError && error\.status === 409\)/)
+  assert.match(actions, /Thử lưu ảnh/)
+  assert.doesNotMatch(actions, /useDeleteSeriesMutation|useDeleteSeriesImageMutation|deleteSeries\(|deleteSeriesImage\(/)
 })
 
 test('catalog dialogs restore opener focus and keep the backdrop out of tab order', () => {

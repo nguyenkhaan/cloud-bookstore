@@ -58,6 +58,17 @@ test('catalog hooks export all queries and mutations matching service functions'
   }
 })
 
+test('series general-update payload is narrowed from the generated backend contract', () => {
+  const catalogType = source('features', 'catalog', 'catalog.type.ts')
+
+  assert.match(catalogType, /import type \{ components \} from '@\/contract\/api-contract'/)
+  assert.match(
+    catalogType,
+    /export type UpdateSeriesRequest = Pick<components\['schemas'\]\['UpdateBookSeriesRequest'\], 'name' \| 'description'>/,
+  )
+  assert.doesNotMatch(catalogType, /UpdateSeriesRequest = \{[\s\S]*expectedVolumeCount/)
+})
+
 test('series cards show the backend image URL instead of a name initial', () => {
   const catalogType = source('features', 'catalog', 'catalog.type.ts')
   const seriesListPage = source('features', 'catalog', 'pages', 'SeriesListPage.tsx')

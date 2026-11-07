@@ -10,6 +10,13 @@ import TitleDetailPage from '@/features/catalog/pages/TitleDetailPage'
 import TitleListPage from '@/features/catalog/pages/TitleListPage'
 import DashboardPage from '@/features/dashboard/pages/DashboardPage'
 import BookSeriesPage from '@/features/bookseries/pages/BookSeriesPage'
+import PosPage from '@/features/pos/pages/PosPage'
+import CustomersPage from '@/features/customers/pages/CustomersPage'
+import HumanResourcesPage from '@/features/hr/pages/HumanResourcesPage'
+import ApprovalsPage from '@/features/approvals/pages/ApprovalsPage'
+import AuditPage from '@/features/audit/pages/AuditPage'
+import ReportsPage from '@/features/reports/pages/ReportsPage'
+import SettingsPage from '@/features/settings/pages/SettingsPage'
 import { useAuth } from '@/features/auth/auth.hook'
 
 function LoginRoute() {
@@ -48,6 +55,13 @@ export default function AppRoutes() {
       <Route path="/login" element={<LoginRoute />} />
       <Route path="/verify-register" element={<VerifyRegisterRoute />} />
       <Route path="/dashboard" element={<RequireSession><DashboardRoute /></RequireSession>} />
+      <Route path="/pos" element={<RequireSession><PosPage /></RequireSession>} />
+      <Route path="/customers" element={<RequireSession><CustomersPage /></RequireSession>} />
+      <Route path="/hr" element={<RequireSession><HumanResourcesPage /></RequireSession>} />
+      <Route path="/approvals" element={<RequireSession><ApprovalsPage /></RequireSession>} />
+      <Route path="/audit" element={<RequireSession><AuditPage /></RequireSession>} />
+      <Route path="/reports" element={<RequireSession><ReportsPage /></RequireSession>} />
+      <Route path="/settings" element={<RequireSession><SettingsPage /></RequireSession>} />
       <Route path="/book-series" element={<RequireSession><BookSeriesPage /></RequireSession>} />
       <Route path="/catalog/series" element={<RequireSession><SeriesListPage /></RequireSession>} />
       <Route path="/catalog/titles" element={<RequireSession><TitleListPage /></RequireSession>} />

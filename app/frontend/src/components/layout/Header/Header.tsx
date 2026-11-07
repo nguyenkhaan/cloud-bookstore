@@ -74,18 +74,6 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-4">
-        {shiftName && (
-          <Badge
-            variant={isShiftOpen ? 'success' : 'neutral'}
-            size="md"
-            dot
-            pulse={isShiftOpen}
-            className="hidden sm:inline-flex"
-          >
-            {shiftName}
-          </Badge>
-        )}
-
         <button
           type="button"
           aria-label="Thông báo"
