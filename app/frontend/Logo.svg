@@ -1,0 +1,178 @@
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 340 100"
+  fill="none"
+>
+  <!-- Hand-drawn mark. Palette follows the app theme (src/index.css):
+       brand-600 #4F46E5 ink line, brand-400 #818CF8 soft detail lines,
+       brand-200 #C7D2FE cover, brand-50 #EEF2FF paper and cloud fill,
+       brand-950 #1E1B4B wordmark, slate-500 #64748B tagline. -->
+
+  <g stroke="#4F46E5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Back cover, peeking out below and beside the pages -->
+    <path
+      d="M13.5 62.5
+         C13.3 72 13.1 81 13 91
+         C28 88.5 43 90.5 52 97
+         C61 90.5 76 88 91 90.5
+         C90.9 81 90.8 72 90.6 62.5"
+      fill="#C7D2FE"
+    />
+
+    <!-- Page block: gives the book its thickness -->
+    <path
+      d="M16.2 84
+         C15.9 85.6 15.9 87 16 88.6
+         C29 85.6 43 87.6 52 93.6
+         C61 87.6 75 85.1 88.5 88.1
+         C88.4 86.6 88.3 85.1 88.2 83.5"
+      fill="#FFFFFF"
+    />
+
+    <!-- Open pages -->
+    <path
+      d="M52 65
+         C44 58.5 30 56.5 17.5 60
+         C16.8 68 16.6 76 16.2 84
+         C29 81 43 83 52 89
+         C61 83 75 80.5 88.2 83.5
+         C87.9 75 87.6 67 87 59.5
+         C74 56.5 60 58.5 52 65 Z"
+      fill="#EEF2FF"
+    />
+    <path d="M52 65 C52.4 73 51.8 81 52 89" />
+  </g>
+
+  <!-- Stacked page edges and handwritten lines -->
+  <g stroke="#818CF8" stroke-width="1.2" stroke-linecap="round">
+    <path d="M16.6 86.3 C29 83.4 43 85.4 52 91.3 C61 85.4 75 82.9 88.3 85.8" />
+    <path
+      d="M23 65.5 C30 63.5 37 63.8 44 67
+         M23.5 71 C30 69 36 69.4 43 72.6
+         M24 76.5 C30 74.8 35 75.2 40 77.4
+         M60 67 C67 63.8 74 63.5 81 65.3
+         M61 72.6 C68 69.4 74 69 80.5 70.8
+         M64 77.4 C69 75.2 74 74.8 80 76.3"
+    />
+  </g>
+
+  <!-- Idea lightbulb: an idea just popping up, tilted 30° to the left
+       in the empty top-left corner above the book -->
+  <g transform="translate(25 34) rotate(-30) scale(1.1)" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Glow rays -->
+    <path
+      d="M0 -15.5 V-19
+         M10.5 -12 L13 -14.5
+         M-10.5 -12 L-13 -14.5
+         M13 -3 H16.5
+         M-13 -3 H-16.5"
+      stroke="#818CF8"
+      stroke-width="1.6"
+    />
+    <!-- Glass -->
+    <path
+      d="M-6 3
+         C-9.6 0 -10.2 -5.6 -7.2 -9.6
+         C-4.6 -13 4.6 -13 7.2 -9.6
+         C10.2 -5.6 9.6 0 6 3
+         C4.8 4.2 4.2 5.6 4.2 7
+         H-4.2
+         C-4.2 5.6 -4.8 4.2 -6 3 Z"
+      fill="#EEF2FF"
+      stroke="#4F46E5"
+      stroke-width="2"
+    />
+    <!-- Filament and glass highlight -->
+    <path
+      d="M-2.6 2.6 L-1.4 -2.4 L0 0.4 L1.4 -2.4 L2.6 2.6
+         M-5.4 -5.6 C-5 -8.2 -3.2 -9.8 -1 -10"
+      stroke="#818CF8"
+      stroke-width="1.3"
+    />
+    <!-- Screw base -->
+    <path
+      d="M-4.2 9.6 H4.2
+         M-3.4 12.2 H3.4
+         M-1.8 14.6 H1.8"
+      stroke="#4F46E5"
+      stroke-width="2"
+    />
+  </g>
+
+  <!-- Idea bubbles rising out of the middle of the open pages, swaying left
+       and right as they float up, then drifting toward the cloud -->
+  <g fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.2">
+    <circle cx="53.8" cy="77" r="0.7" />
+    <circle cx="49.4" cy="72" r="1" />
+    <circle cx="54.8" cy="67.3" r="1.3" />
+    <circle cx="50.6" cy="59" r="1.6" />
+    <circle cx="53.8" cy="51.5" r="2" />
+    <circle cx="51.6" cy="44.5" r="2.4" />
+    <circle cx="56.6" cy="37.5" r="3" />
+  </g>
+
+  <!-- Tiny specks spraying softly out of the pages around the main bubbles -->
+  <g fill="#818CF8">
+    <circle cx="47.6" cy="77.4" r="0.5" />
+    <circle cx="57.2" cy="73" r="0.6" />
+    <circle cx="46.6" cy="61" r="0.6" />
+    <circle cx="57.2" cy="59" r="0.7" />
+    <circle cx="57.4" cy="54.6" r="0.6" />
+    <circle cx="47.2" cy="51" r="0.7" />
+    <circle cx="57.4" cy="46" r="0.6" />
+    <circle cx="47.4" cy="40.5" r="0.8" />
+    <circle cx="61" cy="42.5" r="0.7" />
+    <circle cx="53" cy="13" r="1" />
+    <circle cx="50" cy="21" r="0.7" />
+  </g>
+
+  <!-- Thought cloud: uneven hand-drawn scallops -->
+  <g transform="translate(60 32) scale(1.12) translate(-60 -30)">
+    <path
+      d="M60.2 19.4
+         A4.8 4.8 0 0 1 65.4 13.3
+         A6 6 0 0 1 75.6 9.9
+         A6.5 6.5 0 0 1 86.1 9.8
+         A5.8 5.8 0 0 1 96.1 13
+         A4.9 4.9 0 0 1 101.7 19
+         A3.7 3.7 0 0 1 100.5 25.3
+         A6.2 6.2 0 0 1 92.1 30.8
+         A6.6 6.6 0 0 1 80.3 32.5
+         A6.3 6.3 0 0 1 69.9 30.8
+         A4.9 4.9 0 0 1 62.5 26.4
+         A4.6 4.6 0 0 1 60.2 19.4 Z"
+      fill="#EEF2FF"
+      stroke="#4F46E5"
+      stroke-width="2"
+      stroke-linejoin="round"
+    />
+    <!-- Small inner curl, like a pencil highlight -->
+    <path
+      d="M68 17.5 C70 14.8 73.5 14 76.5 15.2"
+      stroke="#818CF8"
+      stroke-width="1.4"
+      stroke-linecap="round"
+    />
+  </g>
+
+  <!-- Wordmark -->
+  <text
+    x="117"
+    y="49"
+    fill="#1E1B4B"
+    font-family="Inter, sans-serif"
+    font-weight="700"
+    font-size="28"
+  >Nhà Sách Mây</text>
+
+  <!-- Supporting text -->
+  <text
+    x="119"
+    y="73"
+    fill="#64748B"
+    font-family="Inter, sans-serif"
+    font-size="11"
+    letter-spacing="2.5"
+  >KẾT NỐI ƯỚC NGUYỆN</text>
+</svg>

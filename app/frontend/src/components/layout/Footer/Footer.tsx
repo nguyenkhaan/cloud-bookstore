@@ -6,8 +6,8 @@ export interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({
-  version = 'v1.0.0-MVP',
-  note = 'ComicPOS & OldBooks Hub • Dữ liệu minh họa • 18/10/2026',
+  version = '',
+  note = '',
 }) => {
   return (
     <footer className="mt-auto flex items-center justify-between border-t border-slate-200/60 py-3 text-[11px] text-slate-400">

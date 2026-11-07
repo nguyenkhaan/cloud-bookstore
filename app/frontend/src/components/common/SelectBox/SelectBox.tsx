@@ -63,6 +63,7 @@ export function SelectBox<T extends string>({
   const [query, setQuery] = useState('')
   const [activeIndex, setActiveIndex] = useState(-1)
   const [position, setPosition] = useState<MenuPosition | null>(null)
+  const [portalTarget, setPortalTarget] = useState<Element | null>(null)
 
   const visibleOptions = useMemo(() => filterOptions(options, query), [options, query])
   const selectedOption = options.find((option) => option.value === value)
@@ -87,6 +88,9 @@ export function SelectBox<T extends string>({
   // Keep the portal menu glued to the field; flip above when there is no room below.
   useLayoutEffect(() => {
     if (!isOpen) return
+    // Inside an aria-modal dialog, content outside the dialog is hidden from assistive tech,
+    // so render the menu within the dialog (fixed positioning still escapes its overflow).
+    setPortalTarget(wrapperRef.current?.closest('[role="dialog"]') ?? document.body)
     const update = () => {
       const rect = wrapperRef.current?.getBoundingClientRect()
       if (!rect) return
@@ -194,7 +198,7 @@ export function SelectBox<T extends string>({
         <ChevronDown aria-hidden="true" className={cn('size-4 shrink-0 text-slate-500 transition-transform motion-reduce:transition-none', isOpen && 'rotate-180')} />
       </button>
 
-      {isOpen && position && createPortal(
+      {isOpen && position && portalTarget && createPortal(
         <div
           className="fixed z-[60] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_12px_28px_-8px_rgba(15,23,42,0.18),0_2px_6px_rgba(15,23,42,0.06)]"
           // Clicking the scrollbar, footer or empty space must not move focus off the search input,
@@ -264,8 +268,7 @@ export function SelectBox<T extends string>({
             <span aria-hidden="true">↑↓ chọn · Enter · Esc</span>
           </div>
         </div>,
-        // Inside an aria-modal dialog, content outside the dialog is hidden from assistive tech.
-        wrapperRef.current?.closest('[role="dialog"]') ?? document.body,
+        portalTarget,
       )}
     </div>
   )

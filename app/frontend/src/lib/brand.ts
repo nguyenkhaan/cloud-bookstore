@@ -1,8 +1,7 @@
 ﻿export const brand = {
-    name: 'ComicPOS',
-    suffix: '& OldBooks Hub',
-    fullName: 'ComicPOS & OldBooks Hub',
-    store: 'Nhà sách Mây',
-    tagline: 'Từng trang, từng kỷ niệm',
-    version: 'v1.0.0-MVP',
+    name: 'Nhà Sách Mây', //Tên sản phẩm - Nhà Sách Mây
+    productName: 'Mây Portal', //Tên thực của sản phẩm (đây là cái portal thôi, không phải trang buôn bán)
+    storeName: 'Nhà Sách Mây Thủ Đức', //Tên cửa hàng vật lý
+    tagline: '',
+    version: '',
 } as const

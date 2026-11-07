@@ -7,7 +7,7 @@ type PasswordFieldProps = Omit<
   InputHTMLAttributes<HTMLInputElement>,
   'className' | 'type' | 'onKeyUp' | 'onKeyDown' | 'onBlur'
 > & {
-  label: string
+  label?: string
   hint?: ReactNode
   invalid?: boolean
   warnCapsLock?: boolean
@@ -26,17 +26,17 @@ export function PasswordField({ label, hint, invalid, warnCapsLock = false, id, 
 
   const hasHint = capsLockOn || Boolean(hint)
   return (
-    <div className={cn(
-      'block rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 transition-[border-color,box-shadow] focus-within:border-indigo-600 focus-within:ring-3 focus-within:ring-indigo-600/15 motion-reduce:transition-none',
-      invalid && 'border-rose-600 focus-within:border-rose-600 focus-within:ring-rose-600/15',
-    )}>
-      <label className="block text-xs font-semibold text-slate-500" htmlFor={inputId}>{label}</label>
-      <div className="flex items-center gap-2">
+    <div className="block">
+      {label && <label className="block text-xs font-semibold text-slate-500" htmlFor={inputId}>{label}</label>}
+      <div className={cn(
+        'flex items-center gap-2 border-b border-slate-300 pt-1 pb-2 transition-[border-color,box-shadow] focus-within:border-indigo-600 focus-within:shadow-[0_1px_0_0_var(--color-indigo-600)] motion-reduce:transition-none',
+        invalid && 'border-rose-600 focus-within:border-rose-600 focus-within:shadow-[0_1px_0_0_var(--color-rose-600)]',
+      )}>
         <input
           {...inputProps}
           aria-describedby={hasHint ? hintId : undefined}
           aria-invalid={invalid || undefined}
-          className="block w-full border-0 bg-transparent pt-1 text-[15px] text-indigo-950 outline-none placeholder:text-slate-400"
+          className="block w-full border-0 bg-transparent text-[15px] text-indigo-950 outline-none placeholder:text-slate-400"
           id={inputId}
           onBlur={() => setCapsLockOn(false)}
           onKeyDown={trackCapsLock}
@@ -46,7 +46,7 @@ export function PasswordField({ label, hint, invalid, warnCapsLock = false, id, 
         <button
           aria-label={visible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
           aria-pressed={visible}
-          className="-mr-2 inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent text-slate-500 hover:text-indigo-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
+          className="-my-3 -mr-2 inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent text-slate-500 hover:text-indigo-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
           onClick={() => setVisible((current) => !current)}
           type="button"
         >

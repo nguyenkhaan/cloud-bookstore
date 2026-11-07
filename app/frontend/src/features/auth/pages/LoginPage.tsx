@@ -64,35 +64,40 @@ export function LoginPage({ search }: { search: string }) {
   return (
     <SplitLayout>
       <Card aria-labelledby="login-title" className="mx-auto w-full max-w-[500px] rounded-3xl border-slate-200/70 p-5 shadow-[0_8px_28px_rgba(30,27,75,0.06)] sm:p-9" padding="none" role="region">
-        <Badge size="md" variant="brand">Chào mừng trở lại</Badge>
-        <h1 className="mt-4.5 text-[28px] font-bold leading-tight text-indigo-950" id="login-title">Đăng nhập hệ thống</h1>
-        <p className="mt-2.5 text-sm text-slate-500">Sẵn sàng cho một ca làm việc thật tốt. Đăng nhập bằng tài khoản được cửa hàng cấp.</p>
+        <Badge size="md" variant="brand">Sẵn sàng tiếp tục?</Badge>
+        <h1 className="mt-5 text-[36px] font-bold leading-tight text-center text-indigo-950" id="login-title">ĐĂNG NHẬP</h1>
 
         <form className="mt-6 flex flex-col gap-4" onSubmit={submit}>
           {justActivated && !notice && <Banner tone="success">Tài khoản đã được kích hoạt. Hãy đăng nhập để bắt đầu.</Banner>}
-          <TextField
-            autoComplete="username"
-            label="Email nội bộ"
-            name="email"
-            onChange={(event) => setEmail(event.target.value)}
-            required
-            type="email"
-            value={email}
-          />
-          <PasswordField
-            autoComplete="current-password"
-            label="Mật khẩu"
-            name="password"
-            onChange={(event) => setPassword(event.target.value)}
-            required
-            value={password}
-            warnCapsLock
-          />
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm font-semibold text-slate-700" id="login-email-label">Email nội bộ</span>
+            <TextField
+              aria-labelledby="login-email-label"
+              autoComplete="username"
+              name="email"
+              onChange={(event) => setEmail(event.target.value)}
+              required
+              type="email"
+              value={email}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm font-semibold text-slate-700" id="login-password-label">Mật khẩu</span>
+            <PasswordField
+              aria-labelledby="login-password-label"
+              autoComplete="current-password"
+              name="password"
+              onChange={(event) => setPassword(event.target.value)}
+              required
+              value={password}
+              warnCapsLock
+            />
+          </div>
           <div className="-mt-1 flex justify-end">
             <Button className="min-h-11 px-1 text-[13px] text-indigo-600 hover:bg-transparent hover:text-indigo-700 hover:underline" onClick={() => navigate('/forgot-password')} size="sm" type="button" variant="ghost">Quên mật khẩu?</Button>
           </div>
           <Button className="min-h-11" fullWidth loading={isSubmitting} size="lg" type="submit" variant="primary">
-            {isSubmitting ? 'Đang đăng nhập…' : <>Đăng nhập <span className="text-xs font-medium opacity-85">Enter ↵</span></>}
+            {isSubmitting ? 'Đang đăng nhập…' : <>Đăng nhập</>}
           </Button>
           {notice && <Banner tone={notice.tone}>{notice.message}</Banner>}
         </form>
