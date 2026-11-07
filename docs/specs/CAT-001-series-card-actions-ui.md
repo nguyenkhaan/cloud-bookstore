@@ -6,14 +6,14 @@ Accepted
 
 ## Objective
 
-Giúp Admin và Quản lý kho cập nhật thông tin và ảnh bìa của một Bộ sách ngay trên từng thẻ tại `/catalog/series`, trong khi giữ nguyên bố cục trang, luồng đi tới đầu sách và chưa thực hiện xóa.
+Giúp Admin và Quản lý kho cập nhật thông tin, ảnh bìa hoặc xóa một Bộ sách không có Đầu sách/tập trực thuộc ngay trên từng thẻ tại `/catalog/series`, trong khi giữ nguyên bố cục và luồng đi tới đầu sách.
 
 ## References
 
 - Feature `CAT-001`
 - Rule `BR-CAT-001`
 - `PDR-005` — Book hierarchy
-- `BookSeriesController` — các endpoint `PUT /api/book-series/{id}`, `PATCH /api/book-series/{id}/status`, `PUT /api/book-series/{id}/image`
+- `BookSeriesController` — các endpoint `PUT /api/book-series/{id}`, `PATCH /api/book-series/{id}/status`, `PUT /api/book-series/{id}/image`, `DELETE /api/book-series/{id}`
 - [`fe-direct-upload.md`](../guides/fe-direct-upload.md) — direct upload có upload intent một lần
 
 ## Actors and Permissions
@@ -34,7 +34,8 @@ Giúp Admin và Quản lý kho cập nhật thông tin và ảnh bìa của mộ
 4. Frontend gửi tên/mô tả tới `PUT /api/book-series/{id}`. Nếu trạng thái đã đổi, frontend tiếp tục gọi `PATCH /api/book-series/{id}/status` để giữ quy tắc backend khi ngừng Bộ sách sẽ ngừng các Đầu sách/tập đang hoạt động.
 5. Trong tab Ảnh bìa, người dùng chọn JPEG, PNG hoặc WebP không quá 10 MB. Frontend xin signature/intention từ backend, tải file **trực tiếp** lên Cloudinary, rồi hiện preview từ `secure_url` của Cloudinary.
 6. Sau khi tải file thành công, frontend gửi `imageUpload` tới `PUT /api/book-series/{id}/image`. Backend xác thực intent và chữ ký Cloudinary, lưu ảnh mới, audit, rồi mới xoá ảnh cũ sau khi commit.
-7. Chọn Xóa chỉ mở `ConfirmationDialog` dùng chung; nút xác nhận vẫn không gửi request. Đóng dialog bằng nút đóng, nền phủ, hoặc phím Escape.
+7. Chọn Xóa mở `ConfirmationDialog` dùng chung. Khi xác nhận, frontend gọi `DELETE /api/book-series/{id}`; nút bị khóa và hiển thị “Đang xóa…” đến khi hoàn tất.
+8. Xóa thành công đóng dialog và làm mới danh sách. Đóng dialog bằng nút đóng, nền phủ, hoặc phím Escape.
 
 ## Alternate and Error Flows
 
@@ -42,13 +43,15 @@ Giúp Admin và Quản lý kho cập nhật thông tin và ảnh bìa của mộ
 - Nếu tên trống hoặc backend trả lỗi, dialog giữ nguyên dữ liệu người dùng vừa nhập, hiển thị lỗi gần thao tác và mở lại nút lưu.
 - Nếu cập nhật tên/mô tả thành công nhưng cập nhật trạng thái thất bại, thông báo phải nói rõ rằng một phần thay đổi đã được lưu.
 - Khi direct upload thất bại, ảnh cũ vẫn hiển thị. Nếu gắn ảnh thất bại sau khi upload, UI giữ preview mới cùng lỗi để người dùng biết ảnh đó chưa được lưu; backend vẫn giữ ảnh cũ. Với lỗi gắn ảnh `400`, giữ kết quả upload để thử gửi lại cùng intent; với `409`, bỏ kết quả đó và yêu cầu chọn/tải lại ảnh.
-- Không gọi `DELETE /api/book-series/{id}` hoặc `DELETE /api/book-series/{id}/image` trong lát cắt này.
+- Nếu backend từ chối xóa, dialog vẫn mở và hiển thị lỗi. Với lỗi Bộ sách còn Đầu sách/tập trực thuộc, người dùng được hướng dẫn ngừng sử dụng thay vì xóa.
+- Không gọi `DELETE /api/book-series/{id}/image` trong lát cắt này.
 
 ## Data and State Changes
 
 - `PUT /api/book-series/{id}` cập nhật `name` và `description`.
 - `PATCH /api/book-series/{id}/status` chỉ chạy khi `isActive` đổi; không gửi `isActive` qua `PUT` vì endpoint status mới áp dụng cascade xuống Đầu sách/tập.
 - Direct upload không truyền file qua backend. Frontend chỉ gửi `imageUpload` được Cloudinary trả về vào `PUT /api/book-series/{id}/image`.
+- `DELETE /api/book-series/{id}` chỉ thành công khi Bộ sách không có Đầu sách/tập trực thuộc; mutation thành công invalidates danh sách Bộ sách.
 - Mỗi mutation thành công invalidates truy vấn danh sách Bộ sách để thẻ hiển thị response mới của backend.
 
 ## Acceptance Criteria
@@ -61,6 +64,9 @@ Giúp Admin và Quản lý kho cập nhật thông tin và ảnh bìa của mộ
 - Given ảnh đang upload hoặc đang được gắn, then không thể khởi tạo thêm upload/gắn ảnh trùng.
 - Given lỗi upload, then lỗi được thông báo cạnh tab ảnh và ảnh hiện có không bị thay thế trên UI; given lỗi gắn ảnh sau upload, then preview mới được giữ để thử lưu lại trong khi backend vẫn giữ ảnh cũ.
 - Given biểu tượng Xóa, when được chọn, then dialog xác nhận xuất hiện thay vì xóa ngay.
+- Given xác nhận xóa, when request đang chạy, then nút xóa bị khóa và hiển thị “Đang xóa…”.
+- Given backend trả lỗi xoá, when request kết thúc, then dialog vẫn mở và hiển thị lỗi để người dùng xử lý.
+- Given xóa thành công, when request kết thúc, then dialog đóng và Bộ sách biến mất khỏi danh sách sau khi truy vấn được làm mới.
 - Given một màn hình khác cần xác nhận, then màn hình đó có thể tái sử dụng `ConfirmationDialog` và truyền các nút riêng trong `actions`.
 - Given một dialog, when nhấn Escape hoặc đóng dialog, then focus trở về nút đã mở dialog.
 - Giao diện giữ hệ màu slate/indigo, không sửa phần tử ngoài Book Card và các dialog mới.

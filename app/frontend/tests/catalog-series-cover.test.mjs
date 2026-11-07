@@ -51,7 +51,7 @@ test('series card link name comes from visible text and keeps status/progress as
   }
 })
 
-test('series cards provide separate edit and delete controls without a delete mutation', () => {
+test('series cards provide separate edit and delete controls', () => {
   const page = source('features', 'catalog', 'pages', 'SeriesListPage.tsx')
   const actionsPath = path.join(frontendRoot, 'src', 'features', 'catalog', 'components', 'SeriesCardActions.tsx')
   const confirmationPath = path.join(frontendRoot, 'src', 'components', 'common', 'ConfirmationDialog', 'ConfirmationDialog.tsx')
@@ -75,7 +75,21 @@ test('series cards provide separate edit and delete controls without a delete mu
   assert.match(actions, /actions=\{<>/)
   assert.match(confirmation, /message: string/)
   assert.match(confirmation, /actions: ReactNode/)
-  assert.doesNotMatch(actions, /useDeleteSeriesMutation|deleteSeries\(/)
+})
+
+test('series deletion uses the existing mutation, locks the destructive button, and keeps backend errors visible', () => {
+  const actions = source('features', 'catalog', 'components', 'SeriesCardActions.tsx')
+  const confirmation = source('components', 'common', 'ConfirmationDialog', 'ConfirmationDialog.tsx')
+
+  assert.match(actions, /useDeleteSeriesMutation/)
+  assert.match(actions, /const deleteSeries = useDeleteSeriesMutation\(\)/)
+  assert.match(actions, /const handleDelete = async \(\) =>/)
+  assert.match(actions, /await deleteSeries\.mutateAsync\(series\.id\)/)
+  assert.match(actions, /loading=\{deleteSeries\.isPending\}[\s\S]*\{deleteSeries\.isPending \? 'Đang xóa…' : 'Xóa bộ sách'\}/)
+  assert.match(actions, /error=\{deleteError\}/)
+  assert.doesNotMatch(actions, /useDeleteSeriesImageMutation|deleteSeriesImage\(/)
+  assert.match(confirmation, /error\?: string/)
+  assert.match(confirmation, /role="alert"/)
 })
 
 test('series details submit uses update and status mutations with an explicit pending state', () => {
@@ -91,7 +105,6 @@ test('series details submit uses update and status mutations with an explicit pe
   assert.match(actions, /Thông tin chung đã được lưu, nhưng không thể cập nhật trạng thái\./)
   assert.match(actions, /loading=\{isSaving\}[\s\S]*\{isSaving \? 'Đang lưu…' : 'Lưu thay đổi'\}/)
   assert.match(actions, /role="alert"/)
-  assert.doesNotMatch(actions, /useDeleteSeriesMutation|deleteSeries\(/)
 })
 
 test('series cover uploads directly, previews the Cloudinary result, and never deletes', () => {
@@ -108,7 +121,7 @@ test('series cover uploads directly, previews the Cloudinary result, and never d
   assert.match(actions, /isImageUploading \? 'Đang tải ảnh…' : replaceSeriesImage\.isPending \? 'Đang lưu ảnh…'/)
   assert.match(actions, /if \(error instanceof CatalogApiError && error\.status === 409\)/)
   assert.match(actions, /Thử lưu ảnh/)
-  assert.doesNotMatch(actions, /useDeleteSeriesMutation|useDeleteSeriesImageMutation|deleteSeries\(|deleteSeriesImage\(/)
+  assert.doesNotMatch(actions, /useDeleteSeriesImageMutation|deleteSeriesImage\(/)
 })
 
 test('catalog dialogs restore opener focus and keep the backdrop out of tab order', () => {

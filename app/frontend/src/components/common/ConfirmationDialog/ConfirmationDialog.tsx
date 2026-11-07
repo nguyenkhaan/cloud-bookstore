@@ -3,13 +3,14 @@ import type { ReactNode, RefObject } from 'react'
 
 type ConfirmationDialogProps = {
   actions: ReactNode
+  error?: string
   message: string
   onClose: () => void
   title: string
   triggerRef?: RefObject<HTMLButtonElement | null>
 }
 
-export function ConfirmationDialog({ actions, message, onClose, title, triggerRef }: ConfirmationDialogProps) {
+export function ConfirmationDialog({ actions, error, message, onClose, title, triggerRef }: ConfirmationDialogProps) {
   const dialogRef = useRef<HTMLElement>(null)
   const handleClose = useCallback(() => {
     onClose()
@@ -38,6 +39,7 @@ export function ConfirmationDialog({ actions, message, onClose, title, triggerRe
         </header>
         <div className="p-5">
           <p className="text-sm leading-6 text-slate-600">{message}</p>
+          {error && <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs leading-5 text-rose-700" role="alert">{error}</p>}
           <div className="mt-5 flex justify-end gap-2">{actions}</div>
         </div>
       </section>

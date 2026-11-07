@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Enable Book Series information and cover-image updates from each card while leaving all deletion calls disconnected.
+**Goal:** Enable Book Series information, cover-image updates, and confirmed deletion from each card.
 
 **Architecture:** Keep state in the feature-owned `SeriesCardActions` component rendered beside the existing card link, so action clicks never nest inside or trigger navigation. Reuse `useUpdateSeriesMutation` for name/description and `useUpdateSeriesStatusMutation` only for a changed status, preserving the backend's status cascade without backend changes. For an image, reuse the signed direct-upload service (`uploadImage('BOOK_SERIES_IMAGE', file)`) and then `useReplaceSeriesImageMutation`; the browser sends the file to Cloudinary and only its signed result to the backend.
 
@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Scope is limited to `/catalog/series` Book Cards and their existing dialogs.
-- Do not call either Book Series deletion endpoint or edit the generated API contract.
+- Do not call the Book Series image deletion endpoint or edit the generated API contract.
 - Do not send image files through the backend; use the existing signed direct upload flow.
 - Keep the existing slate/indigo visual language and card navigation behavior.
 - Icon actions must be keyboard accessible with visible focus; dialog close restores focus to its opener.
@@ -21,7 +21,7 @@
 ## Review Focus
 
 - Card navigation remains available while icon clicks do not navigate.
-- The destructive action only opens confirmation; it cannot delete a series or its image in this slice.
+- The destructive action is single-flight, shows a backend rejection inside its confirmation dialog, and does not delete an image independently.
 - Opening and closing the dialog preserves the card context and returns keyboard focus correctly.
 - The save and image actions are single-flight, announce pending state, and retain usable data after errors.
 - An uploaded cover previews from Cloudinary before the card cache refreshes.
@@ -137,4 +137,39 @@ Expected: PASS.
 - [ ] **Step 5: Run the required frontend verification and update task evidence**
 
 Run: `cd app/frontend && bun run test && bun run lint && bun run build`
-Expected: all commands exit 0. Update `docs/plans/todo.md` with the exact results and retain the delete API as out of scope.
+Expected: all commands exit 0. Update `docs/plans/todo.md` with the exact results and retain image deletion as out of scope.
+
+### Task 4: Delete a confirmed Book Series
+
+**Files:**
+- Modify: `app/frontend/src/components/common/ConfirmationDialog/ConfirmationDialog.tsx`
+- Modify: `app/frontend/src/features/catalog/components/SeriesCardActions.tsx`
+- Modify: `app/frontend/tests/catalog-series-cover.test.mjs`
+
+**Interfaces:**
+- Consumes: `useDeleteSeriesMutation(seriesId)` and its list-cache invalidation.
+- Produces: a delete confirmation that exposes an optional backend error and a single-flight destructive action.
+
+**Acceptance Criteria:**
+- The confirmation action calls the existing deletion mutation with the current series ID.
+- While pending, the destructive button is disabled and displays `Đang xóa…`.
+- Backend errors leave the dialog open and appear in an alert; no image deletion API is called.
+
+- [x] **Step 1: Write and run the failing source-level UI test**
+
+Run: `cd app/frontend && node --test tests/catalog-series-cover.test.mjs`
+Expected: FAIL because deletion is disconnected.
+
+- [x] **Step 2: Connect the delete mutation and add an optional confirmation error**
+
+Use the existing `useDeleteSeriesMutation`; close the dialog only after success and pass the caught API message to `ConfirmationDialog`.
+
+- [x] **Step 3: Run the focused test to verify it passes**
+
+Run: `cd app/frontend && node --test tests/catalog-series-cover.test.mjs`
+Expected: PASS.
+
+- [ ] **Step 4: Run the required frontend verification and update task evidence**
+
+Run: `cd app/frontend && bun run test && bun run lint && bun run build`
+Expected: all commands exit 0. Update `docs/plans/todo.md` with the exact results; do not add image deletion.

@@ -5,7 +5,7 @@ import { Button, ConfirmationDialog, TextField } from '@/components/common'
 import { uploadImage } from '@/features/uploads/upload.service'
 import type { UploadedImage } from '@/features/uploads/upload.type'
 import { CatalogApiError } from '../catalog.service'
-import { useReplaceSeriesImageMutation, useUpdateSeriesMutation, useUpdateSeriesStatusMutation } from '../catalog.hook'
+import { useDeleteSeriesMutation, useReplaceSeriesImageMutation, useUpdateSeriesMutation, useUpdateSeriesStatusMutation } from '../catalog.hook'
 import type { BookSeries } from '../catalog.type'
 import { CatalogDialog } from './CatalogDialog'
 
@@ -22,12 +22,14 @@ export function SeriesCardActions({ series }: { series: BookSeries }) {
   const [description, setDescription] = useState(series.description ?? '')
   const [isActive, setIsActive] = useState(series.isActive)
   const [detailsError, setDetailsError] = useState('')
+  const [deleteError, setDeleteError] = useState('')
   const [imageError, setImageError] = useState('')
   const [pendingImage, setPendingImage] = useState<UploadedImage | null>(null)
   const [uploadedPreviewUrl, setUploadedPreviewUrl] = useState<string | null>(null)
   const [isImageUploading, setIsImageUploading] = useState(false)
   const updateSeries = useUpdateSeriesMutation()
   const updateStatus = useUpdateSeriesStatusMutation()
+  const deleteSeries = useDeleteSeriesMutation()
   const replaceSeriesImage = useReplaceSeriesImageMutation()
   const isSaving = updateSeries.isPending || updateStatus.isPending
   const isImageBusy = isImageUploading || replaceSeriesImage.isPending
@@ -109,6 +111,16 @@ export function SeriesCardActions({ series }: { series: BookSeries }) {
     }
   }
 
+  const handleDelete = async () => {
+    setDeleteError('')
+    try {
+      await deleteSeries.mutateAsync(series.id)
+      setActiveDialog(null)
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : 'Không thể xóa bộ sách.')
+    }
+  }
+
   return (
     <>
       <div aria-label={`Thao tác cho ${series.name}`} className="absolute right-3 top-3 z-10 flex items-center gap-1" role="group">
@@ -124,7 +136,10 @@ export function SeriesCardActions({ series }: { series: BookSeries }) {
         <button
           aria-label={`Xóa ${series.name}`}
           className="grid h-11 w-11 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-2xs transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-600 focus-visible:ring-offset-2 motion-reduce:transition-none"
-          onClick={() => setActiveDialog('delete')}
+          onClick={() => {
+            setDeleteError('')
+            setActiveDialog('delete')
+          }}
           ref={deleteTriggerRef}
           type="button"
         >
@@ -187,7 +202,8 @@ export function SeriesCardActions({ series }: { series: BookSeries }) {
 
       {activeDialog === 'delete' && (
         <ConfirmationDialog
-          actions={<><Button onClick={() => setActiveDialog(null)} type="button" variant="ghost">Hủy</Button><Button disabled type="button" variant="danger">Xóa bộ sách</Button></>}
+          actions={<><Button onClick={() => setActiveDialog(null)} type="button" variant="ghost">Hủy</Button><Button loading={deleteSeries.isPending} onClick={() => void handleDelete()} type="button" variant="danger">{deleteSeries.isPending ? 'Đang xóa…' : 'Xóa bộ sách'}</Button></>}
+          error={deleteError}
           message={`Chỉ có thể xóa bộ sách “${series.name}” khi chưa chứa đầu sách/tập. Nếu đã có tập, hãy chuyển sang ngừng sử dụng.`}
           onClose={() => setActiveDialog(null)}
           title="Xóa bộ sách"

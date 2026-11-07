@@ -66,7 +66,7 @@ export function DashboardPage({ onSignOut }: DashboardPageProps) {
           <Card title="Hoạt động cần chú ý hôm nay">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="rounded-xl border border-rose-200 bg-rose-50/60 p-3 text-xs">
-                <span className="font-bold text-rose-700">12 phiếu quá hạn</span>
+                <span className="font-bold text-rose-600">12 phiếu quá hạn</span>
                 <p className="text-slate-600 mt-1 text-[11px]">8 khách đã quá hạn trên 7 ngày, ưu tiên liên hệ thu hồi.</p>
               </div>
               <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3 text-xs">
