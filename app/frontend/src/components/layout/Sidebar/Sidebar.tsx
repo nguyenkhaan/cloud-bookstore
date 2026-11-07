@@ -1,5 +1,4 @@
 import React from 'react';
-import logoImg from '@/assets/images/logo.jpg';
 import {
   DashboardIcon,
   PosIcon,
@@ -16,6 +15,7 @@ import {
   LogoutIcon,
 } from '@/components/common/Icons';
 import { Badge, type BadgeVariant } from '@/components/common/Badge';
+import { Logo } from '@/components/common/Logo';
 
 export interface NavItem {
   id: string;
@@ -69,24 +69,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       } h-screen sticky top-0`}
     >
       <div className="flex flex-col flex-1 overflow-y-auto px-4 py-5 scrollbar-thin">
-        <div className="flex items-center gap-3 px-2 mb-4">
-          <div className="shrink-0 cursor-pointer">
-            <img
-              src={logoImg}
-              alt="ComicPOS Logo"
-              className="h-8 w-8 rounded-lg object-contain"
-            />
-          </div>
-          {!isCollapsed && (
-            <div className="flex flex-col">
-              <span className="text-base font-bold tracking-tight text-slate-900 leading-none">
-                ComicPOS
-              </span>
-              <span className="text-[9px] font-semibold tracking-wider text-slate-400 mt-1 uppercase">
-                Cloud Books • New Stories
-              </span>
-            </div>
-          )}
+        <div className={`mb-4 flex items-center ${isCollapsed ? 'justify-center' : 'px-2'}`}>
+          <Logo variant={isCollapsed ? 'mark' : 'full'} />
         </div>
 
         {!isCollapsed ? (

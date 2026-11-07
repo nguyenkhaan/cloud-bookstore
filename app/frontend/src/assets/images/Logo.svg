@@ -1,13 +1,12 @@
 
 <svg
   xmlns="http://www.w3.org/2000/svg"
-  viewBox="0 0 340 100"
+  viewBox="2 4 109 96"
   fill="none"
 >
   <!-- Hand-drawn mark. Palette follows the app theme (src/index.css):
        brand-600 #4F46E5 ink line, brand-400 #818CF8 soft detail lines,
-       brand-200 #C7D2FE cover, brand-50 #EEF2FF paper and cloud fill,
-       brand-950 #1E1B4B wordmark, slate-500 #64748B tagline. -->
+       brand-200 #C7D2FE cover, brand-50 #EEF2FF paper and cloud fill. -->
 
   <g stroke="#4F46E5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
     <!-- Back cover, peeking out below and beside the pages -->
@@ -155,24 +154,4 @@
       stroke-linecap="round"
     />
   </g>
-
-  <!-- Wordmark -->
-  <text
-    x="117"
-    y="49"
-    fill="#1E1B4B"
-    font-family="Inter, sans-serif"
-    font-weight="700"
-    font-size="28"
-  >Nhà Sách Mây</text>
-
-  <!-- Supporting text -->
-  <text
-    x="119"
-    y="73"
-    fill="#64748B"
-    font-family="Inter, sans-serif"
-    font-size="11"
-    letter-spacing="2.5"
-  >KẾT NỐI ƯỚC NGUYỆN</text>
 </svg>

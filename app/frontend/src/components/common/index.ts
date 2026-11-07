@@ -3,6 +3,7 @@ export * from './Badge';
 export * from './Button';
 export * from './Card';
 export * from './Icons';
+export * from './Logo';
 export * from './StatCard';
 export * from './TextField';
 export * from './SelectBox';
