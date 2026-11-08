@@ -7,6 +7,7 @@ import { ActiveBadge } from '../components/CatalogStatusBadge'
 import { CatalogWorkspace } from '../components/CatalogWorkspace'
 import { CoverTile } from '../components/CoverTile'
 import { TitleEditorDialog } from '../components/TitleEditorDialog'
+import { TitleRowDeleteAction } from '../components/TitleRowDeleteAction'
 import { EmptyState, ErrorState, LoadingRows } from './SeriesListPage'
 
 export default function TitleListPage() {
@@ -54,7 +55,10 @@ export default function TitleListPage() {
                       <Link className="block truncate text-sm font-bold text-slate-900 hover:text-indigo-700" to={catalogPaths.titleDetail(title.id)}>{title.name}</Link>
                       <p className="mt-1 text-xs text-slate-500">{title.author || 'Chưa cập nhật tác giả'} {title.volumeLabel ? `• ${title.volumeLabel}` : ''}</p>
                     </div>
-                    <ActiveBadge active={title.isActive} />
+                    <div className="flex items-center gap-1">
+                      <TitleRowDeleteAction title={title} />
+                      <ActiveBadge active={title.isActive} />
+                    </div>
                   </div>
                   <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{title.description || 'Chưa có mô tả.'}</p>
                   <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold">
