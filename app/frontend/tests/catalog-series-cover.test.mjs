@@ -131,3 +131,25 @@ test('catalog dialogs restore opener focus and keep the backdrop out of tab orde
   assert.match(dialog, /triggerRef\?\.current\?\.focus\(\)/)
   assert.match(dialog, /aria-label="Đóng hộp thoại"[\s\S]*tabIndex=\{-1\}/)
 })
+
+test('title rows use a keyboard-safe flipping cover with visible page depth', () => {
+  const page = source('features', 'catalog', 'pages', 'TitleListPage.tsx')
+  const coverPath = path.join(frontendRoot, 'src', 'features', 'catalog', 'components', 'TitleCoverStack.tsx')
+
+  assert.ok(existsSync(coverPath), 'TitleCoverStack should replace the static title cover')
+  const cover = readFileSync(coverPath, 'utf8')
+
+  assert.match(page, /import \{ TitleCoverStack \} from '\.\.\/components\/TitleCoverStack'/)
+  assert.match(page, /<article className="group flex gap-4 p-4 transition hover:bg-slate-50\/70"/)
+  assert.match(page, /<TitleCoverStack imageUrl=\{title\.coverImageUrl\} name=\{title\.name\} \/>/)
+  assert.doesNotMatch(page, /<CoverTile className="h-25 w-\[72px\]/)
+  assert.match(cover, /export function TitleCoverStack/)
+  assert.match(cover, /object-cover object-top/)
+  assert.match(cover, /origin-left/)
+  assert.match(cover, /group-hover:-rotate-y-62/)
+  assert.match(cover, /group-focus-within:-rotate-y-62/)
+  assert.match(cover, /motion-reduce:group-hover:rotate-y-0/)
+  assert.match(cover, /motion-reduce:group-focus-within:rotate-y-0/)
+  assert.match(cover, /translate-x-2/)
+  assert.match(cover, /onError=\{\(\) => setFailed\(true\)\}/)
+})

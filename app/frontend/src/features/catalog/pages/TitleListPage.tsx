@@ -5,7 +5,7 @@ import { catalogPaths } from '../catalog.route'
 import { useCreateTitleMutation, useSeriesQuery, useTitlesQuery } from '../catalog.hook'
 import { ActiveBadge } from '../components/CatalogStatusBadge'
 import { CatalogWorkspace } from '../components/CatalogWorkspace'
-import { CoverTile } from '../components/CoverTile'
+import { TitleCoverStack } from '../components/TitleCoverStack'
 import { TitleEditorDialog } from '../components/TitleEditorDialog'
 import { TitleRowDeleteAction } from '../components/TitleRowDeleteAction'
 import { EmptyState, ErrorState, LoadingRows } from './SeriesListPage'
@@ -47,8 +47,8 @@ export default function TitleListPage() {
         {titlesQuery.isLoading ? <LoadingRows /> : titlesQuery.error ? <ErrorState message="Không thể tải danh mục đầu sách." /> : (
           <div className="divide-y divide-slate-100">
             {titles.map((title) => (
-              <article className="flex gap-4 p-4 transition hover:bg-slate-50/70" key={title.id}>
-                <CoverTile className="h-25 w-[72px] shrink-0 rounded-lg border border-slate-200 shadow-sm" imageUrl={title.coverImageUrl} title={title.name} />
+              <article className="group flex gap-4 p-4 transition hover:bg-slate-50/70" key={title.id}>
+                <TitleCoverStack imageUrl={title.coverImageUrl} name={title.name} />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0">
