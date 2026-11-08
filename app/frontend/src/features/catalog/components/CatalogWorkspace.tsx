@@ -1,19 +1,26 @@
 import type { ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { MainLayout } from '@/components/layout'
+import type { BreadcrumbItem } from '@/components/layout/Header/Header'
 import { useAuth } from '@/features/auth/auth.hook'
 import { workspacePathFor } from '@/features/workspace/workspace.route'
 import { catalogPaths } from '../catalog.route'
 
 type CatalogWorkspaceProps = {
   action?: ReactNode
+  breadcrumbs?: (string | BreadcrumbItem)[]
   children: ReactNode
-  description: string
-  screenCode: string
+  description?: string
+  screenCode?: string
   title: string
 }
 
-export function CatalogWorkspace({ action, children, screenCode, title }: CatalogWorkspaceProps) {
+export function CatalogWorkspace({
+  action,
+  breadcrumbs,
+  children,
+  title,
+}: CatalogWorkspaceProps) {
   const navigate = useNavigate()
   const { session, signOut } = useAuth()
 
@@ -24,15 +31,20 @@ export function CatalogWorkspace({ action, children, screenCode, title }: Catalo
 
   const currentUser = session?.user ?? { name: 'Khách', role: 'Chưa xác thực' }
 
+  const defaultBreadcrumbs: (string | BreadcrumbItem)[] = [
+    { label: 'Không gian làm việc', href: '/dashboard' },
+    { label: 'Kho & đầu sách', href: catalogPaths.seriesList },
+    { label: title },
+  ]
+
   return (
     <MainLayout
       actionButton={action}
-      breadcrumbs={['Không gian làm việc', 'Kho & đầu sách', title]}
+      breadcrumbs={breadcrumbs ?? defaultBreadcrumbs}
       currentPath="inventory"
       onNavigate={navigateFromSidebar}
       onSignOut={signOut}
       pageTitle={title}
-      screenCode={screenCode}
       user={currentUser}
     >
       <div className="space-y-5">

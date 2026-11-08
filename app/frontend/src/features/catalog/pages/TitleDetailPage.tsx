@@ -24,17 +24,45 @@ export default function TitleDetailPage() {
   const editions = editionsQuery.data ?? []
 
   if (titleQuery.isLoading) {
-    return <CatalogWorkspace description="Đang tải thông tin đầu sách…" screenCode="SCR-INV-03 / KHO SÁCH" title="Chi tiết đầu sách"><LoadingRows /></CatalogWorkspace>
+    return (
+      <CatalogWorkspace
+        breadcrumbs={[
+          { label: 'Không gian làm việc', href: '/dashboard' },
+          { label: 'Kho & đầu sách', href: catalogPaths.seriesList },
+          { label: 'Đầu sách', href: catalogPaths.titleList },
+          { label: 'Chi tiết đầu sách' },
+        ]}
+        title="Chi tiết đầu sách"
+      >
+        <LoadingRows />
+      </CatalogWorkspace>
+    )
   }
   if (!title || titleQuery.error) {
-    return <CatalogWorkspace description="Không thể mở dữ liệu đầu sách yêu cầu." screenCode="SCR-INV-03 / KHO SÁCH" title="Chi tiết đầu sách"><ErrorState message="Không tìm thấy đầu sách hoặc bạn không có quyền xem." /></CatalogWorkspace>
+    return (
+      <CatalogWorkspace
+        breadcrumbs={[
+          { label: 'Không gian làm việc', href: '/dashboard' },
+          { label: 'Kho & đầu sách', href: catalogPaths.seriesList },
+          { label: 'Đầu sách', href: catalogPaths.titleList },
+          { label: 'Chi tiết đầu sách' },
+        ]}
+        title="Chi tiết đầu sách"
+      >
+        <ErrorState message="Không tìm thấy đầu sách hoặc bạn không có quyền xem." />
+      </CatalogWorkspace>
+    )
   }
 
   return (
     <CatalogWorkspace
       action={<div className="flex flex-wrap gap-2"><Button onClick={() => setIsTitleEditorOpen(true)} variant="secondary">Chỉnh sửa đầu sách</Button><Button onClick={() => setIsEditionEditorOpen(true)}>+ Thêm ấn bản</Button></div>}
-      description="Từ đầu sách, tạo nhiều ấn bản theo lần in, định dạng hoặc năm xuất bản. Mỗi ấn bản mới là cha của các cuốn sách vật lý được định danh bằng CopyBarcode."
-      screenCode="SCR-INV-03 / KHO SÁCH"
+      breadcrumbs={[
+        { label: 'Không gian làm việc', href: '/dashboard' },
+        { label: 'Kho & đầu sách', href: catalogPaths.seriesList },
+        { label: 'Đầu sách', href: catalogPaths.titleList },
+        { label: title.name },
+      ]}
       title={title.name}
     >
       <Card padding="none">

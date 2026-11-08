@@ -26,7 +26,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   onSignOut,
   breadcrumbs,
   pageTitle,
-  screenCode,
   actionButton,
   user,
 }) => {
@@ -37,25 +36,55 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
     if (breadcrumbs) return breadcrumbs;
     switch (currentPath) {
       case 'overview':
-        return ['Không gian làm việc', 'Tổng quan', 'Tổng quan kinh doanh'];
+        return [
+          { label: 'Không gian làm việc', href: '/dashboard' },
+          { label: 'Tổng quan' },
+        ];
       case 'pos':
-        return ['Không gian làm việc', 'POS', 'Nhận trả sách & Quyết toán tiền cọc'];
+        return [
+          { label: 'Không gian làm việc', href: '/dashboard' },
+          { label: 'POS' },
+        ];
       case 'approvals':
-        return ['Không gian làm việc', 'Phê duyệt', 'Trung tâm Phê duyệt ngoại lệ'];
+        return [
+          { label: 'Không gian làm việc', href: '/dashboard' },
+          { label: 'Phê duyệt' },
+        ];
       case 'inventory':
-        return ['Không gian làm việc', 'Kho & đầu sách', 'Danh mục ấn bản'];
+        return [
+          { label: 'Không gian làm việc', href: '/dashboard' },
+          { label: 'Kho & đầu sách', href: '/catalog/series' },
+        ];
       case 'customers':
-        return ['Không gian làm việc', 'Khách hàng', 'Danh sách thành viên'];
+        return [
+          { label: 'Không gian làm việc', href: '/dashboard' },
+          { label: 'Khách hàng' },
+        ];
       case 'hr':
-        return ['Không gian làm việc', 'Nhân sự', 'Chấm công & Lương ca'];
+        return [
+          { label: 'Không gian làm việc', href: '/dashboard' },
+          { label: 'Nhân sự' },
+        ];
       case 'audit':
-        return ['Không gian làm việc', 'Nhật ký kiểm toán', 'Lịch sử giao dịch'];
+        return [
+          { label: 'Không gian làm việc', href: '/dashboard' },
+          { label: 'Nhật ký kiểm toán' },
+        ];
       case 'reports':
-        return ['Không gian làm việc', 'Báo cáo & thuế', 'Báo cáo doanh thu'];
+        return [
+          { label: 'Không gian làm việc', href: '/dashboard' },
+          { label: 'Báo cáo & thuế' },
+        ];
       case 'settings':
-        return ['Không gian làm việc', 'Cấu hình', 'Tham số hệ thống'];
+        return [
+          { label: 'Không gian làm việc', href: '/dashboard' },
+          { label: 'Cấu hình' },
+        ];
       default:
-        return ['Không gian làm việc', 'Hệ thống'];
+        return [
+          { label: 'Không gian làm việc', href: '/dashboard' },
+          { label: 'Hệ thống' },
+        ];
     }
   };
 
@@ -94,21 +123,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         />
 
         <main className="flex-1 px-6 py-6 overflow-y-auto">
-          {(pageTitle || screenCode || actionButton) && (
+          {(pageTitle || actionButton) && (
             <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                {screenCode && (
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 mb-0.5">
-                    {screenCode}
-                  </div>
-                )}
-                {pageTitle && (
-                  <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-                    {pageTitle}
-                  </h1>
-                )}
-              </div>
-
+              {pageTitle && (
+                <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                  {pageTitle}
+                </h1>
+              )}
               {actionButton && <div>{actionButton}</div>}
             </div>
           )}

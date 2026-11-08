@@ -28,8 +28,11 @@ export default function TitleListPage() {
   return (
     <CatalogWorkspace
       action={<Button onClick={() => setIsEditorOpen(true)}>+ Thêm đầu sách</Button>}
-      description="Mỗi đầu sách mô tả nội dung chung. Một đầu sách có thể là sách độc lập hoặc thuộc Bộ sách; ISBN, lần in và giá bìa được quản lý ở Ấn bản."
-      screenCode="SCR-INV-02 / KHO SÁCH"
+      breadcrumbs={[
+        { label: 'Không gian làm việc', href: '/dashboard' },
+        { label: 'Kho & đầu sách', href: catalogPaths.seriesList },
+        { label: 'Danh mục đầu sách' },
+      ]}
       title="Danh mục đầu sách"
     >
       <Card className="overflow-hidden" padding="none">

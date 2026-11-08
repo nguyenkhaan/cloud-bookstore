@@ -18,17 +18,53 @@ export default function EditionDetailPage() {
   const edition = editionQuery.data
   const titleQuery = useTitleQuery(edition?.titleId ?? '')
 
-  if (editionQuery.isLoading) return <CatalogWorkspace description="Đang tải thông tin ấn bản…" screenCode="SCR-INV-03 / KHO SÁCH" title="Chi tiết ấn bản"><LoadingRows /></CatalogWorkspace>
-  if (!edition || editionQuery.error) return <CatalogWorkspace description="Không thể mở thông tin ấn bản." screenCode="SCR-INV-03 / KHO SÁCH" title="Chi tiết ấn bản"><ErrorState message="Không tìm thấy ấn bản yêu cầu." /></CatalogWorkspace>
+  if (editionQuery.isLoading) {
+    return (
+      <CatalogWorkspace
+        breadcrumbs={[
+          { label: 'Không gian làm việc', href: '/dashboard' },
+          { label: 'Kho & đầu sách', href: catalogPaths.seriesList },
+          { label: 'Đầu sách', href: catalogPaths.titleList },
+          { label: 'Chi tiết ấn bản' },
+        ]}
+        title="Chi tiết ấn bản"
+      >
+        <LoadingRows />
+      </CatalogWorkspace>
+    )
+  }
+  if (!edition || editionQuery.error) {
+    return (
+      <CatalogWorkspace
+        breadcrumbs={[
+          { label: 'Không gian làm việc', href: '/dashboard' },
+          { label: 'Kho & đầu sách', href: catalogPaths.seriesList },
+          { label: 'Đầu sách', href: catalogPaths.titleList },
+          { label: 'Chi tiết ấn bản' },
+        ]}
+        title="Chi tiết ấn bản"
+      >
+        <ErrorState message="Không tìm thấy ấn bản yêu cầu." />
+      </CatalogWorkspace>
+    )
+  }
 
   const copies = copiesQuery.data ?? []
   const availableCopies = copies.filter((copy) => copy.status === 'AVAILABLE').length
+  const editionLabel = edition.editionStatement || (edition.isbn ? `Ấn bản (${edition.isbn})` : 'Chi tiết ấn bản')
 
   return (
     <CatalogWorkspace
       action={<Button onClick={() => setIsCopyEditorOpen(true)}>+ Thêm bản vật lý</Button>}
-      description=""
-      screenCode="SCR-INV-03 / KHO SÁCH"
+      breadcrumbs={[
+        { label: 'Không gian làm việc', href: '/dashboard' },
+        { label: 'Kho & đầu sách', href: catalogPaths.seriesList },
+        { label: 'Đầu sách', href: catalogPaths.titleList },
+        ...(edition.titleId
+          ? [{ label: titleQuery.data?.name || 'Chi tiết đầu sách', href: catalogPaths.titleDetail(edition.titleId) }]
+          : []),
+        { label: editionLabel },
+      ]}
       title={titleQuery.data?.name || 'Chi tiết ấn bản'}
     >
       <Card padding="none">

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { BellIcon, PanelToggleIcon } from '@/components/common/Icons';
 
 export interface BreadcrumbItem {
@@ -21,7 +22,10 @@ export interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  breadcrumbs = ['Không gian làm việc', 'POS', 'Nhận trả sách & Quyết toán tiền cọc'],
+  breadcrumbs = [
+    { label: 'Không gian làm việc', href: '/dashboard' },
+    { label: 'Tổng quan' },
+  ],
   user = {
     name: 'Nguyễn Minh Anh',
     role: 'Quản trị viên',
@@ -55,12 +59,12 @@ export const Header: React.FC<HeaderProps> = ({
                 {isLast ? (
                   <span className="font-medium text-slate-800">{label}</span>
                 ) : href ? (
-                  <a
-                    href={href}
-                    className="text-slate-500 transition-colors hover:text-slate-900"
+                  <Link
+                    to={href}
+                    className="text-slate-500 transition-colors hover:text-indigo-600 hover:underline"
                   >
                     {label}
-                  </a>
+                  </Link>
                 ) : (
                   <span className="text-slate-500">{label}</span>
                 )}
