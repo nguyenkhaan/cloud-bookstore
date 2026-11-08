@@ -1,6 +1,5 @@
 import React from 'react';
 import { BellIcon, PanelToggleIcon } from '@/components/common/Icons';
-import { Badge } from '@/components/common/Badge';
 
 export interface BreadcrumbItem {
   label: string;
@@ -23,8 +22,6 @@ export interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   breadcrumbs = ['Không gian làm việc', 'POS', 'Nhận trả sách & Quyết toán tiền cọc'],
-  shiftName = 'Ca sáng đang mở',
-  isShiftOpen = true,
   user = {
     name: 'Nguyễn Minh Anh',
     role: 'Quản trị viên',

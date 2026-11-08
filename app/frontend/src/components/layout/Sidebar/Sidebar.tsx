@@ -1,20 +1,12 @@
 import React from 'react';
 import {
   DashboardIcon,
-  PosIcon,
   InventoryIcon,
-  CustomerIcon,
-  StaffIcon,
-  ApprovalIcon,
-  AuditIcon,
-  ReportIcon,
-  SettingsIcon,
   HeadphonesIcon,
   PanelToggleIcon,
   ExternalLinkIcon,
   LogoutIcon,
 } from '@/components/common/Icons';
-import { Badge, type BadgeVariant } from '@/components/common/Badge';
 import { Logo } from '@/components/common/Logo';
 import { brand } from '@/lib/brand';
 
@@ -23,8 +15,6 @@ export interface NavItem {
   label: string;
   href?: string;
   icon: React.ComponentType<{ size?: number; className?: string }>;
-  badge?: string | number;
-  badgeVariant?: BadgeVariant;
 }
 
 export interface SidebarProps {
@@ -40,18 +30,11 @@ export interface SidebarProps {
 
 const DEFAULT_NAV_ITEMS: NavItem[] = [
   { id: 'overview', label: 'Tổng quan', icon: DashboardIcon },
-  { id: 'pos', label: 'Quầy giao dịch', icon: PosIcon },
   { id: 'inventory', label: 'Kho & đầu sách', icon: InventoryIcon },
-  { id: 'customers', label: 'Khách hàng', icon: CustomerIcon },
-  { id: 'hr', label: 'Nhân sự & tiền lương', icon: StaffIcon },
-  { id: 'approvals', label: 'Phê duyệt', icon: ApprovalIcon },
-  { id: 'audit', label: 'Nhật ký kiểm toán', icon: AuditIcon },
-  { id: 'reports', label: 'Báo cáo & thuế', icon: ReportIcon },
-  { id: 'settings', label: 'Cấu hình hệ thống', icon: SettingsIcon },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({
-  currentPath = 'pos',
+  currentPath = 'overview',
   onNavigate,
   isCollapsed = false,
   onToggleCollapse,
@@ -119,12 +102,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                   {!isCollapsed && <span>{item.label}</span>}
                 </div>
-
-                {!isCollapsed && item.badge && (
-                  <Badge variant={item.badgeVariant || 'orange'} size="xs">
-                    {item.badge}
-                  </Badge>
-                )}
               </button>
             );
           })}

@@ -13,7 +13,7 @@ type CatalogWorkspaceProps = {
   title: string
 }
 
-export function CatalogWorkspace({ action, children, description, screenCode, title }: CatalogWorkspaceProps) {
+export function CatalogWorkspace({ action, children, screenCode, title }: CatalogWorkspaceProps) {
   const navigate = useNavigate()
   const { session, signOut } = useAuth()
 

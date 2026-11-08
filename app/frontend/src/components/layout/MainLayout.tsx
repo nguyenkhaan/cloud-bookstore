@@ -21,7 +21,7 @@ export interface MainLayoutProps {
 
 export const MainLayout: React.FC<MainLayoutProps> = ({
   children,
-  currentPath = 'pos',
+  currentPath = 'overview',
   onNavigate,
   onSignOut,
   breadcrumbs,
