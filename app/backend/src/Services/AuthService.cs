@@ -86,7 +86,8 @@ public class AuthService(
             employee.Id,
             employee.Email,
             employee.FullName,
-            employee.Role.RoleName.ToString());
+            employee.Role.RoleName.ToString(),
+            employee.AvatarUrl);
         return new BrowserAuthenticationSession(accessToken, refreshToken, csrfToken, user);
     }
     public async Task<RegisterResponse> Register(RegisterRequest request)
@@ -260,7 +261,8 @@ public class AuthService(
             employee.Id,
             employee.Email,
             employee.FullName,
-            employee.Role.RoleName.ToString());
+            employee.Role.RoleName.ToString(),
+            employee.AvatarUrl);
         return new BrowserAuthenticationSession(accessToken, nextRefreshToken, nextCsrfToken, user);
     }
 
@@ -299,7 +301,8 @@ public class AuthService(
                     employee.Id,
                     employee.Email,
                     employee.FullName,
-                    employee.Role.RoleName.ToString());
+                    employee.Role.RoleName.ToString(),
+                    employee.AvatarUrl);
             }
         }
 

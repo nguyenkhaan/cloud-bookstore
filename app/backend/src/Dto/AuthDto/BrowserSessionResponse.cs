@@ -4,9 +4,9 @@ public sealed record BrowserSessionUser(
     Guid Id,
     string Email,
     string FullName,
-    string Role);
+    string Role,
+    string? AvatarUrl = null);
 
 public sealed record BrowserSessionResponse(
     string CsrfToken,
     BrowserSessionUser? User = null);
-
