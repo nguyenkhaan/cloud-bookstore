@@ -5,6 +5,7 @@ import {
   createEdition,
   createSeries,
   createTitle,
+  deleteCopy,
   deleteCopyImage,
   deleteEdition,
   deleteEditionImage,
@@ -19,6 +20,7 @@ import {
   getSeries,
   getTitle,
   listCopies,
+  listAvailableReceiptLines,
   listEditions,
   listSeries,
   listTitles,
@@ -54,6 +56,7 @@ export const catalogQueryKeys = {
   copy: (copyId: string) => ['catalog', 'copies', copyId] as const,
   copyByBarcode: (barcode: string) => ['catalog', 'copies', 'by-barcode', barcode] as const,
   copyHistory: (copyId: string) => ['catalog', 'copies', copyId, 'history'] as const,
+  availableReceiptLines: (editionId: string) => ['catalog', 'editions', editionId, 'receipt-lines'] as const,
   edition: (editionId: string) => ['catalog', 'editions', editionId] as const,
   editions: (titleId: string) => ['catalog', 'titles', titleId, 'editions'] as const,
   series: (search: string) => ['catalog', 'series', search] as const,
@@ -96,6 +99,10 @@ export function useEditionQuery(editionId: string) {
 
 export function useCopiesQuery(editionId: string) {
   return useQuery({ queryKey: catalogQueryKeys.copies(editionId), queryFn: () => listCopies(editionId), enabled: Boolean(editionId) })
+}
+
+export function useAvailableReceiptLinesQuery(editionId: string) {
+  return useQuery({ queryKey: catalogQueryKeys.availableReceiptLines(editionId), queryFn: () => listAvailableReceiptLines(editionId), enabled: Boolean(editionId) })
 }
 
 export function useCopyQuery(copyId: string) {
@@ -296,7 +303,7 @@ export function useUpdateCopyMutation() {
   return useMutation({
     mutationFn: ({ copyId, request }: { copyId: string; request: UpdateCopyRequest }) =>
       updateCopy(copyId, request),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'copies'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog'] }),
   })
 }
 
@@ -305,8 +312,13 @@ export function useUpdateCopyStatusMutation() {
   return useMutation({
     mutationFn: ({ copyId, request }: { copyId: string; request: UpdateCopyStatusRequest }) =>
       updateCopyStatus(copyId, request),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'copies'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog'] }),
   })
+}
+
+export function useDeleteCopyMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({ mutationFn: (copyId: string) => deleteCopy(copyId), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog'] }) })
 }
 
 export function useCreateCopyLabelMutation() {

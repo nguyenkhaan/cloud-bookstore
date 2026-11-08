@@ -7,6 +7,10 @@ const copyStatusLabels: Record<CopyStatus, string> = {
   PENDING_RECEIPT: 'Chờ nhập kho',
   RENTED: 'Đang cho thuê',
   SOLD: 'Đã bán',
+  INVENTORY_LOCKED: 'Khóa kiểm kê',
+  LOST: 'Thất lạc',
+  DISPOSED: 'Đã thanh lý',
+  DISCONTINUED: 'Ngừng sử dụng',
 }
 
 export function ActiveBadge({ active }: { active: boolean }) {

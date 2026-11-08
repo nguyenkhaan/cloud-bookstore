@@ -77,6 +77,7 @@ export function clearCsrfToken(): void {
 export interface StoredUser {
   name: string
   role: string
+  roleCode?: string
   email?: string
 }
 

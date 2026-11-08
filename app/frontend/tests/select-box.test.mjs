@@ -98,9 +98,9 @@ test('native selects are replaced by SelectBox without changing values or payloa
   const copy = read('features/catalog/components/CopyEditorDialog.tsx')
   assert.match(copy, /label="Kênh sử dụng"/)
   assert.match(copy, /label="Tình trạng"/)
-  assert.match(copy, /label="Dòng phiếu nhập"[\s\S]*options=\{\[\]\}/)
-  assert.match(copy, /Sẽ có khi hoàn tất luồng nhập kho \(phase 05\)\./)
-  assert.doesNotMatch(copy, /receiptLineId:/)
+  assert.match(copy, /receiptLines\.map\(\(line\) =>/)
+  assert.match(copy, /receiptLineId: selectedReceiptLineId/)
+  assert.doesNotMatch(copy, /options=\{\[\]\}/)
 })
 
 test('search input is focused only after the portal menu has actually rendered', () => {

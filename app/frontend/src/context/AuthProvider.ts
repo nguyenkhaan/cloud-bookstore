@@ -3,6 +3,7 @@ import { createContext } from 'react'
 export type AuthUser = {
   name: string
   role: string
+  roleCode?: string
   email?: string
 }
 
@@ -31,6 +32,7 @@ export function formatUser(raw?: { fullName?: string | null; role?: string | nul
   return {
     name: raw.fullName || raw.email || 'Người dùng',
     role: mapRoleToDisplay(raw.role ?? undefined),
+    roleCode: raw.role ?? undefined,
     email: raw.email ?? undefined,
   }
 }

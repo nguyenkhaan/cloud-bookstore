@@ -1,11 +1,8 @@
 import type { ReactNode } from 'react'
 import { brand } from '@/lib/brand'
 import { Logo } from '@/components/common/Logo'
-import { useServerStatus } from '@/features/auth/auth.hook'
-// import { ServerStatusBadge } from './ServerStatusBadge'
 
 export function SplitLayout({ children }: { children: ReactNode }) {
-  const status = useServerStatus()
   return (
     <div className="min-h-svh w-full bg-slate-50 text-left font-sans text-sm leading-6 text-slate-700 lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
       {/* Vạch chia nghiêng 4° (trên lệch phải, dưới lệch trái): aside lấn sang cột phải 3.5svh (= tan4° × ½ chiều cao) rồi bị clip-path cắt chéo,
@@ -23,7 +20,6 @@ export function SplitLayout({ children }: { children: ReactNode }) {
       </aside>
       <main className="flex min-h-svh flex-col px-4 py-5 sm:px-10 sm:py-7 lg:pl-[calc(3.5svh+1.5rem)]">
         <div className="flex items-center justify-between gap-3">
-          {/* <ServerStatusBadge status={status} /> */}
           <span className="text-xs text-slate-400">{brand.version}</span>
         </div>
         <div className="flex flex-1 flex-col justify-center py-6">

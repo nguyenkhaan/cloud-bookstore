@@ -42,7 +42,6 @@ export default function SeriesListPage() {
   return (
     <CatalogWorkspace
       action={<Button onClick={() => setIsDialogOpen(true)}>+ Tạo bộ sách mới</Button>}
-      description="Theo dõi mức độ hoàn thiện của từng bộ truyện, nhận diện nhanh qua ảnh bìa và đi tiếp đến các đầu sách thuộc bộ."
       screenCode="SCR-INV-10 / KHO SÁCH"
       title="Quản lý Bộ sách & tiến độ đủ bộ"
     >

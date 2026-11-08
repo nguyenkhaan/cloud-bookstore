@@ -11,6 +11,7 @@ using backend.src.Infrastructure;
 using backend.src.Models;
 using backend.src.Models.Enums;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace backend.src.Services;
 
@@ -31,6 +32,30 @@ public class BookCopyService(
     private const string ActionUpdate = "BOOK_COPY_UPDATE";
     private const string ActionStatusChange = "BOOK_COPY_STATUS_CHANGE";
     private const string ActionLabelReprint = "BOOK_COPY_LABEL_REPRINT";
+    private const string ActionDelete = "BOOK_COPY_DELETE";
+
+    public async Task<IReadOnlyList<AvailableReceiptLineResponse>> GetAvailableReceiptLinesAsync(
+        Guid editionId, CancellationToken cancellationToken = default)
+    {
+        var lines = await (from line in dbContext.StockReceiptLines.AsNoTracking()
+                           join receipt in dbContext.StockReceipts.AsNoTracking() on line.ReceiptId equals receipt.Id
+                           where line.EditionId == editionId &&
+                                 receipt.Status != ApprovalStatus.COMPLETED &&
+                                 receipt.Status != ApprovalStatus.REJECTED &&
+                                 receipt.Status != ApprovalStatus.CANCELLED
+                           select new { line.Id, receipt.Code, line.Quantity, line.ConditionGrade, line.Availability })
+            .ToListAsync(cancellationToken);
+        var ids = lines.Select(x => x.Id).ToArray();
+        var counts = await dbContext.BookCopies.AsNoTracking()
+            .Where(c => ids.Contains(c.ReceiptLineId))
+            .GroupBy(c => c.ReceiptLineId)
+            .Select(g => new { Id = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Id, x => x.Count, cancellationToken);
+
+        return lines.Select(x => new AvailableReceiptLineResponse(
+                x.Id, x.Code, x.Quantity - counts.GetValueOrDefault(x.Id), x.ConditionGrade, x.Availability))
+            .Where(x => x.RemainingQuantity > 0).ToList();
+    }
 
     public async Task<PagedResult<BookCopyResponse>> GetBookCopiesAsync(
         BookCopyQuery query,
@@ -440,13 +465,15 @@ public class BookCopyService(
         var copy = await dbContext.BookCopies.FirstOrDefaultAsync(c => c.Id == id, cancellationToken)
             ?? throw new NotFoundException($"Bản sách với ID '{id}' không tồn tại.");
 
-        BookCopyValidator.EnsureEditable(copy);
-
         var beforeJson = JsonSerializer.Serialize(copy.ToAuditSnapshot());
         var before = copy.ToAuditSnapshot();
 
-        if (copy.Availability != availability)
+        var changesProtectedFields = copy.ConditionGrade != grade || copy.Availability != availability ||
+            copy.SellingPrice != data.SellingPrice || copy.RentalRate != data.RentalRate ||
+            copy.ShelfCode != data.ShelfCode;
+        if (changesProtectedFields)
         {
+            BookCopyValidator.EnsureEditable(copy);
             await BookCopyValidator.EnsureNoActiveReferenceAsync(dbContext, id, cancellationToken);
         }
 
@@ -457,7 +484,7 @@ public class BookCopyService(
         copy.RentalRate = data.RentalRate;
         copy.ShelfCode = data.ShelfCode;
 
-        if (copy.Status == BookCopyStatus.AVAILABLE)
+        if (changesProtectedFields && copy.Status == BookCopyStatus.AVAILABLE)
         {
             BookCopyValidator.EnsureAvailableRequirements(copy);
         }
@@ -523,6 +550,37 @@ public class BookCopyService(
 
         await SaveWithAuditAsync(copy, ActionStatusChange, before, after, reason, auditContext, cancellationToken);
         return await GetBookCopyByIdAsync(id, canViewCost: true, cancellationToken);
+    }
+
+    public async Task DeleteBookCopyAsync(
+        Guid id, AuditLogContext auditContext, CancellationToken cancellationToken = default)
+    {
+        var copy = await dbContext.BookCopies.FirstOrDefaultAsync(c => c.Id == id, cancellationToken)
+            ?? throw new NotFoundException($"Bản sách với ID '{id}' không tồn tại.");
+        var referenced = await dbContext.RentalLines.AnyAsync(x => x.CopyId == id, cancellationToken) ||
+            await dbContext.SaleInvoiceLines.AnyAsync(x => x.CopyId == id, cancellationToken) ||
+            await dbContext.InventoryChecks.AnyAsync(x => x.CopyId == id, cancellationToken);
+        if (referenced || copy.Status is BookCopyStatus.RENTED or BookCopyStatus.SOLD)
+        {
+            throw new ConflictException("Bản sách đã có lịch sử giao dịch hoặc kiểm kê; hãy ngừng sử dụng thay vì xóa.");
+        }
+
+        var oldImageId = copy.PublicImageId;
+        var before = copy.ToAuditSnapshot();
+        dbContext.BookCopies.Remove(copy);
+        try
+        {
+            await SaveWithAuditsAsync([
+                new CreateAuditLogEntry(ActionDelete, AuditEntityType, id, before, null,
+                    "Xóa bản sách chưa phát sinh giao dịch.", auditContext)
+            ], cancellationToken);
+        }
+        catch (DbUpdateException exception) when (exception.InnerException is PostgresException
+            { SqlState: PostgresErrorCodes.ForeignKeyViolation })
+        {
+            throw new ConflictException("Bản sách vừa phát sinh dữ liệu tham chiếu; hãy tải lại trang và ngừng sử dụng thay vì xóa.");
+        }
+        await cloudinaryService.TryDestroyAfterCommitAsync(oldImageId, CopyImageOwner, logger);
     }
 
     public async Task<BookCopyLabelResponse> CreateLabelAsync(
@@ -775,6 +833,7 @@ public class BookCopyService(
         ActionUpdate => "Cập nhật thông tin bản sách (Grade, tình trạng, giá, kệ hoặc kênh Bán/Thuê).",
         ActionStatusChange => "Chuyển trạng thái vòng đời của bản sách.",
         ActionLabelReprint => "In/tái in tem CopyBarcode.",
+        ActionDelete => "Xóa bản sách vật lý chưa phát sinh giao dịch.",
         ActionAttachImage => "Gắn ảnh cho bản sách.",
         ActionReplaceImage => "Thay ảnh của bản sách.",
         ActionDeleteImage => "Xóa ảnh của bản sách.",
