@@ -3164,6 +3164,7 @@ export interface components {
             email: string;
             fullName: string;
             role: string;
+            avatarUrl?: null | string;
         };
         CategoryDetailResponse: {
             /** Format: uuid */
