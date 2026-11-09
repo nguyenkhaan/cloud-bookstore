@@ -1,4 +1,5 @@
 import { cn } from '@/lib/cn'
+import { BookOpen } from 'lucide-react'
 
 type CoverTileProps = {
   imageUrl?: string | null
@@ -12,9 +13,10 @@ export function CoverTile({ imageUrl, title, className }: CoverTileProps) {
   }
 
   return (
-    <div className={cn('grid place-items-center bg-linear-to-br from-indigo-700 via-indigo-600 to-sky-500 text-center text-lg font-black text-white', className)}>
-      <span aria-hidden="true">{title.trim().charAt(0).toUpperCase() || 'S'}</span>
-      <span className="sr-only">Chưa có ảnh bìa cho {title}</span>
+    <div className={cn('flex flex-col items-center justify-center gap-2 bg-slate-100 px-2 text-center text-slate-500', className)}>
+      <BookOpen aria-hidden="true" size={22} strokeWidth={1.5} />
+      <span className="text-[10px] font-medium leading-4">Chưa có ảnh bìa</span>
+      <span className="sr-only">{title}</span>
     </div>
   )
 }

@@ -33,6 +33,21 @@ const DEFAULT_NAV_ITEMS: NavItem[] = [
   { id: 'inventory', label: 'Kho & đầu sách', icon: InventoryIcon },
 ];
 
+export function navLabelFor(id: string): string {
+  const labels: Record<string, string> = {
+    overview: 'Tổng quan',
+    inventory: 'Kho & đầu sách',
+    pos: 'Quầy giao dịch',
+    customers: 'Khách hàng',
+    hr: 'Nhân sự & tiền lương',
+    approvals: 'Phê duyệt',
+    audit: 'Nhật ký kiểm toán',
+    reports: 'Báo cáo & thuế',
+    settings: 'Cấu hình hệ thống',
+  };
+  return labels[id] ?? 'Hệ thống';
+}
+
 export const Sidebar: React.FC<SidebarProps> = ({
   currentPath = 'overview',
   onNavigate,
@@ -116,13 +131,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <HeadphonesIcon size={15} />
               </div>
               <div>
-              <a
-                href="mailto:bookstore@gmail.com"
-                className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 transition-colors hover:text-indigo-700"
-              >
-                <span>Liên hệ trợ giúp</span>
-                <ExternalLinkIcon size={11} />
-              </a>
+                <a
+                  href="mailto:bookstore@gmail.com"
+                  className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 transition-colors hover:text-indigo-700"
+                >
+                  <span>Liên hệ trợ giúp</span>
+                  <ExternalLinkIcon size={11} />
+                </a>
               </div>
             </div>
           </div>

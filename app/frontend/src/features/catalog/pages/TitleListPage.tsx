@@ -28,11 +28,7 @@ export default function TitleListPage() {
   return (
     <CatalogWorkspace
       action={<Button onClick={() => setIsEditorOpen(true)}>+ Thêm đầu sách</Button>}
-      breadcrumbs={[
-        { label: 'Không gian làm việc', href: '/dashboard' },
-        { label: 'Kho & đầu sách', href: catalogPaths.seriesList },
-        { label: 'Danh mục đầu sách' },
-      ]}
+      screenCode="SCR-INV-02 / KHO SÁCH"
       title="Danh mục đầu sách"
     >
       <Card className="overflow-hidden" padding="none">

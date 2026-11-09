@@ -42,10 +42,7 @@ export default function SeriesListPage() {
   return (
     <CatalogWorkspace
       action={<Button onClick={() => setIsDialogOpen(true)}>+ Tạo bộ sách mới</Button>}
-      breadcrumbs={[
-        { label: 'Không gian làm việc', href: '/dashboard' },
-        { label: 'Kho & đầu sách' },
-      ]}
+      screenCode="SCR-INV-10 / KHO SÁCH"
       title="Quản lý Bộ sách & tiến độ đủ bộ"
     >
       <section className="grid gap-4 md:grid-cols-3">

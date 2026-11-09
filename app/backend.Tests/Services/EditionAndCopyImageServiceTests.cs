@@ -165,6 +165,94 @@ public sealed class EditionAndCopyImageServiceTests
         Assert.Equal("ATTACH_IMAGE", (await verifyContext.AuditLogs.SingleAsync()).Action);
     }
 
+    [Fact]
+    public async Task DeleteBookCopy_removes_unreferenced_copy_and_its_image()
+    {
+        var databaseName = NewDatabaseName();
+        await using var dbContext = CreateDbContext(databaseName);
+        var copy = SeedBookCopy(dbContext, null, "cloud-bookstore/public/book-copies/to-delete");
+        await dbContext.SaveChangesAsync();
+        var cloudinary = new FakeCloudinaryService();
+
+        await CreateBookCopyService(dbContext, cloudinary).DeleteBookCopyAsync(copy.Id, new AuditLogContext(null, null));
+
+        await using var verify = CreateDbContext(databaseName);
+        Assert.Empty(verify.BookCopies);
+        Assert.Equal("BOOK_COPY_DELETE", (await verify.AuditLogs.SingleAsync()).Action);
+        Assert.Single(cloudinary.DestroyedIds);
+    }
+
+    [Fact]
+    public async Task DeleteBookCopy_rejects_historical_rental()
+    {
+        await using var dbContext = CreateDbContext(NewDatabaseName());
+        var copy = SeedBookCopy(dbContext, null, null);
+        dbContext.RentalLines.Add(new RentalLineModel { CopyId = copy.Id, Status = RentalLineStatus.RETURNED });
+        await dbContext.SaveChangesAsync();
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            CreateBookCopyService(dbContext, new FakeCloudinaryService()).DeleteBookCopyAsync(copy.Id, new AuditLogContext(null, null)));
+        Assert.Single(dbContext.BookCopies);
+    }
+
+    [Fact]
+    public async Task Rented_copy_allows_note_change_but_rejects_price_change()
+    {
+        await using var dbContext = CreateDbContext(NewDatabaseName());
+        var copy = SeedBookCopy(dbContext, null, null);
+        copy.Status = BookCopyStatus.RENTED;
+        copy.SellingPrice = 50_000;
+        await dbContext.SaveChangesAsync();
+        var service = CreateBookCopyService(dbContext, new FakeCloudinaryService());
+
+        await service.UpdateBookCopyAsync(copy.Id,
+            new UpdateBookCopyRequest(copy.ConditionGrade, copy.Availability, "Kiểm tra bìa", "Bìa có vết xước", 50_000),
+            new AuditLogContext(null, null));
+        Assert.Equal("Bìa có vết xước", copy.ConditionNote);
+
+        await Assert.ThrowsAsync<ConflictException>(() => service.UpdateBookCopyAsync(copy.Id,
+            new UpdateBookCopyRequest(copy.ConditionGrade, copy.Availability, "Đổi giá", copy.ConditionNote, 60_000),
+            new AuditLogContext(null, null)));
+        Assert.Equal(50_000, copy.SellingPrice);
+    }
+
+    [Fact]
+    public async Task Copy_in_active_sale_allows_note_but_rejects_price_change_and_delete()
+    {
+        await using var dbContext = CreateDbContext(NewDatabaseName());
+        var copy = SeedBookCopy(dbContext, null, null);
+        copy.SellingPrice = 50_000;
+        dbContext.SaleInvoiceLines.Add(new SaleInvoiceLineModel { CopyId = copy.Id, Status = SaleInvoiceLineStatus.ACTIVE });
+        await dbContext.SaveChangesAsync();
+        var service = CreateBookCopyService(dbContext, new FakeCloudinaryService());
+
+        await service.UpdateBookCopyAsync(copy.Id,
+            new UpdateBookCopyRequest(copy.ConditionGrade, copy.Availability, "Ghi chú", "Bìa hơi cũ", 50_000),
+            new AuditLogContext(null, null));
+        Assert.Equal("Bìa hơi cũ", copy.ConditionNote);
+        await Assert.ThrowsAsync<ConflictException>(() => service.UpdateBookCopyAsync(copy.Id,
+            new UpdateBookCopyRequest(copy.ConditionGrade, copy.Availability, "Đổi giá", copy.ConditionNote, 60_000),
+            new AuditLogContext(null, null)));
+        await Assert.ThrowsAsync<ConflictException>(() => service.DeleteBookCopyAsync(copy.Id, new AuditLogContext(null, null)));
+        Assert.Equal(50_000, copy.SellingPrice);
+    }
+
+    [Fact]
+    public async Task Available_receipt_lines_only_include_remaining_quantity()
+    {
+        await using var dbContext = CreateDbContext(NewDatabaseName());
+        var copy = SeedBookCopy(dbContext, null, null);
+        await dbContext.SaveChangesAsync();
+        var line = await dbContext.StockReceiptLines.SingleAsync();
+        line.Quantity = 2;
+        await dbContext.SaveChangesAsync();
+
+        var options = await CreateBookCopyService(dbContext, new FakeCloudinaryService())
+            .GetAvailableReceiptLinesAsync(copy.EditionId);
+
+        Assert.Equal(1, Assert.Single(options).RemainingQuantity);
+    }
+
     private static string NewDatabaseName() => Guid.NewGuid().ToString("N");
 
     private static AppDbContext CreateDbContext(string databaseName)

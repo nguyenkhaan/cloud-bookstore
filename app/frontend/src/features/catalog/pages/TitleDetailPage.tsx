@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Button, Card } from '@/components/common'
+import { useAuth } from '@/features/auth/auth.hook'
 import { catalogPaths } from '../catalog.route'
 import { useCreateEditionMutation, useEditionsQuery, useSeriesQuery, useTitleQuery, useUpdateTitleMutation } from '../catalog.hook'
 import { formatVnd } from '../catalog.presentation'
+import type { CreateEditionRequest } from '../catalog.type'
 import { ActiveBadge } from '../components/CatalogStatusBadge'
 import { CatalogWorkspace } from '../components/CatalogWorkspace'
 import { CoverTile } from '../components/CoverTile'
@@ -12,6 +14,8 @@ import { TitleEditorDialog } from '../components/TitleEditorDialog'
 import { ErrorState, LoadingRows } from './SeriesListPage'
 
 export default function TitleDetailPage() {
+  const { session } = useAuth()
+  const canEdit = ['ADMIN', 'INVENTORY_MANAGER'].includes(session?.user?.roleCode ?? '')
   const { titleId = '' } = useParams()
   const [isTitleEditorOpen, setIsTitleEditorOpen] = useState(false)
   const [isEditionEditorOpen, setIsEditionEditorOpen] = useState(false)
@@ -24,45 +28,16 @@ export default function TitleDetailPage() {
   const editions = editionsQuery.data ?? []
 
   if (titleQuery.isLoading) {
-    return (
-      <CatalogWorkspace
-        breadcrumbs={[
-          { label: 'Không gian làm việc', href: '/dashboard' },
-          { label: 'Kho & đầu sách', href: catalogPaths.seriesList },
-          { label: 'Đầu sách', href: catalogPaths.titleList },
-          { label: 'Chi tiết đầu sách' },
-        ]}
-        title="Chi tiết đầu sách"
-      >
-        <LoadingRows />
-      </CatalogWorkspace>
-    )
+    return <CatalogWorkspace screenCode="SCR-INV-03 / KHO SÁCH" title="Chi tiết đầu sách"><LoadingRows /></CatalogWorkspace>
   }
   if (!title || titleQuery.error) {
-    return (
-      <CatalogWorkspace
-        breadcrumbs={[
-          { label: 'Không gian làm việc', href: '/dashboard' },
-          { label: 'Kho & đầu sách', href: catalogPaths.seriesList },
-          { label: 'Đầu sách', href: catalogPaths.titleList },
-          { label: 'Chi tiết đầu sách' },
-        ]}
-        title="Chi tiết đầu sách"
-      >
-        <ErrorState message="Không tìm thấy đầu sách hoặc bạn không có quyền xem." />
-      </CatalogWorkspace>
-    )
+    return <CatalogWorkspace screenCode="SCR-INV-03 / KHO SÁCH" title="Chi tiết đầu sách"><ErrorState message="Không tìm thấy đầu sách hoặc bạn không có quyền xem." /></CatalogWorkspace>
   }
 
   return (
     <CatalogWorkspace
-      action={<div className="flex flex-wrap gap-2"><Button onClick={() => setIsTitleEditorOpen(true)} variant="secondary">Chỉnh sửa đầu sách</Button><Button onClick={() => setIsEditionEditorOpen(true)}>+ Thêm ấn bản</Button></div>}
-      breadcrumbs={[
-        { label: 'Không gian làm việc', href: '/dashboard' },
-        { label: 'Kho & đầu sách', href: catalogPaths.seriesList },
-        { label: 'Đầu sách', href: catalogPaths.titleList },
-        { label: title.name },
-      ]}
+      action={canEdit && <div className="flex flex-wrap gap-2"><Button onClick={() => setIsTitleEditorOpen(true)} variant="secondary">Chỉnh sửa đầu sách</Button><Button onClick={() => setIsEditionEditorOpen(true)}>+ Thêm ấn bản</Button></div>}
+      screenCode="SCR-INV-03 / KHO SÁCH"
       title={title.name}
     >
       <Card padding="none">
@@ -86,7 +61,7 @@ export default function TitleDetailPage() {
         )}
       </section>
       {isTitleEditorOpen && <TitleEditorDialog onClose={() => setIsTitleEditorOpen(false)} onSave={async (request) => { await updateTitle.mutateAsync({ titleId, request }) }} series={seriesQuery.data ?? []} title={title} />}
-      {isEditionEditorOpen && <EditionEditorDialog onClose={() => setIsEditionEditorOpen(false)} onSave={async (request) => { await createEdition.mutateAsync(request) }} titleId={titleId} />}
+      {isEditionEditorOpen && <EditionEditorDialog onClose={() => setIsEditionEditorOpen(false)} onSave={async (request) => { await createEdition.mutateAsync(request as CreateEditionRequest) }} titleId={titleId} />}
     </CatalogWorkspace>
   )
 }

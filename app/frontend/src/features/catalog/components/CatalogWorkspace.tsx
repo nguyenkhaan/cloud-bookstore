@@ -1,29 +1,23 @@
 import type { ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { MainLayout } from '@/components/layout'
-import type { BreadcrumbItem } from '@/components/layout/Header/Header'
 import { useAuth } from '@/features/auth/auth.hook'
 import { workspacePathFor } from '@/features/workspace/workspace.route'
+import { useCatalogBreadcrumbs } from '../catalog.hook'
 import { catalogPaths } from '../catalog.route'
 
 type CatalogWorkspaceProps = {
   action?: ReactNode
-  breadcrumbs?: (string | BreadcrumbItem)[]
   children: ReactNode
-  description?: string
-  screenCode?: string
+  screenCode: string
   title: string
 }
 
-export function CatalogWorkspace({
-  action,
-  breadcrumbs,
-  children,
-  title,
-}: CatalogWorkspaceProps) {
+export function CatalogWorkspace({ action, children, screenCode, title }: CatalogWorkspaceProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const { session, signOut } = useAuth()
+  const breadcrumbs = useCatalogBreadcrumbs()
 
   const navigateFromSidebar = (item: string) => {
     const path = workspacePathFor(item)
@@ -31,12 +25,6 @@ export function CatalogWorkspace({
   }
 
   const currentUser = session?.user ?? { name: 'Khách', role: 'Chưa xác thực' }
-
-  const defaultBreadcrumbs: (string | BreadcrumbItem)[] = [
-    { label: 'Không gian làm việc', href: '/dashboard' },
-    { label: 'Kho & đầu sách', href: catalogPaths.seriesList },
-    { label: title },
-  ]
 
   const isSeriesActive = location.pathname.startsWith(catalogPaths.seriesList)
   const isTitlesActive =
@@ -48,11 +36,12 @@ export function CatalogWorkspace({
   return (
     <MainLayout
       actionButton={action}
-      breadcrumbs={breadcrumbs ?? defaultBreadcrumbs}
+      breadcrumbs={breadcrumbs}
       currentPath="inventory"
       onNavigate={navigateFromSidebar}
       onSignOut={signOut}
       pageTitle={title}
+      screenCode={screenCode}
       user={currentUser}
     >
       <div className="space-y-5">

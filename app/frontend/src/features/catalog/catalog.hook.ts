@@ -1,10 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMatch, useSearchParams } from 'react-router-dom'
+import type { BreadcrumbItem } from '@/components/common/Breadcrumb'
 import {
   createCopy,
   createCopyLabel,
   createEdition,
   createSeries,
   createTitle,
+  deleteCopy,
   deleteCopyImage,
   deleteEdition,
   deleteEditionImage,
@@ -19,6 +22,7 @@ import {
   getSeries,
   getTitle,
   listCopies,
+  listAvailableReceiptLines,
   listEditions,
   listSeries,
   listTitles,
@@ -35,7 +39,9 @@ import {
   updateTitle,
   updateTitleStatus,
 } from './catalog.service'
+import { catalogPaths } from './catalog.route'
 import type {
+  BookEdition,
   CreateCopyRequest,
   CreateEditionRequest,
   CreateSeriesRequest,
@@ -54,6 +60,7 @@ export const catalogQueryKeys = {
   copy: (copyId: string) => ['catalog', 'copies', copyId] as const,
   copyByBarcode: (barcode: string) => ['catalog', 'copies', 'by-barcode', barcode] as const,
   copyHistory: (copyId: string) => ['catalog', 'copies', copyId, 'history'] as const,
+  availableReceiptLines: (editionId: string) => ['catalog', 'editions', editionId, 'receipt-lines'] as const,
   edition: (editionId: string) => ['catalog', 'editions', editionId] as const,
   editions: (titleId: string) => ['catalog', 'titles', titleId, 'editions'] as const,
   series: (search: string) => ['catalog', 'series', search] as const,
@@ -98,6 +105,10 @@ export function useCopiesQuery(editionId: string) {
   return useQuery({ queryKey: catalogQueryKeys.copies(editionId), queryFn: () => listCopies(editionId), enabled: Boolean(editionId) })
 }
 
+export function useAvailableReceiptLinesQuery(editionId: string) {
+  return useQuery({ queryKey: catalogQueryKeys.availableReceiptLines(editionId), queryFn: () => listAvailableReceiptLines(editionId), enabled: Boolean(editionId) })
+}
+
 export function useCopyQuery(copyId: string) {
   return useQuery({ queryKey: catalogQueryKeys.copy(copyId), queryFn: () => getCopy(copyId), enabled: Boolean(copyId) })
 }
@@ -116,6 +127,79 @@ export function useCopyHistoryQuery(copyId: string) {
     queryFn: () => getCopyHistory(copyId),
     enabled: Boolean(copyId),
   })
+}
+
+// ----------------------------------------------------------------------
+// BREADCRUMBS
+// ----------------------------------------------------------------------
+
+const CATALOG_ROOT_LABEL = 'Kho & đầu sách'
+
+function seriesLabel(name?: string | null) {
+  return name ? `Bộ sách ${name}` : 'Bộ sách'
+}
+
+function editionLabel(edition?: Pick<BookEdition, 'editionStatement' | 'isbn'>) {
+  if (edition?.editionStatement) return edition.editionStatement
+  if (edition?.isbn) return `ISBN ${edition.isbn}`
+  return 'Ấn bản'
+}
+
+/**
+ * Builds the header breadcrumb for the current catalog route:
+ * Kho & đầu sách › Bộ sách X › Đầu sách › Ấn bản › CopyBarcode.
+ * Parents are resolved up the Copy → Edition → Title → Series chain and share the
+ * react-query cache with the pages, so no extra requests are made.
+ */
+export function useCatalogBreadcrumbs(): BreadcrumbItem[] {
+  const [searchParams] = useSearchParams()
+  const isTitleList = Boolean(useMatch(catalogPaths.titleList))
+  const titleMatch = useMatch('/catalog/titles/:titleId')
+  const editionMatch = useMatch('/catalog/editions/:editionId')
+  const copyMatch = useMatch('/catalog/copies/:copyId')
+
+  const listSeriesId = isTitleList ? searchParams.get('seriesId') ?? '' : ''
+  const seriesDetailQuery = useSeriesDetailQuery(listSeriesId)
+
+  const copyQuery = useCopyQuery(copyMatch?.params.copyId ?? '')
+  const editionId = editionMatch?.params.editionId ?? copyQuery.data?.editionId ?? ''
+  const editionQuery = useEditionQuery(editionId)
+  const titleId = titleMatch?.params.titleId ?? editionQuery.data?.titleId ?? ''
+  const titleQuery = useTitleQuery(titleId)
+  const title = titleQuery.data
+
+  const root: BreadcrumbItem = { label: CATALOG_ROOT_LABEL, to: catalogPaths.seriesList }
+
+  if (isTitleList) {
+    return [
+      root,
+      listSeriesId
+          ? { label: seriesLabel(seriesDetailQuery.data?.name), to: catalogPaths.titlesForSeries(listSeriesId) }
+          : { label: 'Danh mục đầu sách', to: catalogPaths.titleList },
+    ]
+  }
+
+  const crumbs: BreadcrumbItem[] = [root]
+  if (!titleMatch && !editionMatch && !copyMatch) return crumbs
+
+  // Wait for the title before choosing between a series parent and the plain title list.
+  if (title) {
+    crumbs.push(
+        title.seriesId
+            ? { label: seriesLabel(title.seriesName), to: catalogPaths.titlesForSeries(title.seriesId) }
+            : { label: 'Danh mục đầu sách', to: catalogPaths.titleList },
+    )
+  }
+  if (titleId) {
+    crumbs.push({ label: title?.name ?? 'Đầu sách', to: catalogPaths.titleDetail(titleId) })
+  }
+  if (editionMatch || copyMatch) {
+    if (editionId) crumbs.push({ label: editionLabel(editionQuery.data), to: catalogPaths.editionDetail(editionId) })
+  }
+  if (copyMatch) {
+    crumbs.push({ label: copyQuery.data?.copyBarcode ?? 'Bản sách vật lý' })
+  }
+  return crumbs
 }
 
 // ----------------------------------------------------------------------
@@ -158,7 +242,7 @@ export function useReplaceSeriesImageMutation() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ seriesId, imageUpload }: { seriesId: string; imageUpload: CloudinaryUploadResultRequest }) =>
-      replaceSeriesImage(seriesId, imageUpload),
+        replaceSeriesImage(seriesId, imageUpload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'series'] }),
   })
 }
@@ -211,7 +295,7 @@ export function useReplaceTitleImageMutation() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ titleId, imageUpload }: { titleId: string; imageUpload: CloudinaryUploadResultRequest }) =>
-      replaceTitleImage(titleId, imageUpload),
+        replaceTitleImage(titleId, imageUpload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'titles'] }),
   })
 }
@@ -240,7 +324,7 @@ export function useUpdateEditionMutation() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ editionId, request }: { editionId: string; request: UpdateEditionRequest }) =>
-      updateEdition(editionId, request),
+        updateEdition(editionId, request),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog'] }),
   })
 }
@@ -249,7 +333,7 @@ export function useUpdateEditionStatusMutation() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ editionId, isActive }: { editionId: string; isActive: boolean }) =>
-      updateEditionStatus(editionId, isActive),
+        updateEditionStatus(editionId, isActive),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'editions'] }),
   })
 }
@@ -266,7 +350,7 @@ export function useReplaceEditionImageMutation() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ editionId, imageUpload }: { editionId: string; imageUpload: CloudinaryUploadResultRequest }) =>
-      replaceEditionImage(editionId, imageUpload),
+        replaceEditionImage(editionId, imageUpload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'editions'] }),
   })
 }
@@ -296,7 +380,7 @@ export function useUpdateCopyMutation() {
   return useMutation({
     mutationFn: ({ copyId, request }: { copyId: string; request: UpdateCopyRequest }) =>
       updateCopy(copyId, request),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'copies'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog'] }),
   })
 }
 
@@ -305,8 +389,13 @@ export function useUpdateCopyStatusMutation() {
   return useMutation({
     mutationFn: ({ copyId, request }: { copyId: string; request: UpdateCopyStatusRequest }) =>
       updateCopyStatus(copyId, request),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'copies'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog'] }),
   })
+}
+
+export function useDeleteCopyMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({ mutationFn: (copyId: string) => deleteCopy(copyId), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog'] }) })
 }
 
 export function useCreateCopyLabelMutation() {
@@ -319,7 +408,7 @@ export function useReplaceCopyImageMutation() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ copyId, imageUpload }: { copyId: string; imageUpload: CloudinaryUploadResultRequest }) =>
-      replaceCopyImage(copyId, imageUpload),
+        replaceCopyImage(copyId, imageUpload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'copies'] }),
   })
 }

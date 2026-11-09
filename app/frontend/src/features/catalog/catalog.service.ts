@@ -7,6 +7,7 @@ import type {
   BookCopy,
   BookCopyHistoryItem,
   BookCopyLabelResponse,
+  AvailableReceiptLine,
   BookEdition,
   BookSeries,
   BookTitle,
@@ -293,6 +294,10 @@ export async function listCopies(editionId: string): Promise<BookCopy[]> {
   return listFrom(response).map(copyForView)
 }
 
+export async function listAvailableReceiptLines(editionId: string): Promise<AvailableReceiptLine[]> {
+  return requestData(() => privateClient.get<AvailableReceiptLine[]>(`${endpoints.copies}/receipt-lines`, { params: { editionId } }))
+}
+
 export async function getCopy(copyId: string): Promise<BookCopy> {
   const response = await requestData(() =>
     privateClient.get<CopyResponse>(`${endpoints.copies}/${encodeURIComponent(copyId)}`),
@@ -325,6 +330,10 @@ export async function updateCopy(copyId: string, request: UpdateCopyRequest): Pr
     privateClient.put<CopyResponse>(`${endpoints.copies}/${encodeURIComponent(copyId)}`, request),
   )
   return copyForView(response)
+}
+
+export async function deleteCopy(copyId: string): Promise<void> {
+  await requestData(() => privateClient.delete<void>(`${endpoints.copies}/${encodeURIComponent(copyId)}`))
 }
 
 export async function updateCopyStatus(copyId: string, request: UpdateCopyStatusRequest): Promise<BookCopy> {

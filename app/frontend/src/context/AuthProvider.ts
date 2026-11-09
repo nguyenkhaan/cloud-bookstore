@@ -3,7 +3,9 @@ import { createContext } from 'react'
 export type AuthUser = {
   name: string
   role: string
+  roleCode?: string
   email?: string
+  avatarUrl?: string
 }
 
 export type AuthSession = {
@@ -24,14 +26,18 @@ export function mapRoleToDisplay(role?: string): string {
   }
 }
 
-export function formatUser(raw?: { fullName?: string | null; role?: string | null; email?: string | null } | null): AuthUser {
+export function formatUser(
+    raw?: { fullName?: string | null; role?: string | null; email?: string | null; avatarUrl?: string | null } | null,
+): AuthUser {
   if (!raw) {
     return { name: 'Quản trị viên', role: 'Quản trị viên' }
   }
   return {
     name: raw.fullName || raw.email || 'Người dùng',
     role: mapRoleToDisplay(raw.role ?? undefined),
+    roleCode: raw.role ?? undefined,
     email: raw.email ?? undefined,
+    avatarUrl: raw.avatarUrl ?? undefined,
   }
 }
 
