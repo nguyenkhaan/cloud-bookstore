@@ -20,7 +20,6 @@ export function DashboardPage({ onSignOut }: DashboardPageProps) {
         const path = workspacePathFor(id);
         if (path) navigate(path);
       }}
-      screenCode={currentTab === 'overview' ? 'SCR-REP-01 / TỔNG QUAN' : undefined}
       pageTitle={currentTab === 'overview' ? 'Tổng quan kinh doanh' : undefined}
       user={currentUser}
     >

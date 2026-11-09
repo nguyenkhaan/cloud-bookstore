@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Badge, Button, Card, TextField } from '@/components/common'
+import { Button, Card, TextField } from '@/components/common'
 import { Banner } from '@/features/auth/components/Banner'
 import { PasswordField } from '@/features/auth/components/PasswordField'
 import { SplitLayout } from '@/features/auth/components/SplitLayout'
@@ -64,7 +64,6 @@ export function LoginPage({ search }: { search: string }) {
   return (
     <SplitLayout>
       <Card aria-labelledby="login-title" className="mx-auto w-full max-w-[500px] rounded-3xl border-slate-200/70 p-5 shadow-[0_8px_28px_rgba(30,27,75,0.06)] sm:p-9" padding="none" role="region">
-        <Badge size="md" variant="brand">Sẵn sàng tiếp tục?</Badge>
         <h1 className="mt-5 text-[36px] font-bold leading-tight text-center text-indigo-950" id="login-title">ĐĂNG NHẬP</h1>
 
         <form className="mt-6 flex flex-col gap-4" onSubmit={submit}>
