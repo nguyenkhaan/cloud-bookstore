@@ -1,5 +1,10 @@
 # Phase 04 — Khách hàng và thành viên
 
+## Tài liệu tham chiếu thiết kế UI/UX
+- **Figma Design:** [Cloud Bookstore - CRM / Khách hàng](https://www.figma.com/design/ylSYDMUTYepn3GJ8eyeImv/Cloud-Bookstore?node-id=30-25012)
+  - `SCR-CRM-01`: Danh sách Khách hàng & Hạng thành viên (Node ID: `30:25012`)
+  - `SCR-CRM-02`: Hồ sơ Khách hàng & Lịch sử giao dịch 360° (Node ID: `30:25106`)
+
 ## Mục tiêu
 
 Tạo hồ sơ khách dùng chung cho bán, thuê và thu mua; hạng được tính đúng từ giao dịch hợp lệ.
