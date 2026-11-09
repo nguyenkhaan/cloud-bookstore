@@ -4,8 +4,8 @@ import type { AxiosError, InternalAxiosRequestConfig } from 'axios'
 const rawBaseUrl = (import.meta.env.VITE_BASE_URL ?? '').trim()
 const backendUrl = rawBaseUrl.replace(/\/+$/, '')
 const API_BASE_URL = backendUrl
-  ? (backendUrl.endsWith('/api') ? backendUrl : `${backendUrl}/api`)
-  : '/api'
+    ? (backendUrl.endsWith('/api') ? backendUrl : `${backendUrl}/api`)
+    : '/api'
 const CSRF_HEADER = 'X-CSRF-Token'
 const CSRF_STORAGE_KEY = 'cloud-bookstore.csrf-token'
 const USER_STORAGE_KEY = 'cloud-bookstore.user-info'
@@ -79,6 +79,7 @@ export interface StoredUser {
   role: string
   roleCode?: string
   email?: string
+  avatarUrl?: string
 }
 
 export function readStoredUser(): StoredUser | null {
@@ -160,37 +161,37 @@ export const publicClient = createClient()
 export const privateClient = createClient()
 
 privateClient.interceptors.response.use(
-  (response) => response,
-  async (error: AxiosError<unknown>) => {
-    const request = error.config as RetryableRequest | undefined
+    (response) => response,
+    async (error: AxiosError<unknown>) => {
+      const request = error.config as RetryableRequest | undefined
 
-    // Another tab or a token refresh may have moved this session to a newer CSRF token:
-    // reload it from the session endpoint and replay the request once.
-    if (isCsrfRejection(error) && request && !request._csrfRetried && csrfRecovery) {
-      request._csrfRetried = true
-      await csrfRecovery()
-      return privateClient.request(request)
-    }
+      // Another tab or a token refresh may have moved this session to a newer CSRF token:
+      // reload it from the session endpoint and replay the request once.
+      if (isCsrfRejection(error) && request && !request._csrfRetried && csrfRecovery) {
+        request._csrfRetried = true
+        await csrfRecovery()
+        return privateClient.request(request)
+      }
 
-    const isAuthenticationEndpoint = AUTH_ENDPOINTS.has(String(request?.url))
-    if (
-      error.response?.status !== 401 ||
-      !request ||
-      !csrfToken ||
-      request._sessionRetried ||
-      isAuthenticationEndpoint
-    ) {
-      return Promise.reject(error)
-    }
+      const isAuthenticationEndpoint = AUTH_ENDPOINTS.has(String(request?.url))
+      if (
+          error.response?.status !== 401 ||
+          !request ||
+          !csrfToken ||
+          request._sessionRetried ||
+          isAuthenticationEndpoint
+      ) {
+        return Promise.reject(error)
+      }
 
-    try {
-      await recoverSession()
-      request._sessionRetried = true
-      return privateClient.request(request)
-    } catch {
-      clearCsrfToken()
-      sessionExpiredHandler?.()
-      return Promise.reject(error)
-    }
-  },
+      try {
+        await recoverSession()
+        request._sessionRetried = true
+        return privateClient.request(request)
+      } catch {
+        clearCsrfToken()
+        sessionExpiredHandler?.()
+        return Promise.reject(error)
+      }
+    },
 )
