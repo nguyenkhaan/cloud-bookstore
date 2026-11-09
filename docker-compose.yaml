@@ -1,4 +1,50 @@
 services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: cloud-bookstore-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: cloud_bookstore
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cloud_bookstore"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: cloud-bookstore-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis-rest:
+    image: hiett/serverless-redis-http:latest
+    container_name: cloud-bookstore-redis-rest
+    restart: unless-stopped
+    ports:
+      - "8079:80"
+    environment:
+      SRH_MODE: env
+      SRH_TOKEN: local_redis_token
+      SRH_CONNECTION_STRING: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+
   mailpit:
     image: axllent/mailpit:v1.27
     container_name: cloud-bookstore-mailpit
@@ -12,4 +58,6 @@ services:
       - mailpit-data:/data
 
 volumes:
+  postgres-data:
+  redis-data:
   mailpit-data:
