@@ -27,7 +27,7 @@ test('catalog service exports full CRUD, status, image, barcode and label endpoi
     // Editions
     'listEditions', 'getEdition', 'createEdition', 'updateEdition', 'updateEditionStatus', 'deleteEdition', 'replaceEditionImage', 'deleteEditionImage',
     // Copies
-    'listCopies', 'getCopy', 'getCopyByBarcode', 'getCopyHistory', 'createCopy', 'updateCopy', 'updateCopyStatus', 'createCopyLabel', 'replaceCopyImage', 'deleteCopyImage',
+    'listCopies', 'listAvailableReceiptLines', 'getCopy', 'getCopyByBarcode', 'getCopyHistory', 'createCopy', 'updateCopy', 'deleteCopy', 'updateCopyStatus', 'createCopyLabel', 'replaceCopyImage', 'deleteCopyImage',
   ]
 
   for (const fnName of expectedFunctions) {
@@ -41,7 +41,7 @@ test('catalog hooks export all queries and mutations matching service functions'
   const expectedHooks = [
     // Queries
     'useSeriesQuery', 'useSeriesDetailQuery', 'useTitlesQuery', 'useTitleQuery',
-    'useEditionsQuery', 'useEditionQuery', 'useCopiesQuery', 'useCopyQuery',
+    'useEditionsQuery', 'useEditionQuery', 'useCopiesQuery', 'useAvailableReceiptLinesQuery', 'useCopyQuery',
     'useCopyByBarcodeQuery', 'useCopyHistoryQuery',
     // Series mutations
     'useCreateSeriesMutation', 'useUpdateSeriesMutation', 'useUpdateSeriesStatusMutation', 'useDeleteSeriesMutation', 'useReplaceSeriesImageMutation', 'useDeleteSeriesImageMutation',
@@ -50,7 +50,7 @@ test('catalog hooks export all queries and mutations matching service functions'
     // Edition mutations
     'useCreateEditionMutation', 'useUpdateEditionMutation', 'useUpdateEditionStatusMutation', 'useDeleteEditionMutation', 'useReplaceEditionImageMutation', 'useDeleteEditionImageMutation',
     // Copy mutations
-    'useCreateCopyMutation', 'useUpdateCopyMutation', 'useUpdateCopyStatusMutation', 'useCreateCopyLabelMutation', 'useReplaceCopyImageMutation', 'useDeleteCopyImageMutation',
+    'useCreateCopyMutation', 'useUpdateCopyMutation', 'useDeleteCopyMutation', 'useUpdateCopyStatusMutation', 'useCreateCopyLabelMutation', 'useReplaceCopyImageMutation', 'useDeleteCopyImageMutation',
   ]
 
   for (const hookName of expectedHooks) {

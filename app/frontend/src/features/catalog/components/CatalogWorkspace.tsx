@@ -9,12 +9,11 @@ import { catalogPaths } from '../catalog.route'
 type CatalogWorkspaceProps = {
   action?: ReactNode
   children: ReactNode
-  description: string
   screenCode: string
   title: string
 }
 
-export function CatalogWorkspace({ action, children, description, screenCode, title }: CatalogWorkspaceProps) {
+export function CatalogWorkspace({ action, children, screenCode, title }: CatalogWorkspaceProps) {
   const navigate = useNavigate()
   const { session, signOut } = useAuth()
   const breadcrumbs = useCatalogBreadcrumbs()

@@ -69,6 +69,13 @@ public class BookCopiesController(BookCopyService bookCopyService) : ControllerB
         return Ok(result);
     }
 
+    [HttpGet("receipt-lines")]
+    [Authorize(Roles = WriteRoles)]
+    [ProducesResponseType<IReadOnlyList<AvailableReceiptLineResponse>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<AvailableReceiptLineResponse>>> GetAvailableReceiptLines(
+        [FromQuery] Guid editionId, CancellationToken cancellationToken)
+        => Ok(await bookCopyService.GetAvailableReceiptLinesAsync(editionId, cancellationToken));
+
     [HttpPost]
     [Authorize(Roles = WriteRoles)]
     [ProducesResponseType<BookCopyDetailResponse>(StatusCodes.Status201Created)]
@@ -96,6 +103,17 @@ public class BookCopiesController(BookCopyService bookCopyService) : ControllerB
     {
         var result = await bookCopyService.UpdateBookCopyAsync(id, request, BuildAuditContext(), cancellationToken);
         return Ok(result);
+    }
+
+    [HttpDelete("{id:guid}")]
+    [Authorize(Roles = WriteRoles)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> DeleteBookCopy([FromRoute] Guid id, CancellationToken cancellationToken)
+    {
+        await bookCopyService.DeleteBookCopyAsync(id, BuildAuditContext(), cancellationToken);
+        return NoContent();
     }
 
     [HttpPatch("{id:guid}/status")]
@@ -129,7 +147,7 @@ public class BookCopiesController(BookCopyService bookCopyService) : ControllerB
     }
 
     [HttpPut("{id:guid}/image")]
-    [Authorize(Roles = ReadRoles)]
+    [Authorize(Roles = WriteRoles)]
     [ProducesResponseType<BookCopyDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -146,7 +164,7 @@ public class BookCopiesController(BookCopyService bookCopyService) : ControllerB
     }
 
     [HttpDelete("{id:guid}/image")]
-    [Authorize(Roles = ReadRoles)]
+    [Authorize(Roles = WriteRoles)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteBookCopyImage(

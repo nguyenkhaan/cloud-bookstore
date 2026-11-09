@@ -189,7 +189,7 @@ public class EditionService(
         AuditLogContext auditContext,
         CancellationToken cancellationToken = default)
     {
-        var actorId = auditContext?.ActorId;
+        var actorId = auditContext.ActorId;
         var title = await EditionValidator.EnsureTitleValidForEditionAsync(
             dbContext, request.TitleId, request.IsActive, cancellationToken);
 
@@ -253,7 +253,7 @@ public class EditionService(
         AuditLogContext auditContext,
         CancellationToken cancellationToken = default)
     {
-        var actorId = auditContext?.ActorId;
+        var actorId = auditContext.ActorId;
         var edition = await dbContext.Editions.FirstOrDefaultAsync(e => e.Id == id, cancellationToken)
             ?? throw new NotFoundException($"Edition with ID '{id}' was not found.");
 
@@ -433,7 +433,7 @@ public class EditionService(
         AuditLogContext auditContext,
         CancellationToken cancellationToken)
     {
-        if (auditContext?.ActorId is not { } actorId || actorId == Guid.Empty)
+        if (auditContext.ActorId is not { } actorId || actorId == Guid.Empty)
         {
             throw new UnauthorizedException("Authenticated user is required to attach an image.");
         }

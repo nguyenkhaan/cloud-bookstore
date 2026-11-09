@@ -16,7 +16,7 @@ test('title rows provide a confirmed delete action', () => {
 
   assert.match(page, /import \{ TitleRowDeleteAction \} from '\.\.\/components\/TitleRowDeleteAction'/)
   assert.match(page, /<TitleRowDeleteAction title=\{title\} \/>/)
-  assert.match(page, /<article className="flex gap-4 p-4 transition hover:bg-slate-50\/70"/)
+  assert.match(page, /<article className="group flex gap-4 p-4 transition hover:bg-slate-50\/70"/)
   assert.match(page, /<TitleRowDeleteAction title=\{title\} \/>\s*<ActiveBadge active=\{title\.isActive\} \/>/)
   assert.match(action, /import \{ Trash2 \} from 'lucide-react'/)
   assert.match(action, /import \{ Button, ConfirmationDialog \} from '@\/components\/common'/)

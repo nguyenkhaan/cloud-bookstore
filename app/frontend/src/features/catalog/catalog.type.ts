@@ -2,7 +2,7 @@ import type { CloudinaryUploadResultRequest } from '@/features/uploads/upload.ty
 import type { components } from '@/contract/api-contract'
 
 export type CatalogStatus = 'ACTIVE' | 'INACTIVE'
-export type CopyStatus = 'PENDING_RECEIPT' | 'AVAILABLE' | 'RENTED' | 'SOLD' | 'DAMAGED'
+export type CopyStatus = 'PENDING_RECEIPT' | 'AVAILABLE' | 'RENTED' | 'SOLD' | 'INVENTORY_LOCKED' | 'DAMAGED' | 'LOST' | 'DISPOSED' | 'DISCONTINUED'
 export type CopyAvailability = 'BOTH' | 'SALE_ONLY' | 'RENTAL_ONLY'
 export type ConditionGrade = 'A' | 'B' | 'C' | 'D'
 
@@ -39,6 +39,8 @@ export type BookEdition = {
   publisher: string | null
   publishYear: number | null
   coverPrice: number
+  minStockSale?: number
+  minStockRental?: number
   coverImageUrl: string | null
   isActive: boolean
 }
@@ -54,6 +56,9 @@ export type BookCopy = {
   sellingPrice: number | null
   rentalRate: number | null
   shelfCode: string | null
+  imageUrl?: string | null
+  editionImageUrl?: string | null
+  receiptLineId?: string
 }
 
 export type CreateSeriesRequest = Pick<BookSeries, 'name' | 'description'> & {
@@ -68,21 +73,25 @@ export type SaveTitleRequest = Pick<BookTitle, 'name' | 'seriesId' | 'volumeLabe
 export type CreateTitleRequest = SaveTitleRequest
 export type UpdateTitleRequest = SaveTitleRequest
 
-export type CreateEditionRequest = Pick<BookEdition, 'titleId' | 'isbn' | 'editionStatement' | 'printingStatement' | 'format' | 'publisher' | 'publishYear' | 'coverPrice' | 'coverImageUrl'> & {
+export type CreateEditionRequest = Pick<BookEdition, 'titleId' | 'isbn' | 'editionStatement' | 'printingStatement' | 'format' | 'publisher' | 'publishYear' | 'coverPrice'> & {
   imageUpload?: CloudinaryUploadResultRequest | null
 }
 export type UpdateEditionRequest = {
+  isbn?: string | null
   editionStatement?: string | null
   printingStatement?: string | null
   publisher?: string | null
   publishYear?: number | null
   format?: string | null
   coverPrice?: number
-  description?: string | null
+  minStockSale?: number
+  minStockRental?: number
+  isActive?: boolean
   imageUpload?: CloudinaryUploadResultRequest | null
 }
 
-export type CreateCopyRequest = Pick<BookCopy, 'editionId' | 'copyBarcode' | 'availability' | 'conditionGrade' | 'conditionNote' | 'sellingPrice' | 'rentalRate' | 'shelfCode'> & {
+export type CreateCopyRequest = Pick<BookCopy, 'editionId' | 'availability' | 'conditionGrade' | 'conditionNote' | 'sellingPrice' | 'rentalRate' | 'shelfCode'> & {
+  receiptLineId: string
   imageUpload?: CloudinaryUploadResultRequest | null
 }
 export type UpdateCopyRequest = {
@@ -92,7 +101,16 @@ export type UpdateCopyRequest = {
   rentalRate?: number | null
   shelfCode?: string | null
   availability: CopyAvailability
+  reason: string
   imageUpload?: CloudinaryUploadResultRequest | null
+}
+
+export type AvailableReceiptLine = {
+  id: string
+  receiptCode: string
+  remainingQuantity: number
+  conditionGrade: ConditionGrade
+  availability: CopyAvailability
 }
 
 export type UpdateStatusRequest = {

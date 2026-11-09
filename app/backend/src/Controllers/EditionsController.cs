@@ -15,8 +15,8 @@ namespace backend.src.Controllers;
 [Route("api/editions")]
 public class EditionsController(EditionService editionService) : ControllerBase
 {
-    private const string StaffRoles =
-        $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)},{nameof(RoleName.CASHIER)}";
+    private const string WriteRoles =
+        $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}";
 
     [HttpGet]
     [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)},{nameof(RoleName.CASHIER)}")]
@@ -98,7 +98,7 @@ public class EditionsController(EditionService editionService) : ControllerBase
     }
 
     [HttpPut("{id:guid}/image")]
-    [Authorize(Roles = StaffRoles)]
+    [Authorize(Roles = WriteRoles)]
     [ProducesResponseType<EditionResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -115,7 +115,7 @@ public class EditionsController(EditionService editionService) : ControllerBase
     }
 
     [HttpDelete("{id:guid}/image")]
-    [Authorize(Roles = StaffRoles)]
+    [Authorize(Roles = WriteRoles)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteEditionImage(
