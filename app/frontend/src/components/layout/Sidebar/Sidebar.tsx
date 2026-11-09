@@ -6,6 +6,13 @@ import {
   PanelToggleIcon,
   ExternalLinkIcon,
   LogoutIcon,
+  PosIcon,
+  CustomerIcon, 
+  StaffIcon, 
+  ApprovalIcon,
+  AuditIcon, 
+  ReportIcon, 
+  SettingsIcon
 } from '@/components/common/Icons';
 import { Logo } from '@/components/common/Logo';
 import { brand } from '@/lib/brand';
@@ -27,11 +34,30 @@ export interface SidebarProps {
   branchName?: string;
   storeAddress?: string;
 }
-
+//Inside the workspace.route.ts 
+// export const workspacePaths = {
+//   overview: '/dashboard',
+//   pos: '/pos',
+//   inventory: catalogPaths.seriesList,
+//   customers: '/customers',
+//   hr: '/hr',
+//   approvals: '/approvals',
+//   audit: '/audit',
+//   reports: '/reports',
+//   settings: '/settings',
+// } as const
 const DEFAULT_NAV_ITEMS: NavItem[] = [
   { id: 'overview', label: 'Tổng quan', icon: DashboardIcon },
+  { id: 'pos', label: 'Quầy giao dịch', icon: PosIcon },
   { id: 'inventory', label: 'Kho & đầu sách', icon: InventoryIcon },
+  { id: 'customers', label: 'Khách hàng', icon: CustomerIcon },
+  { id: 'hr', label: 'Nhân sự & tiền lương', icon: StaffIcon },
+  { id: 'approvals', label: 'Phê duyệt', icon: ApprovalIcon },
+  { id: 'audit', label: 'Nhật ký kiểm toán', icon: AuditIcon },
+  { id: 'reports', label: 'Báo cáo & thuế', icon: ReportIcon },
+  { id: 'settings', label: 'Cấu hình hệ thống', icon: SettingsIcon },
 ];
+
 
 export function navLabelFor(id: string): string {
   const labels: Record<string, string> = {
