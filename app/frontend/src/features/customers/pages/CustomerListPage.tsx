@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { MainLayout } from '@/components/layout'
 import { Button } from '@/components/common/Button'
 import { StatCard } from '@/components/common/StatCard'
+import { SelectBox } from '@/components/common/SelectBox'
 import { SearchIcon } from '@/components/common/Icons'
 import { useAuth } from '@/features/auth/auth.hook'
 import { notify } from '@/components/common/Toast'
@@ -70,7 +71,11 @@ export default function CustomerListPage() {
       currentPath="customers"
       screenCode="SCR-CRM-01 / KHÁCH HÀNG"
       pageTitle="Danh sách Khách hàng & Hạng thành viên"
-      breadcrumbs={['Không gian làm việc', 'Khách hàng', 'Danh sách Khách hàng & Hạng thành viên']}
+      breadcrumbs={[
+        { label: 'Không gian làm việc', to: '/dashboard' },
+        { label: 'Khách hàng', to: '/customers' },
+        { label: 'Danh sách Khách hàng & Hạng thành viên' },
+      ]}
       onNavigate={navigateFromSidebar}
       onSignOut={signOut}
       user={currentUser}
@@ -150,36 +155,38 @@ export default function CustomerListPage() {
             </div>
 
             {/* Tier Filter */}
-            <div className="shrink-0">
-              <select
+            <div className="w-44 shrink-0">
+              <SelectBox
+                label="Hạng thành viên"
                 value={tierFilter}
-                onChange={(e) => {
-                  setTierFilter(e.target.value)
+                onChange={(value) => {
+                  setTierFilter(value)
                   setPage(1)
                 }}
-                className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-medium text-slate-700 hover:border-slate-300 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/15"
-              >
-                <option value="">Hạng: Tất cả</option>
-                <option value="REGULAR">Hạng: Thường</option>
-                <option value="SILVER">Hạng: Bạc</option>
-                <option value="GOLD">Hạng: Vàng</option>
-              </select>
+                options={[
+                  { value: '', label: 'Hạng: Tất cả' },
+                  { value: 'REGULAR', label: 'Hạng: Thường' },
+                  { value: 'SILVER', label: 'Hạng: Bạc' },
+                  { value: 'GOLD', label: 'Hạng: Vàng' },
+                ]}
+              />
             </div>
 
             {/* Status Filter */}
-            <div className="shrink-0">
-              <select
+            <div className="w-44 shrink-0">
+              <SelectBox
+                label="Trạng thái"
                 value={flaggedFilter}
-                onChange={(e) => {
-                  setFlaggedFilter(e.target.value)
+                onChange={(value) => {
+                  setFlaggedFilter(value)
                   setPage(1)
                 }}
-                className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-medium text-slate-700 hover:border-slate-300 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/15"
-              >
-                <option value="">Trạng thái: Tất cả</option>
-                <option value="normal">Bình thường</option>
-                <option value="flagged">Cần theo dõi</option>
-              </select>
+                options={[
+                  { value: '', label: 'Trạng thái: Tất cả' },
+                  { value: 'normal', label: 'Bình thường' },
+                  { value: 'flagged', label: 'Cần theo dõi' },
+                ]}
+              />
             </div>
           </div>
 
