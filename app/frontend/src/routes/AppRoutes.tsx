@@ -8,6 +8,7 @@ import EditionDetailPage from '@/features/catalog/pages/EditionDetailPage'
 import SeriesListPage from '@/features/catalog/pages/SeriesListPage'
 import TitleDetailPage from '@/features/catalog/pages/TitleDetailPage'
 import TitleListPage from '@/features/catalog/pages/TitleListPage'
+import CustomerListPage from '@/features/customers/pages/CustomerListPage'
 import DashboardPage from '@/features/dashboard/pages/DashboardPage'
 import BookSeriesPage from '@/features/bookseries/pages/BookSeriesPage'
 import PosPage from '@/features/pos/pages/PosPage'
@@ -68,6 +69,7 @@ export default function AppRoutes() {
       <Route path="/catalog/titles/:titleId" element={<RequireSession><TitleDetailPage /></RequireSession>} />
       <Route path="/catalog/editions/:editionId" element={<RequireSession><EditionDetailPage /></RequireSession>} />
       <Route path="/catalog/copies/:copyId" element={<RequireSession><CopyDetailPage /></RequireSession>} />
+      <Route path="/customers" element={<RequireSession><CustomerListPage /></RequireSession>} />
       <Route path="*" element={<Navigate replace to="/login" />} />
     </Routes>
   )
