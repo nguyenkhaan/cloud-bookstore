@@ -71,7 +71,7 @@ File này chỉ theo dõi trạng thái, owner và evidence. Nội dung acceptan
 | `P03-S03` | [Quản lý bản vật lý](./phase-03-danh-muc-an-ban-ban-sach.md) | Chưa gán | IN_PROGRESS | BE barcode/Grade/giá/kênh/trạng thái/audit/in tem xong (PR #21). Còn: UI lịch sử + in tem, constraint test `AVAILABLE`, E2E |
 | `P03-S04` | [Tra cứu chi tiết bản sách](./phase-03-danh-muc-an-ban-ban-sach.md) | Chưa gán | IN_PROGRESS | BE tìm kiếm phân trang + `by-barcode` xong. Còn: UI quét CopyBarcode/ISBN, test không lẫn bản cùng ISBN, E2E |
 | `P04-S01` | [Quản lý hồ sơ khách](./phase-04-khach-hang-thanh-vien.md) | Chưa gán | TODO | — |
-| `P04-S02` | [Tính chính sách thành viên](./phase-04-khach-hang-thanh-vien.md) | Chưa gán | TODO | — |
+| `P04-S02` | [Tính chính sách thành viên](./phase-04-khach-hang-thanh-vien.md) | Chưa gán | IN_PROGRESS | BE policy endpoint, resolver/recalculation, seed correction và data migration đã xong; `dotnet build backend.sln --no-restore` 0 warning/error, `dotnet test backend.sln --no-restore` 58/58. Contract OpenAPI đã tái sinh; FE policy UI và dependency P04-S01 còn lại. |
 | `P04-S03` | [Tra cứu nghĩa vụ khách](./phase-04-khach-hang-thanh-vien.md) | Chưa gán | TODO | — |
 | `P04-S04` | [Xử lý yêu cầu khách hàng](./phase-04-khach-hang-thanh-vien.md) | Chưa gán | TODO | — |
 | `P05-S01` | [Lập phiếu nhập nháp](./phase-05-nhap-kho-va-thu-mua.md) | Chưa gán | TODO | — |

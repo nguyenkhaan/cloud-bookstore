@@ -2986,6 +2986,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MembershipTierPolicyResponse"][];
+                        "application/json": components["schemas"]["MembershipTierPolicyResponse"][];
+                        "text/json": components["schemas"]["MembershipTierPolicyResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/uploads/signature": {
         parameters: {
             query?: never;
@@ -3452,6 +3489,23 @@ export interface components {
         LoginRequest: {
             email: string;
             password: string;
+        };
+        /** @enum {unknown} */
+        MembershipTierName: "REGULAR" | "SILVER" | "GOLD";
+        MembershipTierPolicyResponse: {
+            name: components["schemas"]["MembershipTierName"];
+            /** Format: int64 */
+            minEligibleSpend: number | string;
+            /** Format: int64 */
+            nextTierMinEligibleSpend: null | number | string;
+            /** Format: int16 */
+            maxBooks: number | string;
+            /** Format: int16 */
+            maxRentalDays: number | string;
+            /** Format: double */
+            saleDiscountPct: number | string;
+            /** Format: double */
+            rentDiscountPct: number | string;
         };
         /** @enum {unknown} */
         MetadataSource: "MANUAL" | "GOOGLE_BOOKS" | "OPEN_LIBRARY" | null;

@@ -258,6 +258,7 @@ builder.Services.AddScoped<BookSeriesService>();
 builder.Services.AddScoped<TitleService>();
 builder.Services.AddScoped<EditionService>();
 builder.Services.AddScoped<BookCopyService>();
+builder.Services.AddScoped<MembershipService>();
 //Dependency Injection -> builder.Services.AddScoped<AuthService>();
 var app = builder.Build();
 
