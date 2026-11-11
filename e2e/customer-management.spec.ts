@@ -78,7 +78,11 @@ async function ensureTestCredentials(request: APIRequestContext): Promise<E2ECre
 
 function attachRuntimeMonitors(
   page: Page,
-  options?: { allow404ForMissingCustomer?: boolean; allow422ForAddCustomerError?: boolean },
+  options?: {
+    allow404ForMissingCustomer?: boolean
+    allow422ForAddCustomerError?: boolean
+    allow409ForCustomerConflict?: boolean
+  },
 ) {
   const consoleErrors: string[] = []
   const pageErrors: string[] = []
@@ -102,6 +106,13 @@ function attachRuntimeMonitors(
       if (
         options?.allow422ForAddCustomerError &&
         text.includes('status of 422') &&
+        locUrl.includes('/api/customers')
+      ) {
+        return
+      }
+      if (
+        options?.allow409ForCustomerConflict &&
+        text.includes('status of 409') &&
         locUrl.includes('/api/customers')
       ) {
         return
@@ -1284,6 +1295,275 @@ test.describe('Customer Management Refinement & 360 Profile (E2E)', () => {
     }
 
     expect(lowContrastByRoute, 'Low-contrast text across customer routes').toEqual([])
+
+    monitor.assertClean()
+  })
+
+  test('QA: live API enforces auth, RBAC, CORS origin policy, and rejects comma-separated/numeric TierName on PostgreSQL', async ({ page, request }) => {
+    const creds = await ensureTestCredentials(request)
+    const monitor = attachRuntimeMonitors(page, { allow404ForMissingCustomer: false })
+
+    // Unauthenticated API access must return 401
+    const unauthRes = await request.get(`${API_URL}/api/customers`)
+    expect(unauthRes.status()).toBe(401)
+
+    // CORS preflight: allowed origin receives ACAO; disallowed origin must not
+    const allowedPreflight = await request.fetch(`${API_URL}/api/customers`, {
+      method: 'OPTIONS',
+      headers: {
+        Origin: BASE_URL,
+        'Access-Control-Request-Method': 'GET',
+      },
+    })
+    expect([200, 204]).toContain(allowedPreflight.status())
+    expect(allowedPreflight.headers()['access-control-allow-origin']).toBe(BASE_URL)
+
+    const evilPreflight = await request.fetch(`${API_URL}/api/customers`, {
+      method: 'OPTIONS',
+      headers: {
+        Origin: 'https://evil.example',
+        'Access-Control-Request-Method': 'GET',
+      },
+    })
+    expect(evilPreflight.headers()['access-control-allow-origin']).toBeUndefined()
+
+    await loginViaUi(page, creds)
+    await page.goto(`${BASE_URL}/customers`)
+    await expect(page.locator('tbody tr').first()).toBeVisible()
+
+    const csrfToken = await page.evaluate(() => sessionStorage.getItem('cloud-bookstore.csrf-token'))
+    expect(csrfToken).toBeTruthy()
+
+    // Live PostgreSQL TierName filter rejection for comma-separated & numeric strings
+    for (const invalidTier of ['REGULAR,SILVER', '0,2', '2', 'UNKNOWN']) {
+      const res = await page.request.get(
+        `${API_URL}/api/customers?TierName=${encodeURIComponent(invalidTier)}`,
+      )
+      expect(res.status()).toBe(200)
+      const body = (await res.json()) as { totalCount: number; items: unknown[] }
+      expect(body.totalCount, `TierName=${invalidTier} must return 0 records`).toBe(0)
+      expect(body.items).toEqual([])
+    }
+
+    // RBAC check: Cashier role cannot delete customer records (ADMIN or INVENTORY_MANAGER only)
+    const deleteRes = await page.request.delete(`${API_URL}/api/customers/${SEEDED_SILVER_ID}`, {
+      headers: { Origin: BASE_URL, 'X-CSRF-Token': csrfToken! },
+    })
+    expect(deleteRes.status()).toBe(403)
+
+    monitor.assertClean()
+  })
+
+  test('QA: checks broken images, dialog mobile geometry & WCAG contrast inside open modals, 409 conflicts, and clearing flagReason via EditCustomerDialog', async ({ page, request }) => {
+    const creds = await ensureTestCredentials(request)
+    const monitor = attachRuntimeMonitors(page, { allow409ForCustomerConflict: true })
+
+    async function scanVisibleContrastInside(selector: string) {
+      return page.evaluate((rootSelector) => {
+        const root = document.querySelector(rootSelector)
+        if (!root) return [{ text: `Missing root ${rootSelector}`, contrast: 0, fontSize: 0 }]
+        const canvas = document.createElement('canvas')
+        canvas.width = 1
+        canvas.height = 1
+        const ctx = canvas.getContext('2d')!
+        function parseCssColor(css: string): [number, number, number, number] {
+          ctx.clearRect(0, 0, 1, 1)
+          ctx.fillStyle = 'rgba(0, 0, 0, 0)'
+          ctx.fillStyle = css
+          ctx.fillRect(0, 0, 1, 1)
+          const d = ctx.getImageData(0, 0, 1, 1).data
+          return [d[0], d[1], d[2], d[3] / 255]
+        }
+        function effectiveBg(node: Element | null): [number, number, number] {
+          const layers: Array<[number, number, number, number]> = []
+          let cur: Element | null = node
+          while (cur) {
+            const parsed = parseCssColor(getComputedStyle(cur).backgroundColor)
+            if (parsed[3] > 0) layers.unshift(parsed)
+            cur = cur.parentElement
+          }
+          let r = 255
+          let g = 255
+          let b = 255
+          for (const [lr, lg, lb, la] of layers) {
+            r = lr * la + r * (1 - la)
+            g = lg * la + g * (1 - la)
+            b = lb * la + b * (1 - la)
+          }
+          return [Math.round(r), Math.round(g), Math.round(b)]
+        }
+        function luminance(rgb: [number, number, number]): number {
+          const [r, g, b] = rgb.map((v) => {
+            const s = v / 255
+            return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
+          })
+          return 0.2126 * r + 0.7152 * g + 0.0722 * b
+        }
+
+        const failures: Array<{ text: string; contrast: number; fontSize: number }> = []
+        for (const el of root.querySelectorAll('*')) {
+          if (el.closest('svg')) continue
+          const hasTextNode = Array.from(el.childNodes).some(
+            (n) => n.nodeType === Node.TEXT_NODE && (n.textContent?.trim() ?? '').length > 0,
+          )
+          if (!hasTextNode) continue
+          const style = getComputedStyle(el)
+          if (style.visibility === 'hidden' || style.display === 'none' || Number(style.opacity) === 0) continue
+          const rect = el.getBoundingClientRect()
+          if (rect.width === 0 || rect.height === 0) continue
+
+          const fg = parseCssColor(style.color)
+          const bg = effectiveBg(el)
+          const l1 = Math.max(luminance([fg[0], fg[1], fg[2]]), luminance(bg))
+          const l2 = Math.min(luminance([fg[0], fg[1], fg[2]]), luminance(bg))
+          const ratio = Number(((l1 + 0.05) / (l2 + 0.05)).toFixed(2))
+          const fontSize = Number.parseFloat(style.fontSize)
+          const weight = Number.parseInt(style.fontWeight, 10) || 400
+          const isLargeText = fontSize >= 24 || (fontSize >= 18.67 && weight >= 700)
+          const threshold = isLargeText ? 3 : 4.5
+          if (ratio < threshold) {
+            failures.push({
+              text: (el.textContent ?? '').trim().slice(0, 60),
+              contrast: ratio,
+              fontSize,
+            })
+          }
+        }
+        return failures
+      }, selector)
+    }
+
+    await loginViaUi(page, creds)
+
+    // Verify zero broken images across customers/detail routes
+    for (const routePath of ['/customers', `/customers/${SEEDED_SILVER_ID}`]) {
+      await page.goto(`${BASE_URL}${routePath}`)
+      await page.waitForLoadState('networkidle')
+      const brokenImgs = await page.evaluate(() =>
+        Array.from(document.querySelectorAll('img'))
+          .filter((img) => !img.complete || img.naturalWidth === 0)
+          .map((img) => img.getAttribute('src') ?? img.alt ?? 'unknown-img'),
+      )
+      expect(brokenImgs, `Broken images on ${routePath}`).toEqual([])
+    }
+
+    // Mobile 390x844 check for open AddCustomerDialog & ExportCustomerDialog bounds (no horizontal overflow)
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto(`${BASE_URL}/customers`)
+    await expect(page.locator('tbody tr').first()).toBeVisible()
+
+    await page.getByRole('button', { name: 'Xuất danh sách' }).click()
+    const mobileExportDialog = page.getByRole('dialog', { name: 'Xuất danh sách khách hàng' })
+    await expect(mobileExportDialog).toBeVisible()
+    const mobileExportGeometry = await mobileExportDialog.evaluate((dialog) => {
+      const rect = dialog.getBoundingClientRect()
+      return {
+        docScrollWidth: document.documentElement.scrollWidth,
+        innerWidth: window.innerWidth,
+        dialogLeft: rect.left,
+        dialogRight: rect.right,
+        dialogScrollWidth: dialog.scrollWidth,
+        dialogClientWidth: dialog.clientWidth,
+      }
+    })
+    expect(mobileExportGeometry.docScrollWidth).toBeLessThanOrEqual(mobileExportGeometry.innerWidth)
+    expect(mobileExportGeometry.dialogLeft).toBeGreaterThanOrEqual(0)
+    expect(mobileExportGeometry.dialogRight).toBeLessThanOrEqual(mobileExportGeometry.innerWidth)
+    expect(mobileExportGeometry.dialogScrollWidth).toBeLessThanOrEqual(mobileExportGeometry.dialogClientWidth)
+    expect(await scanVisibleContrastInside('[role="dialog"]')).toEqual([])
+    await mobileExportDialog.getByRole('button', { name: 'Đóng', exact: true }).click()
+
+    await page.getByRole('button', { name: '+ Thêm mới khách hàng' }).click()
+    const mobileAddDialog = page.getByRole('dialog', { name: 'Tạo nhanh khách hàng' })
+    await expect(mobileAddDialog).toBeVisible()
+    const mobileAddGeometry = await mobileAddDialog.evaluate((dialog) => {
+      const rect = dialog.getBoundingClientRect()
+      return {
+        docScrollWidth: document.documentElement.scrollWidth,
+        innerWidth: window.innerWidth,
+        dialogLeft: rect.left,
+        dialogRight: rect.right,
+        dialogScrollWidth: dialog.scrollWidth,
+        dialogClientWidth: dialog.clientWidth,
+      }
+    })
+    expect(mobileAddGeometry.docScrollWidth).toBeLessThanOrEqual(mobileAddGeometry.innerWidth)
+    expect(mobileAddGeometry.dialogLeft).toBeGreaterThanOrEqual(0)
+    expect(mobileAddGeometry.dialogRight).toBeLessThanOrEqual(mobileAddGeometry.innerWidth)
+    expect(mobileAddGeometry.dialogScrollWidth).toBeLessThanOrEqual(mobileAddGeometry.dialogClientWidth)
+
+    // Submit duplicate phone in AddCustomerDialog -> real backend 409 Conflict preserves user inputs
+    await mobileAddDialog.getByLabel('Họ và tên *').fill('Khách Trùng SĐT QA')
+    await mobileAddDialog.getByLabel('Số điện thoại *').fill('0900000005')
+    const dupPostPromise = page.waitForResponse(
+      (res) => res.url().endsWith('/api/customers') && res.request().method() === 'POST',
+    )
+    await mobileAddDialog.locator('button[type="submit"]').click()
+    expect((await dupPostPromise).status()).toBe(409)
+    await expect(mobileAddDialog.getByText(/Số điện thoại đã tồn tại/)).toBeVisible()
+    expect(await mobileAddDialog.getByLabel('Họ và tên *').inputValue()).toBe('Khách Trùng SĐT QA')
+    expect(await scanVisibleContrastInside('[role="dialog"]')).toEqual([])
+    await mobileAddDialog.getByRole('button', { name: 'Hủy bỏ' }).click()
+
+    // Desktop check for "Cập nhật ghi chú" -> EditCustomerDialog 409 conflict & clearing flagReason across reload
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto(`${BASE_URL}/customers/${SEEDED_SILVER_ID}`)
+    await expect(page.getByRole('heading', { name: 'Trần Minh Anh', level: 1 })).toBeVisible()
+
+    const lockPromise = page.waitForResponse(
+      (res) => res.url().includes(`/api/customers/${SEEDED_SILVER_ID}`) && res.request().method() === 'PUT',
+    )
+    await page.getByRole('button', { name: 'Chặn quyền thuê sách' }).click()
+    expect((await lockPromise).status()).toBe(200)
+
+    await page.getByRole('tab', { name: /Vi phạm & Ghi chú/ }).click()
+    await page.getByRole('button', { name: 'Cập nhật ghi chú' }).click()
+    const editDialog = page.getByRole('dialog', { name: 'Chỉnh sửa thông tin khách hàng' })
+    await expect(editDialog).toBeVisible()
+
+    // Submit duplicate phone (0900000006 belongs to Lê Quốc Bảo) -> real backend 409 inline phoneError
+    const editPhoneInput = editDialog.getByLabel('Số điện thoại *')
+    const ownPhone = await editPhoneInput.inputValue()
+    await editPhoneInput.fill('0900000006')
+    const edit409Promise = page.waitForResponse(
+      (res) => res.url().includes(`/api/customers/${SEEDED_SILVER_ID}`) && res.request().method() === 'PUT',
+    )
+    await editDialog.getByRole('button', { name: 'Lưu thay đổi' }).click()
+    expect((await edit409Promise).status()).toBe(409)
+    await expect(editDialog.getByText(/Số điện thoại đã tồn tại/)).toBeVisible()
+    await expect(editPhoneInput).toHaveAttribute('aria-invalid', 'true')
+    expect(await scanVisibleContrastInside('[role="dialog"]')).toEqual([])
+
+    // Restore own phone, update flagReason, save, and verify across reload
+    await editPhoneInput.fill(ownPhone)
+    const reasonInput = editDialog.getByLabel('Lý do theo dõi / ghi chú (tùy chọn)')
+    await reasonInput.fill('Trả trễ 5 ngày - cần đối soát')
+    const updateReasonPromise = page.waitForResponse(
+      (res) => res.url().includes(`/api/customers/${SEEDED_SILVER_ID}`) && res.request().method() === 'PUT',
+    )
+    await editDialog.getByRole('button', { name: 'Lưu thay đổi' }).click()
+    expect((await updateReasonPromise).status()).toBe(200)
+    await expect(editDialog).toHaveCount(0)
+
+    await page.reload()
+    await expect(page.getByText('Trả trễ 5 ngày - cần đối soát').first()).toBeVisible()
+
+    // Unflag & clear flagReason via EditCustomerDialog -> confirm FlagReason cleared in DB across reload
+    await page.getByRole('button', { name: 'Chỉnh sửa thông tin' }).click()
+    const clearDialog = page.getByRole('dialog', { name: 'Chỉnh sửa thông tin khách hàng' })
+    await clearDialog.getByRole('checkbox').uncheck()
+    await clearDialog.getByLabel('Lý do theo dõi / ghi chú (tùy chọn)').fill('')
+    const clearPromise = page.waitForResponse(
+      (res) => res.url().includes(`/api/customers/${SEEDED_SILVER_ID}`) && res.request().method() === 'PUT',
+    )
+    await clearDialog.getByRole('button', { name: 'Lưu thay đổi' }).click()
+    expect((await clearPromise).status()).toBe(200)
+    await expect(clearDialog).toHaveCount(0)
+
+    await page.reload()
+    await expect(page.getByText('Bình thường', { exact: true })).toBeVisible()
+    await expect(page.getByRole('tab', { name: /Vi phạm & Ghi chú/ })).toContainText('0')
+    await expect(page.getByText('Trả trễ 5 ngày - cần đối soát')).toHaveCount(0)
 
     monitor.assertClean()
   })
