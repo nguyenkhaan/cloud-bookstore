@@ -1,20 +1,28 @@
 import { useState, useTransition } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { AlertTriangle } from 'lucide-react'
 import { MainLayout } from '@/components/layout'
 import { Button } from '@/components/common/Button'
 import { StatCard } from '@/components/common/StatCard'
 import { SelectBox } from '@/components/common/SelectBox'
 import { SearchIcon } from '@/components/common/Icons'
 import { useAuth } from '@/features/auth/auth.hook'
+import { workspacePathFor } from '@/features/workspace/workspace.route'
 import { notify } from '@/components/common/Toast'
 import { AddCustomerDialog } from '../components/AddCustomerDialog'
+import { ExportCustomerDialog } from '../components/ExportCustomerDialog'
+import { exportCustomersToFile } from '../customers.export'
+import type { CustomerExportFormat } from '../customers.export'
 import { useCustomers, useCustomerStats } from '../customers.hook'
+import { listCustomers } from '../customers.service'
 import {
   formatPhoneNumber,
   formatVnd,
   getInitials,
   getTierBadge,
 } from '../customers.presentation'
+import { customerPaths } from '../customers.route'
+import type { Customer } from '../customers.type'
 
 export default function CustomerListPage() {
   const navigate = useNavigate()
@@ -26,13 +34,19 @@ export default function CustomerListPage() {
   const [flaggedFilter, setFlaggedFilter] = useState<string>('')
   const [page, setPage] = useState(1)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
+  const [exportError, setExportError] = useState<string | null>(null)
+
+  const trimmedSearch = search.trim() || undefined
+  const flaggedQueryParam = flaggedFilter === '' ? undefined : flaggedFilter === 'flagged'
 
   // Query customers
   const { data: customerData, isLoading } = useCustomers({
     page,
     pageSize: 10,
-    search: search.trim() || undefined,
-    isFlagged: flaggedFilter === '' ? undefined : flaggedFilter === 'flagged',
+    search: trimmedSearch,
+    isFlagged: flaggedQueryParam,
   })
 
   // Query stats
@@ -42,8 +56,69 @@ export default function CustomerListPage() {
   const totalCount = customerData?.totalCount ?? 0
   const totalPages = customerData?.totalPages ?? 1
 
-  const handleExport = () => {
-    notify.success('Đã xuất danh sách khách hàng (CSV/Excel)')
+  const displayedCustomers = tierFilter
+    ? customers.filter((c) => c.tierName.toUpperCase() === tierFilter.toUpperCase())
+    : customers
+
+  const exportableRecordCount = totalPages <= 1 ? displayedCustomers.length : totalCount
+
+  const handleOpenExport = () => {
+    setExportError(null)
+    setIsExportDialogOpen(true)
+  }
+
+  const handleSelectExportFormat = async (format: CustomerExportFormat) => {
+    setExportError(null)
+    setIsExporting(true)
+
+    try {
+      let allMatching: Customer[] = []
+
+      if (totalPages <= 1 && page === 1 && customerData) {
+        allMatching = customerData.items
+      } else {
+        const firstPage = await listCustomers({
+          page: 1,
+          pageSize: 100,
+          search: trimmedSearch,
+          isFlagged: flaggedQueryParam,
+        })
+        allMatching = [...firstPage.items]
+
+        for (let nextPage = 2; nextPage <= firstPage.totalPages; nextPage += 1) {
+          const pageResult = await listCustomers({
+            page: nextPage,
+            pageSize: 100,
+            search: trimmedSearch,
+            isFlagged: flaggedQueryParam,
+          })
+          allMatching.push(...pageResult.items)
+        }
+      }
+
+      const filteredRecords = tierFilter
+        ? allMatching.filter((c) => c.tierName.toUpperCase() === tierFilter.toUpperCase())
+        : allMatching
+
+      if (filteredRecords.length === 0) {
+        setExportError('Không có khách hàng nào khớp với bộ lọc hiện tại để xuất.')
+        return
+      }
+
+      exportCustomersToFile(filteredRecords, format)
+      notify.success(
+        format === 'excel'
+          ? `Đã xuất ${filteredRecords.length} khách hàng ra tệp Excel (.xlsx)`
+          : `Đã xuất ${filteredRecords.length} khách hàng ra tệp CSV (.csv)`,
+      )
+      setIsExportDialogOpen(false)
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Không thể xuất danh sách khách hàng'
+      setExportError(message)
+      notify.error(message)
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   const handleResetFilters = () => {
@@ -56,20 +131,13 @@ export default function CustomerListPage() {
   const currentUser = session?.user ?? { name: 'Nhân viên', role: 'Quản trị viên' }
 
   const navigateFromSidebar = (id: string) => {
-    if (id === 'overview') navigate('/dashboard')
-    if (id === 'inventory') navigate('/catalog/series')
-    if (id === 'customers') navigate('/customers')
+    const targetPath = workspacePathFor(id)
+    if (targetPath) navigate(targetPath)
   }
-
-  // Filter in memory for tier if specified (or tierId)
-  const displayedCustomers = tierFilter
-    ? customers.filter((c) => c.tierName.toUpperCase() === tierFilter.toUpperCase())
-    : customers
 
   return (
     <MainLayout
       currentPath="customers"
-      screenCode="SCR-CRM-01 / KHÁCH HÀNG"
       pageTitle="Danh sách Khách hàng & Hạng thành viên"
       breadcrumbs={[
         { label: 'Không gian làm việc', to: '/dashboard' },
@@ -80,13 +148,20 @@ export default function CustomerListPage() {
       onSignOut={signOut}
       user={currentUser}
       actionButton={
-        <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={handleExport} className="min-h-[42px] px-4 font-semibold text-slate-800">
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            className="min-h-[42px] px-4 font-semibold"
+            onClick={handleOpenExport}
+            type="button"
+            variant="secondary"
+          >
             Xuất danh sách
           </Button>
           <Button
+            className="min-h-[42px] px-4 font-semibold"
             onClick={() => setIsAddDialogOpen(true)}
-            className="min-h-[42px] px-4 font-semibold text-white shadow-xs"
+            type="button"
+            variant="primary"
           >
             + Thêm mới khách hàng
           </Button>
@@ -94,18 +169,12 @@ export default function CustomerListPage() {
       }
     >
       <div className="space-y-6">
-        {/* Subtitle */}
-        <p className="-mt-3 text-xs text-slate-500">
-          Hiểu khách hàng hơn qua từng lượt đọc · Số điện thoại là khóa định danh chính
-        </p>
-
         {/* 4 Stat Summary Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             label="Khách hàng"
             value={statsData?.totalCount ?? totalCount}
             valueColor="default"
-            description="+24 khách trong tháng"
           />
           <StatCard
             label="Hạng Bạc"
@@ -141,6 +210,7 @@ export default function CustomerListPage() {
                 <SearchIcon size={16} />
               </div>
               <input
+                aria-label="Tìm kiếm khách hàng theo số điện thoại, mã hoặc họ tên"
                 type="text"
                 placeholder="Tìm SĐT, mã khách hàng hoặc họ tên…"
                 value={search}
@@ -155,10 +225,10 @@ export default function CustomerListPage() {
             </div>
 
             {/* Tier Filter */}
-            <div className="w-44 shrink-0">
+            <div className="w-full shrink-0 sm:w-44">
               <SelectBox
+                hideLabel
                 label="Hạng thành viên"
-                value={tierFilter}
                 onChange={(value) => {
                   setTierFilter(value)
                   setPage(1)
@@ -169,23 +239,27 @@ export default function CustomerListPage() {
                   { value: 'SILVER', label: 'Hạng: Bạc' },
                   { value: 'GOLD', label: 'Hạng: Vàng' },
                 ]}
+                searchable={false}
+                value={tierFilter}
               />
             </div>
 
             {/* Status Filter */}
-            <div className="w-44 shrink-0">
+            <div className="w-full shrink-0 sm:w-52">
               <SelectBox
+                hideLabel
                 label="Trạng thái"
-                value={flaggedFilter}
                 onChange={(value) => {
                   setFlaggedFilter(value)
                   setPage(1)
                 }}
                 options={[
                   { value: '', label: 'Trạng thái: Tất cả' },
-                  { value: 'normal', label: 'Bình thường' },
-                  { value: 'flagged', label: 'Cần theo dõi' },
+                  { value: 'normal', label: 'Trạng thái: Bình thường' },
+                  { value: 'flagged', label: 'Trạng thái: Cần theo dõi' },
                 ]}
+                searchable={false}
+                value={flaggedFilter}
               />
             </div>
           </div>
@@ -279,7 +353,8 @@ export default function CustomerListPage() {
                         <td className="py-3 px-3">
                           {customer.isFlagged ? (
                             <span className="inline-flex items-center gap-1 text-[11px] font-medium text-rose-600">
-                              <span>⚠️</span> {customer.flagReason || 'Cần theo dõi'}
+                              <AlertTriangle aria-hidden="true" className="size-3.5 shrink-0" />
+                              <span>{customer.flagReason || 'Cần theo dõi'}</span>
                             </span>
                           ) : (
                             <span className="text-[11px] text-slate-400">Bình thường</span>
@@ -287,15 +362,12 @@ export default function CustomerListPage() {
                         </td>
 
                         <td className="py-3 px-3 text-right">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              notify.success(`Xem hồ sơ 360° khách hàng: ${customer.fullName}`)
-                            }}
-                            className="inline-flex items-center text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer"
+                          <Link
+                            className="inline-flex items-center rounded-md px-1.5 py-1 text-xs font-semibold text-indigo-600 transition-colors hover:text-indigo-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
+                            to={customerPaths.customerDetail(customer.id)}
                           >
                             Hồ sơ 360°
-                          </button>
+                          </Link>
                         </td>
                       </tr>
                     )
@@ -313,6 +385,7 @@ export default function CustomerListPage() {
               </p>
               <div className="flex items-center gap-1">
                 <button
+                  aria-label="Trang trước"
                   type="button"
                   disabled={page <= 1}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -335,6 +408,7 @@ export default function CustomerListPage() {
                   </button>
                 ))}
                 <button
+                  aria-label="Trang sau"
                   type="button"
                   disabled={page >= totalPages}
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
@@ -345,13 +419,6 @@ export default function CustomerListPage() {
               </div>
             </div>
           )}
-
-          {/* Information Notice Banner */}
-          <div className="mt-5 rounded-xl border border-indigo-100 bg-indigo-50/60 p-3.5 text-xs text-indigo-700">
-            <p>
-              ⓘ Chi tiêu hợp lệ = tiền mua sách + phí thuê đã quyết toán + phí gia hạn đã quyết toán. Không tính tiền cọc, tiền phạt và các phiếu chưa hoàn tất.
-            </p>
-          </div>
         </div>
       </div>
 
@@ -362,6 +429,16 @@ export default function CustomerListPage() {
         onSuccess={() => {
           setPage(1)
         }}
+      />
+
+      {/* Export Customer Dialog */}
+      <ExportCustomerDialog
+        errorMessage={exportError}
+        isExporting={isExporting}
+        isOpen={isExportDialogOpen}
+        onClose={() => setIsExportDialogOpen(false)}
+        onSelectFormat={handleSelectExportFormat}
+        recordCount={exportableRecordCount}
       />
     </MainLayout>
   )

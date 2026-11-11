@@ -8,6 +8,7 @@ import EditionDetailPage from '@/features/catalog/pages/EditionDetailPage'
 import SeriesListPage from '@/features/catalog/pages/SeriesListPage'
 import TitleDetailPage from '@/features/catalog/pages/TitleDetailPage'
 import TitleListPage from '@/features/catalog/pages/TitleListPage'
+import CustomerDetailPage from '@/features/customers/pages/CustomerDetailPage'
 import CustomerListPage from '@/features/customers/pages/CustomerListPage'
 import DashboardPage from '@/features/dashboard/pages/DashboardPage'
 import BookSeriesPage from '@/features/bookseries/pages/BookSeriesPage'
@@ -57,6 +58,7 @@ export default function AppRoutes() {
       <Route path="/dashboard" element={<RequireSession><DashboardRoute /></RequireSession>} />
       <Route path="/pos" element={<RequireSession><PosPage /></RequireSession>} />
       <Route path="/customers" element={<RequireSession><CustomerListPage /></RequireSession>} />
+      <Route path="/customers/:id" element={<RequireSession><CustomerDetailPage /></RequireSession>} />
       <Route path="/hr" element={<RequireSession><HumanResourcesPage /></RequireSession>} />
       <Route path="/approvals" element={<RequireSession><ApprovalsPage /></RequireSession>} />
       <Route path="/audit" element={<RequireSession><AuditPage /></RequireSession>} />
