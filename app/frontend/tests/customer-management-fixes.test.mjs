@@ -20,6 +20,7 @@ let serviceMod
 let hookMod
 let indexMod
 let SelectBox
+let AddCustomerDialog
 let ExportCustomerDialog
 let EditCustomerDialog
 let CustomerListPage
@@ -147,6 +148,7 @@ before(async () => {
   hookMod = await viteServer.ssrLoadModule('/src/features/customers/customers.hook.ts')
   indexMod = await viteServer.ssrLoadModule('/src/features/customers/index.ts')
   ;({ SelectBox } = await viteServer.ssrLoadModule('/src/components/common/SelectBox/SelectBox.tsx'))
+  ;({ AddCustomerDialog } = await viteServer.ssrLoadModule('/src/features/customers/components/AddCustomerDialog.tsx'))
   ;({ ExportCustomerDialog } = await viteServer.ssrLoadModule('/src/features/customers/components/ExportCustomerDialog.tsx'))
   ;({ EditCustomerDialog } = await viteServer.ssrLoadModule('/src/features/customers/components/EditCustomerDialog.tsx'))
   CustomerListPage = (await viteServer.ssrLoadModule('/src/features/customers/pages/CustomerListPage.tsx')).default
@@ -791,6 +793,37 @@ describe('AC 5: Presentation helpers, routing, and CustomerDetailPage', { concur
     assert.match(openHtml, /value="079091001234"/)
     assert.match(openHtml, /Lưu thay đổi/)
   })
+
+  test('AddCustomerDialog uses custom noValidate validation, accessible dialog metadata, and primary submit styling', () => {
+    const queryClient = new QueryClient()
+
+    const closedHtml = renderToStaticMarkup(
+      el(
+        QueryClientProvider,
+        { client: queryClient },
+        el(AddCustomerDialog, { isOpen: false, onClose: () => {} }),
+      ),
+    )
+    assert.equal(closedHtml, '')
+
+    const openHtml = renderToStaticMarkup(
+      el(
+        QueryClientProvider,
+        { client: queryClient },
+        el(AddCustomerDialog, { isOpen: true, onClose: () => {} }),
+      ),
+    )
+    assert.match(openHtml, /role="dialog"/)
+    assert.match(openHtml, /aria-modal="true"/)
+    assert.match(openHtml, /<form[^>]*novalidate/i)
+    assert.match(openHtml, /Tạo nhanh khách hàng/)
+    assert.match(openHtml, /aria-label="Đóng hộp thoại"/)
+    assert.match(
+      openHtml,
+      /<button[^>]*bg-indigo-600 text-white[^>]*type="submit"|<button[^>]*type="submit"[^>]*bg-indigo-600 text-white/,
+      'Primary submit CTA "Thêm khách hàng · Hạng Thường" must use variant="primary" (bg-indigo-600 text-white)',
+    )
+  })
 })
 
 describe('Customer API client boundary integration against real HTTP server', { concurrency: false }, () => {
@@ -827,6 +860,47 @@ describe('Customer API client boundary integration against real HTTP server', { 
             hasPreviousPage: false,
             hasNextPage: false,
           }),
+        )
+        return
+      }
+
+      if (req.method === 'GET' && url.pathname === '/customers/check-duplicate') {
+        const phone = url.searchParams.get('phone') ?? ''
+        const isDup = phone === '0901234890'
+        res.statusCode = 200
+        res.end(
+          JSON.stringify({
+            isDuplicate: isDup,
+            normalizedPhone: phone,
+            existingCustomer: isDup ? makeCustomer() : null,
+          }),
+        )
+        return
+      }
+
+      if (req.method === 'POST' && url.pathname === '/customers') {
+        if (req.headers['x-csrf-token'] !== 'unit-csrf-token') {
+          res.statusCode = 403
+          res.end(JSON.stringify({ code: 'CSRF_TOKEN_INVALID', message: 'Thiếu CSRF token' }))
+          return
+        }
+        const payload = bodyText ? JSON.parse(bodyText) : {}
+        if (payload.phone === '0901234890') {
+          res.statusCode = 409
+          res.end(JSON.stringify({ message: 'Số điện thoại đã tồn tại trong hệ thống' }))
+          return
+        }
+        res.statusCode = 201
+        res.end(
+          JSON.stringify(
+            makeCustomer({
+              id: 'cust-created-1',
+              fullName: payload.fullName,
+              phone: payload.phone,
+              tierName: 'REGULAR',
+              eligibleSpend: 0,
+            }),
+          ),
         )
         return
       }
@@ -893,6 +967,32 @@ describe('Customer API client boundary integration against real HTTP server', { 
     assert.equal(params.get('Search'), 'Nhiên')
     assert.equal(params.get('TierName'), 'GOLD')
     assert.equal(params.get('IsFlagged'), 'false')
+  })
+
+  test('createCustomer & checkDuplicateCustomer send CSRF header and propagate 409 conflict errors', async () => {
+    const dup = await serviceMod.checkDuplicateCustomer('0901234890')
+    assert.equal(dup.isDuplicate, true)
+    assert.equal(dup.existingCustomer?.fullName, 'Nguyễn An Nhiên')
+
+    const created = await serviceMod.createCustomer({
+      fullName: 'Khách Tạo Mới',
+      phone: '0908889999',
+    })
+    assert.equal(created.id, 'cust-created-1')
+    assert.equal(created.tierName, 'REGULAR')
+
+    const postReq = receivedRequests.at(-1)
+    assert.equal(postReq.method, 'POST')
+    assert.equal(postReq.csrf, 'unit-csrf-token')
+
+    await assert.rejects(
+      () =>
+        serviceMod.createCustomer({
+          fullName: 'Khách Trùng',
+          phone: '0901234890',
+        }),
+      (err) => err instanceof serviceMod.CustomerApiError && err.status === 409 && err.message.includes('tồn tại'),
+    )
   })
 
   test('updateCustomer sends X-CSRF-Token header and propagates 404/409 errors as CustomerApiError', async () => {

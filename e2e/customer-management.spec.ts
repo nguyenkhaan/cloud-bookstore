@@ -76,7 +76,10 @@ async function ensureTestCredentials(request: APIRequestContext): Promise<E2ECre
   return cachedCredentials
 }
 
-function attachRuntimeMonitors(page: Page, options?: { allow404ForMissingCustomer?: boolean }) {
+function attachRuntimeMonitors(
+  page: Page,
+  options?: { allow404ForMissingCustomer?: boolean; allow422ForAddCustomerError?: boolean },
+) {
   const consoleErrors: string[] = []
   const pageErrors: string[] = []
   const serverErrors: string[] = []
@@ -93,6 +96,13 @@ function attachRuntimeMonitors(page: Page, options?: { allow404ForMissingCustome
         options?.allow404ForMissingCustomer &&
         text.includes('status of 404') &&
         locUrl.includes(`/api/customers/${MISSING_CUSTOMER_ID}`)
+      ) {
+        return
+      }
+      if (
+        options?.allow422ForAddCustomerError &&
+        text.includes('status of 422') &&
+        locUrl.includes('/api/customers')
       ) {
         return
       }
@@ -817,6 +827,463 @@ test.describe('Customer Management Refinement & 360 Profile (E2E)', () => {
     const exportDialog = page.getByRole('dialog', { name: 'Xuất danh sách khách hàng' })
     await expect(exportDialog).toBeVisible()
     await expect(exportDialog).toContainText('1 khách hàng theo bộ lọc hiện tại')
+
+    monitor.assertClean()
+  })
+
+  test('covers CSRF enforcement, AddCustomerDialog validation/creation, combined filters, Page 2 export, and mobile drawer interaction', async ({ page, request }) => {
+    const creds = await ensureTestCredentials(request)
+    const monitor = attachRuntimeMonitors(page)
+
+    await loginViaUi(page, creds)
+    await page.goto(`${BASE_URL}/customers`)
+    await expect(page.locator('tbody tr').first()).toBeVisible()
+
+    const csrfToken = await page.evaluate(() => sessionStorage.getItem('cloud-bookstore.csrf-token'))
+    expect(csrfToken).toBeTruthy()
+
+    // CSRF enforcement on authenticated write endpoints (using browser session cookies via page.request)
+    const postNoCsrfRes = await page.request.post(`${API_URL}/api/customers`, {
+      headers: { Origin: BASE_URL },
+      data: { fullName: 'CSRF Probe', phone: '0901234999' },
+    })
+    expect(postNoCsrfRes.status()).toBe(403)
+    expect((await postNoCsrfRes.json()).code).toBe('CSRF_TOKEN_INVALID')
+
+    const putNoCsrfRes = await page.request.put(`${API_URL}/api/customers/${SEEDED_SILVER_ID}`, {
+      headers: { Origin: BASE_URL },
+      data: { fullName: 'CSRF Probe', phone: '0900000005' },
+    })
+    expect(putNoCsrfRes.status()).toBe(403)
+    expect((await putNoCsrfRes.json()).code).toBe('CSRF_TOKEN_INVALID')
+
+    const postBadPhoneRes = await page.request.post(`${API_URL}/api/customers`, {
+      headers: { Origin: BASE_URL, 'X-CSRF-Token': csrfToken! },
+      data: { fullName: 'Valid Token Bad Phone', phone: '0123456789' },
+    })
+    expect(postBadPhoneRes.status()).toBe(400)
+
+    // AddCustomerDialog: simultaneous noValidate inline errors + duplicate warning + creation
+    await page.getByRole('button', { name: '+ Thêm mới khách hàng' }).click()
+    const addDialog = page.getByRole('dialog', { name: 'Tạo nhanh khách hàng' })
+    await expect(addDialog).toBeVisible()
+
+    const nameInput = addDialog.getByLabel('Họ và tên *')
+    const phoneInput = addDialog.getByLabel('Số điện thoại *')
+    const emailInput = addDialog.getByLabel('Email (tùy chọn)')
+
+    await nameInput.fill('   ')
+    await phoneInput.fill('0123456789')
+    await emailInput.fill('invalid-email')
+    await addDialog.locator('button[type="submit"]').click()
+
+    await expect(addDialog.getByText('Họ và tên không được để trống')).toBeVisible()
+    await expect(addDialog.getByText(/Số điện thoại không hợp lệ/)).toBeVisible()
+    await expect(addDialog.getByText('Email không đúng định dạng')).toBeVisible()
+    await expect(nameInput).toHaveAttribute('aria-invalid', 'true')
+    await expect(phoneInput).toHaveAttribute('aria-invalid', 'true')
+    await expect(emailInput).toHaveAttribute('aria-invalid', 'true')
+
+    // Duplicate phone alert banner triggers for existing seeded Silver customer phone
+    await phoneInput.fill('0900000005')
+    await expect(addDialog.getByText('Phát hiện số điện thoại đã tồn tại!')).toBeVisible()
+    await expect(addDialog.getByText(/Trần Minh Anh/)).toBeVisible()
+
+    const uniqueSuffix = String(Date.now()).slice(-6)
+    const createdName = `Khách QA ${uniqueSuffix}`
+    const createdPhone = `093${uniqueSuffix}1`
+    await nameInput.fill(createdName)
+    await phoneInput.fill(createdPhone)
+    await emailInput.fill(`qa.${uniqueSuffix}@example.com`)
+    await expect(addDialog.getByText('Phát hiện số điện thoại đã tồn tại!')).toHaveCount(0)
+
+    const createPromise = page.waitForResponse(
+      (res) => res.url().endsWith('/api/customers') && res.request().method() === 'POST',
+    )
+    await addDialog.locator('button[type="submit"]').click()
+    const createRes = await createPromise
+    expect(createRes.status()).toBe(201)
+    const createdBody = (await createRes.json()) as { id: string }
+
+    await expect(addDialog).toHaveCount(0)
+    await expect(page.getByText('Thêm khách hàng thành công')).toBeVisible()
+    await expect(page.getByText(createdName)).toBeVisible()
+
+    // Flag newly created customer on /customers/:id and test combined Search + TierName + IsFlagged
+    const createdRow = page.locator('tbody tr', { hasText: createdName })
+    await createdRow.getByRole('link', { name: 'Hồ sơ 360°' }).click()
+    await page.waitForURL((url) => url.pathname === `/customers/${createdBody.id}`)
+
+    const blockPromise = page.waitForResponse(
+      (res) => res.url().includes(`/api/customers/${createdBody.id}`) && res.request().method() === 'PUT',
+    )
+    await page.getByRole('button', { name: 'Chặn quyền thuê sách' }).click()
+    expect((await blockPromise).status()).toBe(200)
+    await expect(page.getByText('Đang chặn thuê', { exact: true })).toBeVisible()
+
+    await page.goto(`${BASE_URL}/customers`)
+    await page.locator('input[placeholder*="Tìm SĐT"]').fill(createdName)
+    await page.getByRole('button', { name: 'Hạng thành viên' }).click()
+    await page.getByRole('option', { name: 'Hạng: Thường' }).click()
+    await page.getByRole('button', { name: 'Trạng thái' }).click()
+    await page.getByRole('option', { name: 'Trạng thái: Cần theo dõi' }).click()
+
+    await expect(page.locator('tbody tr')).toHaveCount(1)
+    await expect(page.getByText(createdName)).toBeVisible()
+
+    await page.getByRole('button', { name: 'Trạng thái' }).click()
+    await page.getByRole('option', { name: 'Trạng thái: Bình thường' }).click()
+    await expect(page.getByText('Chưa tìm thấy khách hàng')).toBeVisible()
+
+    await page.getByRole('button', { name: 'Xóa bộ lọc' }).click()
+    await expect(page.locator('tbody tr').first()).toBeVisible()
+
+    // Ensure at least 11 REGULAR customers exist so Page 2 exists even with Hạng: Thường filter active
+    const initialRegularSummary = await page.evaluate(async ({ apiUrl }) => {
+      const res = await fetch(`${apiUrl}/api/customers?TierName=REGULAR&Page=1&PageSize=1`, { credentials: 'include' })
+      return (await res.json()) as { totalCount: number }
+    }, { apiUrl: API_URL })
+
+    if (initialRegularSummary.totalCount < 11) {
+      const needed = 11 - initialRegularSummary.totalCount
+      const phoneSeed = uniqueSuffix.slice(-5)
+      for (let i = 1; i <= needed; i += 1) {
+        await page.evaluate(
+          async ({ apiUrl, csrf, suffix, seed, idx }) => {
+            const res = await fetch(`${apiUrl}/api/customers`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+              body: JSON.stringify({
+                fullName: `Khách Phân Trang ${suffix}-${idx}`,
+                phone: `094${seed}${String(idx).padStart(2, '0')}`,
+              }),
+            })
+            if (!res.ok) {
+              throw new Error(`Pagination fixture customer ${idx} failed with ${res.status}`)
+            }
+          },
+          { apiUrl: API_URL, csrf: csrfToken!, suffix: uniqueSuffix, seed: phoneSeed, idx: i },
+        )
+      }
+      await page.reload()
+    }
+
+    const regularSummary = await page.evaluate(async ({ apiUrl }) => {
+      const res = await fetch(`${apiUrl}/api/customers?TierName=REGULAR&Page=1&PageSize=1`, { credentials: 'include' })
+      return (await res.json()) as { totalCount: number }
+    }, { apiUrl: API_URL })
+    expect(regularSummary.totalCount).toBeGreaterThanOrEqual(11)
+
+    await page.getByRole('button', { name: 'Hạng thành viên' }).click()
+    await page.getByRole('option', { name: 'Hạng: Thường' }).click()
+    await page.getByRole('button', { name: '2', exact: true }).click()
+    await expect(page.getByText(new RegExp(`Hiển thị 11–.*trong ${regularSummary.totalCount} khách hàng`))).toBeVisible()
+
+    await page.getByRole('button', { name: 'Xuất danh sách' }).click()
+    const page2ExportDialog = page.getByRole('dialog', { name: 'Xuất danh sách khách hàng' })
+    await expect(page2ExportDialog).toContainText(`${regularSummary.totalCount} khách hàng theo bộ lọc hiện tại`)
+
+    const csvDownloadPromise = page.waitForEvent('download')
+    await page2ExportDialog.getByRole('button', { name: /Xuất CSV/ }).click()
+    const csvDownload = await csvDownloadPromise
+    const csvBytes = readFileSync((await csvDownload.path())!)
+    expect(Array.from(csvBytes.subarray(0, 3))).toEqual([0xef, 0xbb, 0xbf])
+    const csvRows = csvBytes.toString('utf8').slice(1).split('\r\n')
+    expect(csvRows.length).toBe(regularSummary.totalCount + 1)
+
+    await page.getByRole('button', { name: 'Xuất danh sách' }).click()
+    const xlsxDownloadPromise = page.waitForEvent('download')
+    await page.getByRole('dialog').getByRole('button', { name: /Xuất Excel/ }).click()
+    const xlsxDownload = await xlsxDownloadPromise
+    const xlsxZip = extractZipStoreFiles(new Uint8Array(readFileSync((await xlsxDownload.path())!)))
+    expect(xlsxZip.has('xl/worksheets/sheet1.xml')).toBe(true)
+
+    // Mobile drawer toggle & backdrop dismissal at 390x844
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto(`${BASE_URL}/customers`)
+    await expect(page.locator('tbody tr').first()).toBeVisible()
+
+    await page.getByRole('button', { name: 'Toggle Sidebar' }).click()
+    await expect.poll(async () => (await page.locator('aside').boundingBox())?.x ?? -999).toBe(0)
+
+    await page.locator('.fixed.inset-0.z-30').click({ position: { x: 350, y: 120 } })
+    await expect(page.locator('.fixed.inset-0.z-30')).toHaveCount(0)
+    await expect.poll(async () => {
+      const box = await page.locator('aside').boundingBox()
+      return box ? box.x + box.width : 999
+    }).toBeLessThanOrEqual(0)
+
+    monitor.assertClean()
+  })
+
+  test('regression: mobile and tablet Header sidebar toggle keeps >= 44x44px touch target without horizontal compression', async ({ page, request }) => {
+    const creds = await ensureTestCredentials(request)
+    const monitor = attachRuntimeMonitors(page)
+
+    await loginViaUi(page, creds)
+    const failures: string[] = []
+
+    for (const check of [
+      { width: 390, height: 844, path: '/customers' },
+      { width: 390, height: 844, path: `/customers/${SEEDED_SILVER_ID}` },
+      { width: 768, height: 1024, path: '/customers' },
+    ]) {
+      await page.setViewportSize({ width: check.width, height: check.height })
+      await page.goto(`${BASE_URL}${check.path}`)
+      await page.waitForLoadState('networkidle')
+
+      const toggleBox = await page.getByRole('button', { name: 'Toggle Sidebar' }).boundingBox()
+      if (!toggleBox) {
+        failures.push(`Missing Toggle Sidebar on ${check.path} at ${check.width}x${check.height}`)
+        continue
+      }
+      if (toggleBox.width < 44 || toggleBox.height < 44) {
+        failures.push(
+          `Toggle Sidebar box=${toggleBox.width.toFixed(2)}x${toggleBox.height.toFixed(2)}px (< 44x44px) on ${check.path} at ${check.width}x${check.height}`,
+        )
+      }
+    }
+
+    expect(failures).toEqual([])
+    monitor.assertClean()
+  })
+
+  test('regression: customer dialog footer CTAs and empty-state/note buttons meet >= 44px height and AddCustomerDialog submit uses primary indigo styling', async ({ page, request }) => {
+    const creds = await ensureTestCredentials(request)
+    const monitor = attachRuntimeMonitors(page)
+
+    await loginViaUi(page, creds)
+    const failures: string[] = []
+
+    for (const vp of [
+      { width: 1440, height: 900 },
+      { width: 390, height: 844 },
+    ]) {
+      await page.setViewportSize(vp)
+      await page.goto(`${BASE_URL}/customers`)
+      await expect(page.locator('tbody tr').first()).toBeVisible()
+
+      // Empty-state recovery CTA >= 44px height
+      await page.locator('input[placeholder*="Tìm SĐT"]').fill('ZZZ-EMPTY-TOUCH-CHECK')
+      const clearFilterBtn = page.getByRole('button', { name: 'Xóa bộ lọc' })
+      await expect(clearFilterBtn).toBeVisible()
+      const clearFilterBox = await clearFilterBtn.boundingBox()
+      if ((clearFilterBox?.height ?? 0) < 44) {
+        failures.push(`Xóa bộ lọc height=${clearFilterBox?.height ?? 0}px < 44px at ${vp.width}x${vp.height}`)
+      }
+      await clearFilterBtn.click()
+
+      // AddCustomerDialog submit uses primary indigo background (not white secondary) & both footer buttons >= 44px
+      await page.getByRole('button', { name: '+ Thêm mới khách hàng' }).click()
+      const addDialog = page.getByRole('dialog', { name: 'Tạo nhanh khách hàng' })
+      const addCancelBox = await addDialog.getByRole('button', { name: 'Hủy bỏ' }).boundingBox()
+      const addSubmit = addDialog.locator('button[type="submit"]')
+      const addSubmitBox = await addSubmit.boundingBox()
+      const addSubmitBg = await addSubmit.evaluate((el) => getComputedStyle(el).backgroundColor)
+
+      if (addSubmitBg === 'rgb(255, 255, 255)') {
+        failures.push(`AddCustomerDialog submit uses secondary white background (${addSubmitBg}) instead of primary indigo at ${vp.width}x${vp.height}`)
+      }
+      if ((addCancelBox?.height ?? 0) < 44) {
+        failures.push(`AddCustomerDialog Hủy bỏ height=${addCancelBox?.height ?? 0}px < 44px at ${vp.width}x${vp.height}`)
+      }
+      if ((addSubmitBox?.height ?? 0) < 44) {
+        failures.push(`AddCustomerDialog submit height=${addSubmitBox?.height ?? 0}px < 44px at ${vp.width}x${vp.height}`)
+      }
+      await addDialog.getByRole('button', { name: 'Hủy bỏ' }).click()
+
+      // ExportCustomerDialog footer close CTA >= 44px
+      await page.getByRole('button', { name: 'Xuất danh sách' }).click()
+      const exportDialog = page.getByRole('dialog', { name: 'Xuất danh sách khách hàng' })
+      const exportCloseBox = await exportDialog.getByRole('button', { name: 'Đóng', exact: true }).boundingBox()
+      if ((exportCloseBox?.height ?? 0) < 44) {
+        failures.push(`ExportCustomerDialog Đóng height=${exportCloseBox?.height ?? 0}px < 44px at ${vp.width}x${vp.height}`)
+      }
+      await exportDialog.getByRole('button', { name: 'Đóng', exact: true }).click()
+
+      // EditCustomerDialog footer CTAs >= 44px
+      await page.goto(`${BASE_URL}/customers/${SEEDED_SILVER_ID}`)
+      await expect(page.getByRole('heading', { name: 'Trần Minh Anh', level: 1 })).toBeVisible()
+      await page.getByRole('button', { name: 'Chỉnh sửa thông tin' }).click()
+      const editDialog = page.getByRole('dialog', { name: 'Chỉnh sửa thông tin khách hàng' })
+      const editCancelBox = await editDialog.getByRole('button', { name: 'Hủy bỏ' }).boundingBox()
+      const editSubmitBox = await editDialog.getByRole('button', { name: 'Lưu thay đổi' }).boundingBox()
+      if ((editCancelBox?.height ?? 0) < 44) {
+        failures.push(`EditCustomerDialog Hủy bỏ height=${editCancelBox?.height ?? 0}px < 44px at ${vp.width}x${vp.height}`)
+      }
+      if ((editSubmitBox?.height ?? 0) < 44) {
+        failures.push(`EditCustomerDialog Lưu thay đổi height=${editSubmitBox?.height ?? 0}px < 44px at ${vp.width}x${vp.height}`)
+      }
+      await editDialog.getByRole('button', { name: 'Hủy bỏ' }).click()
+
+      // CustomerDetailPage "Cập nhật ghi chú" button in Violations tab >= 44px (restore customer before asserting)
+      await page.getByRole('button', { name: 'Chặn quyền thuê sách' }).click()
+      await expect(page.getByRole('button', { name: 'Mở quyền thuê sách' })).toBeVisible()
+      await page.getByRole('tab', { name: /Vi phạm & Ghi chú/ }).click()
+      const noteBtnBox = await page.getByRole('button', { name: 'Cập nhật ghi chú' }).boundingBox()
+      await page.getByRole('button', { name: 'Mở quyền thuê sách' }).click()
+      await expect(page.getByRole('button', { name: 'Chặn quyền thuê sách' })).toBeVisible()
+      if ((noteBtnBox?.height ?? 0) < 44) {
+        failures.push(`Cập nhật ghi chú height=${noteBtnBox?.height ?? 0}px < 44px at ${vp.width}x${vp.height}`)
+      }
+    }
+
+    expect(failures).toEqual([])
+    monitor.assertClean()
+  })
+
+  test('regression: AddCustomerDialog resets unsaved state when reopened and announces generalError with role="alert"', async ({ page, request }) => {
+    const creds = await ensureTestCredentials(request)
+    const monitor = attachRuntimeMonitors(page, { allow422ForAddCustomerError: true })
+
+    await loginViaUi(page, creds)
+    await page.goto(`${BASE_URL}/customers`)
+    await expect(page.locator('tbody tr').first()).toBeVisible()
+
+    const failures: string[] = []
+
+    // 1. Trigger validation + dirty inputs, close dialog, and verify reopen starts clean
+    await page.getByRole('button', { name: '+ Thêm mới khách hàng' }).click()
+    const addDialog = page.getByRole('dialog', { name: 'Tạo nhanh khách hàng' })
+    await addDialog.getByLabel('Họ và tên *').fill('Khách Chưa Lưu')
+    await addDialog.getByLabel('Email (tùy chọn)').fill('bad-email')
+    await addDialog.locator('button[type="submit"]').click()
+    await expect(addDialog.getByText('Email không đúng định dạng')).toBeVisible()
+
+    await addDialog.getByRole('button', { name: 'Hủy bỏ' }).click()
+    await expect(addDialog).toHaveCount(0)
+
+    await page.getByRole('button', { name: '+ Thêm mới khách hàng' }).click()
+    const reopenedDialog = page.getByRole('dialog', { name: 'Tạo nhanh khách hàng' })
+    const persistedName = await reopenedDialog.getByLabel('Họ và tên *').inputValue()
+    const persistedEmail = await reopenedDialog.getByLabel('Email (tùy chọn)').inputValue()
+    const persistedErrorCount = await reopenedDialog.getByText('Email không đúng định dạng').count()
+    if (persistedName !== '' || persistedEmail !== '' || persistedErrorCount > 0) {
+      failures.push(
+        `AddCustomerDialog retained stale state after close/reopen (fullName=${JSON.stringify(persistedName)}, email=${JSON.stringify(persistedEmail)}, emailErrorCount=${persistedErrorCount})`,
+      )
+    }
+
+    // 2. Backend generalError must render inside an accessible role="alert" live region
+    await page.route('**/api/customers', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 422,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Không thể lưu khách hàng vào lúc này' }),
+        })
+        return
+      }
+      await route.continue()
+    })
+
+    await reopenedDialog.getByLabel('Họ và tên *').fill('Khách Lỗi Hệ Thống')
+    await reopenedDialog.getByLabel('Số điện thoại *').fill('0907778889')
+    await reopenedDialog.getByLabel('Email (tùy chọn)').fill('')
+    await reopenedDialog.locator('button[type="submit"]').click()
+    const errorBanner = reopenedDialog.getByText('Không thể lưu khách hàng vào lúc này')
+    await expect(errorBanner).toBeVisible()
+    const alertRoleCount = await reopenedDialog
+      .locator('[role="alert"]', { hasText: 'Không thể lưu khách hàng vào lúc này' })
+      .count()
+    if (alertRoleCount === 0) {
+      failures.push('AddCustomerDialog generalError banner is missing role="alert"')
+    }
+
+    await page.unroute('**/api/customers')
+    expect(failures).toEqual([])
+    monitor.assertClean()
+  })
+
+  test('regression: all rendered visible text including Brand Logo tagline meets >= 4.5:1 WCAG contrast', async ({ page, request }) => {
+    const creds = await ensureTestCredentials(request)
+    const monitor = attachRuntimeMonitors(page)
+
+    await loginViaUi(page, creds)
+    const lowContrastByRoute: Array<{ route: string; text: string; contrast: number; fontSize: number }> = []
+
+    for (const routePath of ['/customers', `/customers/${SEEDED_SILVER_ID}`]) {
+      await page.goto(`${BASE_URL}${routePath}`)
+      await page.waitForLoadState('networkidle')
+
+      const lowContrastItems = await page.evaluate(() => {
+        const canvas = document.createElement('canvas')
+        canvas.width = 1
+        canvas.height = 1
+        const ctx = canvas.getContext('2d')!
+        function parseCssColor(css: string): [number, number, number, number] {
+          ctx.clearRect(0, 0, 1, 1)
+          ctx.fillStyle = 'rgba(0, 0, 0, 0)'
+          ctx.fillStyle = css
+          ctx.fillRect(0, 0, 1, 1)
+          const d = ctx.getImageData(0, 0, 1, 1).data
+          return [d[0], d[1], d[2], d[3] / 255]
+        }
+        function effectiveBg(node: Element | null): [number, number, number] {
+          const layers: Array<[number, number, number, number]> = []
+          let cur: Element | null = node
+          while (cur) {
+            const parsed = parseCssColor(getComputedStyle(cur).backgroundColor)
+            if (parsed[3] > 0) layers.unshift(parsed)
+            cur = cur.parentElement
+          }
+          let r = 255
+          let g = 255
+          let b = 255
+          for (const [lr, lg, lb, la] of layers) {
+            r = lr * la + r * (1 - la)
+            g = lg * la + g * (1 - la)
+            b = lb * la + b * (1 - la)
+          }
+          return [Math.round(r), Math.round(g), Math.round(b)]
+        }
+        function luminance(rgb: [number, number, number]): number {
+          const [r, g, b] = rgb.map((v) => {
+            const s = v / 255
+            return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
+          })
+          return 0.2126 * r + 0.7152 * g + 0.0722 * b
+        }
+
+        const failures: Array<{ text: string; contrast: number; fontSize: number }> = []
+        for (const el of document.querySelectorAll('body *')) {
+          if (el.closest('svg')) continue
+          const hasTextNode = Array.from(el.childNodes).some(
+            (n) => n.nodeType === Node.TEXT_NODE && (n.textContent?.trim() ?? '').length > 0,
+          )
+          if (!hasTextNode) continue
+          const style = getComputedStyle(el)
+          if (style.visibility === 'hidden' || style.display === 'none' || Number(style.opacity) === 0) continue
+          const rect = el.getBoundingClientRect()
+          if (rect.width === 0 || rect.height === 0) continue
+
+          const fg = parseCssColor(style.color)
+          const bg = effectiveBg(el)
+          const l1 = Math.max(luminance([fg[0], fg[1], fg[2]]), luminance(bg))
+          const l2 = Math.min(luminance([fg[0], fg[1], fg[2]]), luminance(bg))
+          const ratio = Number(((l1 + 0.05) / (l2 + 0.05)).toFixed(2))
+          const fontSize = Number.parseFloat(style.fontSize)
+          const weight = Number.parseInt(style.fontWeight, 10) || 400
+          const isLargeText = fontSize >= 24 || (fontSize >= 18.67 && weight >= 700)
+          const threshold = isLargeText ? 3 : 4.5
+          if (ratio < threshold) {
+            failures.push({
+              text: (el.textContent ?? '').trim().slice(0, 60),
+              contrast: ratio,
+              fontSize,
+            })
+          }
+        }
+        return failures
+      })
+
+      for (const item of lowContrastItems) {
+        lowContrastByRoute.push({ route: routePath, ...item })
+      }
+    }
+
+    expect(lowContrastByRoute, 'Low-contrast text across customer routes').toEqual([])
 
     monitor.assertClean()
   })

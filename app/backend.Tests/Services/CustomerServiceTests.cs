@@ -367,4 +367,170 @@ public class CustomerServiceTests
 
         await Assert.ThrowsAsync<BadRequestException>(() => service.DeleteCustomerAsync(customer.Id));
     }
+
+    [Fact]
+    public async Task GetCustomers_WithCombinedTierNameSearchAndIsFlagged_ReturnsExactIntersection()
+    {
+        var dbName = Guid.NewGuid().ToString("N");
+        await using var context = CreateDbContext(dbName);
+        var service = CreateService(context);
+
+        var goldTier = await context.MembershipTiers.FirstAsync(t => t.Name == MembershipTierName.GOLD);
+        var silverTier = await context.MembershipTiers.FirstAsync(t => t.Name == MembershipTierName.SILVER);
+
+        context.Customers.AddRange(
+            new CustomerModel
+            {
+                Id = Guid.NewGuid(),
+                FullName = "Phạm Gia Hân",
+                Phone = "0909000001",
+                TierId = goldTier.Id,
+                MembershipTier = goldTier,
+                EligibleSpend = 4_000_000L,
+                IsFlagged = true,
+                FlagReason = "Quá hạn trả sách",
+                CreatedAt = DateTime.UtcNow.AddMinutes(-10)
+            },
+            new CustomerModel
+            {
+                Id = Guid.NewGuid(),
+                FullName = "Phạm Hân Bình",
+                Phone = "0909000002",
+                TierId = goldTier.Id,
+                MembershipTier = goldTier,
+                EligibleSpend = 3_500_000L,
+                IsFlagged = false,
+                CreatedAt = DateTime.UtcNow.AddMinutes(-9)
+            },
+            new CustomerModel
+            {
+                Id = Guid.NewGuid(),
+                FullName = "Nguyễn Gia Hân",
+                Phone = "0909000003",
+                TierId = silverTier.Id,
+                MembershipTier = silverTier,
+                EligibleSpend = 1_500_000L,
+                IsFlagged = true,
+                FlagReason = "Cần đối soát cọc",
+                CreatedAt = DateTime.UtcNow.AddMinutes(-8)
+            }
+        );
+        await context.SaveChangesAsync();
+
+        var exactMatch = await service.GetCustomersAsync(new CustomerQuery
+        {
+            TierName = "  gold  ",
+            Search = "gia hân",
+            IsFlagged = true
+        });
+        Assert.Equal(1, exactMatch.TotalCount);
+        Assert.Single(exactMatch.Items);
+        Assert.Equal("Phạm Gia Hân", exactMatch.Items[0].FullName);
+
+        var unflaggedGold = await service.GetCustomersAsync(new CustomerQuery
+        {
+            TierName = "GOLD",
+            Search = "hân",
+            IsFlagged = false
+        });
+        Assert.Equal(1, unflaggedGold.TotalCount);
+        Assert.Equal("Phạm Hân Bình", unflaggedGold.Items[0].FullName);
+
+        // Whitespace TierName behaves as unfiltered
+        var whitespaceTier = await service.GetCustomersAsync(new CustomerQuery { TierName = "   " });
+        Assert.Equal(3, whitespaceTier.TotalCount);
+
+        // Numeric enum string must not match
+        var numericTier = await service.GetCustomersAsync(new CustomerQuery { TierName = "2" });
+        Assert.Equal(0, numericTier.TotalCount);
+        Assert.Empty(numericTier.Items);
+    }
+
+    [Fact]
+    public async Task UpdateCustomer_EmptyFlagReason_ClearsStoredFlagReasonWhileNullPreservesIt()
+    {
+        var dbName = Guid.NewGuid().ToString("N");
+        await using var context = CreateDbContext(dbName);
+        var service = CreateService(context);
+
+        var created = await service.CreateCustomerAsync(new CreateCustomerRequest
+        {
+            FullName = "Đỗ Hải Đăng",
+            Phone = "0905551122"
+        });
+
+        var flagged = await service.UpdateCustomerAsync(created.Id, new UpdateCustomerRequest
+        {
+            FullName = "Đỗ Hải Đăng",
+            Phone = "0905551122",
+            IsFlagged = true,
+            FlagReason = "  Trả trễ 5 ngày  "
+        });
+        Assert.True(flagged.IsFlagged);
+        Assert.Equal("Trả trễ 5 ngày", flagged.FlagReason);
+
+        // Passing FlagReason = null preserves existing reason
+        var keptReason = await service.UpdateCustomerAsync(created.Id, new UpdateCustomerRequest
+        {
+            FullName = "Đỗ Hải Đăng",
+            Phone = "0905551122",
+            IsFlagged = true,
+            FlagReason = null
+        });
+        Assert.Equal("Trả trễ 5 ngày", keptReason.FlagReason);
+
+        // Passing empty/whitespace FlagReason clears persisted FlagReason
+        var cleared = await service.UpdateCustomerAsync(created.Id, new UpdateCustomerRequest
+        {
+            FullName = "Đỗ Hải Đăng",
+            Phone = "0905551122",
+            IsFlagged = false,
+            FlagReason = "   "
+        });
+        Assert.False(cleared.IsFlagged);
+        Assert.Null(cleared.FlagReason);
+    }
+
+    [Fact]
+    public async Task GetCustomers_WithCommaSeparatedTierName_ReturnsEmpty()
+    {
+        var dbName = Guid.NewGuid().ToString("N");
+        await using var context = CreateDbContext(dbName);
+        var service = CreateService(context);
+
+        var silverTier = await context.MembershipTiers.FirstAsync(t => t.Name == MembershipTierName.SILVER);
+        var goldTier = await context.MembershipTiers.FirstAsync(t => t.Name == MembershipTierName.GOLD);
+
+        context.Customers.AddRange(
+            new CustomerModel
+            {
+                Id = Guid.NewGuid(),
+                FullName = "Khách Bạc",
+                Phone = "0906111222",
+                TierId = silverTier.Id,
+                MembershipTier = silverTier,
+                EligibleSpend = 1_200_000L,
+                CreatedAt = DateTime.UtcNow
+            },
+            new CustomerModel
+            {
+                Id = Guid.NewGuid(),
+                FullName = "Khách Vàng",
+                Phone = "0906111333",
+                TierId = goldTier.Id,
+                MembershipTier = goldTier,
+                EligibleSpend = 3_500_000L,
+                CreatedAt = DateTime.UtcNow
+            }
+        );
+        await context.SaveChangesAsync();
+
+        var commaSeparatedResult = await service.GetCustomersAsync(new CustomerQuery { TierName = "REGULAR,SILVER" });
+        Assert.Equal(0, commaSeparatedResult.TotalCount);
+        Assert.Empty(commaSeparatedResult.Items);
+
+        var numericCommaResult = await service.GetCustomersAsync(new CustomerQuery { TierName = "0,2" });
+        Assert.Equal(0, numericCommaResult.TotalCount);
+        Assert.Empty(numericCommaResult.Items);
+    }
 }
