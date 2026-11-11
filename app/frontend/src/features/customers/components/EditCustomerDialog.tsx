@@ -314,6 +314,7 @@ function EditCustomerDialogForm({
 
           <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
             <Button
+              className="min-h-[44px]"
               disabled={updateCustomerMutation.isPending}
               onClick={onClose}
               type="button"
@@ -322,6 +323,7 @@ function EditCustomerDialogForm({
               Hủy bỏ
             </Button>
             <Button
+              className="min-h-[44px]"
               loading={updateCustomerMutation.isPending}
               type="submit"
               variant="primary"

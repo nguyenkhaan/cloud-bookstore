@@ -141,6 +141,7 @@ export function ExportCustomerDialog({
             </span>
           )}
           <Button
+            className="min-h-[44px]"
             disabled={isExporting}
             onClick={onClose}
             type="button"

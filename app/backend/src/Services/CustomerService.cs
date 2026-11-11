@@ -69,9 +69,10 @@ public class CustomerService(AppDbContext dbContext, ILogger<CustomerService> lo
         if (!string.IsNullOrWhiteSpace(query.TierName))
         {
             var normalizedTier = query.TierName.Trim();
-            if (!int.TryParse(normalizedTier, out _) &&
-                Enum.TryParse<MembershipTierName>(normalizedTier, ignoreCase: true, out var tierName) &&
-                Enum.IsDefined(tierName))
+            if (!normalizedTier.Contains(',') &&
+                Enum.GetNames<MembershipTierName>().Any(name =>
+                    string.Equals(name, normalizedTier, StringComparison.OrdinalIgnoreCase)) &&
+                Enum.TryParse<MembershipTierName>(normalizedTier, ignoreCase: true, out var tierName))
             {
                 queryable = queryable.Where(c => c.MembershipTier.Name == tierName);
             }

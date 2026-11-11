@@ -34,7 +34,7 @@ export function Logo({ variant = 'full', size = 'md', className }: LogoProps) {
           <span className={cn('font-bold leading-tight tracking-tight text-indigo-700', sizes.name)}>
             {brand.name}
           </span>
-          <span className={cn('mt-1 font-semibold uppercase tracking-[0.2em] text-slate-400', sizes.tagline)}>
+          <span className={cn('mt-1 font-semibold uppercase tracking-[0.2em] text-slate-600', sizes.tagline)}>
             {brand.tagline}
           </span>
         </div>

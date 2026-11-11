@@ -36,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
                   type="button"
                   onClick={onToggleSidebar}
                   aria-label="Toggle Sidebar"
-                  className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 lg:hidden"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 lg:hidden"
               >
                 <PanelToggleIcon size={18} />
               </button>

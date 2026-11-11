@@ -293,7 +293,13 @@ export default function CustomerListPage() {
                             Thử số điện thoại khác hoặc xóa bộ lọc hạng thành viên.
                           </p>
                           <div className="mt-4">
-                            <Button variant="outline" size="sm" onClick={handleResetFilters}>
+                            <Button
+                              className="min-h-[44px]"
+                              onClick={handleResetFilters}
+                              size="sm"
+                              type="button"
+                              variant="outline"
+                            >
                               Xóa bộ lọc
                             </Button>
                           </div>

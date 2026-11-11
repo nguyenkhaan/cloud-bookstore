@@ -21,6 +21,15 @@ export interface AddCustomerDialogProps {
 }
 
 export function AddCustomerDialog({ isOpen, onClose, onSuccess }: AddCustomerDialogProps) {
+  if (!isOpen) return null
+
+  return <AddCustomerDialogForm onClose={onClose} onSuccess={onSuccess} />
+}
+
+function AddCustomerDialogForm({
+  onClose,
+  onSuccess,
+}: Omit<AddCustomerDialogProps, 'isOpen'>) {
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
   const [debouncedPhone, setDebouncedPhone] = useState('')
@@ -38,20 +47,17 @@ export function AddCustomerDialog({ isOpen, onClose, onSuccess }: AddCustomerDia
 
   // Escape key handler
   useEffect(() => {
-    if (!isOpen) return
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && !createCustomerMutation.isPending) {
         onClose()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onClose])
+  }, [onClose, createCustomerMutation.isPending])
 
   // Debounce phone input for duplicate check
   useEffect(() => {
-    if (!isOpen) return
-
     const normalized = normalizePhoneNumber(phone)
     if (normalized.length === 10) {
       const timer = setTimeout(() => {
@@ -64,16 +70,14 @@ export function AddCustomerDialog({ isOpen, onClose, onSuccess }: AddCustomerDia
       }, 0)
       return () => clearTimeout(timer)
     }
-  }, [phone, isOpen])
+  }, [phone])
 
   // Query duplicate check via TanStack Query
   const { data: duplicateData, isFetching: isCheckingDuplicate } = useCheckDuplicate(
     debouncedPhone,
-    isOpen && debouncedPhone.length === 10
+    debouncedPhone.length === 10
   )
   const duplicateWarning = duplicateData?.isDuplicate ? duplicateData.existingCustomer : null
-
-  if (!isOpen) return null
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -133,8 +137,10 @@ export function AddCustomerDialog({ isOpen, onClose, onSuccess }: AddCustomerDia
       role="presentation"
     >
       <div
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
-        onClick={onClose}
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity motion-reduce:transition-none"
+        onClick={() => {
+          if (!createCustomerMutation.isPending) onClose()
+        }}
         aria-hidden="true"
       />
 
@@ -144,7 +150,7 @@ export function AddCustomerDialog({ isOpen, onClose, onSuccess }: AddCustomerDia
         aria-modal="true"
         aria-labelledby="dialog-title"
         aria-describedby="dialog-desc"
-        className="relative z-10 w-full max-w-lg rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xl transition-all"
+        className="relative z-10 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xl transition-all"
       >
         <div className="flex items-start justify-between border-b border-slate-100 pb-4">
           <div>
@@ -157,9 +163,10 @@ export function AddCustomerDialog({ isOpen, onClose, onSuccess }: AddCustomerDia
           </div>
           <button
             type="button"
+            disabled={createCustomerMutation.isPending}
             onClick={onClose}
             aria-label="Đóng hộp thoại"
-            className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
+            className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 disabled:opacity-40"
           >
             <X aria-hidden="true" className="size-5" />
           </button>
@@ -167,7 +174,10 @@ export function AddCustomerDialog({ isOpen, onClose, onSuccess }: AddCustomerDia
 
         <form noValidate onSubmit={handleSubmit} className="mt-5 space-y-4">
           {generalError && (
-            <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
+            <div
+              role="alert"
+              className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700"
+            >
               {generalError}
             </div>
           )}
@@ -273,6 +283,7 @@ export function AddCustomerDialog({ isOpen, onClose, onSuccess }: AddCustomerDia
 
           <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
             <Button
+              className="min-h-[44px]"
               type="button"
               variant="outline"
               onClick={onClose}
@@ -281,12 +292,14 @@ export function AddCustomerDialog({ isOpen, onClose, onSuccess }: AddCustomerDia
               Hủy bỏ
             </Button>
             <Button
+              className="min-h-[44px]"
               type="submit"
+              variant="primary"
               disabled={createCustomerMutation.isPending}
             >
               {createCustomerMutation.isPending ? (
                 <span className="flex items-center gap-2">
-                  <svg className="size-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <svg aria-hidden="true" className="size-4 animate-spin" viewBox="0 0 24 24" fill="none">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                   </svg>

@@ -540,6 +540,7 @@ export default function CustomerDetailPage() {
                         </div>
                       </div>
                       <Button
+                        className="min-h-[44px]"
                         onClick={() => setIsEditDialogOpen(true)}
                         size="sm"
                         type="button"
