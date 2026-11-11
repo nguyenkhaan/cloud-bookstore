@@ -340,7 +340,7 @@ describe('AC 1: Customer export (CSV UTF-8 BOM + OpenXML XLSX)', { concurrency: 
     assert.match(populatedHtml, /role="dialog"/)
     assert.match(populatedHtml, /aria-modal="true"/)
     assert.match(populatedHtml, /12 khách hàng/)
-    assert.match(populatedHtml, /Xuất Excel \(\.xlsx \/ \.csv\)/)
+    assert.match(populatedHtml, /Xuất Excel \(\.xlsx\)/)
     assert.match(populatedHtml, /Xuất CSV \(\.csv\)/)
 
     const emptyHtml = renderToStaticMarkup(

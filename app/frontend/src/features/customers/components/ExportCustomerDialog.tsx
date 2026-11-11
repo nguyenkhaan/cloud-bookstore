@@ -95,7 +95,7 @@ export function ExportCustomerDialog({
             <span className="min-w-0 flex-1">
               <span className="flex items-center justify-between gap-2">
                 <span className="text-sm font-semibold text-slate-900 group-hover:text-indigo-700">
-                  Xuất Excel (.xlsx / .csv)
+                  Xuất Excel (.xlsx)
                 </span>
                 <Download aria-hidden="true" className="size-4 shrink-0 text-slate-600 group-hover:text-indigo-600" />
               </span>
