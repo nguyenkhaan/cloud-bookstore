@@ -475,9 +475,9 @@ describe('AC 2 & AC 4: CustomerListPage rendering & cleanup contracts', { concur
     assert.doesNotMatch(html, /\+24 khách trong tháng/)
     assert.doesNotMatch(html, /Chi tiêu hợp lệ = tiền mua sách/)
 
-    // AC 5.1: "Hồ sơ 360°" links directly to /customers/:id
-    assert.match(html, /href="\/customers\/cust-a"[^>]*>Hồ sơ 360°<\/a>/)
-    assert.match(html, /href="\/customers\/cust-b"[^>]*>Hồ sơ 360°<\/a>/)
+    // AC 5.1: "Xem chi tiết" links directly to /customers/:id
+    assert.match(html, /href="\/customers\/cust-a"[^>]*>Xem chi tiết<\/a>/)
+    assert.match(html, /href="\/customers\/cust-b"[^>]*>Xem chi tiết<\/a>/)
   })
 })
 

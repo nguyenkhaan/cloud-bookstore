@@ -369,7 +369,7 @@ export default function CustomerListPage() {
                             className="inline-flex min-h-[44px] min-w-[44px] items-center justify-end whitespace-nowrap rounded-md px-2.5 py-2 text-xs font-semibold text-indigo-600 transition-colors hover:text-indigo-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
                             to={customerPaths.customerDetail(customer.id)}
                           >
-                            Hồ sơ 360°
+                            Xem chi tiết
                           </Link>
                         </td>
                       </tr>

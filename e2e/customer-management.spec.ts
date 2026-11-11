@@ -445,9 +445,9 @@ test.describe('Customer Management Refinement & 360 Profile (E2E)', () => {
     await page.goto(`${BASE_URL}/customers`)
     await expect(page.getByText('Trần Minh Anh')).toBeVisible()
 
-    // Navigate via "Hồ sơ 360°" link on Trần Minh Anh's row
+    // Navigate via "Xem chi tiết" link on Trần Minh Anh's row
     const silverRow = page.locator('tbody tr', { hasText: 'Trần Minh Anh' })
-    await silverRow.getByRole('link', { name: 'Hồ sơ 360°' }).click()
+    await silverRow.getByRole('link', { name: /Xem chi tiết|Hồ sơ 360°/ }).click()
     await page.waitForURL((url) => url.pathname === `/customers/${SEEDED_SILVER_ID}`)
 
     // Verify Customer 360° profile elements, breadcrumbs, PDR-003 progress & privileges
@@ -690,7 +690,7 @@ test.describe('Customer Management Refinement & 360 Profile (E2E)', () => {
 
     const mobileTierBtn = await page.getByRole('button', { name: 'Hạng thành viên' }).boundingBox()
     expect(mobileTierBtn?.height ?? 0).toBeGreaterThanOrEqual(44)
-    const mobileDetailLink = await page.getByRole('link', { name: 'Hồ sơ 360°' }).first().boundingBox()
+    const mobileDetailLink = await page.getByRole('link', { name: /Xem chi tiết|Hồ sơ 360°/ }).first().boundingBox()
     expect(mobileDetailLink?.width ?? 0).toBeGreaterThanOrEqual(44)
     expect(mobileDetailLink?.height ?? 0).toBeGreaterThanOrEqual(44)
 
@@ -922,7 +922,7 @@ test.describe('Customer Management Refinement & 360 Profile (E2E)', () => {
 
     // Flag newly created customer on /customers/:id and test combined Search + TierName + IsFlagged
     const createdRow = page.locator('tbody tr', { hasText: createdName })
-    await createdRow.getByRole('link', { name: 'Hồ sơ 360°' }).click()
+    await createdRow.getByRole('link', { name: /Xem chi tiết|Hồ sơ 360°/ }).click()
     await page.waitForURL((url) => url.pathname === `/customers/${createdBody.id}`)
 
     const blockPromise = page.waitForResponse(
