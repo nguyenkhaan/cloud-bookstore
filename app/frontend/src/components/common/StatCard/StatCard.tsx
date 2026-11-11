@@ -35,14 +35,14 @@ export const StatCard: React.FC<StatCardProps> = ({
       {...props}
     >
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-medium text-slate-500">{label}</span>
-        {badge || (icon && <span className="text-slate-400">{icon}</span>)}
+        <span className="text-[11px] font-medium text-slate-600">{label}</span>
+        {badge || (icon && <span className="text-slate-600">{icon}</span>)}
       </div>
       <div className={`mt-1 text-xl sm:text-2xl font-bold tracking-tight ${colorClasses[valueColor]}`}>
         {value}
       </div>
       {description && (
-        <div className="mt-1 text-[10px] text-slate-400 leading-tight">
+        <div className="mt-1 text-[10px] text-slate-600 leading-tight">
           {description}
         </div>
       )}

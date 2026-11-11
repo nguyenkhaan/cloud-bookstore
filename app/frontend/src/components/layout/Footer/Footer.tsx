@@ -10,7 +10,7 @@ export const Footer: React.FC<FooterProps> = ({
   note = '',
 }) => {
   return (
-    <footer className="mt-auto flex items-center justify-between border-t border-slate-200/60 py-3 text-[11px] text-slate-400">
+    <footer className="mt-auto flex items-center justify-between border-t border-slate-200/60 py-3 text-[11px] text-slate-600">
       <div>{note}</div>
       <div className="font-mono">{version}</div>
     </footer>

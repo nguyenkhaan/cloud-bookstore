@@ -8,10 +8,11 @@ import EditionDetailPage from '@/features/catalog/pages/EditionDetailPage'
 import SeriesListPage from '@/features/catalog/pages/SeriesListPage'
 import TitleDetailPage from '@/features/catalog/pages/TitleDetailPage'
 import TitleListPage from '@/features/catalog/pages/TitleListPage'
+import CustomerDetailPage from '@/features/customers/pages/CustomerDetailPage'
+import CustomerListPage from '@/features/customers/pages/CustomerListPage'
 import DashboardPage from '@/features/dashboard/pages/DashboardPage'
 import BookSeriesPage from '@/features/bookseries/pages/BookSeriesPage'
 import PosPage from '@/features/pos/pages/PosPage'
-import CustomersPage from '@/features/customers/pages/CustomersPage'
 import HumanResourcesPage from '@/features/hr/pages/HumanResourcesPage'
 import ApprovalsPage from '@/features/approvals/pages/ApprovalsPage'
 import AuditPage from '@/features/audit/pages/AuditPage'
@@ -56,7 +57,8 @@ export default function AppRoutes() {
       <Route path="/verify-register" element={<VerifyRegisterRoute />} />
       <Route path="/dashboard" element={<RequireSession><DashboardRoute /></RequireSession>} />
       <Route path="/pos" element={<RequireSession><PosPage /></RequireSession>} />
-      <Route path="/customers" element={<RequireSession><CustomersPage /></RequireSession>} />
+      <Route path="/customers" element={<RequireSession><CustomerListPage /></RequireSession>} />
+      <Route path="/customers/:id" element={<RequireSession><CustomerDetailPage /></RequireSession>} />
       <Route path="/hr" element={<RequireSession><HumanResourcesPage /></RequireSession>} />
       <Route path="/approvals" element={<RequireSession><ApprovalsPage /></RequireSession>} />
       <Route path="/audit" element={<RequireSession><AuditPage /></RequireSession>} />

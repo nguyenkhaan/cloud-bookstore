@@ -6,7 +6,7 @@ import { cn } from '@/lib/cn'
 import { filterOptions, getMatchRange, moveActiveIndex } from './selectBox.utils'
 import type { SelectOption } from './selectBox.utils'
 
-type SelectBoxProps<T extends string> = {
+export type SelectBoxProps<T extends string> = {
   label: string
   value: T | ''
   options: SelectOption<T>[]
@@ -17,6 +17,8 @@ type SelectBoxProps<T extends string> = {
   emptyHint?: string
   disabled?: boolean
   className?: string
+  searchable?: boolean
+  hideLabel?: boolean
 }
 
 type MenuPosition = { left: number; width: number; top?: number; bottom?: number }
@@ -48,6 +50,8 @@ export function SelectBox<T extends string>({
   emptyHint,
   disabled = false,
   className,
+  searchable = true,
+  hideLabel = false,
 }: SelectBoxProps<T>) {
   const baseId = useId()
   const labelId = `${baseId}-label`
@@ -65,7 +69,10 @@ export function SelectBox<T extends string>({
   const [position, setPosition] = useState<MenuPosition | null>(null)
   const [portalTarget, setPortalTarget] = useState<Element | null>(null)
 
-  const visibleOptions = useMemo(() => filterOptions(options, query), [options, query])
+  const visibleOptions = useMemo(
+    () => (searchable ? filterOptions(options, query) : options),
+    [options, query, searchable],
+  )
   const selectedOption = options.find((option) => option.value === value)
 
   const open = () => {
@@ -133,9 +140,37 @@ export function SelectBox<T extends string>({
   }, [activeIndex, baseId, isOpen])
 
   const handleTriggerKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
-    if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) {
-      event.preventDefault()
-      open()
+    if (!isOpen) {
+      if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) {
+        event.preventDefault()
+        open()
+      }
+      return
+    }
+
+    switch (event.key) {
+      case 'ArrowDown':
+      case 'ArrowUp':
+      case 'Home':
+      case 'End':
+        event.preventDefault()
+        setActiveIndex((current) => moveActiveIndex(event.key as 'ArrowDown', current, visibleOptions.length))
+        break
+      case 'Enter':
+      case ' ': {
+        event.preventDefault()
+        const option = visibleOptions[activeIndex]
+        if (option) choose(option)
+        break
+      }
+      case 'Escape':
+        event.preventDefault()
+        event.stopPropagation()
+        close()
+        break
+      case 'Tab':
+        close(false)
+        break
     }
   }
 
@@ -172,30 +207,50 @@ export function SelectBox<T extends string>({
   return (
     <div
       className={cn(
-        'block rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 transition-[border-color,box-shadow] focus-within:border-indigo-600 focus-within:ring-3 focus-within:ring-indigo-600/15 motion-reduce:transition-none',
+        'block rounded-xl border border-slate-200 bg-white transition-[border-color,box-shadow] focus-within:border-indigo-600 focus-within:ring-3 focus-within:ring-indigo-600/15 motion-reduce:transition-none',
         isOpen && 'border-indigo-600 ring-3 ring-indigo-600/15',
         disabled && 'opacity-60',
         className,
       )}
       ref={wrapperRef}
     >
-      <span className="block text-xs font-semibold text-slate-500" id={labelId}>{label}</span>
+      {!hideLabel && (
+        <span
+          className="block cursor-pointer px-3.5 pt-2.5 text-xs font-semibold text-slate-600"
+          id={labelId}
+          onClick={() => {
+            if (!disabled) {
+              if (isOpen) close()
+              else open()
+            }
+          }}
+        >
+          {label}
+        </span>
+      )}
       <button
+        aria-activedescendant={!searchable && isOpen && activeIndex >= 0 && visibleOptions[activeIndex] ? optionId(activeIndex) : undefined}
         aria-controls={isOpen ? listboxId : undefined}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
-        aria-labelledby={`${labelId} ${baseId}-value`}
-        className="mt-1 flex w-full items-center justify-between gap-2 text-left text-[15px] text-indigo-950 outline-none disabled:cursor-not-allowed"
+        aria-label={hideLabel ? label : undefined}
+        aria-labelledby={hideLabel ? undefined : `${labelId} ${baseId}-value`}
+        className={cn(
+          'flex min-h-[44px] w-full cursor-pointer items-center justify-between gap-2 text-left outline-none disabled:cursor-not-allowed',
+          hideLabel
+            ? 'px-3.5 py-2.5 text-xs font-medium text-slate-700'
+            : 'px-3.5 pt-1 pb-2.5 text-[15px] text-indigo-950',
+        )}
         disabled={disabled}
         onClick={() => (isOpen ? close() : open())}
         onKeyDown={handleTriggerKeyDown}
         ref={triggerRef}
         type="button"
       >
-        <span className={cn('min-w-0 truncate', !selectedOption && 'text-slate-400')} id={`${baseId}-value`}>
+        <span className={cn('min-w-0 truncate', !selectedOption && 'text-slate-600')} id={`${baseId}-value`}>
           {selectedOption?.label ?? placeholder}
         </span>
-        <ChevronDown aria-hidden="true" className={cn('size-4 shrink-0 text-slate-500 transition-transform motion-reduce:transition-none', isOpen && 'rotate-180')} />
+        <ChevronDown aria-hidden="true" className={cn('size-4 shrink-0 text-slate-600 transition-transform motion-reduce:transition-none', isOpen && 'rotate-180')} />
       </button>
 
       {isOpen && position && portalTarget && createPortal(
@@ -209,28 +264,36 @@ export function SelectBox<T extends string>({
           ref={menuRef}
           style={position}
         >
-          <div className="flex items-center gap-2 border-b border-slate-100 px-2.5 py-2">
-            <Search aria-hidden="true" className="size-3.5 shrink-0 text-slate-400" />
-            <input
-              aria-activedescendant={activeIndex >= 0 && visibleOptions[activeIndex] ? optionId(activeIndex) : undefined}
-              aria-autocomplete="list"
-              aria-controls={listboxId}
-              aria-expanded={isOpen}
-              aria-label={`Tìm trong ${label}`}
-              className="min-w-0 flex-1 bg-transparent text-[13px] text-indigo-950 outline-none placeholder:text-slate-400"
-              onChange={(event) => {
-                setQuery(event.target.value)
-                setActiveIndex(0)
-              }}
-              onKeyDown={handleSearchKeyDown}
-              placeholder={searchPlaceholder}
-              ref={searchRef}
-              role="combobox"
-              value={query}
-            />
-          </div>
+          {searchable && (
+            <div className="flex items-center gap-2 border-b border-slate-100 px-2.5 py-2">
+              <Search aria-hidden="true" className="size-3.5 shrink-0 text-slate-600" />
+              <input
+                aria-activedescendant={activeIndex >= 0 && visibleOptions[activeIndex] ? optionId(activeIndex) : undefined}
+                aria-autocomplete="list"
+                aria-controls={listboxId}
+                aria-expanded={isOpen}
+                aria-label={`Tìm trong ${label}`}
+                className="min-w-0 flex-1 bg-transparent text-[13px] text-indigo-950 outline-none placeholder:text-slate-500"
+                onChange={(event) => {
+                  setQuery(event.target.value)
+                  setActiveIndex(0)
+                }}
+                onKeyDown={handleSearchKeyDown}
+                placeholder={searchPlaceholder}
+                ref={searchRef}
+                role="combobox"
+                value={query}
+              />
+            </div>
+          )}
 
-          <ul aria-labelledby={labelId} className="max-h-60 overflow-auto p-1.5" id={listboxId} role="listbox">
+          <ul
+            aria-label={hideLabel ? label : undefined}
+            aria-labelledby={hideLabel ? undefined : labelId}
+            className="max-h-60 overflow-auto p-1.5"
+            id={listboxId}
+            role="listbox"
+          >
             {visibleOptions.map((option, index) => {
               const isSelected = option.value === value
               return (
@@ -247,7 +310,7 @@ export function SelectBox<T extends string>({
                   onMouseEnter={() => setActiveIndex(index)}
                   role="option"
                 >
-                  <span className="min-w-0 truncate">{renderLabel(option.label, query)}</span>
+                  <span className="min-w-0 truncate">{searchable ? renderLabel(option.label, query) : option.label}</span>
                   {isSelected && <Check aria-hidden="true" className="size-4 shrink-0 text-indigo-600" />}
                 </li>
               )
@@ -255,18 +318,20 @@ export function SelectBox<T extends string>({
           </ul>
 
           {options.length === 0 ? (
-            <div className="px-3 pt-2 pb-4 text-center text-[13px] text-slate-500">
+            <div className="px-3 pt-2 pb-4 text-center text-[13px] text-slate-600">
               <p>{emptyMessage}</p>
-              {emptyHint && <p className="mt-1 text-[11px] text-slate-400">{emptyHint}</p>}
+              {emptyHint && <p className="mt-1 text-[11px] text-slate-600">{emptyHint}</p>}
             </div>
           ) : visibleOptions.length === 0 ? (
-            <p className="px-3 pt-2 pb-4 text-center text-[13px] text-slate-500">Không tìm thấy kết quả phù hợp</p>
+            <p className="px-3 pt-2 pb-4 text-center text-[13px] text-slate-600">Không tìm thấy kết quả phù hợp</p>
           ) : null}
 
-          <div className="flex items-center justify-between gap-2 border-t border-slate-100 px-3 py-1.5 text-[11px] text-slate-400">
-            <span aria-live="polite">{resultLabel}</span>
-            <span aria-hidden="true">↑↓ chọn · Enter · Esc</span>
-          </div>
+          {searchable && (
+            <div className="flex items-center justify-between gap-2 border-t border-slate-100 px-3 py-1.5 text-[11px] text-slate-600">
+              <span aria-live="polite">{resultLabel}</span>
+              <span aria-hidden="true">↑↓ chọn · Enter · Esc</span>
+            </div>
+          )}
         </div>,
         portalTarget,
       )}
