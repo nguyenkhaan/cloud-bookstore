@@ -455,6 +455,12 @@ describe('AC 2 & AC 4: CustomerListPage rendering & cleanup contracts', { concur
     // AC 2: "+ Thêm mới khách hàng" uses primary indigo styling (not white-on-white)
     assert.match(html, /<button[^>]*bg-indigo-600 text-white[^>]*>[\s\S]*?\+ Thêm mới khách hàng/)
 
+    // PDR-003: StatCard privilege descriptions match 5% Silver / 10% Gold
+    assert.match(html, /Giảm 5% thuê · 5% mua/)
+    assert.match(html, /Giảm 10% thuê · 10% mua/)
+    assert.doesNotMatch(html, /Giảm 10% thuê · 5% mua/)
+    assert.doesNotMatch(html, /Giảm 20% thuê · 10% mua/)
+
     // AC 3: Filter labels inline with accessible labels, no top label headers
     assert.match(html, /aria-label="Hạng thành viên"/)
     assert.match(html, /Hạng: Tất cả/)
@@ -712,6 +718,11 @@ describe('AC 5: Presentation helpers, routing, and CustomerDetailPage', { concur
     assert.match(populatedHtml, /Bán sách cũ/)
     assert.match(populatedHtml, /Vi phạm &amp; Ghi chú/)
     assert.match(populatedHtml, /Hồ sơ đủ điều kiện thuê mới/)
+    assert.match(
+      populatedHtml,
+      /<table class="hidden w-full min-w-\[540px\][^"]*"[\s\S]*?<\/table><div class="rounded-xl[^"]*">Chưa có phiếu thuê hoặc trả sách nào/,
+      'Empty-state message must sit in a responsive non-overflowing card outside the wide table',
+    )
 
     // 4. Flagged profile + missing optional fields
     const flaggedCustomer = makeCustomer({
@@ -772,6 +783,7 @@ describe('AC 5: Presentation helpers, routing, and CustomerDetailPage', { concur
       ),
     )
     assert.match(openHtml, /role="dialog"/)
+    assert.match(openHtml, /<form[^>]*novalidate/i)
     assert.match(openHtml, /Chỉnh sửa thông tin khách hàng/)
     assert.match(openHtml, /value="Nguyễn An Nhiên"/)
     assert.match(openHtml, /value="0901234890"/)
@@ -861,11 +873,12 @@ describe('Customer API client boundary integration against real HTTP server', { 
     await new Promise((resolve) => httpServer.close(resolve))
   })
 
-  test('listCustomers serializes Page, PageSize, Search, IsFlagged query params accurately', async () => {
+  test('listCustomers serializes Page, PageSize, Search, TierName, IsFlagged query params accurately', async () => {
     const result = await serviceMod.listCustomers({
       page: 2,
       pageSize: 100,
       search: '  Nhiên  ',
+      tierName: '  GOLD  ',
       isFlagged: false,
     })
 
@@ -878,6 +891,7 @@ describe('Customer API client boundary integration against real HTTP server', { 
     assert.equal(params.get('Page'), '2')
     assert.equal(params.get('PageSize'), '100')
     assert.equal(params.get('Search'), 'Nhiên')
+    assert.equal(params.get('TierName'), 'GOLD')
     assert.equal(params.get('IsFlagged'), 'false')
   })
 

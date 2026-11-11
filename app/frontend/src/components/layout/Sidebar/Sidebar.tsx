@@ -102,14 +102,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="text-xs font-semibold text-slate-800">
               {storeName}
             </div>
-            <div className="text-[11px] text-slate-500 mt-0.5">{storeAddress}</div>
+            <div className="text-[11px] text-slate-600 mt-0.5">{storeAddress}</div>
           </div>
         ) : (
           <div className="my-2 h-px bg-slate-200" />
         )}
 
         {!isCollapsed ? (
-          <div className="px-2 mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+          <div className="px-2 mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
             Không gian làm việc
           </div>
         ) : (
@@ -129,14 +129,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 title={isCollapsed ? item.label : undefined}
                 className={`group flex w-full cursor-pointer items-center rounded-xl px-3 py-2.5 text-xs font-medium transition-all ${
                   isActive
-                    ? 'bg-indigo-50 text-indigo-600 font-semibold shadow-xs'
+                    ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-xs'
                     : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900'
                 } ${isCollapsed ? 'justify-center px-0' : 'justify-between'}`}
               >
                 <div className="flex items-center gap-3">
                   <div
                     className={`flex items-center justify-center transition-colors ${
-                      isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700'
+                      isActive ? 'text-indigo-700' : 'text-slate-600 group-hover:text-slate-800'
                     }`}
                   >
                     <Icon size={19} />
@@ -185,7 +185,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className={`flex w-full items-center rounded-xl px-2.5 py-2 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 cursor-pointer ${
+            className={`flex w-full items-center rounded-xl px-2.5 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 cursor-pointer ${
               isCollapsed ? 'justify-center' : 'gap-2.5'
             }`}
             title={isCollapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'}

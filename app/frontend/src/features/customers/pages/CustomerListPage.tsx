@@ -39,6 +39,7 @@ export default function CustomerListPage() {
   const [exportError, setExportError] = useState<string | null>(null)
 
   const trimmedSearch = search.trim() || undefined
+  const normalizedTierFilter = tierFilter.trim() || undefined
   const flaggedQueryParam = flaggedFilter === '' ? undefined : flaggedFilter === 'flagged'
 
   // Query customers
@@ -46,6 +47,7 @@ export default function CustomerListPage() {
     page,
     pageSize: 10,
     search: trimmedSearch,
+    ...(normalizedTierFilter ? { tierName: normalizedTierFilter } : {}),
     isFlagged: flaggedQueryParam,
   })
 
@@ -56,11 +58,8 @@ export default function CustomerListPage() {
   const totalCount = customerData?.totalCount ?? 0
   const totalPages = customerData?.totalPages ?? 1
 
-  const displayedCustomers = tierFilter
-    ? customers.filter((c) => c.tierName.toUpperCase() === tierFilter.toUpperCase())
-    : customers
-
-  const exportableRecordCount = totalPages <= 1 ? displayedCustomers.length : totalCount
+  const displayedCustomers = customers
+  const exportableRecordCount = totalCount
 
   const handleOpenExport = () => {
     setExportError(null)
@@ -81,6 +80,7 @@ export default function CustomerListPage() {
           page: 1,
           pageSize: 100,
           search: trimmedSearch,
+          tierName: normalizedTierFilter,
           isFlagged: flaggedQueryParam,
         })
         allMatching = [...firstPage.items]
@@ -90,26 +90,23 @@ export default function CustomerListPage() {
             page: nextPage,
             pageSize: 100,
             search: trimmedSearch,
+            tierName: normalizedTierFilter,
             isFlagged: flaggedQueryParam,
           })
           allMatching.push(...pageResult.items)
         }
       }
 
-      const filteredRecords = tierFilter
-        ? allMatching.filter((c) => c.tierName.toUpperCase() === tierFilter.toUpperCase())
-        : allMatching
-
-      if (filteredRecords.length === 0) {
+      if (allMatching.length === 0) {
         setExportError('Không có khách hàng nào khớp với bộ lọc hiện tại để xuất.')
         return
       }
 
-      exportCustomersToFile(filteredRecords, format)
+      exportCustomersToFile(allMatching, format)
       notify.success(
         format === 'excel'
-          ? `Đã xuất ${filteredRecords.length} khách hàng ra tệp Excel (.xlsx)`
-          : `Đã xuất ${filteredRecords.length} khách hàng ra tệp CSV (.csv)`,
+          ? `Đã xuất ${allMatching.length} khách hàng ra tệp Excel (.xlsx)`
+          : `Đã xuất ${allMatching.length} khách hàng ra tệp CSV (.csv)`,
       )
       setIsExportDialogOpen(false)
     } catch (error: unknown) {
@@ -150,7 +147,7 @@ export default function CustomerListPage() {
       actionButton={
         <div className="flex flex-wrap items-center gap-3">
           <Button
-            className="min-h-[42px] px-4 font-semibold"
+            className="min-h-[44px] px-4 font-semibold"
             onClick={handleOpenExport}
             type="button"
             variant="secondary"
@@ -158,7 +155,7 @@ export default function CustomerListPage() {
             Xuất danh sách
           </Button>
           <Button
-            className="min-h-[42px] px-4 font-semibold"
+            className="min-h-[44px] px-4 font-semibold"
             onClick={() => setIsAddDialogOpen(true)}
             type="button"
             variant="primary"
@@ -180,13 +177,13 @@ export default function CustomerListPage() {
             label="Hạng Bạc"
             value={statsData?.silverCount ?? 0}
             valueColor="default"
-            description="Giảm 10% thuê · 5% mua"
+            description="Giảm 5% thuê · 5% mua"
           />
           <StatCard
             label="Hạng Vàng"
             value={statsData?.goldCount ?? 0}
             valueColor="amber"
-            description="Giảm 20% thuê · 10% mua"
+            description="Giảm 10% thuê · 10% mua"
           />
           <StatCard
             label="Cần theo dõi"
@@ -206,7 +203,7 @@ export default function CustomerListPage() {
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
             {/* Search Input */}
             <div className="relative flex-1">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-600">
                 <SearchIcon size={16} />
               </div>
               <input
@@ -220,7 +217,7 @@ export default function CustomerListPage() {
                     setPage(1)
                   })
                 }}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-2.5 pl-10 pr-4 text-xs text-slate-800 placeholder:text-slate-400 focus:border-indigo-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600/15"
+                className="min-h-[44px] w-full rounded-xl border border-slate-200 bg-slate-50/70 py-2.5 pl-10 pr-4 text-xs text-slate-800 placeholder:text-slate-500 focus:border-indigo-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600/15"
               />
             </div>
 
@@ -268,7 +265,7 @@ export default function CustomerListPage() {
           <div className="mt-5 overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-100 bg-indigo-50/50 text-[11px] font-semibold text-slate-500">
+                <tr className="border-b border-slate-100 bg-indigo-50/50 text-[11px] font-semibold text-slate-600">
                   <th className="py-3 px-3 rounded-l-lg">Mã / Khách hàng</th>
                   <th className="py-3 px-3">Số điện thoại</th>
                   <th className="py-3 px-3">Hạng</th>
@@ -282,7 +279,7 @@ export default function CustomerListPage() {
               <tbody className="divide-y divide-slate-100">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-slate-400">
+                    <td colSpan={7} className="py-12 text-center text-slate-600">
                       Đang tải danh sách khách hàng...
                     </td>
                   </tr>
@@ -292,7 +289,7 @@ export default function CustomerListPage() {
                       <div className="flex flex-col items-center justify-center text-center">
                         <div className="rounded-2xl bg-slate-50 p-6 max-w-md w-full border border-slate-100">
                           <p className="font-semibold text-slate-800 text-sm">Chưa tìm thấy khách hàng</p>
-                          <p className="mt-1 text-xs text-slate-500">
+                          <p className="mt-1 text-xs text-slate-600">
                             Thử số điện thoại khác hoặc xóa bộ lọc hạng thành viên.
                           </p>
                           <div className="mt-4">
@@ -318,11 +315,11 @@ export default function CustomerListPage() {
                             </div>
                             <div>
                               <div className="font-semibold text-slate-900">
-                                <span className="text-slate-400 font-normal mr-1">{code} ·</span>
+                                <span className="text-slate-600 font-normal mr-1">{code} ·</span>
                                 {customer.fullName}
                               </div>
                               {customer.nationalId && (
-                                <div className="text-[10px] text-slate-400 mt-0.5">
+                                <div className="text-[10px] text-slate-600 mt-0.5">
                                   CCCD: {customer.nationalId}
                                 </div>
                               )}
@@ -330,7 +327,7 @@ export default function CustomerListPage() {
                           </div>
                         </td>
 
-                        <td className="py-3 px-3 font-mono text-slate-600">
+                        <td className="py-3 px-3 font-mono text-slate-700">
                           {formatPhoneNumber(customer.phone)}
                         </td>
 
@@ -346,24 +343,24 @@ export default function CustomerListPage() {
                           {formatVnd(customer.eligibleSpend)}
                         </td>
 
-                        <td className="py-3 px-3 text-slate-500">
+                        <td className="py-3 px-3 text-slate-600">
                           0/{customer.tierName === 'GOLD' ? 8 : customer.tierName === 'SILVER' ? 5 : 3}
                         </td>
 
                         <td className="py-3 px-3">
                           {customer.isFlagged ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-rose-600">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-rose-700">
                               <AlertTriangle aria-hidden="true" className="size-3.5 shrink-0" />
                               <span>{customer.flagReason || 'Cần theo dõi'}</span>
                             </span>
                           ) : (
-                            <span className="text-[11px] text-slate-400">Bình thường</span>
+                            <span className="text-[11px] text-slate-600">Bình thường</span>
                           )}
                         </td>
 
                         <td className="py-3 px-3 text-right">
                           <Link
-                            className="inline-flex items-center rounded-md px-1.5 py-1 text-xs font-semibold text-indigo-600 transition-colors hover:text-indigo-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
+                            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-end whitespace-nowrap rounded-md px-2.5 py-2 text-xs font-semibold text-indigo-600 transition-colors hover:text-indigo-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
                             to={customerPaths.customerDetail(customer.id)}
                           >
                             Hồ sơ 360°
@@ -379,7 +376,7 @@ export default function CustomerListPage() {
 
           {/* Pagination */}
           {totalCount > 0 && (
-            <div className="mt-4 flex flex-col gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between text-xs text-slate-500">
+            <div className="mt-4 flex flex-col gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between text-xs text-slate-600">
               <p>
                 Hiển thị {(page - 1) * 10 + 1}–{Math.min(page * 10, totalCount)} trong {totalCount} khách hàng
               </p>
@@ -389,7 +386,7 @@ export default function CustomerListPage() {
                   type="button"
                   disabled={page <= 1}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent"
+                  className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent"
                 >
                   ‹
                 </button>
@@ -398,9 +395,9 @@ export default function CustomerListPage() {
                     key={p}
                     type="button"
                     onClick={() => setPage(p)}
-                    className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${
+                    className={`inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg px-2.5 py-1 text-xs font-semibold ${
                       page === p
-                        ? 'bg-indigo-50 text-indigo-600'
+                        ? 'bg-indigo-50 text-indigo-700'
                         : 'text-slate-600 hover:bg-slate-50'
                     }`}
                   >
@@ -412,7 +409,7 @@ export default function CustomerListPage() {
                   type="button"
                   disabled={page >= totalPages}
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent"
+                  className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent"
                 >
                   ›
                 </button>

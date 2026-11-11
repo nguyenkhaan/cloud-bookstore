@@ -15,7 +15,7 @@ export interface BreadcrumbProps {
 }
 
 const linkClasses =
-    'block truncate rounded px-1 py-1.5 text-slate-500 transition-colors hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/40';
+    'block truncate rounded px-1 py-1.5 text-slate-600 transition-colors hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/40';
 
 export const Breadcrumb: React.FC<BreadcrumbProps> = ({ items, className }) => {
     if (items.length === 0) return null;
@@ -32,7 +32,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({ items, className }) => {
                             className={cn('flex min-w-0 items-center gap-1.5', !isLast && 'max-w-48')}
                         >
                             {index > 0 && (
-                                <ChevronRightIcon aria-hidden="true" className="shrink-0 text-slate-300" size={12} />
+                                <ChevronRightIcon aria-hidden="true" className="shrink-0 text-slate-400" size={12} />
                             )}
                             {isLast ? (
                                 <span
@@ -47,7 +47,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({ items, className }) => {
                                     {item.label}
                                 </Link>
                             ) : (
-                                <span className="truncate px-1 py-1.5 text-slate-500" title={item.label}>
+                                <span className="truncate px-1 py-1.5 text-slate-600" title={item.label}>
                   {item.label}
                 </span>
                             )}

@@ -2314,6 +2314,7 @@ export interface paths {
                     PageSize?: number | string;
                     Search?: string;
                     TierId?: string;
+                    TierName?: string;
                     IsFlagged?: boolean;
                 };
                 header?: never;

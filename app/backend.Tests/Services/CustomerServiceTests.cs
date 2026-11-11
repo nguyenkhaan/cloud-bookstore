@@ -205,6 +205,70 @@ public class CustomerServiceTests
     }
 
     [Fact]
+    public async Task GetCustomers_WithTierNameAcrossMultiplePages_ReturnsAllMatchingTierCustomers()
+    {
+        var dbName = Guid.NewGuid().ToString("N");
+        await using var context = CreateDbContext(dbName);
+        var service = CreateService(context);
+
+        var goldTier = await context.MembershipTiers.FirstAsync(t => t.Name == MembershipTierName.GOLD);
+        var silverTier = await context.MembershipTiers.FirstAsync(t => t.Name == MembershipTierName.SILVER);
+
+        var goldCustomer = new CustomerModel
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Phạm Gia Hân",
+            Phone = "0909998877",
+            TierId = goldTier.Id,
+            MembershipTier = goldTier,
+            EligibleSpend = 4_200_000L,
+            CreatedAt = DateTime.UtcNow.AddHours(-24)
+        };
+        context.Customers.Add(goldCustomer);
+
+        var silverCustomer = new CustomerModel
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Trần Minh Anh",
+            Phone = "0908887766",
+            TierId = silverTier.Id,
+            MembershipTier = silverTier,
+            EligibleSpend = 1_500_000L,
+            CreatedAt = DateTime.UtcNow.AddHours(-23)
+        };
+        context.Customers.Add(silverCustomer);
+
+        // Add 12 newer REGULAR customers so the GOLD customer sits on page 2 when unfiltered
+        for (var i = 1; i <= 12; i++)
+        {
+            await service.CreateCustomerAsync(new CreateCustomerRequest
+            {
+                FullName = $"Khách Thường {i:D2}",
+                Phone = $"09110000{i:D2}"
+            });
+        }
+        await context.SaveChangesAsync();
+
+        var unfilteredPage1 = await service.GetCustomersAsync(new CustomerQuery { Page = 1, PageSize = 10 });
+        Assert.Equal(14, unfilteredPage1.TotalCount);
+        Assert.DoesNotContain(unfilteredPage1.Items, c => c.Id == goldCustomer.Id);
+
+        var goldFiltered = await service.GetCustomersAsync(new CustomerQuery
+        {
+            Page = 1,
+            PageSize = 10,
+            TierName = "gold"
+        });
+        Assert.Equal(1, goldFiltered.TotalCount);
+        Assert.Single(goldFiltered.Items);
+        Assert.Equal("Phạm Gia Hân", goldFiltered.Items[0].FullName);
+
+        var invalidTier = await service.GetCustomersAsync(new CustomerQuery { TierName = "UNKNOWN" });
+        Assert.Equal(0, invalidTier.TotalCount);
+        Assert.Empty(invalidTier.Items);
+    }
+
+    [Fact]
     public async Task UpdateCustomer_ValidUpdate_UpdatesAndReturnsCustomer()
     {
         var dbName = Guid.NewGuid().ToString("N");

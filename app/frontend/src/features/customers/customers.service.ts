@@ -71,6 +71,7 @@ export async function listCustomers(filters: CustomerListFilters = {}): Promise<
   if (filters.pageSize) params.PageSize = filters.pageSize
   if (filters.search) params.Search = filters.search.trim()
   if (filters.tierId) params.TierId = filters.tierId
+  if (filters.tierName) params.TierName = filters.tierName.trim()
   if (typeof filters.isFlagged === 'boolean') params.IsFlagged = filters.isFlagged
 
   const data = await requestData<PagedResultOfCustomerDto>(() =>

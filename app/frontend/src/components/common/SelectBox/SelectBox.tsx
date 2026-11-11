@@ -207,7 +207,7 @@ export function SelectBox<T extends string>({
   return (
     <div
       className={cn(
-        'block rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 transition-[border-color,box-shadow] focus-within:border-indigo-600 focus-within:ring-3 focus-within:ring-indigo-600/15 motion-reduce:transition-none',
+        'block rounded-xl border border-slate-200 bg-white transition-[border-color,box-shadow] focus-within:border-indigo-600 focus-within:ring-3 focus-within:ring-indigo-600/15 motion-reduce:transition-none',
         isOpen && 'border-indigo-600 ring-3 ring-indigo-600/15',
         disabled && 'opacity-60',
         className,
@@ -215,7 +215,18 @@ export function SelectBox<T extends string>({
       ref={wrapperRef}
     >
       {!hideLabel && (
-        <span className="block text-xs font-semibold text-slate-500" id={labelId}>{label}</span>
+        <span
+          className="block cursor-pointer px-3.5 pt-2.5 text-xs font-semibold text-slate-600"
+          id={labelId}
+          onClick={() => {
+            if (!disabled) {
+              if (isOpen) close()
+              else open()
+            }
+          }}
+        >
+          {label}
+        </span>
       )}
       <button
         aria-activedescendant={!searchable && isOpen && activeIndex >= 0 && visibleOptions[activeIndex] ? optionId(activeIndex) : undefined}
@@ -225,8 +236,10 @@ export function SelectBox<T extends string>({
         aria-label={hideLabel ? label : undefined}
         aria-labelledby={hideLabel ? undefined : `${labelId} ${baseId}-value`}
         className={cn(
-          'flex w-full items-center justify-between gap-2 text-left outline-none disabled:cursor-not-allowed',
-          hideLabel ? 'text-xs font-medium text-slate-700' : 'mt-1 text-[15px] text-indigo-950',
+          'flex min-h-[44px] w-full cursor-pointer items-center justify-between gap-2 text-left outline-none disabled:cursor-not-allowed',
+          hideLabel
+            ? 'px-3.5 py-2.5 text-xs font-medium text-slate-700'
+            : 'px-3.5 pt-1 pb-2.5 text-[15px] text-indigo-950',
         )}
         disabled={disabled}
         onClick={() => (isOpen ? close() : open())}
@@ -234,10 +247,10 @@ export function SelectBox<T extends string>({
         ref={triggerRef}
         type="button"
       >
-        <span className={cn('min-w-0 truncate', !selectedOption && 'text-slate-400')} id={`${baseId}-value`}>
+        <span className={cn('min-w-0 truncate', !selectedOption && 'text-slate-600')} id={`${baseId}-value`}>
           {selectedOption?.label ?? placeholder}
         </span>
-        <ChevronDown aria-hidden="true" className={cn('size-4 shrink-0 text-slate-500 transition-transform motion-reduce:transition-none', isOpen && 'rotate-180')} />
+        <ChevronDown aria-hidden="true" className={cn('size-4 shrink-0 text-slate-600 transition-transform motion-reduce:transition-none', isOpen && 'rotate-180')} />
       </button>
 
       {isOpen && position && portalTarget && createPortal(
@@ -253,14 +266,14 @@ export function SelectBox<T extends string>({
         >
           {searchable && (
             <div className="flex items-center gap-2 border-b border-slate-100 px-2.5 py-2">
-              <Search aria-hidden="true" className="size-3.5 shrink-0 text-slate-400" />
+              <Search aria-hidden="true" className="size-3.5 shrink-0 text-slate-600" />
               <input
                 aria-activedescendant={activeIndex >= 0 && visibleOptions[activeIndex] ? optionId(activeIndex) : undefined}
                 aria-autocomplete="list"
                 aria-controls={listboxId}
                 aria-expanded={isOpen}
                 aria-label={`Tìm trong ${label}`}
-                className="min-w-0 flex-1 bg-transparent text-[13px] text-indigo-950 outline-none placeholder:text-slate-400"
+                className="min-w-0 flex-1 bg-transparent text-[13px] text-indigo-950 outline-none placeholder:text-slate-500"
                 onChange={(event) => {
                   setQuery(event.target.value)
                   setActiveIndex(0)
@@ -305,16 +318,16 @@ export function SelectBox<T extends string>({
           </ul>
 
           {options.length === 0 ? (
-            <div className="px-3 pt-2 pb-4 text-center text-[13px] text-slate-500">
+            <div className="px-3 pt-2 pb-4 text-center text-[13px] text-slate-600">
               <p>{emptyMessage}</p>
-              {emptyHint && <p className="mt-1 text-[11px] text-slate-400">{emptyHint}</p>}
+              {emptyHint && <p className="mt-1 text-[11px] text-slate-600">{emptyHint}</p>}
             </div>
           ) : visibleOptions.length === 0 ? (
-            <p className="px-3 pt-2 pb-4 text-center text-[13px] text-slate-500">Không tìm thấy kết quả phù hợp</p>
+            <p className="px-3 pt-2 pb-4 text-center text-[13px] text-slate-600">Không tìm thấy kết quả phù hợp</p>
           ) : null}
 
           {searchable && (
-            <div className="flex items-center justify-between gap-2 border-t border-slate-100 px-3 py-1.5 text-[11px] text-slate-400">
+            <div className="flex items-center justify-between gap-2 border-t border-slate-100 px-3 py-1.5 text-[11px] text-slate-600">
               <span aria-live="polite">{resultLabel}</span>
               <span aria-hidden="true">↑↓ chọn · Enter · Esc</span>
             </div>

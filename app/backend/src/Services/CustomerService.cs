@@ -66,6 +66,21 @@ public class CustomerService(AppDbContext dbContext, ILogger<CustomerService> lo
             queryable = queryable.Where(c => c.TierId == query.TierId.Value);
         }
 
+        if (!string.IsNullOrWhiteSpace(query.TierName))
+        {
+            var normalizedTier = query.TierName.Trim();
+            if (!int.TryParse(normalizedTier, out _) &&
+                Enum.TryParse<MembershipTierName>(normalizedTier, ignoreCase: true, out var tierName) &&
+                Enum.IsDefined(tierName))
+            {
+                queryable = queryable.Where(c => c.MembershipTier.Name == tierName);
+            }
+            else
+            {
+                queryable = queryable.Where(_ => false);
+            }
+        }
+
         if (query.IsFlagged.HasValue)
         {
             queryable = queryable.Where(c => c.IsFlagged == query.IsFlagged.Value);

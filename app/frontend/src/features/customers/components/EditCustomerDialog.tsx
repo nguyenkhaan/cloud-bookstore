@@ -103,20 +103,22 @@ function EditCustomerDialogForm({
     setGeneralError(null)
 
     const trimmedName = fullName.trim()
-    if (!trimmedName) {
-      setNameError('Họ và tên không được để trống')
-      return
-    }
-
     const normalizedPhone = normalizePhoneNumber(phone)
-    if (!isValidVietnamesePhone(normalizedPhone)) {
-      setPhoneError('Số điện thoại không hợp lệ. Vui lòng nhập số di động Việt Nam 10 chữ số.')
-      return
-    }
-
     const trimmedEmail = email.trim()
-    if (trimmedEmail && !EMAIL_PATTERN.test(trimmedEmail)) {
-      setEmailError('Email không đúng định dạng')
+
+    const nextNameError = !trimmedName ? 'Họ và tên không được để trống' : null
+    const nextPhoneError = !isValidVietnamesePhone(normalizedPhone)
+      ? 'Số điện thoại không hợp lệ. Vui lòng nhập số di động Việt Nam 10 chữ số.'
+      : null
+    const nextEmailError =
+      trimmedEmail && !EMAIL_PATTERN.test(trimmedEmail)
+        ? 'Email không đúng định dạng'
+        : null
+
+    if (nextNameError || nextPhoneError || nextEmailError) {
+      setNameError(nextNameError)
+      setPhoneError(nextPhoneError)
+      setEmailError(nextEmailError)
       return
     }
 
@@ -175,13 +177,13 @@ function EditCustomerDialogForm({
             <h2 className="text-lg font-bold text-slate-900" id="edit-customer-title">
               Chỉnh sửa thông tin khách hàng
             </h2>
-            <p className="mt-1 text-xs text-slate-500" id="edit-customer-desc">
+            <p className="mt-1 text-xs text-slate-600" id="edit-customer-desc">
               Cập nhật thông tin liên hệ, định danh CCCD và trạng thái theo dõi thuê sách.
             </p>
           </div>
           <button
             aria-label="Đóng hộp thoại chỉnh sửa"
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 disabled:opacity-40"
+            className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 disabled:opacity-40"
             disabled={updateCustomerMutation.isPending}
             onClick={onClose}
             type="button"
@@ -190,7 +192,7 @@ function EditCustomerDialogForm({
           </button>
         </div>
 
-        <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
+        <form className="mt-5 space-y-4" noValidate onSubmit={handleSubmit}>
           {generalError && (
             <div
               className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700"
@@ -250,7 +252,7 @@ function EditCustomerDialogForm({
           )}
 
           {isCheckingDuplicate && (
-            <p className="text-[11px] italic text-slate-400">
+            <p className="text-[11px] italic text-slate-600">
               Đang kiểm tra trùng số điện thoại...
             </p>
           )}
@@ -296,7 +298,7 @@ function EditCustomerDialogForm({
                 <span className="block font-semibold text-slate-800">
                   Cần theo dõi / Chặn quyền thuê sách mới
                 </span>
-                <span className="block text-[11px] text-slate-500">
+                <span className="block text-[11px] text-slate-600">
                   Bật khi khách hàng có nghĩa vụ chưa thanh toán hoặc vi phạm cần tạm khóa thuê sách.
                 </span>
               </span>

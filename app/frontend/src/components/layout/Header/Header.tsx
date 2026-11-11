@@ -36,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
                   type="button"
                   onClick={onToggleSidebar}
                   aria-label="Toggle Sidebar"
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 lg:hidden"
+                  className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 lg:hidden"
               >
                 <PanelToggleIcon size={18} />
               </button>
@@ -52,11 +52,11 @@ export const Header: React.FC<HeaderProps> = ({
           <button
               type="button"
               aria-label="Thông báo"
-              className="relative flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
+              className="relative flex h-11 w-11 items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
           >
             <BellIcon size={18} />
             {unreadNotifications > 0 && (
-                <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+                <span className="absolute top-2.5 right-2.5 flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-indigo-600" />
             </span>
@@ -70,7 +70,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <Avatar imageUrl={currentUser.avatarUrl} name={currentUser.name} />
                 <div className="hidden text-left sm:block">
                   <div className="text-xs font-semibold text-slate-900">{currentUser.name}</div>
-                  <div className="text-[11px] text-slate-500">{currentUser.role}</div>
+                  <div className="text-[11px] text-slate-600">{currentUser.role}</div>
                 </div>
               </div>
           )}

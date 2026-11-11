@@ -35,6 +35,7 @@ export type CustomerListFilters = {
   pageSize?: number
   search?: string
   tierId?: string
+  tierName?: string
   isFlagged?: boolean
 }
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
+import { AlertTriangle, X } from 'lucide-react'
 import { Button } from '@/components/common/Button'
 import { TextField } from '@/components/common/TextField'
 import { notify } from '@/components/common/Toast'
@@ -10,6 +11,8 @@ import {
   normalizePhoneNumber,
 } from '../customers.presentation'
 import type { Customer } from '../customers.type'
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export interface AddCustomerDialogProps {
   isOpen: boolean
@@ -27,6 +30,7 @@ export function AddCustomerDialog({ isOpen, onClose, onSuccess }: AddCustomerDia
 
   const [phoneError, setPhoneError] = useState<string | null>(null)
   const [nameError, setNameError] = useState<string | null>(null)
+  const [emailError, setEmailError] = useState<string | null>(null)
   const [generalError, setGeneralError] = useState<string | null>(null)
 
   const createCustomerMutation = useCreateCustomer()
@@ -76,17 +80,26 @@ export function AddCustomerDialog({ isOpen, onClose, onSuccess }: AddCustomerDia
 
     setNameError(null)
     setPhoneError(null)
+    setEmailError(null)
     setGeneralError(null)
 
     const trimmedName = fullName.trim()
-    if (!trimmedName) {
-      setNameError('Họ và tên không được để trống')
-      return
-    }
-
     const normalizedPhone = normalizePhoneNumber(phone)
-    if (!isValidVietnamesePhone(normalizedPhone)) {
-      setPhoneError('Số điện thoại không hợp lệ. Vui lòng nhập số di động Việt Nam 10 chữ số.')
+    const trimmedEmail = email.trim()
+
+    const nextNameError = !trimmedName ? 'Họ và tên không được để trống' : null
+    const nextPhoneError = !isValidVietnamesePhone(normalizedPhone)
+      ? 'Số điện thoại không hợp lệ. Vui lòng nhập số di động Việt Nam 10 chữ số.'
+      : null
+    const nextEmailError =
+      trimmedEmail && !EMAIL_PATTERN.test(trimmedEmail)
+        ? 'Email không đúng định dạng'
+        : null
+
+    if (nextNameError || nextPhoneError || nextEmailError) {
+      setNameError(nextNameError)
+      setPhoneError(nextPhoneError)
+      setEmailError(nextEmailError)
       return
     }
 
@@ -94,7 +107,7 @@ export function AddCustomerDialog({ isOpen, onClose, onSuccess }: AddCustomerDia
       const created = await createCustomerMutation.mutateAsync({
         fullName: trimmedName,
         phone: normalizedPhone,
-        email: email.trim() || undefined,
+        email: trimmedEmail || undefined,
         nationalId: nationalId.trim() || undefined,
         address: address.trim() || undefined,
       })
@@ -106,6 +119,8 @@ export function AddCustomerDialog({ isOpen, onClose, onSuccess }: AddCustomerDia
       const message = err instanceof Error ? err.message : 'Có lỗi xảy ra khi tạo khách hàng'
       if (message.includes('Số điện thoại') || message.includes('409') || message.includes('tồn tại')) {
         setPhoneError(message)
+      } else if (message.toLowerCase().includes('email')) {
+        setEmailError(message)
       } else {
         setGeneralError(message)
       }
@@ -136,7 +151,7 @@ export function AddCustomerDialog({ isOpen, onClose, onSuccess }: AddCustomerDia
             <h2 id="dialog-title" className="text-lg font-bold text-slate-900">
               Tạo nhanh khách hàng
             </h2>
-            <p id="dialog-desc" className="mt-1 text-xs text-slate-500">
+            <p id="dialog-desc" className="mt-1 text-xs text-slate-600">
               Thu ngân được xem và tạo nhanh; Quản lý được chỉnh sửa / tạm khóa.
             </p>
           </div>
@@ -144,15 +159,13 @@ export function AddCustomerDialog({ isOpen, onClose, onSuccess }: AddCustomerDia
             type="button"
             onClick={onClose}
             aria-label="Đóng hộp thoại"
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
+            className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
           >
-            <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <X aria-hidden="true" className="size-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+        <form noValidate onSubmit={handleSubmit} className="mt-5 space-y-4">
           {generalError && (
             <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
               {generalError}
@@ -198,7 +211,7 @@ export function AddCustomerDialog({ isOpen, onClose, onSuccess }: AddCustomerDia
               role="alert"
               className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800"
             >
-              <span className="shrink-0 text-base leading-none">⚠️</span>
+              <AlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-amber-600" />
               <div>
                 <p className="font-semibold">Phát hiện số điện thoại đã tồn tại!</p>
                 <p className="mt-0.5">
@@ -214,7 +227,7 @@ export function AddCustomerDialog({ isOpen, onClose, onSuccess }: AddCustomerDia
           )}
 
           {isCheckingDuplicate && (
-            <div className="text-[11px] text-slate-400 italic">
+            <div className="text-[11px] text-slate-600 italic">
               Đang kiểm tra trùng số điện thoại...
             </div>
           )}
@@ -226,7 +239,12 @@ export function AddCustomerDialog({ isOpen, onClose, onSuccess }: AddCustomerDia
                 type="email"
                 placeholder="khachhang@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmailError(null)
+                  setEmail(e.target.value)
+                }}
+                invalid={Boolean(emailError)}
+                hint={emailError}
               />
             </div>
 
@@ -249,7 +267,7 @@ export function AddCustomerDialog({ isOpen, onClose, onSuccess }: AddCustomerDia
             />
           </div>
 
-          <p className="text-[11px] text-slate-500">
+          <p className="text-[11px] text-slate-600">
             Khách hàng mới sẽ được tự động kích hoạt ở <strong>Hạng Thường</strong> với chi tiêu tích lũy bắt đầu từ 0 đ.
           </p>
 

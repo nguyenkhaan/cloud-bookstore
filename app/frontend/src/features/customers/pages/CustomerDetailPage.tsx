@@ -56,7 +56,7 @@ export default function CustomerDetailPage() {
 
   const backToListButton = (
     <Link
-      className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-2xs transition-colors hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 motion-reduce:transition-none"
+      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-2xs transition-colors hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 motion-reduce:transition-none"
       to={customerPaths.customerList}
     >
       <ArrowLeft aria-hidden="true" className="size-4" />
@@ -79,7 +79,7 @@ export default function CustomerDetailPage() {
         pageTitle="Hồ sơ khách hàng 360°"
         user={currentUser}
       >
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-12 text-center text-sm text-slate-500 shadow-2xs">
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-12 text-center text-sm text-slate-600 shadow-2xs">
           Đang tải thông tin hồ sơ khách hàng...
         </div>
       </MainLayout>
@@ -108,7 +108,7 @@ export default function CustomerDetailPage() {
           <p className="text-sm font-semibold text-rose-700">
             {error instanceof Error ? error.message : 'Không tìm thấy khách hàng hoặc bạn không có quyền truy cập.'}
           </p>
-          <p className="mt-1.5 text-xs text-slate-500">
+          <p className="mt-1.5 text-xs text-slate-600">
             Vui lòng kiểm tra lại đường dẫn hoặc quay về danh sách khách hàng.
           </p>
           <div className="mt-5 flex justify-center">
@@ -204,7 +204,7 @@ export default function CustomerDetailPage() {
               <h2 className="break-words text-base font-bold text-slate-900">
                 {customer.fullName}
               </h2>
-              <p className="mt-0.5 text-xs text-slate-500">
+              <p className="mt-0.5 text-xs text-slate-600">
                 Tham gia từ {formatDateVi(customer.createdAt)}
               </p>
               <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
@@ -228,39 +228,39 @@ export default function CustomerDetailPage() {
 
           <dl className="mt-5 space-y-3 border-t border-slate-100 pt-4 text-xs">
             <div className="flex items-start justify-between gap-3">
-              <dt className="shrink-0 font-medium text-slate-500">SĐT</dt>
+              <dt className="shrink-0 font-medium text-slate-600">SĐT</dt>
               <dd className="text-right font-mono font-semibold text-slate-800">
                 {formatPhoneNumber(customer.phone)}
               </dd>
             </div>
 
             <div className="flex items-start justify-between gap-3">
-              <dt className="shrink-0 font-medium text-slate-500">Email</dt>
+              <dt className="shrink-0 font-medium text-slate-600">Email</dt>
               <dd className="min-w-0 break-all text-right font-medium text-slate-800">
-                {customer.email || <span className="text-slate-400">Chưa cập nhật</span>}
+                {customer.email || <span className="text-slate-600">Chưa cập nhật</span>}
               </dd>
             </div>
 
             <div className="flex items-center justify-between gap-3">
-              <dt className="shrink-0 font-medium text-slate-500">CCCD</dt>
+              <dt className="shrink-0 font-medium text-slate-600">CCCD</dt>
               <dd className="flex items-center gap-1.5 font-mono font-medium text-slate-800">
                 <span>
                   {customer.nationalId
                     ? maskNationalId(customer.nationalId, isNationalIdRevealed)
-                    : <span className="font-sans text-slate-400">Chưa cập nhật</span>}
+                    : <span className="font-sans text-slate-600">Chưa cập nhật</span>}
                 </span>
                 {customer.nationalId && (
                   <button
                     aria-label={isNationalIdRevealed ? 'Ẩn số CCCD' : 'Hiện số CCCD'}
                     aria-pressed={isNationalIdRevealed}
-                    className="inline-flex size-7 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
+                    className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
                     onClick={() => setIsNationalIdRevealed((prev) => !prev)}
                     type="button"
                   >
                     {isNationalIdRevealed ? (
-                      <EyeOff aria-hidden="true" className="size-3.5" />
+                      <EyeOff aria-hidden="true" className="size-4" />
                     ) : (
-                      <Eye aria-hidden="true" className="size-3.5" />
+                      <Eye aria-hidden="true" className="size-4" />
                     )}
                   </button>
                 )}
@@ -268,20 +268,20 @@ export default function CustomerDetailPage() {
             </div>
 
             <div className="flex items-start justify-between gap-3">
-              <dt className="shrink-0 font-medium text-slate-500">Địa chỉ</dt>
+              <dt className="shrink-0 font-medium text-slate-600">Địa chỉ</dt>
               <dd className="min-w-0 break-words text-right font-medium text-slate-800">
-                {customer.address || <span className="text-slate-400">Chưa cập nhật</span>}
+                {customer.address || <span className="text-slate-600">Chưa cập nhật</span>}
               </dd>
             </div>
           </dl>
 
           {customer.isFlagged && (
             <div
-              className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-xs text-rose-700"
+              className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-xs text-rose-800"
               role="status"
             >
               <p className="font-semibold">Đang áp dụng chặn thuê sách</p>
-              <p className="mt-0.5 text-[11px] text-rose-600">
+              <p className="mt-0.5 text-[11px] text-rose-700">
                 {customer.flagReason || 'Chưa ghi nhận lý do chi tiết.'}
               </p>
             </div>
@@ -289,7 +289,7 @@ export default function CustomerDetailPage() {
 
           {/* Cumulative Spend & Tier Progress */}
           <div className="mt-5 border-t border-slate-100 pt-4">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
               Chi tiêu hợp lệ tích lũy
             </p>
             <p className="mt-1 text-2xl font-bold tracking-tight text-indigo-600">
@@ -415,7 +415,7 @@ export default function CustomerDetailPage() {
             <div className="flex flex-col gap-3 border-b border-slate-100 pb-1">
               <div className="flex items-center justify-between gap-2">
                 <h2 className="text-base font-bold text-slate-900">Lịch sử giao dịch</h2>
-                <span className="text-[11px] text-slate-400">
+                <span className="text-[11px] text-slate-600">
                   Không áp dụng điểm tích lũy
                 </span>
               </div>
@@ -435,7 +435,7 @@ export default function CustomerDetailPage() {
                       className={`inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 motion-reduce:transition-none ${
                         isActive
                           ? 'border-indigo-600 text-indigo-700'
-                          : 'border-transparent text-slate-500 hover:text-slate-800'
+                          : 'border-transparent text-slate-600 hover:text-slate-900'
                       }`}
                       id={`${tabsBaseId}-tab-${tab.id}`}
                       key={tab.id}
@@ -450,7 +450,7 @@ export default function CustomerDetailPage() {
                         className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
                           isActive
                             ? 'bg-indigo-50 text-indigo-700'
-                            : 'bg-slate-100 text-slate-500'
+                            : 'bg-slate-100 text-slate-600'
                         }`}
                       >
                         {tab.count}
@@ -469,9 +469,9 @@ export default function CustomerDetailPage() {
             >
               {activeTab === 'rentals' && (
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[540px] text-left text-xs">
+                  <table className="hidden w-full min-w-[540px] text-left text-xs sm:table">
                     <thead>
-                      <tr className="border-b border-slate-100 bg-indigo-50/50 text-[11px] font-semibold text-slate-500">
+                      <tr className="border-b border-slate-100 bg-indigo-50/50 text-[11px] font-semibold text-slate-600">
                         <th className="rounded-l-lg px-3 py-2.5">Mã phiếu</th>
                         <th className="px-3 py-2.5">Sách &amp; CopyBarcode</th>
                         <th className="px-3 py-2.5">Ngày / Hạn trả</th>
@@ -479,22 +479,18 @@ export default function CustomerDetailPage() {
                         <th className="rounded-r-lg px-3 py-2.5 text-right">Trạng thái</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      <tr>
-                        <td className="px-3 py-10 text-center text-slate-500" colSpan={5}>
-                          Chưa có phiếu thuê hoặc trả sách nào được ghi nhận cho khách hàng này.
-                        </td>
-                      </tr>
-                    </tbody>
                   </table>
+                  <div className="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-10 text-center text-xs leading-relaxed text-slate-600 sm:rounded-none sm:border-x-0 sm:border-t-0 sm:border-b sm:bg-transparent">
+                    Chưa có phiếu thuê hoặc trả sách nào được ghi nhận cho khách hàng này.
+                  </div>
                 </div>
               )}
 
               {activeTab === 'sales' && (
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[540px] text-left text-xs">
+                  <table className="hidden w-full min-w-[540px] text-left text-xs sm:table">
                     <thead>
-                      <tr className="border-b border-slate-100 bg-indigo-50/50 text-[11px] font-semibold text-slate-500">
+                      <tr className="border-b border-slate-100 bg-indigo-50/50 text-[11px] font-semibold text-slate-600">
                         <th className="rounded-l-lg px-3 py-2.5">Mã hóa đơn</th>
                         <th className="px-3 py-2.5">Sách đã mua</th>
                         <th className="px-3 py-2.5">Ngày giao dịch</th>
@@ -502,22 +498,18 @@ export default function CustomerDetailPage() {
                         <th className="rounded-r-lg px-3 py-2.5 text-right">Tổng tiền</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      <tr>
-                        <td className="px-3 py-10 text-center text-slate-500" colSpan={5}>
-                          Chưa có hóa đơn mua sách nào được ghi nhận cho khách hàng này.
-                        </td>
-                      </tr>
-                    </tbody>
                   </table>
+                  <div className="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-10 text-center text-xs leading-relaxed text-slate-600 sm:rounded-none sm:border-x-0 sm:border-t-0 sm:border-b sm:bg-transparent">
+                    Chưa có hóa đơn mua sách nào được ghi nhận cho khách hàng này.
+                  </div>
                 </div>
               )}
 
               {activeTab === 'buybacks' && (
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[540px] text-left text-xs">
+                  <table className="hidden w-full min-w-[540px] text-left text-xs sm:table">
                     <thead>
-                      <tr className="border-b border-slate-100 bg-indigo-50/50 text-[11px] font-semibold text-slate-500">
+                      <tr className="border-b border-slate-100 bg-indigo-50/50 text-[11px] font-semibold text-slate-600">
                         <th className="rounded-l-lg px-3 py-2.5">Mã phiếu thu mua</th>
                         <th className="px-3 py-2.5">Đầu sách &amp; Phân loại</th>
                         <th className="px-3 py-2.5">Ngày thu mua</th>
@@ -525,14 +517,10 @@ export default function CustomerDetailPage() {
                         <th className="rounded-r-lg px-3 py-2.5 text-right">Trạng thái</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      <tr>
-                        <td className="px-3 py-10 text-center text-slate-500" colSpan={5}>
-                          Chưa có giao dịch bán sách cũ nào được ghi nhận cho khách hàng này.
-                        </td>
-                      </tr>
-                    </tbody>
                   </table>
+                  <div className="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-10 text-center text-xs leading-relaxed text-slate-600 sm:rounded-none sm:border-x-0 sm:border-t-0 sm:border-b sm:bg-transparent">
+                    Chưa có giao dịch bán sách cũ nào được ghi nhận cho khách hàng này.
+                  </div>
                 </div>
               )}
 
@@ -562,10 +550,10 @@ export default function CustomerDetailPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-10 text-center text-xs text-slate-500">
-                    <ShieldCheck aria-hidden="true" className="mx-auto mb-2 size-6 text-emerald-500" />
+                  <div className="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-10 text-center text-xs text-slate-600">
+                    <ShieldCheck aria-hidden="true" className="mx-auto mb-2 size-6 text-emerald-600" />
                     <p className="font-semibold text-slate-700">Chưa có vi phạm hoặc ghi chú đặc biệt</p>
-                    <p className="mt-1 text-[11px] text-slate-500">
+                    <p className="mt-1 text-[11px] text-slate-600">
                       Khách hàng chưa có lịch sử trả trễ hoặc nghĩa vụ bồi thường chưa thanh toán.
                     </p>
                   </div>

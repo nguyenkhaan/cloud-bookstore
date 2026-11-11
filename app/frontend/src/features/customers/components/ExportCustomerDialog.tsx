@@ -58,13 +58,13 @@ export function ExportCustomerDialog({
             <h2 className="text-lg font-bold text-slate-900" id="export-customer-title">
               Xuất danh sách khách hàng
             </h2>
-            <p className="mt-1 text-xs text-slate-500" id="export-customer-desc">
+            <p className="mt-1 text-xs text-slate-600" id="export-customer-desc">
               Chọn định dạng tệp để tải xuống {recordCount} khách hàng theo bộ lọc hiện tại.
             </p>
           </div>
           <button
             aria-label="Đóng hộp thoại xuất danh sách"
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 disabled:opacity-40"
+            className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 disabled:opacity-40"
             disabled={isExporting}
             onClick={onClose}
             type="button"
@@ -97,9 +97,9 @@ export function ExportCustomerDialog({
                 <span className="text-sm font-semibold text-slate-900 group-hover:text-indigo-700">
                   Xuất Excel (.xlsx / .csv)
                 </span>
-                <Download aria-hidden="true" className="size-4 shrink-0 text-slate-400 group-hover:text-indigo-600" />
+                <Download aria-hidden="true" className="size-4 shrink-0 text-slate-600 group-hover:text-indigo-600" />
               </span>
-              <span className="mt-1 block text-xs leading-relaxed text-slate-500">
+              <span className="mt-1 block text-xs leading-relaxed text-slate-600">
                 Tải trực tiếp tệp bảng tính Microsoft Excel (.xlsx) đầy đủ cột và định dạng tiếng Việt.
               </span>
             </span>
@@ -119,16 +119,16 @@ export function ExportCustomerDialog({
                 <span className="text-sm font-semibold text-slate-900 group-hover:text-indigo-700">
                   Xuất CSV (.csv)
                 </span>
-                <Download aria-hidden="true" className="size-4 shrink-0 text-slate-400 group-hover:text-indigo-600" />
+                <Download aria-hidden="true" className="size-4 shrink-0 text-slate-600 group-hover:text-indigo-600" />
               </span>
-              <span className="mt-1 block text-xs leading-relaxed text-slate-500">
+              <span className="mt-1 block text-xs leading-relaxed text-slate-600">
                 Tệp văn bản phân cách dấu phẩy chuẩn UTF-8 BOM, mở đúng tiếng Việt có dấu trên Excel.
               </span>
             </span>
           </button>
 
           {recordCount === 0 && (
-            <p className="rounded-xl border border-slate-100 bg-slate-50 px-3.5 py-2.5 text-center text-xs text-slate-500">
+            <p className="rounded-xl border border-slate-100 bg-slate-50 px-3.5 py-2.5 text-center text-xs text-slate-600">
               Không có khách hàng nào khớp với bộ lọc hiện tại để xuất.
             </p>
           )}
@@ -136,7 +136,7 @@ export function ExportCustomerDialog({
 
         <div className="mt-5 flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
           {isExporting && (
-            <span className="mr-auto text-xs text-slate-500" role="status">
+            <span className="mr-auto text-xs text-slate-600" role="status">
               Đang chuẩn bị tệp tải xuống...
             </span>
           )}
