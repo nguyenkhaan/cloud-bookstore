@@ -54,8 +54,8 @@
       "Name": "REGULAR",
       "RankOrder": 1,
       "MinSpend": 0,
-      "MaxBooks": 2,
-      "MaxRentalDays": 7,
+      "MaxBooks": 3,
+      "MaxRentalDays": 14,
       "RentDiscountPct": 0,
       "SaleDiscountPct": 0
     },
@@ -64,20 +64,20 @@
       "Name": "SILVER",
       "RankOrder": 2,
       "MinSpend": 1000000,
-      "MaxBooks": 4,
-      "MaxRentalDays": 10,
+      "MaxBooks": 5,
+      "MaxRentalDays": 21,
       "RentDiscountPct": 5,
-      "SaleDiscountPct": 3
+      "SaleDiscountPct": 5
     },
     {
       "Id": "00000000-0000-0000-0000-000000000103",
       "Name": "GOLD",
       "RankOrder": 3,
       "MinSpend": 3000000,
-      "MaxBooks": 6,
-      "MaxRentalDays": 14,
+      "MaxBooks": 8,
+      "MaxRentalDays": 30,
       "RentDiscountPct": 10,
-      "SaleDiscountPct": 5
+      "SaleDiscountPct": 10
     }
   ],
   "customers": [
