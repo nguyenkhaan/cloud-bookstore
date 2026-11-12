@@ -96,7 +96,7 @@ File này chỉ theo dõi trạng thái, owner và evidence. Nội dung acceptan
 | `P09-S04` | [Đóng phiếu thuê](./phase-09-gia-han-tra-sach.md) | Chưa gán | TODO | — |
 | `P10-S01` | [Điều chỉnh tồn thông thường](./phase-10-kiem-ke-va-dieu-chinh-kho.md) | Chưa gán | TODO | — |
 | `P10-S02` | [Quét kiểm kê](./phase-10-kiem-ke-va-dieu-chinh-kho.md) | Chưa gán | TODO | — |
-| `P10-S03` | [Duyệt chênh lệch](./phase-10-kiem-ke-va-dieu-chinh-kho.md) | Chưa gán | TODO | — |
+| `P10-S03` | [Duyệt chênh lệch](./phase-10-kiem-ke-va-dieu-chinh-kho.md) | Chưa gán | TODO | Spec: [`INV-005-inventory-adjustment-requests.md`](../specs/INV-005-inventory-adjustment-requests.md); Plan: [`INV-005-inventory-adjustment-requests.md`](./INV-005-inventory-adjustment-requests.md) |
 | `P10-S04` | [Theo dõi cảnh báo tồn](./phase-10-kiem-ke-va-dieu-chinh-kho.md) | Chưa gán | TODO | — |
 | `P11-S01` | [Lập bản ghi ca](./phase-11-nhan-su-cham-cong-luong.md) | Chưa gán | TODO | — |
 | `P11-S02` | [Ghi nhận chấm công](./phase-11-nhan-su-cham-cong-luong.md) | Chưa gán | TODO | — |
