@@ -30,8 +30,8 @@ export default function EditionDetailPage() {
   const edition = editionQuery.data
   const titleQuery = useTitleQuery(edition?.titleId ?? '')
 
-  if (editionQuery.isLoading) return <CatalogWorkspace screenCode="SCR-INV-03 / KHO SÁCH" title="Chi tiết ấn bản"><LoadingRows /></CatalogWorkspace>
-  if (!edition || editionQuery.error) return <CatalogWorkspace screenCode="SCR-INV-03 / KHO SÁCH" title="Chi tiết ấn bản"><ErrorState message="Không tìm thấy ấn bản yêu cầu." /></CatalogWorkspace>
+  if (editionQuery.isLoading) return <CatalogWorkspace title="Chi tiết ấn bản"><LoadingRows /></CatalogWorkspace>
+  if (!edition || editionQuery.error) return <CatalogWorkspace title="Chi tiết ấn bản"><ErrorState message="Không tìm thấy ấn bản yêu cầu." /></CatalogWorkspace>
 
   const copies = copiesQuery.data ?? []
   const displayName = edition.editionStatement || edition.publisher || 'Ấn bản'
@@ -48,7 +48,7 @@ export default function EditionDetailPage() {
 
   return <CatalogWorkspace
     action={canEdit && <div className="flex flex-wrap gap-2"><Button onClick={() => setDialog('edit')} variant="secondary">Chỉnh sửa</Button><Button onClick={() => { setActionError(''); setDialog('delete') }} variant="outline">Xóa</Button><Button disabled={!edition.isActive} onClick={() => setDialog('create-copy')}>Thêm bản vật lý</Button></div>}
-    screenCode="SCR-INV-03 / KHO SÁCH" title={titleQuery.data?.name || 'Chi tiết ấn bản'}>
+    title={titleQuery.data?.name || 'Chi tiết ấn bản'}>
     {actionError && <p className="text-sm text-rose-700" role="alert">{actionError}</p>}
     <Card padding="none"><div className="flex flex-col gap-5 p-5 sm:flex-row">
       <CoverTile className="aspect-[3/4] w-28 shrink-0 rounded-lg border border-slate-200" imageUrl={edition.coverImageUrl} title={displayName} />

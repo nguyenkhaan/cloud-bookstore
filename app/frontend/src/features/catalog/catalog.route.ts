@@ -7,4 +7,5 @@ export const catalogPaths = {
   titlesForSeries: (seriesId: string) => `${catalogRoot}/titles?seriesId=${encodeURIComponent(seriesId)}`,
   editionDetail: (editionId: string) => `${catalogRoot}/editions/${encodeURIComponent(editionId)}`,
   copyDetail: (copyId: string) => `${catalogRoot}/copies/${encodeURIComponent(copyId)}`,
+  inventoryCheck: `${catalogRoot}/inventory-check`,
 } as const
