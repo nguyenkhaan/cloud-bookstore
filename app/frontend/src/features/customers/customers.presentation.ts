@@ -1,3 +1,5 @@
+import type { CustomerHistoryTab, CustomerViolationItem } from './customers.type'
+
 export type { CustomerExportFormat } from './customers.export'
 export { exportCustomersToFile } from './customers.export'
 
@@ -162,4 +164,98 @@ export function getTierPolicy(tierName: string | undefined, eligibleSpend: numbe
     remainingToNextTier: Math.max(0, threshold - safeSpend),
     progressPercent: Math.min(100, Math.round((safeSpend / threshold) * 100)),
   }
+}
+
+// ── CUS-003: history presentation ───────────────────────────────
+export function formatDateTimeVi(isoDate: string | null | undefined): string {
+  if (!isoDate) return '—'
+  const date = new Date(isoDate)
+  if (Number.isNaN(date.getTime())) return '—'
+  const hh = String(date.getHours()).padStart(2, '0')
+  const mm = String(date.getMinutes()).padStart(2, '0')
+  return `${formatDateVi(isoDate)} ${hh}:${mm}`
+}
+
+export type StatusTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral'
+export type StatusDescriptor = { label: string; tone: StatusTone }
+
+export const STATUS_TONE_CLASSES: Record<StatusTone, string> = {
+  success: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  warning: 'border-amber-200 bg-amber-50 text-amber-800',
+  danger: 'border-rose-200 bg-rose-50 text-rose-700',
+  info: 'border-indigo-200 bg-indigo-50 text-indigo-700',
+  neutral: 'border-slate-200 bg-slate-100 text-slate-700',
+}
+
+export function getRentalSlipStatus(status: string, isOverdue: boolean): StatusDescriptor {
+  switch (status) {
+    case 'ACTIVE':
+      return isOverdue ? { label: 'Quá hạn', tone: 'danger' } : { label: 'Đang thuê', tone: 'info' }
+    case 'RETURNED':
+      return { label: 'Đã trả', tone: 'success' }
+    case 'AWAITING_DEPOSIT':
+      return { label: 'Chờ thu cọc', tone: 'warning' }
+    case 'CANCELLED':
+      return { label: 'Đã hủy', tone: 'neutral' }
+    default:
+      return { label: status, tone: 'neutral' }
+  }
+}
+
+export function getSaleStatus(status: string, isFullyReversed: boolean): StatusDescriptor {
+  if (isFullyReversed) return { label: 'Đã đảo', tone: 'neutral' }
+  if (status === 'PAID') return { label: 'Đã thanh toán', tone: 'success' }
+  if (status === 'CANCELLED') return { label: 'Đã hủy', tone: 'neutral' }
+  return { label: status, tone: 'neutral' }
+}
+
+export function getBuybackStatus(status: string, isPaidOut: boolean): StatusDescriptor {
+  if (isPaidOut) return { label: 'Đã chi tiền', tone: 'success' }
+  if (/REJECT|CANCEL/.test(status)) return { label: 'Đã từ chối / hủy', tone: 'neutral' }
+  if (/PEND|WAIT/.test(status)) return { label: 'Chờ duyệt', tone: 'warning' }
+  return { label: status, tone: 'info' }
+}
+
+export function getViolationResult(result: CustomerViolationItem['result']): StatusDescriptor {
+  switch (result) {
+    case 'OPEN_OVERDUE':
+      return { label: 'Đang quá hạn', tone: 'danger' }
+    case 'AWAITING_PAYMENT':
+      return { label: 'Chờ thanh toán bù', tone: 'warning' }
+    default:
+      return { label: 'Đã trừ cọc', tone: 'success' }
+  }
+}
+
+export function describeViolation(
+    item: Pick<CustomerViolationItem, 'result' | 'lateDays' | 'damagePenalty' | 'lostRetainedAmount' | 'outstandingAmount'>,
+): string[] {
+  const reasons: string[] = []
+  if (item.result === 'OPEN_OVERDUE') reasons.push('Quá hạn chưa trả')
+  if (item.lateDays > 0) reasons.push(`Trễ ${item.lateDays} ngày`)
+  if (item.damagePenalty > 0) reasons.push('Hư hỏng')
+  if (item.lostRetainedAmount > 0) reasons.push('Mất sách')
+  if (item.outstandingAmount > 0) reasons.push('Còn nợ nghĩa vụ')
+  return reasons
+}
+
+type StatusOption = { value: string; label: string }
+
+export const HISTORY_STATUS_OPTIONS: Record<CustomerHistoryTab, StatusOption[]> = {
+  rentals: [
+    { value: 'ACTIVE', label: 'Đang thuê' },
+    { value: 'RETURNED', label: 'Đã trả' },
+    { value: 'AWAITING_DEPOSIT', label: 'Chờ thu cọc' },
+    { value: 'CANCELLED', label: 'Đã hủy' },
+  ],
+  sales: [
+    { value: 'PAID', label: 'Đã thanh toán' },
+    { value: 'CANCELLED', label: 'Đã hủy' },
+  ],
+  buybacks: [],
+  violations: [
+    { value: 'OPEN_OVERDUE', label: 'Đang quá hạn' },
+    { value: 'AWAITING_PAYMENT', label: 'Chờ thanh toán bù' },
+    { value: 'SETTLED', label: 'Đã trừ cọc' },
+  ],
 }
