@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Button, SelectBox } from '@/components/common'
 import type { SelectOption } from '@/components/common'
-import { useCreateApprovalMutation } from '../approvals.hook'
+import { useAllBookCopiesQuery, useCreateApprovalMutation } from '../approvals.hook'
+import { copyStatusLabel } from '../approvals.presentation'
 import type { BookCopyStatus, InventoryVarianceType } from '../approvals.type'
 
 export interface DiscrepancyRow {
@@ -59,6 +60,23 @@ export const CreateAdjustmentModal: React.FC<CreateAdjustmentModalProps> = ({
   const [errorMessage, setErrorMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const createMutation = useCreateApprovalMutation()
+  const { data: bookCopies = [], isLoading: isLoadingCopies } = useAllBookCopiesQuery(isOpen)
+
+  const copyOptions = useMemo<SelectOption<string>[]>(() => {
+    const options: SelectOption<string>[] = bookCopies.map((copy) => ({
+      value: copy.copyBarcode,
+      label: `${copy.copyBarcode} - ${copy.titleName} (${copyStatusLabel(copy.status)})`,
+    }))
+    for (const row of rows) {
+      if (row.copyBarcode && !options.some((opt) => opt.value === row.copyBarcode)) {
+        options.unshift({
+          value: row.copyBarcode,
+          label: row.titleName ? `${row.copyBarcode} - ${row.titleName}` : row.copyBarcode,
+        })
+      }
+    }
+    return options
+  }, [bookCopies, rows])
 
   if (!isOpen) return null
 
@@ -80,7 +98,7 @@ export const CreateAdjustmentModal: React.FC<CreateAdjustmentModalProps> = ({
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i]
       if (!row.copyBarcode.trim()) {
-        setErrorMessage(`Dòng số ${i + 1}: Vui lòng nhập mã vạch cuốn sách (CopyBarcode).`)
+        setErrorMessage(`Dòng số ${i + 1}: Vui lòng chọn mã vạch cuốn sách (CopyBarcode).`)
         return
       }
       if (!row.reason.trim()) {
@@ -171,16 +189,31 @@ export const CreateAdjustmentModal: React.FC<CreateAdjustmentModalProps> = ({
               <tbody className="divide-y divide-slate-100">
                 {rows.map((row, index) => (
                   <tr className="hover:bg-slate-50/50" key={row.id}>
-                    <td className="px-3 py-2.5 align-top">
-                      <input
-                        className="w-32 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 font-mono text-xs font-semibold text-indigo-700 focus:border-indigo-500 focus:outline-hidden"
-                        onChange={(e) => handleUpdateRow(row.id, { copyBarcode: e.target.value })}
-                        placeholder="BC-XXXXXX"
-                        type="text"
+                    <td className="px-3 py-2.5 align-top min-w-56">
+                      <SelectBox
+                        disabled={isLoadingCopies}
+                        emptyMessage={isLoadingCopies ? 'Đang tải danh sách bản sách...' : 'Không có bản sách nào.'}
+                        hideLabel
+                        label="Bản sách / CopyBarcode"
+                        onChange={(barcode) => {
+                          const selected = bookCopies.find((c) => c.copyBarcode === barcode)
+                          handleUpdateRow(row.id, {
+                            copyBarcode: barcode,
+                            titleName: selected?.titleName,
+                            systemStatus: selected ? copyStatusLabel(selected.status) : undefined,
+                          })
+                        }}
+                        options={copyOptions}
+                        placeholder={isLoadingCopies ? 'Đang tải...' : 'Chọn CopyBarcode...'}
+                        searchPlaceholder="Tìm CopyBarcode hoặc tên sách..."
                         value={row.copyBarcode}
                       />
-                      {row.titleName && (
-                        <p className="mt-1 text-[11px] text-slate-500 truncate max-w-32.5">{row.titleName}</p>
+                      {(row.titleName || row.systemStatus) && (
+                        <p className="mt-1 text-[11px] text-slate-500 truncate max-w-60">
+                          {[row.titleName, row.systemStatus ? `Hiện tại: ${row.systemStatus}` : null]
+                            .filter(Boolean)
+                            .join(' - ')}
+                        </p>
                       )}
                     </td>
                     <td className="px-3 py-2.5 align-top min-w-35">

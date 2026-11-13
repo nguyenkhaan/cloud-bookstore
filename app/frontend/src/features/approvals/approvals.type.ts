@@ -108,3 +108,11 @@ export type UpdateInventoryAdjustmentStatusRequest = {
 export type CancelInventoryAdjustmentRequest = {
   reason?: string
 }
+
+export type SelectableBookCopy = {
+  id: string
+  copyBarcode: string
+  titleName: string
+  status: BookCopyStatus
+  shelfCode?: string | null
+}

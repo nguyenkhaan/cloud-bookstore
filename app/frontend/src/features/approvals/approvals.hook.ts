@@ -12,6 +12,15 @@ export const approvalsQueryKeys = {
   list: (query: InventoryAdjustmentQuery) => ['inventory-adjustments', 'list', query] as const,
   stats: () => ['inventory-adjustments', 'stats'] as const,
   detail: (id: string | null) => ['inventory-adjustments', 'detail', id] as const,
+  bookCopies: () => ['inventory-adjustments', 'book-copies'] as const,
+}
+
+export function useAllBookCopiesQuery(enabled = true) {
+  return useQuery({
+    queryKey: approvalsQueryKeys.bookCopies(),
+    queryFn: () => approvalsService.getAllBookCopies(),
+    enabled,
+  })
 }
 
 export function useApprovalsQuery(query: InventoryAdjustmentQuery) {

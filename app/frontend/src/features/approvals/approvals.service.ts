@@ -12,6 +12,7 @@ import type {
   InventoryAdjustmentStatus,
   InventoryVarianceType,
   PagedResult,
+  SelectableBookCopy,
   UpdateInventoryAdjustmentStatusRequest,
 } from './approvals.type'
 
@@ -206,5 +207,22 @@ export const approvalsService = {
       privateClient.post<ApiAdjustment>(`/inventory-adjustment-requests/${encodeURIComponent(id)}/cancel`, dto),
     )
     return toItem(raw)
+  },
+
+  async getAllBookCopies(): Promise<SelectableBookCopy[]> {
+    const firstPage = await requestData(() =>
+      privateClient.get<ApiPaged<SelectableBookCopy>>('/book-copies?Page=1&PageSize=100'),
+    )
+    const allItems: SelectableBookCopy[] = [...(firstPage.items ?? [])]
+    const totalPages = firstPage.totalPages ?? 1
+    for (let page = 2; page <= totalPages; page++) {
+      const nextPage = await requestData(() =>
+        privateClient.get<ApiPaged<SelectableBookCopy>>(`/book-copies?Page=${page}&PageSize=100`),
+      )
+      if (nextPage.items) {
+        allItems.push(...nextPage.items)
+      }
+    }
+    return allItems.sort((a, b) => a.copyBarcode.localeCompare(b.copyBarcode))
   },
 }
