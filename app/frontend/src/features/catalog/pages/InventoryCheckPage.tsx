@@ -52,7 +52,7 @@ export default function InventoryCheckPage() {
     varianceType: varianceFilter || undefined,
   })
 
-  const currentUserId = session?.user?.email || session?.user?.name
+  const currentUserId = session?.user?.name
   const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(session?.user?.roleCode ?? '')
 
   const openModal = (rows?: DiscrepancyRow[]) => {

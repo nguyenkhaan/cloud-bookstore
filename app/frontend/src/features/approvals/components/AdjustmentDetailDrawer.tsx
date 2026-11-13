@@ -23,16 +23,22 @@ export interface AdjustmentDetailDrawerProps {
 
 function auditActionLabel(action: string): string {
   switch (action) {
+    case 'INVENTORY_ADJUSTMENT_CREATE':
     case 'INVENTORY_ADJUSTMENT_CREATED':
       return 'Lập đề nghị điều chỉnh kho'
+    case 'INVENTORY_ADJUSTMENT_APPROVE':
     case 'INVENTORY_ADJUSTMENT_APPROVED':
       return 'Quản lý phê duyệt đề xuất'
+    case 'INVENTORY_ADJUSTMENT_APPLY':
     case 'INVENTORY_ADJUSTMENT_APPLIED':
       return 'Áp dụng cập nhật trạng thái kho'
+    case 'INVENTORY_ADJUSTMENT_REJECT':
     case 'INVENTORY_ADJUSTMENT_REJECTED':
       return 'Từ chối đề xuất điều chỉnh'
+    case 'INVENTORY_ADJUSTMENT_CANCEL':
     case 'INVENTORY_ADJUSTMENT_CANCELLED':
       return 'Người tạo hủy yêu cầu'
+    case 'BOOK_COPY_STATUS_CHANGE':
     case 'BOOK_COPY_STATUS_UPDATED':
       return 'Cập nhật trạng thái bản sách vật lý'
     default:
@@ -58,7 +64,7 @@ export const AdjustmentDetailDrawer: React.FC<AdjustmentDetailDrawerProps> = ({
   if (!requestId) return null
 
   const isSelfRequest = Boolean(
-    currentUserId && detail?.requestedBy && currentUserId.toLowerCase() === detail.requestedBy.toLowerCase(),
+    currentUserId && detail?.requestedByName && currentUserId.toLowerCase() === detail.requestedByName.toLowerCase(),
   )
   const canAdminDecide = isAdmin && !isSelfRequest && (detail?.status === 'PENDING_APPROVAL' || detail?.status === 'APPROVED')
   const canCreatorCancel = isSelfRequest && detail?.status === 'PENDING_APPROVAL'
@@ -179,14 +185,18 @@ export const AdjustmentDetailDrawer: React.FC<AdjustmentDetailDrawerProps> = ({
                       <span className="text-slate-500">Đề xuất chuyển:</span>
                       <p className="font-semibold text-indigo-700 mt-0.5">{copyStatusLabel(detail.requestedStatus)}</p>
                     </div>
-                    <div>
-                      <span className="text-slate-500">Giá bán:</span>
-                      <p className="font-semibold text-slate-800 mt-0.5">{formatVnd(detail.sellingPrice)}</p>
-                    </div>
-                    <div>
-                      <span className="text-slate-500">Vị trí kệ:</span>
-                      <p className="font-semibold text-slate-800 mt-0.5">{detail.shelfCode || '—'}</p>
-                    </div>
+                    {detail.sellingPrice != null && (
+                      <div>
+                        <span className="text-slate-500">Giá bán:</span>
+                        <p className="font-semibold text-slate-800 mt-0.5">{formatVnd(detail.sellingPrice)}</p>
+                      </div>
+                    )}
+                    {detail.shelfCode && (
+                      <div>
+                        <span className="text-slate-500">Vị trí kệ:</span>
+                        <p className="font-semibold text-slate-800 mt-0.5">{detail.shelfCode}</p>
+                      </div>
+                    )}
                   </div>
                 </section>
 

@@ -42,7 +42,7 @@ export default function ApprovalsPage() {
   const { data: stats } = useApprovalsStatsQuery()
 
   const currentUser = session?.user ?? { name: 'Nhân viên', role: 'Chưa xác thực' }
-  const currentUserId = session?.user?.email || session?.user?.name
+  const currentUserId = session?.user?.name
   const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(session?.user?.roleCode ?? '')
 
   const navigateFromSidebar = (item: string) => {
