@@ -154,6 +154,7 @@ function editionLabel(edition?: Pick<BookEdition, 'editionStatement' | 'isbn'>) 
 export function useCatalogBreadcrumbs(): BreadcrumbItem[] {
   const [searchParams] = useSearchParams()
   const isTitleList = Boolean(useMatch(catalogPaths.titleList))
+  const isInventoryCheck = Boolean(useMatch(catalogPaths.inventoryCheck))
   const titleMatch = useMatch('/catalog/titles/:titleId')
   const editionMatch = useMatch('/catalog/editions/:editionId')
   const copyMatch = useMatch('/catalog/copies/:copyId')
@@ -169,6 +170,13 @@ export function useCatalogBreadcrumbs(): BreadcrumbItem[] {
   const title = titleQuery.data
 
   const root: BreadcrumbItem = { label: CATALOG_ROOT_LABEL, to: catalogPaths.seriesList }
+
+  if (isInventoryCheck) {
+    return [
+      root,
+      { label: 'Kiểm kê kho & Đối soát sai lệch' },
+    ]
+  }
 
   if (isTitleList) {
     return [

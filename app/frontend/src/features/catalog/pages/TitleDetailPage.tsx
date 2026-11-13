@@ -28,16 +28,15 @@ export default function TitleDetailPage() {
   const editions = editionsQuery.data ?? []
 
   if (titleQuery.isLoading) {
-    return <CatalogWorkspace screenCode="SCR-INV-03 / KHO SÁCH" title="Chi tiết đầu sách"><LoadingRows /></CatalogWorkspace>
+    return <CatalogWorkspace title="Chi tiết đầu sách"><LoadingRows /></CatalogWorkspace>
   }
   if (!title || titleQuery.error) {
-    return <CatalogWorkspace screenCode="SCR-INV-03 / KHO SÁCH" title="Chi tiết đầu sách"><ErrorState message="Không tìm thấy đầu sách hoặc bạn không có quyền xem." /></CatalogWorkspace>
+    return <CatalogWorkspace title="Chi tiết đầu sách"><ErrorState message="Không tìm thấy đầu sách hoặc bạn không có quyền xem." /></CatalogWorkspace>
   }
 
   return (
     <CatalogWorkspace
       action={canEdit && <div className="flex flex-wrap gap-2"><Button onClick={() => setIsTitleEditorOpen(true)} variant="secondary">Chỉnh sửa đầu sách</Button><Button onClick={() => setIsEditionEditorOpen(true)}>+ Thêm ấn bản</Button></div>}
-      screenCode="SCR-INV-03 / KHO SÁCH"
       title={title.name}
     >
       <Card padding="none">

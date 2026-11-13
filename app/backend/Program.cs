@@ -257,9 +257,11 @@ builder.Services.AddScoped<CategoryService>();
 builder.Services.AddScoped<BookSeriesService>();
 builder.Services.AddScoped<TitleService>();
 builder.Services.AddScoped<EditionService>();
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<BookCopyService>();
 builder.Services.AddScoped<CustomerService>();
 builder.Services.AddScoped<MembershipService>();
+builder.Services.AddScoped<InventoryAdjustmentService>();
 //Dependency Injection -> builder.Services.AddScoped<AuthService>();
 var app = builder.Build();
 

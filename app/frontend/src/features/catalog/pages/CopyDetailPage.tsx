@@ -27,8 +27,8 @@ export default function CopyDetailPage() {
   const updateStatus = useUpdateCopyStatusMutation()
   const deleteCopy = useDeleteCopyMutation()
 
-  if (copyQuery.isLoading) return <CatalogWorkspace screenCode="SCR-INV-03 / KHO SÁCH" title="Bản sách vật lý"><LoadingRows /></CatalogWorkspace>
-  if (!copy || copyQuery.error) return <CatalogWorkspace screenCode="SCR-INV-03 / KHO SÁCH" title="Bản sách vật lý"><ErrorState message="Không tìm thấy bản sách yêu cầu." /></CatalogWorkspace>
+  if (copyQuery.isLoading) return <CatalogWorkspace title="Bản sách vật lý"><LoadingRows /></CatalogWorkspace>
+  if (!copy || copyQuery.error) return <CatalogWorkspace title="Bản sách vật lý"><ErrorState message="Không tìm thấy bản sách yêu cầu." /></CatalogWorkspace>
 
   const handleDelete = async () => {
     setActionError('')
@@ -44,7 +44,7 @@ export default function CopyDetailPage() {
 
   return <CatalogWorkspace
     action={canEdit && <div className="flex flex-wrap gap-2"><Button onClick={() => setDialog('edit')} variant="secondary">Chỉnh sửa</Button><Button onClick={() => { setActionError(''); setDialog('delete') }} variant="outline">Xóa</Button>{canDiscontinue && <Button disabled={updateStatus.isPending} onClick={() => void handleDiscontinue()} variant="ghost">Ngừng sử dụng</Button>}</div>}
-    screenCode="SCR-INV-03 / KHO SÁCH" title={copy.copyBarcode}>
+    title={copy.copyBarcode}>
     {actionError && <p className="text-sm text-rose-700" role="alert">{actionError}</p>}
     <Card padding="none"><div className="flex flex-col gap-5 p-5 sm:flex-row">
       <CoverTile className="aspect-[3/4] w-28 shrink-0 rounded-lg border border-slate-200" imageUrl={copy.imageUrl || copy.editionImageUrl || editionQuery.data?.coverImageUrl} title={copy.copyBarcode} />

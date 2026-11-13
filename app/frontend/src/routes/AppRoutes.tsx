@@ -5,6 +5,7 @@ import LoginPage from '@/features/auth/pages/LoginPage'
 import VerifyRegisterPage from '@/features/auth/pages/VerifyRegisterPage'
 import CopyDetailPage from '@/features/catalog/pages/CopyDetailPage'
 import EditionDetailPage from '@/features/catalog/pages/EditionDetailPage'
+import InventoryCheckPage from '@/features/catalog/pages/InventoryCheckPage'
 import SeriesListPage from '@/features/catalog/pages/SeriesListPage'
 import TitleDetailPage from '@/features/catalog/pages/TitleDetailPage'
 import TitleListPage from '@/features/catalog/pages/TitleListPage'
@@ -70,6 +71,7 @@ export default function AppRoutes() {
       <Route path="/catalog/titles/:titleId" element={<RequireSession><TitleDetailPage /></RequireSession>} />
       <Route path="/catalog/editions/:editionId" element={<RequireSession><EditionDetailPage /></RequireSession>} />
       <Route path="/catalog/copies/:copyId" element={<RequireSession><CopyDetailPage /></RequireSession>} />
+      <Route path="/catalog/inventory-check" element={<RequireSession><InventoryCheckPage /></RequireSession>} />
       <Route path="*" element={<Navigate replace to="/login" />} />
     </Routes>
   )

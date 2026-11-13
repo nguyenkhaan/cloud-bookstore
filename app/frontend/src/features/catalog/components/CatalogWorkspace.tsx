@@ -9,7 +9,7 @@ import { catalogPaths } from '../catalog.route'
 type CatalogWorkspaceProps = {
   action?: ReactNode
   children: ReactNode
-  screenCode: string
+  screenCode?: string
   title: string
 }
 
@@ -27,8 +27,10 @@ export function CatalogWorkspace({ action, children, screenCode, title }: Catalo
   const currentUser = session?.user ?? { name: 'Khách', role: 'Chưa xác thực' }
 
   const isSeriesActive = location.pathname.startsWith(catalogPaths.seriesList)
+  const isCheckActive = location.pathname.startsWith(catalogPaths.inventoryCheck)
   const isTitlesActive =
     !isSeriesActive &&
+    !isCheckActive &&
     (location.pathname.startsWith(catalogPaths.titleList) ||
       location.pathname.startsWith('/catalog/editions') ||
       location.pathname.startsWith('/catalog/copies'))
@@ -67,6 +69,17 @@ export function CatalogWorkspace({ action, children, screenCode, title }: Catalo
             to={catalogPaths.titleList}
           >
             Đầu sách
+          </Link>
+          <Link
+            aria-current={isCheckActive ? 'page' : undefined}
+            className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
+              isCheckActive
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            }`}
+            to={catalogPaths.inventoryCheck}
+          >
+            Kiểm kê kho
           </Link>
         </nav>
         {children}

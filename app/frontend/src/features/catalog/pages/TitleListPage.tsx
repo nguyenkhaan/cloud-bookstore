@@ -28,7 +28,6 @@ export default function TitleListPage() {
   return (
     <CatalogWorkspace
       action={<Button onClick={() => setIsEditorOpen(true)}>+ Thêm đầu sách</Button>}
-      screenCode="SCR-INV-02 / KHO SÁCH"
       title="Danh mục đầu sách"
     >
       <Card className="overflow-hidden" padding="none">
