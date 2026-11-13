@@ -260,6 +260,7 @@ builder.Services.AddScoped<EditionService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<BookCopyService>();
 builder.Services.AddScoped<CustomerService>();
+builder.Services.AddScoped<CustomerHistoryService>();
 builder.Services.AddScoped<MembershipService>();
 builder.Services.AddScoped<InventoryAdjustmentService>();
 //Dependency Injection -> builder.Services.AddScoped<AuthService>();

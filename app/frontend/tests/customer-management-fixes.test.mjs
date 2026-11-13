@@ -720,11 +720,14 @@ describe('AC 5: Presentation helpers, routing, and CustomerDetailPage', { concur
     assert.match(populatedHtml, /Bán sách cũ/)
     assert.match(populatedHtml, /Vi phạm &amp; Ghi chú/)
     assert.match(populatedHtml, /Hồ sơ đủ điều kiện thuê mới/)
-    assert.match(
-      populatedHtml,
-      /<table class="hidden w-full min-w-\[540px\][^"]*"[\s\S]*?<\/table><div class="rounded-xl[^"]*">Chưa có phiếu thuê hoặc trả sách nào/,
-      'Empty-state message must sit in a responsive non-overflowing card outside the wide table',
-    )
+    // CUS-003: placeholder tables were replaced by the data-driven CustomerHistoryPanel.
+    assert.doesNotMatch(populatedHtml, /min-w-\[540px\]/, 'Wide placeholder table must be gone')
+    assert.match(populatedHtml, /role="tabpanel"/)
+    assert.match(populatedHtml, /aria-label="Bộ lọc lịch sử"/, 'History filters must render in the active tab')
+    assert.match(populatedHtml, /Từ ngày/)
+    assert.match(populatedHtml, /Đến ngày/)
+// SSR does not resolve queries, so the list is either loading or empty, never a placeholder table.
+    assert.match(populatedHtml, /Đang tải lịch sử|Chưa có phiếu thuê hoặc trả sách nào/)
 
     // 4. Flagged profile + missing optional fields
     const flaggedCustomer = makeCustomer({
