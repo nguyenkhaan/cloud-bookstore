@@ -12,6 +12,12 @@ import type {
   PagedResult,
   PagedResultOfCustomerDto,
   UpdateCustomerRequest,
+  CustomerBuybackItem,
+  CustomerHistoryQuery,
+  CustomerHistorySummary,
+  CustomerRentalItem,
+  CustomerSaleItem,
+  CustomerViolationItem,
 } from './customers.type'
 
 export class CustomerApiError extends Error {
@@ -142,3 +148,48 @@ export async function deleteCustomer(id: string): Promise<void> {
     privateClient.delete(`/customers/${id}`)
   )
 }
+
+// ── CUS-003: history ─────────────────────────────────────────────
+function historyParams(query: CustomerHistoryQuery): Record<string, string | number> {
+  const params: Record<string, string | number> = {}
+  if (query.page) params.Page = query.page
+  if (query.pageSize) params.PageSize = query.pageSize
+  if (query.status) params.Status = query.status
+  if (query.from) params.From = query.from
+  if (query.to) params.To = query.to
+  return params
+}
+
+async function getHistoryPage<T>(
+    customerId: string,
+    segment: 'rentals' | 'sales' | 'buybacks' | 'violations',
+    query: CustomerHistoryQuery,
+): Promise<PagedResult<T>> {
+  const data = await requestData<Partial<PagedResult<T>>>(() =>
+      privateClient.get(`/customers/${customerId}/history/${segment}`, { params: historyParams(query) }),
+  )
+  return {
+    items: data.items ?? [],
+    totalCount: Number(data.totalCount ?? 0),
+    page: Number(data.page ?? 1),
+    pageSize: Number(data.pageSize ?? 10),
+    totalPages: Number(data.totalPages ?? 0),
+    hasPreviousPage: Boolean(data.hasPreviousPage),
+    hasNextPage: Boolean(data.hasNextPage),
+  }
+}
+
+export function getCustomerHistorySummary(customerId: string): Promise<CustomerHistorySummary> {
+  return requestData<CustomerHistorySummary>(() =>
+      privateClient.get(`/customers/${customerId}/history/summary`),
+  )
+}
+
+export const listCustomerRentals = (id: string, query: CustomerHistoryQuery = {}) =>
+    getHistoryPage<CustomerRentalItem>(id, 'rentals', query)
+export const listCustomerSales = (id: string, query: CustomerHistoryQuery = {}) =>
+    getHistoryPage<CustomerSaleItem>(id, 'sales', query)
+export const listCustomerBuybacks = (id: string, query: CustomerHistoryQuery = {}) =>
+    getHistoryPage<CustomerBuybackItem>(id, 'buybacks', query)
+export const listCustomerViolations = (id: string, query: CustomerHistoryQuery = {}) =>
+    getHistoryPage<CustomerViolationItem>(id, 'violations', query)

@@ -2300,6 +2300,324 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/customers/{customerId}/history/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    customerId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CustomerHistorySummaryResponse"];
+                        "application/json": components["schemas"]["CustomerHistorySummaryResponse"];
+                        "text/json": components["schemas"]["CustomerHistorySummaryResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/customers/{customerId}/history/rentals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Page?: number | string;
+                    PageSize?: number | string;
+                    Status?: string;
+                    From?: string;
+                    To?: string;
+                };
+                header?: never;
+                path: {
+                    customerId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfCustomerRentalHistoryItem"];
+                        "application/json": components["schemas"]["PagedResultOfCustomerRentalHistoryItem"];
+                        "text/json": components["schemas"]["PagedResultOfCustomerRentalHistoryItem"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/customers/{customerId}/history/sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Page?: number | string;
+                    PageSize?: number | string;
+                    Status?: string;
+                    From?: string;
+                    To?: string;
+                };
+                header?: never;
+                path: {
+                    customerId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfCustomerSaleHistoryItem"];
+                        "application/json": components["schemas"]["PagedResultOfCustomerSaleHistoryItem"];
+                        "text/json": components["schemas"]["PagedResultOfCustomerSaleHistoryItem"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/customers/{customerId}/history/buybacks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Page?: number | string;
+                    PageSize?: number | string;
+                    Status?: string;
+                    From?: string;
+                    To?: string;
+                };
+                header?: never;
+                path: {
+                    customerId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfCustomerBuybackHistoryItem"];
+                        "application/json": components["schemas"]["PagedResultOfCustomerBuybackHistoryItem"];
+                        "text/json": components["schemas"]["PagedResultOfCustomerBuybackHistoryItem"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/customers/{customerId}/history/violations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Page?: number | string;
+                    PageSize?: number | string;
+                    Status?: string;
+                    From?: string;
+                    To?: string;
+                };
+                header?: never;
+                path: {
+                    customerId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfCustomerViolationItem"];
+                        "application/json": components["schemas"]["PagedResultOfCustomerViolationItem"];
+                        "text/json": components["schemas"]["PagedResultOfCustomerViolationItem"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/customers": {
         parameters: {
             query?: never;
@@ -3614,6 +3932,15 @@ export interface components {
             role: string;
             avatarUrl?: null | string;
         };
+        BuybackLineSummary: {
+            titleName: string;
+            volumeLabel: null | string;
+            conditionGrade: string;
+            /** Format: int32 */
+            quantity: number | string;
+            /** Format: int64 */
+            unitCost: number | string;
+        };
         CategoryDetailResponse: {
             /** Format: uuid */
             id: string;
@@ -3735,6 +4062,19 @@ export interface components {
             isActive: boolean;
             imageUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
         };
+        CustomerBuybackHistoryItem: {
+            /** Format: uuid */
+            receiptId: string;
+            code: string;
+            status: string;
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: int64 */
+            totalAmount: number | string;
+            isPaidOut: boolean;
+            needsApproval: boolean;
+            lines: components["schemas"]["BuybackLineSummary"][];
+        };
         CustomerDto: {
             /** Format: uuid */
             id?: string;
@@ -3760,6 +4100,104 @@ export interface components {
             normalizedPhone?: string;
             existingCustomer?: null | components["schemas"]["CustomerDto"];
         };
+        CustomerHistorySummaryResponse: {
+            /** Format: int32 */
+            rentalCount: number | string;
+            /** Format: int32 */
+            saleCount: number | string;
+            /** Format: int32 */
+            buybackCount: number | string;
+            /** Format: int32 */
+            violationCount: number | string;
+            /** Format: int32 */
+            heldBookCount: number | string;
+            /** Format: int32 */
+            activeSlipCount: number | string;
+            /** Format: int64 */
+            depositHeld: number | string;
+            /** Format: int32 */
+            lateReturnCount: number | string;
+            /** Format: int32 */
+            openOverdueCount: number | string;
+            /** Format: int64 */
+            outstandingAmount: number | string;
+            blocksNewRental: boolean;
+            /** Format: int64 */
+            salesSpend: number | string;
+            /** Format: int64 */
+            salesDiscountTotal: number | string;
+            /** Format: int64 */
+            rentalSpend: number | string;
+            /** Format: int64 */
+            computedEligibleSpend: number | string;
+            /** Format: int64 */
+            storedEligibleSpend: number | string;
+            eligibleSpendMismatch: boolean;
+            /** Format: int64 */
+            buybackPaidTotal: number | string;
+            latestSale: null | components["schemas"]["CustomerLatestDocument"];
+            latestBuyback: null | components["schemas"]["CustomerLatestDocument"];
+        };
+        CustomerLatestDocument: {
+            /** Format: uuid */
+            id: string;
+            no: string;
+            /** Format: date-time */
+            at: string;
+            /** Format: int64 */
+            amount: number | string;
+        };
+        CustomerRentalHistoryItem: {
+            /** Format: uuid */
+            slipId: string;
+            slipNo: string;
+            status: string;
+            /** Format: date */
+            rentDate: string;
+            /** Format: date-time */
+            activatedAt: null | string;
+            /** Format: date-time */
+            dueAt: null | string;
+            /** Format: int32 */
+            extensionCount: number | string;
+            /** Format: int32 */
+            lateDays: number | string;
+            isOverdue: boolean;
+            /** Format: int64 */
+            depositTotal: number | string;
+            /** Format: int64 */
+            refundTotal: number | string;
+            /** Format: int64 */
+            outstandingAmount: number | string;
+            /** Format: int64 */
+            countedSpend: number | string;
+            /** Format: uuid */
+            returnId: null | string;
+            returnNo: null | string;
+            returnStatus: null | string;
+            /** Format: date-time */
+            returnedAt: null | string;
+            lines: components["schemas"]["RentalLineSummary"][];
+        };
+        CustomerSaleHistoryItem: {
+            /** Format: uuid */
+            invoiceId: string;
+            invoiceNo: null | string;
+            status: string;
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: int64 */
+            subtotal: number | string;
+            /** Format: int64 */
+            discountTotal: number | string;
+            /** Format: int64 */
+            totalPayable: number | string;
+            /** Format: int64 */
+            countedAmount: number | string;
+            hasReversedLines: boolean;
+            isFullyReversed: boolean;
+            lines: components["schemas"]["SaleLineSummary"][];
+        };
         CustomerStatsDto: {
             /** Format: int32 */
             totalCount?: number | string;
@@ -3769,6 +4207,36 @@ export interface components {
             goldCount?: number | string;
             /** Format: int32 */
             flaggedCount?: number | string;
+        };
+        CustomerViolationItem: {
+            /** Format: uuid */
+            lineId: string;
+            /** Format: uuid */
+            slipId: string;
+            slipNo: string;
+            /** Format: uuid */
+            returnId: null | string;
+            returnNo: null | string;
+            /** Format: uuid */
+            copyId: string;
+            copyBarcode: string;
+            titleName: string;
+            volumeLabel: null | string;
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: date-time */
+            dueAt: string;
+            result: string;
+            /** Format: int32 */
+            lateDays: number | string;
+            /** Format: int64 */
+            latePenalty: number | string;
+            /** Format: int64 */
+            damagePenalty: number | string;
+            /** Format: int64 */
+            lostRetainedAmount: number | string;
+            /** Format: int64 */
+            outstandingAmount: number | string;
         };
         EditionCopySummary: {
             /** Format: uuid */
@@ -3912,8 +4380,60 @@ export interface components {
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
+        PagedResultOfCustomerBuybackHistoryItem: {
+            items: components["schemas"]["CustomerBuybackHistoryItem"][];
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
         PagedResultOfCustomerDto: {
             items: components["schemas"]["CustomerDto"][];
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
+        PagedResultOfCustomerRentalHistoryItem: {
+            items: components["schemas"]["CustomerRentalHistoryItem"][];
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
+        PagedResultOfCustomerSaleHistoryItem: {
+            items: components["schemas"]["CustomerSaleHistoryItem"][];
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
+        PagedResultOfCustomerViolationItem: {
+            items: components["schemas"]["CustomerViolationItem"][];
             /** Format: int32 */
             totalCount: number | string;
             /** Format: int32 */
@@ -3965,6 +4485,18 @@ export interface components {
             password: string;
             phone: string;
         };
+        RentalLineSummary: {
+            /** Format: uuid */
+            lineId: string;
+            /** Format: uuid */
+            copyId: string;
+            copyBarcode: string;
+            titleName: string;
+            volumeLabel: null | string;
+            status: string;
+            /** Format: int64 */
+            depositAmount: number | string;
+        };
         ResendVerificationRequest: {
             email: string;
         };
@@ -3974,6 +4506,20 @@ export interface components {
         };
         /** @enum {unknown} */
         RoleName: "ADMIN" | "CASHIER" | "INVENTORY_MANAGER";
+        SaleLineSummary: {
+            /** Format: uuid */
+            lineId: string;
+            /** Format: uuid */
+            copyId: string;
+            copyBarcode: string;
+            titleName: string;
+            volumeLabel: null | string;
+            /** Format: int64 */
+            listPrice: number | string;
+            /** Format: int64 */
+            finalPrice: number | string;
+            status: string;
+        };
         SendTestEmailRequest: {
             recipientEmail: string;
         };
