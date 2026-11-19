@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { CircleCheck, CircleX, LoaderCircle, LogIn, Mail } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { AlertCircle, ArrowLeft, Check, LoaderCircle, Mail } from 'lucide-react'
 import { Button, Card, notify, TextField } from '@/components/common'
 import { CenterLayout } from '@/features/auth/components/CenterLayout'
 import { useResendVerificationMutation, useVerifyMutation } from '@/features/auth/auth.hook'
 import { getVerificationToken } from '@/features/auth/verification'
-import { useNavigate } from 'react-router-dom'
 
 type VerificationState = 'verifying' | 'success' | 'failed'
 
@@ -64,51 +64,107 @@ export function VerifyRegisterPage({ search }: { search: string }) {
 
   return (
     <CenterLayout>
-      <Card aria-labelledby="verify-register-title" className="mx-auto w-full max-w-[540px] rounded-3xl border-slate-200/70 p-5 text-center shadow-[0_8px_28px_rgba(30,27,75,0.06)] sm:p-9" padding="none" role="region">
+      <Card
+        aria-labelledby="verify-register-title"
+        className="mx-auto w-full max-w-[520px] rounded-3xl border-slate-200/70 p-6 text-center shadow-[0_10px_32px_rgba(30,27,75,0.06)] sm:p-10"
+        padding="none"
+        role="region"
+      >
         {state === 'verifying' && (
-          <div aria-busy="true" className="flex flex-col items-center py-7" role="status">
-            <LoaderCircle aria-hidden="true" className="h-12 w-12 animate-spin text-indigo-600 motion-reduce:animate-none" />
-            <h1 className="mt-5 text-[28px] font-bold leading-tight text-indigo-950" id="verify-register-title">Đang xác minh tài khoản</h1>
+          <div aria-busy="true" className="flex flex-col items-center py-6" role="status">
+            <div className="flex h-[68px] w-[68px] items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 text-indigo-600">
+              <LoaderCircle aria-hidden="true" className="size-8 animate-spin motion-reduce:animate-none" />
+            </div>
+            <h1 className="mt-5 text-2xl font-bold tracking-tight text-slate-900" id="verify-register-title">
+              Đang xác minh tài khoản
+            </h1>
             <p className="mt-2.5 text-sm text-slate-500">Vui lòng chờ trong giây lát.</p>
           </div>
         )}
 
         {state === 'success' && (
-          <div className="flex flex-col items-center py-7" role="status">
-            <CircleCheck aria-hidden="true" className="h-14 w-14 text-emerald-600" />
-            <h1 className="mt-5 text-[28px] font-bold leading-tight text-indigo-950" id="verify-register-title">Xác minh thành công</h1>
-            <p className="mt-2.5 max-w-sm text-sm text-slate-500">Tài khoản của bạn đã sẵn sàng. Hãy đăng nhập để bắt đầu làm việc.</p>
-            <Button className="mt-7 min-h-11" icon={<LogIn aria-hidden="true" className="h-4 w-4" />} onClick={() => navigate('/login?activated=1', { replace: true })} size="lg" type="button" variant="primary">
-              Đến trang đăng nhập
+          <div className="flex flex-col items-center py-4" role="status">
+            <div className="flex h-[68px] w-[68px] items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600">
+              <Check aria-hidden="true" className="size-8 stroke-[2.5]" />
+            </div>
+            <h1 className="mt-5 text-2xl font-bold tracking-tight text-slate-900" id="verify-register-title">
+              Xác minh thành công!
+            </h1>
+            <p className="mt-2.5 max-w-sm text-sm leading-6 text-slate-500">
+              Tài khoản của bạn đã sẵn sàng. Hãy đăng nhập để bắt đầu làm việc.
+            </p>
+            <Button
+              className="mt-7 min-h-12 text-[15px]"
+              fullWidth
+              onClick={() => navigate('/login?activated=1', { replace: true })}
+              size="lg"
+              type="button"
+              variant="primary"
+            >
+              Đăng nhập ngay
             </Button>
           </div>
         )}
 
         {state === 'failed' && (
-          <div className="py-3 sm:py-5">
-            <CircleX aria-hidden="true" className="mx-auto h-14 w-14 text-rose-600" />
-            <h1 className="mt-5 text-[28px] font-bold leading-tight text-indigo-950" id="verify-register-title">Không thể xác minh tài khoản</h1>
-            <p className="mt-2.5 text-sm text-slate-500">{invalidLinkMessage} Nhập email công vụ để nhận liên kết mới.</p>
+          <div className="py-2">
+            <div className="mx-auto flex h-[68px] w-[68px] items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-600">
+              <AlertCircle aria-hidden="true" className="size-8" />
+            </div>
+            <h1 className="mt-5 text-2xl font-bold tracking-tight text-slate-900" id="verify-register-title">
+              Liên kết xác minh không hợp lệ hoặc đã hết hạn
+            </h1>
+            <p className="mt-2.5 text-sm leading-6 text-slate-500">
+              Nhập email nội bộ đã đăng ký để nhận liên kết xác minh mới.
+            </p>
 
             <form className="mt-6 flex flex-col gap-4 text-left" onSubmit={(event) => void handleResend(event)}>
               <TextField
                 autoComplete="email"
-                label="Email công vụ"
+                label="Email nội bộ"
                 name="email"
                 onChange={(event) => {
                   setEmail(event.target.value)
                   setResendComplete(false)
                 }}
+                placeholder="nv.phong@nhasachmay.vn"
                 required
                 type="email"
                 value={email}
+                variant="outlined"
               />
-              <Button className="min-h-11" disabled={isResending} fullWidth icon={isResending ? <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin motion-reduce:animate-none" /> : <Mail aria-hidden="true" className="h-4 w-4" />} size="lg" type="submit" variant="primary">
+              <Button
+                className="min-h-12 text-[15px]"
+                disabled={isResending}
+                fullWidth
+                icon={
+                  isResending ? (
+                    <LoaderCircle aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" />
+                  ) : (
+                    <Mail aria-hidden="true" className="size-4" />
+                  )
+                }
+                size="lg"
+                type="submit"
+                variant="primary"
+              >
                 {isResending ? 'Đang gửi…' : 'Gửi lại email xác minh'}
               </Button>
             </form>
 
-            {resendComplete && <p className="mt-4 text-sm text-emerald-700" role="status">Nếu email này đang chờ xác minh, một liên kết mới đã được gửi.</p>}
+            {resendComplete && (
+              <p className="mt-4 text-xs text-emerald-700" role="status">
+                Nếu email này đang chờ xác minh, một liên kết mới đã được gửi.
+              </p>
+            )}
+
+            <Link
+              className="mt-4 inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
+              to="/login"
+            >
+              <ArrowLeft aria-hidden="true" className="size-4" />
+              Quay lại trang đăng nhập
+            </Link>
           </div>
         )}
       </Card>

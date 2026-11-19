@@ -14,6 +14,7 @@ import type {
   BrowserSessionResponse,
   ForgotPasswordRequest,
   LoginRequest,
+  RegisterRequest,
   ResendVerificationRequest,
   ResetPasswordRequest,
   VerifyRequest,
@@ -31,6 +32,7 @@ export class ApiError extends Error {
 
 const AUTH_ENDPOINTS = {
   login: '/auth/login',
+  register: '/auth/register',
   refresh: '/auth/refresh',
   verify: '/auth/verify',
   verificationResends: '/auth/verification-resends',
@@ -106,6 +108,10 @@ setSessionRecovery(async () => {
 setCsrfRecovery(async () => {
   await getSession()
 })
+
+export async function register(request: RegisterRequest): Promise<void> {
+  await requestData(() => publicClient.post<void>(AUTH_ENDPOINTS.register, request))
+}
 
 export async function verify(request: VerifyRequest): Promise<void> {
   await requestData(() => publicClient.post<void>(AUTH_ENDPOINTS.verify, request))

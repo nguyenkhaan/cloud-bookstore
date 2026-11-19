@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Button, Card, TextField } from '@/components/common'
 import { Banner } from '@/features/auth/components/Banner'
 import { PasswordField } from '@/features/auth/components/PasswordField'
@@ -63,44 +63,90 @@ export function LoginPage({ search }: { search: string }) {
 
   return (
     <SplitLayout>
-      <Card aria-labelledby="login-title" className="mx-auto w-full max-w-[500px] rounded-3xl border-slate-200/70 p-5 shadow-[0_8px_28px_rgba(30,27,75,0.06)] sm:p-9" padding="none" role="region">
-        <h1 className="mt-5 text-[36px] font-bold leading-tight text-center text-indigo-950" id="login-title">ĐĂNG NHẬP</h1>
+      <div className="mx-auto w-full max-w-[500px]">
+        <Card
+          aria-labelledby="login-title"
+          className="w-full rounded-3xl border-slate-200/70 p-6 shadow-[0_10px_32px_rgba(30,27,75,0.06)] sm:p-10"
+          padding="none"
+          role="region"
+        >
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-[28px]" id="login-title">
+            Đăng nhập hệ thống
+          </h1>
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            Sẵn sàng cho một ca làm việc thật tốt. Đăng nhập bằng tài khoản được cửa hàng cấp.
+          </p>
 
-        <form className="mt-6 flex flex-col gap-4" onSubmit={submit}>
-          {justActivated && !notice && <Banner tone="success">Tài khoản đã được kích hoạt. Hãy đăng nhập để bắt đầu.</Banner>}
-          <div className="flex flex-col gap-1.5">
-            <span className="text-sm font-semibold text-slate-700" id="login-email-label">Email nội bộ</span>
+          <form className="mt-6 flex flex-col gap-4" onSubmit={submit}>
+            {justActivated && !notice && (
+              <Banner tone="success">Tài khoản đã được kích hoạt. Hãy đăng nhập để bắt đầu.</Banner>
+            )}
+
             <TextField
-              aria-labelledby="login-email-label"
               autoComplete="username"
+              label="Email nội bộ"
               name="email"
               onChange={(event) => setEmail(event.target.value)}
+              placeholder="nv.phong@nhasachmay.vn"
               required
               type="email"
               value={email}
+              variant="outlined"
             />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <span className="text-sm font-semibold text-slate-700" id="login-password-label">Mật khẩu</span>
+
             <PasswordField
-              aria-labelledby="login-password-label"
               autoComplete="current-password"
+              label="Mật khẩu"
               name="password"
               onChange={(event) => setPassword(event.target.value)}
+              placeholder="Nhập mật khẩu"
               required
               value={password}
+              variant="outlined"
               warnCapsLock
             />
-          </div>
-          <div className="-mt-1 flex justify-end">
-            <Button className="min-h-11 px-1 text-[13px] text-indigo-600 hover:bg-transparent hover:text-indigo-700 hover:underline" onClick={() => navigate('/forgot-password')} size="sm" type="button" variant="ghost">Quên mật khẩu?</Button>
-          </div>
-          <Button className="min-h-11" fullWidth loading={isSubmitting} size="lg" type="submit" variant="primary">
-            {isSubmitting ? 'Đang đăng nhập…' : <>Đăng nhập</>}
-          </Button>
-          {notice && <Banner tone={notice.tone}>{notice.message}</Banner>}
-        </form>
-      </Card>
+
+            <div className="-mt-1 flex justify-end">
+              <Link
+                className="inline-flex min-h-11 items-center rounded-lg px-1 text-[13px] font-medium text-indigo-600 transition-colors hover:text-indigo-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
+                data-testid="auth-forgot-link"
+                to="/forgot-password"
+              >
+                Quên mật khẩu?
+              </Link>
+            </div>
+
+            <Button
+              className="min-h-12 text-[15px]"
+              data-testid="auth-login-submit"
+              fullWidth
+              loading={isSubmitting}
+              size="lg"
+              type="submit"
+              variant="primary"
+            >
+              {isSubmitting ? 'Đang đăng nhập…' : 'Đăng nhập'}
+            </Button>
+
+            {notice && <Banner tone={notice.tone}>{notice.message}</Banner>}
+          </form>
+
+          <p className="mt-5 text-center text-xs text-slate-500">
+            Chưa có tài khoản?{' '}
+            <Link
+              className="inline-flex min-h-11 items-center font-semibold text-indigo-600 hover:text-indigo-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
+              data-testid="auth-register-link"
+              to="/register"
+            >
+              Đăng ký nhân viên
+            </Link>
+          </p>
+        </Card>
+
+        <p className="mt-6 text-center text-xs text-slate-500">
+          Cần hỗ trợ? Liên hệ Quản trị viên cửa hàng.
+        </p>
+      </div>
     </SplitLayout>
   )
 }
