@@ -263,6 +263,10 @@ builder.Services.AddScoped<CustomerService>();
 builder.Services.AddScoped<CustomerHistoryService>();
 builder.Services.AddScoped<MembershipService>();
 builder.Services.AddScoped<InventoryAdjustmentService>();
+builder.Services.AddScoped<backend.src.Services.ApprovalServices.BuybackApprovalService>();
+builder.Services.AddScoped<backend.src.Services.ApprovalServices.DamagePenaltyApprovalService>();
+builder.Services.AddScoped<backend.src.Services.ApprovalServices.DisposalReversalApprovalService>();
+builder.Services.AddScoped<backend.src.Services.ApprovalServices.ApprovalsOverviewService>();
 //Dependency Injection -> builder.Services.AddScoped<AuthService>();
 var app = builder.Build();
 
