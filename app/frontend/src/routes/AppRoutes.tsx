@@ -18,6 +18,8 @@ import PosShiftPage from '@/features/pos/pages/PosShiftPage'
 import HumanResourcesPage from '@/features/hr/pages/HumanResourcesPage'
 import ShiftRecordsPage from '@/features/hr/pages/ShiftRecordsPage'
 import AttendancePage from '@/features/hr/pages/AttendancePage'
+import AdminAttendancePage from '@/features/hr/pages/AdminAttendancePage'
+import { adminHrPaths } from '@/features/hr/admin-hr.route'
 import ApprovalsPage from '@/features/approvals/pages/ApprovalsPage'
 import AuditPage from '@/features/audit/pages/AuditPage'
 import ReportsPage from '@/features/reports/pages/ReportsPage'
@@ -72,8 +74,11 @@ export default function AppRoutes() {
       <Route path="/customers" element={<RequireSession><CustomerListPage /></RequireSession>} />
       <Route path="/customers/:id" element={<RequireSession><CustomerDetailPage /></RequireSession>} />
       <Route path="/hr" element={<RequireSession><HumanResourcesPage /></RequireSession>} />
-      <Route path="/hr/shifts" element={<RequireSession><ShiftRecordsPage /></RequireSession>} />
+      <Route path="/hr/shifts" element={<RequireSession><Navigate replace to={adminHrPaths.shifts} /></RequireSession>} />
       <Route path="/hr/attendance" element={<RequireSession><AttendancePage /></RequireSession>} />
+      <Route path="/admin/hr" element={<RequireSession><Navigate replace to={adminHrPaths.attendance} /></RequireSession>} />
+      <Route path="/admin/hr/attendance" element={<RequireSession><AdminAttendancePage /></RequireSession>} />
+      <Route path="/admin/hr/shifts" element={<RequireSession><ShiftRecordsPage /></RequireSession>} />
       <Route path="/approvals" element={<RequireSession><ApprovalsPage /></RequireSession>} />
       <Route path="/audit" element={<RequireSession><AuditPage /></RequireSession>} />
       <Route path="/reports" element={<RequireSession><ReportsPage /></RequireSession>} />

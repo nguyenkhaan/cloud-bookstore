@@ -6,6 +6,7 @@ export const workspacePaths = {
   inventory: catalogPaths.seriesList,
   customers: '/customers',
   hr: '/hr',
+  'admin-hr': '/admin/hr',
   approvals: '/approvals',
   audit: '/audit',
   reports: '/reports',

@@ -32,3 +32,11 @@ test('phase 11 screens are guarded and feature roots redirect to their first scr
   assert.doesNotMatch(posPage, /WorkspacePlaceholderPage/)
   assert.doesNotMatch(hrPage, /WorkspacePlaceholderPage/)
 })
+
+test('Admin HR has separate attendance/payroll and shift-assignment routes', () => {
+  for (const path of ['/admin/hr', '/admin/hr/attendance', '/admin/hr/shifts']) {
+    assert.equal((routes.match(new RegExp(`path="${path}"`, 'g')) ?? []).length, 1)
+    assert.match(routes, new RegExp(`path="${path}"[\\s\\S]*?<RequireSession>`))
+  }
+  assert.match(routes, /path="\/hr\/shifts"[\s\S]*?adminHrPaths\.shifts/)
+})

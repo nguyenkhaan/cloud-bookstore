@@ -70,7 +70,13 @@ test('phase 11 routes and display types stay in their owning features', () => {
     ['features', 'pos', 'pos.route.ts'],
     ['features', 'pos', 'pos-shift.type.ts'],
     ['features', 'hr', 'hr.route.ts'],
+    ['features', 'hr', 'admin-hr.route.ts'],
     ['features', 'hr', 'hr-shift.type.ts'],
+    ['features', 'hr', 'attendance.data.ts'],
+    ['features', 'hr', 'components', 'AttendanceCard.tsx'],
+    ['features', 'hr', 'components', 'AttendanceDateFilter.tsx'],
+    ['features', 'hr', 'components', 'AdminHrTabs.tsx'],
+    ['features', 'hr', 'pages', 'AdminAttendancePage.tsx'],
   ]
 
   for (const parts of expectedFiles) {

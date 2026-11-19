@@ -9,7 +9,7 @@ type TodayAttendanceCardProps = {
 
 export function TodayAttendanceCard({ row, onCheckIn, onCheckOut }: TodayAttendanceCardProps) {
   return (
-    <Card padding="lg" title={`Điểm danh hôm nay · ${row.employeeName}`} subtitle="Thời gian hiển thị là dữ liệu minh họa cho UI">
+    <Card padding="lg" title={`Điểm danh hôm nay · ${row.employeeName}`}>
       <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
         <div>
           <p className="text-4xl font-bold tracking-tight text-indigo-600">10:24:36</p>
@@ -17,7 +17,7 @@ export function TodayAttendanceCard({ row, onCheckIn, onCheckOut }: TodayAttenda
         </div>
         <div className="rounded-xl bg-emerald-50 p-4 lg:min-w-55">
           <Badge dot variant="success">{row.checkIn ? `Đã vào ca lúc ${row.checkIn}` : 'Chưa vào ca'}</Badge>
-          <p className="mt-2 text-xs text-slate-700">Ca làm được hiển thị theo từng lần làm, không tự quyết định policy ca qua ngày.</p>
+      
         </div>
       </div>
       <div className="mt-5 flex flex-col gap-2 sm:flex-row">

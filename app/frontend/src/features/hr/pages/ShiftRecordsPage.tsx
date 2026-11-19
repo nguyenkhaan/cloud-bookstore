@@ -5,6 +5,7 @@ import { Badge, Button } from '@/components/common'
 import { MainLayout } from '@/components/layout'
 import { workspacePathFor } from '@/features/workspace/workspace.route'
 import { ShiftDateToolbar, type ShiftStatusFilter } from '../components/ShiftDateToolbar'
+import { AdminHrTabs } from '../components/AdminHrTabs'
 import { ShiftRecordDrawer } from '../components/ShiftRecordDrawer'
 import { ShiftRecordsTable } from '../components/ShiftRecordsTable'
 import { ShiftSummaryCards } from '../components/ShiftSummaryCards'
@@ -20,7 +21,7 @@ const initialRecords: ShiftRecordDisplay[] = [
 export default function ShiftRecordsPage() {
   const navigate = useNavigate()
   const auth = useContext(AuthContext)
-  const currentUser = auth?.session?.user ?? { name: 'Khách', role: 'Admin view' }
+  const currentUser = auth?.session?.user ?? { name: 'Khách', role: 'Admin view', roleCode: undefined }
   const [records, setRecords] = useState(initialRecords)
   const [date, setDate] = useState('2026-10-18')
   const [employee, setEmployee] = useState('all')
@@ -28,7 +29,7 @@ export default function ShiftRecordsPage() {
   const [status, setStatus] = useState<ShiftStatusFilter>('all')
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [selectedRecord, setSelectedRecord] = useState<ShiftRecordDisplay>()
-  const isAdminView = currentUser.role.toLowerCase().includes('admin')
+  const isAdminView = currentUser.roleCode === 'ADMIN'
   const adminActionState = 'admin-only'
   const selectedDateLabel = date === '2026-10-18' ? '18/10/2026' : date.split('-').reverse().join('/')
 
@@ -46,8 +47,8 @@ export default function ShiftRecordsPage() {
   return (
     <MainLayout
       actionButton={isAdminView && <Button onClick={() => openDrawer()} size="sm">+ Thêm bản ghi ca</Button>}
-      breadcrumbs={[{ label: 'Không gian làm việc' }, { label: 'Nhân sự & tiền lương', to: '/hr' }]}
-      currentPath="hr"
+      breadcrumbs={[{ label: 'Không gian làm việc' }, { label: 'Nhân sự' }, { label: 'Phân công ca' }]}
+      currentPath="admin-hr"
       onNavigate={(item) => { const path = workspacePathFor(item); if (path) navigate(path) }}
       onSignOut={auth?.signOut}
       pageTitle="Phân công ca"
@@ -55,6 +56,7 @@ export default function ShiftRecordsPage() {
       user={currentUser}
     >
       <div className="space-y-4">
+        <AdminHrTabs activeTab="shifts" />
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-slate-500">Tra cứu và phân công bản ghi ca theo ngày · dữ liệu minh họa</p>
           <Badge dot variant="info">Admin-only action</Badge><span className="sr-only">{adminActionState}</span>
