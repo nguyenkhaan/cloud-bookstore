@@ -14,12 +14,16 @@ import CustomerListPage from '@/features/customers/pages/CustomerListPage'
 import DashboardPage from '@/features/dashboard/pages/DashboardPage'
 import BookSeriesPage from '@/features/bookseries/pages/BookSeriesPage'
 import PosPage from '@/features/pos/pages/PosPage'
+import PosShiftPage from '@/features/pos/pages/PosShiftPage'
 import HumanResourcesPage from '@/features/hr/pages/HumanResourcesPage'
+import ShiftRecordsPage from '@/features/hr/pages/ShiftRecordsPage'
+import AttendancePage from '@/features/hr/pages/AttendancePage'
 import ApprovalsPage from '@/features/approvals/pages/ApprovalsPage'
 import AuditPage from '@/features/audit/pages/AuditPage'
 import ReportsPage from '@/features/reports/pages/ReportsPage'
 import SettingsPage from '@/features/settings/pages/SettingsPage'
 import { useAuth } from '@/features/auth/auth.hook'
+import NotFound from '@/features/notfound/page';
 
 function LoginRoute() {
   const { search } = useLocation()
@@ -30,7 +34,13 @@ function VerifyRegisterRoute() {
   const { search } = useLocation()
   return <VerifyRegisterPage search={search} />
 }
-
+function GuestOnly({children} : {children : ReactNode}) {
+  const {session , isInitializing} = useAuth() 
+  if (isInitializing) return null 
+  if (session) 
+    return <Navigate replace to={'/dashboard'} /> 
+  return children
+}
 function RequireSession({ children }: { children: ReactNode }) {
   const { pathname, search } = useLocation()
   const { session, isInitializing } = useAuth()
@@ -54,13 +64,16 @@ export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Navigate replace to="/login" />} />
-      <Route path="/login" element={<LoginRoute />} />
-      <Route path="/verify-register" element={<VerifyRegisterRoute />} />
+      <Route path="/login" element={<GuestOnly><LoginRoute /></GuestOnly>} /> 
+      <Route path="/verify-register" element={<GuestOnly><VerifyRegisterRoute /></GuestOnly>} />
       <Route path="/dashboard" element={<RequireSession><DashboardRoute /></RequireSession>} />
       <Route path="/pos" element={<RequireSession><PosPage /></RequireSession>} />
+      <Route path="/pos/shift" element={<RequireSession><PosShiftPage /></RequireSession>} />
       <Route path="/customers" element={<RequireSession><CustomerListPage /></RequireSession>} />
       <Route path="/customers/:id" element={<RequireSession><CustomerDetailPage /></RequireSession>} />
       <Route path="/hr" element={<RequireSession><HumanResourcesPage /></RequireSession>} />
+      <Route path="/hr/shifts" element={<RequireSession><ShiftRecordsPage /></RequireSession>} />
+      <Route path="/hr/attendance" element={<RequireSession><AttendancePage /></RequireSession>} />
       <Route path="/approvals" element={<RequireSession><ApprovalsPage /></RequireSession>} />
       <Route path="/audit" element={<RequireSession><AuditPage /></RequireSession>} />
       <Route path="/reports" element={<RequireSession><ReportsPage /></RequireSession>} />
@@ -72,7 +85,7 @@ export default function AppRoutes() {
       <Route path="/catalog/editions/:editionId" element={<RequireSession><EditionDetailPage /></RequireSession>} />
       <Route path="/catalog/copies/:copyId" element={<RequireSession><CopyDetailPage /></RequireSession>} />
       <Route path="/catalog/inventory-check" element={<RequireSession><InventoryCheckPage /></RequireSession>} />
-      <Route path="*" element={<Navigate replace to="/login" />} />
+      <Route path="*" element={<NotFound />} />  
     </Routes>
   )
 }

@@ -1,5 +1,6 @@
-import { WorkspacePlaceholderPage } from '@/features/workspace/components/WorkspacePlaceholderPage'
+import { Navigate } from 'react-router-dom'
+import { hrPaths } from '../hr.route'
 
 export default function HumanResourcesPage() {
-  return <WorkspacePlaceholderPage currentPath="hr" title="Nhân sự & tiền lương" />
+  return <Navigate replace to={hrPaths.attendance} />
 }

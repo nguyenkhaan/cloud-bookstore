@@ -65,6 +65,19 @@ test('application brand configuration lives in shared lib', () => {
   assert.ok(!existsSync(src('tmp', 'config', 'brand.ts')))
 })
 
+test('phase 11 routes and display types stay in their owning features', () => {
+  const expectedFiles = [
+    ['features', 'pos', 'pos.route.ts'],
+    ['features', 'pos', 'pos-shift.type.ts'],
+    ['features', 'hr', 'hr.route.ts'],
+    ['features', 'hr', 'hr-shift.type.ts'],
+  ]
+
+  for (const parts of expectedFiles) {
+    assert.ok(existsSync(src(...parts)), `missing src/${parts.join('/')}`)
+  }
+})
+
 test('React Query is configured at the application root', () => {
   assert.ok(!existsSync(src('lib', 'query-client.ts')))
   assert.ok(!existsSync(src('context', 'QueryProvider.tsx')))

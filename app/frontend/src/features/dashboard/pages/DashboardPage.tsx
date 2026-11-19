@@ -21,6 +21,7 @@ export function DashboardPage({ onSignOut }: DashboardPageProps) {
         if (path) navigate(path);
       }}
       pageTitle={currentTab === 'overview' ? 'Tổng quan kinh doanh' : undefined}
+      breadcrumbs={[{ label: 'Không gian làm việc' }, { label: 'Tổng quan' }]}
       user={currentUser}
     >
       {currentTab === 'overview' ? (

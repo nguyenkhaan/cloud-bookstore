@@ -76,7 +76,7 @@ export default function CustomerDetailPage() {
         <MainLayout
             actionButton={backToListButton}
             breadcrumbs={[
-              { label: 'Không gian làm việc', to: '/dashboard' },
+              { label: 'Không gian làm việc' },
               { label: 'Khách hàng', to: customerPaths.customerList },
               { label: 'Hồ sơ 360°' },
             ]}
@@ -98,7 +98,7 @@ export default function CustomerDetailPage() {
         <MainLayout
             actionButton={backToListButton}
             breadcrumbs={[
-              { label: 'Không gian làm việc', to: '/dashboard' },
+              { label: 'Không gian làm việc' },
               { label: 'Khách hàng', to: customerPaths.customerList },
               { label: 'Không tìm thấy' },
             ]}
@@ -193,7 +193,7 @@ export default function CustomerDetailPage() {
       <MainLayout
           actionButton={backToListButton}
           breadcrumbs={[
-            { label: 'Không gian làm việc', to: '/dashboard' },
+            { label: 'Không gian làm việc' },
             { label: 'Khách hàng', to: customerPaths.customerList },
             { label: customer.fullName },
           ]}

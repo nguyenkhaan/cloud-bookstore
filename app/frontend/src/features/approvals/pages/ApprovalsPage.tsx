@@ -69,7 +69,7 @@ export default function ApprovalsPage() {
         </div>
       }
       breadcrumbs={[
-        { label: 'Không gian làm việc', to: '/dashboard' },
+        { label: 'Không gian làm việc' },
         { label: 'Phê duyệt', to: '/approvals' },
         { label: 'Trung tâm Phê duyệt ngoại lệ' },
       ]}

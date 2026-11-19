@@ -1,5 +1,6 @@
-import { WorkspacePlaceholderPage } from '@/features/workspace/components/WorkspacePlaceholderPage'
+import { Navigate } from 'react-router-dom'
+import { posPaths } from '../pos.route'
 
 export default function PosPage() {
-  return <WorkspacePlaceholderPage currentPath="pos" title="Quầy giao dịch" />
+  return <Navigate replace to={posPaths.shift} />
 }
