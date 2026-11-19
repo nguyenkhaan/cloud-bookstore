@@ -133,7 +133,7 @@ export function useCopyHistoryQuery(copyId: string) {
 // BREADCRUMBS
 // ----------------------------------------------------------------------
 
-const CATALOG_ROOT_LABEL = 'Kho & đầu sách'
+const CATALOG_ROOT_LABEL = 'Quản lý bộ sách & tiến độ'
 
 function seriesLabel(name?: string | null) {
   return name ? `Bộ sách ${name}` : 'Bộ sách'
@@ -158,7 +158,7 @@ export function useCatalogBreadcrumbs(): BreadcrumbItem[] {
   const titleMatch = useMatch('/catalog/titles/:titleId')
   const editionMatch = useMatch('/catalog/editions/:editionId')
   const copyMatch = useMatch('/catalog/copies/:copyId')
-
+  // const seriesMatch = useMatch("/catalog/series/:seriesId")
   const listSeriesId = isTitleList ? searchParams.get('seriesId') ?? '' : ''
   const seriesDetailQuery = useSeriesDetailQuery(listSeriesId)
 
@@ -170,7 +170,6 @@ export function useCatalogBreadcrumbs(): BreadcrumbItem[] {
   const title = titleQuery.data
 
   const root: BreadcrumbItem = { label: CATALOG_ROOT_LABEL, to: catalogPaths.seriesList }
-
   if (isInventoryCheck) {
     return [
       root,
@@ -187,7 +186,7 @@ export function useCatalogBreadcrumbs(): BreadcrumbItem[] {
     ]
   }
 
-  const crumbs: BreadcrumbItem[] = [root]
+  const crumbs: BreadcrumbItem[] = [{ label: 'Không gian làm việc' }, root]
   if (!titleMatch && !editionMatch && !copyMatch) return crumbs
 
   // Wait for the title before choosing between a series parent and the plain title list.

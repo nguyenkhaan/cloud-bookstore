@@ -93,7 +93,7 @@ export default function ApprovalsPage() {
         ) : undefined
       }
       breadcrumbs={[
-        { label: 'Không gian làm việc', to: '/dashboard' },
+        { label: 'Không gian làm việc' },
         { label: 'Phê duyệt', to: '/approvals' },
         { label: 'Trung tâm Phê duyệt ngoại lệ (SCR-APP-01)' },
       ]}

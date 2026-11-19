@@ -137,7 +137,7 @@ export default function CustomerListPage() {
       currentPath="customers"
       pageTitle="Danh sách Khách hàng & Hạng thành viên"
       breadcrumbs={[
-        { label: 'Không gian làm việc', to: '/dashboard' },
+        { label: 'Không gian làm việc' },
         { label: 'Khách hàng', to: '/customers' },
         { label: 'Danh sách Khách hàng & Hạng thành viên' },
       ]}
