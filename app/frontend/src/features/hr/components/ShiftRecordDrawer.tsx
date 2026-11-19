@@ -46,7 +46,7 @@ export function ShiftRecordDrawer({ open, record, onClose, onSave }: ShiftRecord
     <div aria-modal="true" className="fixed inset-0 z-50 bg-slate-900/35" role="dialog">
       <div className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col border-l border-slate-200 bg-white shadow-xl">
         <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-6">
-          <div><p className="text-[11px] font-bold uppercase tracking-wide text-indigo-600">Admin view</p><h2 className="mt-1 text-lg font-bold text-slate-900">Thêm bản ghi ca</h2><p className="mt-1 text-xs leading-5 text-slate-500">Chỉ ghi nhận một nhân viên cho một lần làm cụ thể.</p></div>
+          <div><h2 className="mt-1 text-lg font-bold text-slate-900">Thêm bản ghi ca</h2><p className="mt-1 text-xs leading-5 text-slate-500">Chỉ ghi nhận một nhân viên cho một lần làm cụ thể.</p></div>
           <button aria-label="Đóng drawer bản ghi ca" className="flex h-11 w-11 items-center justify-center rounded-lg text-xl text-slate-500 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600" onClick={onClose} ref={closeButtonRef} type="button">×</button>
         </div>
         <div className="flex-1 space-y-4 overflow-y-auto p-6">

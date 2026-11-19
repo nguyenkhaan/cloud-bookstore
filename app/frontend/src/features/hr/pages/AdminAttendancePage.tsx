@@ -50,7 +50,6 @@ export default function AdminAttendancePage() {
       <div className="space-y-5">
         <AdminHrTabs activeTab="attendance" />
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs leading-5 text-slate-500">Tra cứu toàn bộ bản ghi chấm công, giờ công và lương theo từng ca.</p>
           <span className="text-[11px] font-semibold text-indigo-600">Admin view</span>
         </div>
         <AttendanceSummaryCards absent={filteredRows.filter((row) => row.state === 'absent').length} late={filteredRows.filter((row) => row.state === 'late').length} missing={filteredRows.filter((row) => row.state === 'missing-attendance').length} present={filteredRows.filter((row) => row.state === 'present').length} />

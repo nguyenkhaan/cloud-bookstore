@@ -57,10 +57,6 @@ export default function ShiftRecordsPage() {
     >
       <div className="space-y-4">
         <AdminHrTabs activeTab="shifts" />
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-slate-500">Tra cứu và phân công bản ghi ca theo ngày · dữ liệu minh họa</p>
-          <Badge dot variant="info">Admin-only action</Badge><span className="sr-only">{adminActionState}</span>
-        </div>
         <ShiftDateToolbar date={date} employee={employee} onDateChange={setDate} onEmployeeChange={setEmployee} onShiftOrderChange={setShiftOrder} onStatusChange={setStatus} shiftOrder={shiftOrder} status={status} />
         <ShiftSummaryCards assignedEmployees={assignedEmployees} attendanceMissing={filteredRecords.filter((record) => record.state === 'attendance-missing').length} totalRecords={filteredRecords.length} unassignedRecords={filteredRecords.filter((record) => record.state === 'unassigned').length} />
         <ShiftRecordsTable isAdminView={isAdminView} onView={openDrawer} records={filteredRecords} />
