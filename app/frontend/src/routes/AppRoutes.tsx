@@ -2,7 +2,12 @@ import type { ReactNode } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
 import LoginPage from '@/features/auth/pages/LoginPage'
+import RegisterPage from '@/features/auth/pages/RegisterPage'
 import VerifyRegisterPage from '@/features/auth/pages/VerifyRegisterPage'
+import ForgotPasswordPage from '@/features/auth/pages/ForgotPasswordPage'
+import ResetPasswordPage from '@/features/auth/pages/ResetPasswordPage'
+import FirstChangePasswordPage from '@/features/auth/pages/FirstChangePasswordPage'
+import ProfileSecurityPage from '@/features/auth/pages/ProfileSecurityPage'
 import CopyDetailPage from '@/features/catalog/pages/CopyDetailPage'
 import EditionDetailPage from '@/features/catalog/pages/EditionDetailPage'
 import InventoryCheckPage from '@/features/catalog/pages/InventoryCheckPage'
@@ -34,6 +39,11 @@ function VerifyRegisterRoute() {
   const { search } = useLocation()
   return <VerifyRegisterPage search={search} />
 }
+
+function ResetPasswordRoute() {
+  const { search } = useLocation()
+  return <ResetPasswordPage search={search} />
+}
 function GuestOnly({children} : {children : ReactNode}) {
   const {session , isInitializing} = useAuth() 
   if (isInitializing) return null 
@@ -64,8 +74,14 @@ export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Navigate replace to="/login" />} />
-      <Route path="/login" element={<GuestOnly><LoginRoute /></GuestOnly>} /> 
+      <Route path="/login" element={<GuestOnly><LoginRoute /></GuestOnly>} />
+      <Route path="/register" element={<GuestOnly><RegisterPage /></GuestOnly>} />
       <Route path="/verify-register" element={<GuestOnly><VerifyRegisterRoute /></GuestOnly>} />
+      <Route path="/forgot-password" element={<GuestOnly><ForgotPasswordPage /></GuestOnly>} />
+      <Route path="/reset-password" element={<GuestOnly><ResetPasswordRoute /></GuestOnly>} />
+      <Route path="/change-password" element={<RequireSession><FirstChangePasswordPage /></RequireSession>} />
+      <Route path="/first-change-password" element={<RequireSession><FirstChangePasswordPage /></RequireSession>} />
+      <Route path="/profile" element={<RequireSession><ProfileSecurityPage /></RequireSession>} />
       <Route path="/dashboard" element={<RequireSession><DashboardRoute /></RequireSession>} />
       <Route path="/pos" element={<RequireSession><PosPage /></RequireSession>} />
       <Route path="/pos/shift" element={<RequireSession><PosShiftPage /></RequireSession>} />
