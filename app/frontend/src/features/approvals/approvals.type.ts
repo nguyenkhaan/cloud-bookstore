@@ -1,9 +1,6 @@
-export type InventoryAdjustmentStatus =
-  | 'PENDING_APPROVAL'
-  | 'APPROVED'
-  | 'REJECTED'
-  | 'APPLIED'
-  | 'CANCELLED'
+import type { components } from '@/contract/api-contract'
+
+export type ApprovalStatus = components['schemas']['ApprovalStatus']
 
 export type BookCopyStatus =
   | 'PENDING_RECEIPT'
@@ -16,6 +13,13 @@ export type BookCopyStatus =
   | 'DISPOSED'
   | 'DISCONTINUED'
 
+export type InventoryAdjustmentStatus =
+  | 'PENDING_APPROVAL'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'APPLIED'
+  | 'CANCELLED'
+
 export type InventoryVarianceType = 'MISSING' | 'UNEXPECTED_STATUS' | 'DAMAGED' | 'NONE'
 
 export type AuditLogEntry = {
@@ -26,6 +30,21 @@ export type AuditLogEntry = {
   timestamp: string
   details?: string | null
 }
+
+export type ApprovalsOverviewStats = components['schemas']['ApprovalsOverviewStatsResponse']
+
+export type BuybackApprovalItem = components['schemas']['BuybackApprovalItemResponse']
+export type BuybackApprovalLine = components['schemas']['BuybackApprovalLineDto']
+export type BuybackApprovalDetail = components['schemas']['BuybackApprovalDetailResponse']
+export type CreateBuybackApprovalRequest = components['schemas']['CreateBuybackApprovalRequestDto']
+
+export type DamagePenaltyApprovalItem = components['schemas']['DamagePenaltyApprovalItemResponse']
+export type DamagePenaltyApprovalDetail = components['schemas']['DamagePenaltyApprovalDetailResponse']
+export type CreateDamagePenaltyApprovalRequest = components['schemas']['CreateDamagePenaltyApprovalRequestDto']
+
+export type DisposalReversalApprovalItem = components['schemas']['DisposalReversalApprovalItemResponse']
+export type DisposalReversalApprovalDetail = components['schemas']['DisposalReversalApprovalDetailResponse']
+export type CreateDisposalReversalApprovalRequest = components['schemas']['CreateDisposalReversalApprovalRequestDto']
 
 export type InventoryAdjustmentItem = {
   id: string
@@ -75,6 +94,13 @@ export type PagedResult<T> = {
   totalPages: number
 }
 
+export type ApprovalQuery = {
+  page?: number
+  pageSize?: number
+  status?: ApprovalStatus | ''
+  search?: string
+}
+
 export type InventoryAdjustmentQuery = {
   page?: number
   pageSize?: number
@@ -100,8 +126,15 @@ export type CreateInventoryAdjustmentRequest = {
   checkNote?: string
 }
 
+export type UpdateApprovalStatusRequest = {
+  status: ApprovalStatus
+  reason?: string
+}
+
 export type UpdateInventoryAdjustmentStatusRequest = {
   status: InventoryAdjustmentStatus
+  rejectionReason?: string
+  note?: string
   reason?: string
 }
 
@@ -113,6 +146,8 @@ export type SelectableBookCopy = {
   id: string
   copyBarcode: string
   titleName: string
+  editionStatement?: string | null
   status: BookCopyStatus
   shelfCode?: string | null
+  sellingPrice?: number | null
 }

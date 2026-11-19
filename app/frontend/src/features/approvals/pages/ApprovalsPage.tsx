@@ -5,7 +5,11 @@ import { Button, SelectBox, StatCard } from '@/components/common'
 import { notify } from '@/components/common/Toast'
 import { useAuth } from '@/features/auth/auth.hook'
 import { workspacePathFor } from '@/features/workspace/workspace.route'
-import { useApprovalsQuery, useApprovalsStatsQuery } from '../approvals.hook'
+import {
+  useApprovalsOverviewStatsQuery,
+  useApprovalsQuery,
+  useApprovalsStatsQuery,
+} from '../approvals.hook'
 import {
   approvalStatusMeta,
   copyStatusLabel,
@@ -14,7 +18,13 @@ import {
 } from '../approvals.presentation'
 import type { InventoryAdjustmentQuery, InventoryAdjustmentStatus } from '../approvals.type'
 import { AdjustmentDetailDrawer } from '../components/AdjustmentDetailDrawer'
+import { BuybackApprovalsTable } from '../components/BuybackApprovalsTable'
+import { BuybackDetailDrawer } from '../components/BuybackDetailDrawer'
 import { CreateAdjustmentModal } from '../components/CreateAdjustmentModal'
+import { DamagePenaltyApprovalsTable } from '../components/DamagePenaltyApprovalsTable'
+import { DamagePenaltyDetailDrawer } from '../components/DamagePenaltyDetailDrawer'
+import { DisposalReversalApprovalsTable } from '../components/DisposalReversalApprovalsTable'
+import { DisposalReversalDetailDrawer } from '../components/DisposalReversalDetailDrawer'
 
 type TabKey = 'old-book-price' | 'damage-penalty' | 'inventory-adjustment' | 'disposal-reversal'
 
@@ -28,7 +38,12 @@ export default function ApprovalsPage() {
   const [page, setPage] = useState(1)
   const pageSize = 10
 
+  // Selected IDs for drawers
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null)
+  const [selectedBuybackId, setSelectedBuybackId] = useState<string | null>(null)
+  const [selectedDamageId, setSelectedDamageId] = useState<string | null>(null)
+  const [selectedDisposalId, setSelectedDisposalId] = useState<string | null>(null)
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   const queryParams: InventoryAdjustmentQuery = {
@@ -40,6 +55,7 @@ export default function ApprovalsPage() {
 
   const { data: pageResult, isLoading } = useApprovalsQuery(queryParams)
   const { data: stats } = useApprovalsStatsQuery()
+  const { data: overviewStats } = useApprovalsOverviewStatsQuery()
 
   const currentUser = session?.user ?? { name: 'Nhân viên', role: 'Chưa xác thực' }
   const currentUserId = session?.user?.name
@@ -56,66 +72,76 @@ export default function ApprovalsPage() {
     }
   }
 
+  // Aggregate KPI stats from overviewStats or fallback to stats
+  const pendingCount = overviewStats?.pendingCount ?? stats?.pendingApproval ?? 0
+  const totalCount = overviewStats?.totalCount ?? stats?.total ?? 0
+  const approvedCount = overviewStats?.approvedCount ?? ((stats?.approved ?? 0) + (stats?.applied ?? 0))
+  const rejectedCount = overviewStats?.rejectedCount ?? ((stats?.rejected ?? 0) + (stats?.cancelled ?? 0))
+
   return (
     <MainLayout
       actionButton={
-        <div className="flex gap-2">
-          <Button
-            onClick={() => setIsCreateModalOpen(true)}
-            variant="primary"
-          >
-            + Lập đề nghị điều chỉnh kho
-          </Button>
-        </div>
+        activeTab === 'inventory-adjustment' ? (
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setIsCreateModalOpen(true)}
+              variant="primary"
+            >
+              + Lập đề nghị điều chỉnh kho
+            </Button>
+          </div>
+        ) : undefined
       }
       breadcrumbs={[
         { label: 'Không gian làm việc', to: '/dashboard' },
         { label: 'Phê duyệt', to: '/approvals' },
-        { label: 'Trung tâm Phê duyệt ngoại lệ' },
+        { label: 'Trung tâm Phê duyệt ngoại lệ (SCR-APP-01)' },
       ]}
       currentPath="approvals"
       onNavigate={navigateFromSidebar}
       onSignOut={signOut}
-      pageTitle="Trung tâm Phê duyệt ngoại lệ"
+      pageTitle="Trung tâm Phê duyệt ngoại lệ (SCR-APP-01)"
       user={currentUser}
     >
       <div className="space-y-6">
         <div>
           <p className="text-xs text-slate-500">
-            4 tab nghiệp vụ chuyên biệt: Duyệt giá mua cũ, phạt hư hỏng, điều chỉnh kho và xuất hủy / đảo bán
+            Không gian phê duyệt tập trung dành riêng cho Quản lý &amp; Admin: Duyệt giá mua cũ, phạt hư hỏng, điều chỉnh kho và xuất hủy / đảo bán
           </p>
         </div>
 
+        {/* 4 StatCards KPI Overview */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard
-            description="Tất cả nghiệp vụ"
+            description="Tất cả 4 phân hệ ngoại lệ"
             label="Chờ xử lý"
-            value={stats?.pendingApproval ?? 0}
-            valueColor={stats?.pendingApproval ? 'amber' : 'default'}
+            value={pendingCount}
+            valueColor={pendingCount > 0 ? 'amber' : 'default'}
           />
           <StatCard
             description="Tất cả trạng thái"
             label="Tổng yêu cầu"
-            value={stats?.total ?? 0}
+            value={totalCount}
             valueColor="indigo"
           />
           <StatCard
-            description="Đã duyệt hoặc đã áp dụng vào kho"
+            description="Đã duyệt hoặc đã áp dụng"
             label="Đã duyệt & Áp dụng"
-            value={(stats?.approved ?? 0) + (stats?.applied ?? 0)}
+            value={approvedCount}
             valueColor="emerald"
           />
           <StatCard
-            description="Từ chối hoặc người tạo hủy"
+            description="Từ chối hoặc đã hủy"
             label="Đã đóng / Từ chối"
-            value={(stats?.rejected ?? 0) + (stats?.cancelled ?? 0)}
+            value={rejectedCount}
             valueColor="default"
           />
         </div>
 
+        {/* 4 Specialized Approval Tabs */}
         <nav aria-label="Tabs nghiệp vụ phê duyệt" className="flex flex-wrap gap-2 border-b border-slate-200 pb-2">
           <button
-            className={`rounded-xl px-4 py-2.5 text-xs font-semibold transition ${
+            className={`rounded-xl px-4 py-2.5 text-xs font-semibold transition inline-flex items-center gap-2 ${
               activeTab === 'old-book-price'
                 ? 'bg-indigo-600 text-white shadow-xs'
                 : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200'
@@ -123,10 +149,18 @@ export default function ApprovalsPage() {
             onClick={() => setActiveTab('old-book-price')}
             type="button"
           >
-            Duyệt Giá Thu mua Sách cũ Vượt Hạn mức
+            <span>Duyệt Giá Thu mua Sách cũ Vượt Hạn mức</span>
+            {(overviewStats?.buybackPending ?? 0) > 0 && (
+              <span className={`rounded-full px-2 py-0.2 text-[10px] font-bold ${
+                activeTab === 'old-book-price' ? 'bg-white text-indigo-700' : 'bg-amber-100 text-amber-800'
+              }`}>
+                {overviewStats?.buybackPending}
+              </span>
+            )}
           </button>
+
           <button
-            className={`rounded-xl px-4 py-2.5 text-xs font-semibold transition ${
+            className={`rounded-xl px-4 py-2.5 text-xs font-semibold transition inline-flex items-center gap-2 ${
               activeTab === 'damage-penalty'
                 ? 'bg-indigo-600 text-white shadow-xs'
                 : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200'
@@ -134,10 +168,18 @@ export default function ApprovalsPage() {
             onClick={() => setActiveTab('damage-penalty')}
             type="button"
           >
-            Duyệt Phạt Hư hỏng Trả sách Ngoài Khung
+            <span>Duyệt Phạt Hư hỏng Trả sách Ngoài Khung</span>
+            {(overviewStats?.damagePenaltyPending ?? 0) > 0 && (
+              <span className={`rounded-full px-2 py-0.2 text-[10px] font-bold ${
+                activeTab === 'damage-penalty' ? 'bg-white text-indigo-700' : 'bg-amber-100 text-amber-800'
+              }`}>
+                {overviewStats?.damagePenaltyPending}
+              </span>
+            )}
           </button>
+
           <button
-            className={`rounded-xl px-4 py-2.5 text-xs font-bold transition ${
+            className={`rounded-xl px-4 py-2.5 text-xs font-semibold transition inline-flex items-center gap-2 ${
               activeTab === 'inventory-adjustment'
                 ? 'bg-indigo-600 text-white shadow-xs'
                 : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200'
@@ -145,10 +187,18 @@ export default function ApprovalsPage() {
             onClick={() => setActiveTab('inventory-adjustment')}
             type="button"
           >
-            Duyệt Điều chỉnh Kho sau Kiểm kê
+            <span>Duyệt Điều chỉnh Kho sau Kiểm kê</span>
+            {((overviewStats?.inventoryAdjustmentPending ?? stats?.pendingApproval) ?? 0) > 0 && (
+              <span className={`rounded-full px-2 py-0.2 text-[10px] font-bold ${
+                activeTab === 'inventory-adjustment' ? 'bg-white text-indigo-700' : 'bg-amber-100 text-amber-800'
+              }`}>
+                {overviewStats?.inventoryAdjustmentPending ?? stats?.pendingApproval}
+              </span>
+            )}
           </button>
+
           <button
-            className={`rounded-xl px-4 py-2.5 text-xs font-semibold transition ${
+            className={`rounded-xl px-4 py-2.5 text-xs font-semibold transition inline-flex items-center gap-2 ${
               activeTab === 'disposal-reversal'
                 ? 'bg-indigo-600 text-white shadow-xs'
                 : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200'
@@ -156,21 +206,34 @@ export default function ApprovalsPage() {
             onClick={() => setActiveTab('disposal-reversal')}
             type="button"
           >
-            Duyệt Xuất hủy Sách hỏng / Đảo Hóa đơn
+            <span>Duyệt Xuất hủy Sách hỏng / Đảo Hóa đơn</span>
+            {(overviewStats?.disposalReversalPending ?? 0) > 0 && (
+              <span className={`rounded-full px-2 py-0.2 text-[10px] font-bold ${
+                activeTab === 'disposal-reversal' ? 'bg-white text-indigo-700' : 'bg-amber-100 text-amber-800'
+              }`}>
+                {overviewStats?.disposalReversalPending}
+              </span>
+            )}
           </button>
         </nav>
 
-        {activeTab !== 'inventory-adjustment' ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-2xs">
-            <svg className="mx-auto h-12 w-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-            </svg>
-            <h3 className="mt-4 text-sm font-semibold text-slate-900">Phân hệ nghiệp vụ đang kết nối</h3>
-            <p className="mt-1 text-xs text-slate-500">
-              Vui lòng chuyển qua tab <strong>Duyệt Điều chỉnh Kho sau Kiểm kê</strong> để xử lý các yêu cầu điều chỉnh kho sách.
-            </p>
-          </div>
-        ) : (
+        {/* Tab 1 Content: Duyệt Giá Thu mua Sách cũ */}
+        {activeTab === 'old-book-price' && (
+          <BuybackApprovalsTable onSelectRequest={(id) => setSelectedBuybackId(id)} />
+        )}
+
+        {/* Tab 2 Content: Duyệt Phạt Hư hỏng Ngoài Khung */}
+        {activeTab === 'damage-penalty' && (
+          <DamagePenaltyApprovalsTable onSelectRequest={(id) => setSelectedDamageId(id)} />
+        )}
+
+        {/* Tab 4 Content: Duyệt Xuất hủy & Đảo Hóa đơn */}
+        {activeTab === 'disposal-reversal' && (
+          <DisposalReversalApprovalsTable onSelectRequest={(id) => setSelectedDisposalId(id)} />
+        )}
+
+        {/* Tab 3 Content: Duyệt Điều chỉnh Kho sau Kiểm kê */}
+        {activeTab === 'inventory-adjustment' && (
           <div className="space-y-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-slate-200 bg-white p-3 shadow-2xs">
               <div className="flex flex-1 items-center gap-2">
@@ -223,7 +286,7 @@ export default function ApprovalsPage() {
                   <thead className="bg-slate-50/80 text-slate-600 font-semibold">
                     <tr>
                       <th className="px-4 py-3 text-left" scope="col">Mã yêu cầu</th>
-                      <th className="px-4 py-3 text-left" scope="col">Bản sách & Đầu sách</th>
+                      <th className="px-4 py-3 text-left" scope="col">Bản sách &amp; Đầu sách</th>
                       <th className="px-3 py-3 text-left" scope="col">Loại sai lệch</th>
                       <th className="px-3 py-3 text-left" scope="col">Đề xuất trạng thái</th>
                       <th className="px-4 py-3 text-left" scope="col">Lý do giải trình</th>
@@ -335,11 +398,33 @@ export default function ApprovalsPage() {
         )}
       </div>
 
+      {/* Drawers and Modals for each category */}
+      <BuybackDetailDrawer
+        currentUserId={currentUserId}
+        isAdmin={isAdmin}
+        onClose={() => setSelectedBuybackId(null)}
+        requestId={selectedBuybackId}
+      />
+
+      <DamagePenaltyDetailDrawer
+        currentUserId={currentUserId}
+        isAdmin={isAdmin}
+        onClose={() => setSelectedDamageId(null)}
+        requestId={selectedDamageId}
+      />
+
       <AdjustmentDetailDrawer
         currentUserId={currentUserId}
         isAdmin={isAdmin}
         onClose={() => setSelectedRequestId(null)}
         requestId={selectedRequestId}
+      />
+
+      <DisposalReversalDetailDrawer
+        currentUserId={currentUserId}
+        isAdmin={isAdmin}
+        onClose={() => setSelectedDisposalId(null)}
+        requestId={selectedDisposalId}
       />
 
       <CreateAdjustmentModal
