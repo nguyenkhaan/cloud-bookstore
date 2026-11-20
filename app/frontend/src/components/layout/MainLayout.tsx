@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import type { BreadcrumbItem } from '@/components/common/Breadcrumb';
 import { Sidebar, navLabelFor } from '@/components/layout/Sidebar/Sidebar';
 import { Header } from '@/components/layout/Header/Header';
 import { Footer } from '@/components/layout/Footer/Footer';
+import { AuthContext } from '@/context/AuthProvider';
+import { resolveHrRoleCode } from '@/features/hr/hr-role.util';
 
 export interface MainLayoutProps {
   children?: React.ReactNode;
@@ -11,11 +14,13 @@ export interface MainLayoutProps {
   onSignOut?: () => void;
   breadcrumbs?: BreadcrumbItem[];
   pageTitle?: string;
+  pageSubtitle?: string;
   screenCode?: string;
   actionButton?: React.ReactNode;
   user?: {
     name: string;
     role: string;
+    roleCode?: string;
     avatarUrl?: string;
   };
 }
@@ -27,12 +32,17 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                                                         onSignOut,
                                                         breadcrumbs,
                                                         pageTitle,
+                                                        pageSubtitle,
                                                         screenCode,
                                                         actionButton,
                                                         user,
                                                       }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const location = useLocation();
+  const auth = useContext(AuthContext);
+  const effectiveUser = user ?? auth?.session?.user;
+  const userRoleCode = resolveHrRoleCode(effectiveUser, location.search);
 
   return (
       <div className="flex min-h-screen bg-slate-50 text-slate-800 antialiased font-sans">
@@ -49,6 +59,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             }`}
         >
           <Sidebar
+              activeHref={location.pathname}
               currentPath={currentPath}
               onNavigate={(id) => {
                 onNavigate?.(id);
@@ -57,6 +68,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
               isCollapsed={isCollapsed}
               onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
               onSignOut={onSignOut}
+              userRoleCode={userRoleCode}
           />
         </div>
 
@@ -68,8 +80,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
               user={user}
           />
 
-          <main className="flex-1 px-6 py-6 overflow-y-auto">
-            {(pageTitle || screenCode || actionButton) && (
+          <main className="flex-1 px-4 py-6 sm:px-6 overflow-y-auto">
+            {(pageTitle || pageSubtitle || screenCode || actionButton) && (
                 <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     {screenCode && (
@@ -82,9 +94,14 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                           {pageTitle}
                         </h1>
                     )}
+                    {pageSubtitle && (
+                        <p className="mt-1 text-xs text-slate-500">
+                          {pageSubtitle}
+                        </p>
+                    )}
                   </div>
 
-                  {actionButton && <div>{actionButton}</div>}
+                  {actionButton && <div className="shrink-0">{actionButton}</div>}
                 </div>
             )}
 
