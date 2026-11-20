@@ -675,6 +675,10 @@ describe('AC 5: Presentation helpers, routing, and CustomerDetailPage', { concur
       defaultOptions: { queries: { retry: false, staleTime: Infinity } },
     })
     populatedClient.setQueryData(hookMod.customerKeys.detail(silverCustomer.id), silverCustomer)
+    populatedClient.setQueryData(['role-permissions', undefined, 'ADMIN'], [
+      'CustomerHistory.GetSummary', 'CustomerHistory.GetRentals', 'CustomerHistory.GetSales',
+      'CustomerHistory.GetBuybacks', 'CustomerHistory.GetViolations', 'Customers.UpdateCustomer',
+    ])
 
     const populatedHtml = renderToStaticMarkup(
       el(

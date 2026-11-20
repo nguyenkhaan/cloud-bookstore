@@ -88,6 +88,21 @@ describe('Approvals feature: types, presentation, and service mapping', () => {
     assert.equal(presentationMod.conditionGradeMeta(null).label, 'Chưa thẩm định')
   })
 
+  test('condition grades accept exact codes and preserve unknown values', () => {
+    for (const [grade, color] of [['A', 'emerald'], ['B', 'blue'], ['C', 'amber'], ['D', 'rose']]) {
+      for (const value of [grade, `GRADE_${grade}`, grade.toLowerCase(), `grade_${grade.toLowerCase()}`]) {
+        const meta = presentationMod.conditionGradeMeta(value)
+        assert.ok(meta.label.startsWith(`Grade ${grade} (`), value)
+        assert.ok(meta.className.includes(color), value)
+      }
+    }
+    for (const value of ['DAMAGED', 'GRADE_AB', 'UNKNOWN', '']) {
+      assert.equal(presentationMod.conditionGradeMeta(value).label, value)
+      assert.match(presentationMod.conditionGradeMeta(value).className, /slate/)
+    }
+    assert.equal(presentationMod.conditionGradeMeta(undefined).label, presentationMod.conditionGradeMeta(null).label)
+  })
+
   test('reversalTypeMeta categorizes reversal vs disposal', () => {
     const reversal = presentationMod.reversalTypeMeta('HỦY_HÓA_ĐƠN_BÁN')
     assert.equal(reversal.label, 'Đảo/Hủy hóa đơn 24h')

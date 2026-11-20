@@ -1,3 +1,4 @@
+import { usePermissions } from '@/hooks/usePermissions'
 import { useState, useTransition } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AlertTriangle } from 'lucide-react'
@@ -25,6 +26,7 @@ import { customerPaths } from '../customers.route'
 import type { Customer } from '../customers.type'
 
 export default function CustomerListPage() {
+  const { can } = usePermissions()
   const navigate = useNavigate()
   const { session, signOut } = useAuth()
   const [, startTransition] = useTransition()
@@ -156,6 +158,7 @@ export default function CustomerListPage() {
           </Button>
           <Button
             className="min-h-[44px] px-4 font-semibold"
+            disabled={!can("Customers.CreateCustomer")}
             onClick={() => setIsAddDialogOpen(true)}
             type="button"
             variant="primary"

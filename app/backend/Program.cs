@@ -17,6 +17,8 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Authorization;
 var builder = WebApplication.CreateBuilder(args);
 var authCookieSettings = builder.Configuration
     .GetSection(AuthCookieSettings.SectionName)
@@ -35,6 +37,8 @@ builder.Services.AddControllers()
 // Without this, every enum is documented as an integer although the API only accepts names.
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
+    // Document numeric JSON responses; MVC keeps its existing permissive request-number handling.
+    options.SerializerOptions.NumberHandling = JsonNumberHandling.Strict;
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(
         namingPolicy: null,
         allowIntegerValues: false
@@ -227,7 +231,10 @@ builder.Services
             }
         };
     });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options => options.AddPolicy(PermissionAttribute.PolicyName,
+    policy => policy.RequireAuthenticatedUser().AddRequirements(new PermissionRequirement())));
+builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+builder.Services.AddScoped<RolePermissionService>();
 
 builder.Services
     .AddOptions<EmailSettings>()
@@ -248,6 +255,8 @@ builder.Services.AddSingleton<ICloudinaryService, CloudinaryService>();
 //Dependency Injection
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<SettingService>();
+builder.Services.AddScoped<SystemSettingsService>();
+builder.Services.AddDataProtection().SetApplicationName("CloudBookstore");
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<EmployeeService>();

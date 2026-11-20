@@ -1,3 +1,4 @@
+using backend.src.Configurations;
 using backend.src.Dto.Membership;
 using backend.src.Models.Enums;
 using backend.src.Services;
@@ -14,7 +15,7 @@ public sealed class MembershipController(MembershipService membershipService) : 
         $"{nameof(RoleName.ADMIN)},{nameof(RoleName.CASHIER)},{nameof(RoleName.INVENTORY_MANAGER)}";
 
     [HttpGet("policy")]
-    [Authorize(Roles = StaffRoles)]
+    [Permission(StaffRoles)]
     [ProducesResponseType<IReadOnlyList<MembershipTierPolicyResponse>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<MembershipTierPolicyResponse>>> GetCurrentPolicy(
         CancellationToken cancellationToken)
