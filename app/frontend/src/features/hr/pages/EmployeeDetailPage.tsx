@@ -185,7 +185,7 @@ export default function EmployeeDetailPage() {
               </div>
             </Card>
 
-            <EmployeeRecentShiftsCard shifts={employee.recentShifts} />
+            <EmployeeRecentShiftsCard key={employee.id} shifts={employee.recentShifts} />
           </>
         )}
       </div>

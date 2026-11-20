@@ -30,7 +30,6 @@ export interface CreateHrRequestCardProps {
   requesterName: string
   requesterCode: string
   onCreated?: (created: HrRequestRecord) => void
-  focusTrigger?: number
 }
 
 export function CreateHrRequestCard({
