@@ -11,7 +11,6 @@ import { cn } from '@/lib/cn'
 import { ApprovalHistoryCard } from '../components/ApprovalHistoryCard'
 import { ApprovalRequestDetailCard } from '../components/ApprovalRequestDetailCard'
 import { CreateHrRequestCard } from '../components/CreateHrRequestCard'
-import { HrModuleTabs } from '../components/HrModuleTabs'
 import {
   HR_REQUEST_MONTH_OPTIONS,
   HR_REQUEST_STATUS_LABELS,
@@ -28,7 +27,7 @@ import {
 
 type RequestTabKey = 'mine' | 'pending'
 
-const MY_REQUESTS_PAGE_SIZE = 4
+const MY_REQUESTS_PAGE_SIZE = 10
 
 export default function HrRequestsPage() {
   const navigate = useNavigate()
@@ -136,8 +135,6 @@ export default function HrRequestsPage() {
       user={currentUser}
     >
       <div className="space-y-5">
-        <HrModuleTabs />
-
         <div
           aria-label="Phân loại đơn xét duyệt"
           className="flex flex-wrap gap-2 rounded-2xl bg-indigo-50/70 p-1.5"

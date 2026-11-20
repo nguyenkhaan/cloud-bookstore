@@ -8,7 +8,6 @@ import { MainLayout } from '@/components/layout'
 import { useAuth } from '@/features/auth/auth.hook'
 import { workspacePathFor } from '@/features/workspace/workspace.route'
 import { cn } from '@/lib/cn'
-import { HrModuleTabs } from '../components/HrModuleTabs'
 import { PayslipAdminReconcilePanel } from '../components/PayslipAdminReconcilePanel'
 import { PayslipBreakdownCard } from '../components/PayslipBreakdownCard'
 import { PayslipDisputePanel } from '../components/PayslipDisputePanel'
@@ -117,8 +116,6 @@ export default function PayslipPage() {
       user={headerUser}
     >
       <div className="space-y-6">
-        <HrModuleTabs />
-
         {payslip && (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
             <div className="min-w-0 lg:col-span-8">

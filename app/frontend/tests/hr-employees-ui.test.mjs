@@ -34,7 +34,6 @@ test('SCR-HRM-01 routes and feature files exist and are guarded in AppRoutes.tsx
     ['features', 'hr', 'hr-employees.mock.ts'],
     ['features', 'hr', 'hr-employees.service.ts'],
     ['features', 'hr', 'hr-employees.hook.ts'],
-    ['features', 'hr', 'components', 'HrModuleTabs.tsx'],
     ['features', 'hr', 'components', 'AddEmployeeModal.tsx'],
     ['features', 'hr', 'components', 'EditEmployeeModal.tsx'],
     ['features', 'hr', 'components', 'EmployeeRecentShiftsCard.tsx'],
@@ -158,15 +157,17 @@ test('SCR-HRM-01 UI includes required data-testid hooks and excludes whitelist/r
 
   assert.match(listSource, /data-testid="hrm01-add-account-btn"/)
   assert.match(listSource, /data-testid="hrm01-search-input"/)
-  assert.match(listSource, /<HrModuleTabs/)
+  assert.doesNotMatch(listSource, /HrModuleTabs/)
   assert.doesNotMatch(listSource, /Gửi lại lời mời|Whitelist/i)
 
   assert.match(detailSource, /data-testid="hrm01-edit-profile-btn"/)
-  assert.match(detailSource, /<HrModuleTabs/)
+  assert.doesNotMatch(detailSource, /HrModuleTabs/)
 
   assert.match(addModalSource, /data-testid="hrm01-add-submit-btn"/)
   assert.match(addModalSource, /aria-invalid/)
+  assert.doesNotMatch(addModalSource, /Nhân viên tự thiết lập mật khẩu qua email/)
 
   assert.match(editModalSource, /data-testid="hrm01-edit-submit-btn"/)
   assert.match(editModalSource, /Lý do đổi vai trò/)
+  assert.doesNotMatch(editModalSource, /Chỉ Admin được thay đổi vai trò hoặc trạng thái/)
 })

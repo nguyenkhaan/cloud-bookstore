@@ -70,8 +70,14 @@ test('SCR-HRM-05 routes, files, and forbidden card guard exist', () => {
     src('features', 'hr', 'pages', 'PayrollPage.tsx'),
     'utf8',
   )
+  const adjustmentPageSource = readFileSync(
+    src('features', 'hr', 'pages', 'PayrollAdjustmentPage.tsx'),
+    'utf8',
+  )
   assert.match(payrollPageSource, /hrm05-forbidden-card/)
   assert.match(payrollPageSource, /Bạn chưa có quyền truy cập bảng lương/)
+  assert.doesNotMatch(payrollPageSource, /HrModuleTabs/)
+  assert.doesNotMatch(adjustmentPageSource, /HrModuleTabs/)
 })
 
 test('SCR-HRM-05 period states match exact Figma figures (30.850.000đ) and draft/approve/unlock workflow', async () => {

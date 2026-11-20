@@ -7,7 +7,6 @@ import { notify } from '@/components/common/Toast'
 import { MainLayout } from '@/components/layout'
 import { useAuth } from '@/features/auth/auth.hook'
 import { workspacePathFor } from '@/features/workspace/workspace.route'
-import { HrModuleTabs } from '../components/HrModuleTabs'
 import { PayrollBatchPayoutModal } from '../components/PayrollBatchPayoutModal'
 import { PayrollBottomPanels } from '../components/PayrollBottomPanels'
 import { PayrollBreakdownDrawer } from '../components/PayrollBreakdownDrawer'
@@ -165,7 +164,6 @@ export default function PayrollPage() {
         }}
       >
         <div className="space-y-6">
-          <HrModuleTabs />
           <Card
             aria-label="Bạn chưa có quyền truy cập bảng lương"
             data-testid="hrm05-forbidden-card"
@@ -252,8 +250,6 @@ export default function PayrollPage() {
       user={currentUser}
     >
       <div className="space-y-6">
-        <HrModuleTabs />
-
         {summary && (
           <>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

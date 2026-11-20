@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { after, before, test } from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -62,8 +62,20 @@ test('Sidebar hides admin-only nav items for CASHIER and INVENTORY_MANAGER and r
   assert.match(mainLayoutSource, /userRoleCode=\{userRoleCode\}/)
 })
 
-test('HrModuleTabs exposes navigation role and testid without touching HRM-02 or HRM-03 pages', () => {
-  const tabsSource = readFileSync(src('features', 'hr', 'components', 'HrModuleTabs.tsx'), 'utf8')
-  assert.match(tabsSource, /data-testid="hr-module-tabs"/)
-  assert.match(tabsSource, /aria-label="Phân hệ Nhân sự & tiền lương"/)
+test('HRM pages rely strictly on Sidebar HRM sub-menu without HrModuleTabs', () => {
+  assert.equal(
+    existsSync(src('features', 'hr', 'components', 'HrModuleTabs.tsx')),
+    false,
+  )
+  for (const page of [
+    'EmployeeListPage.tsx',
+    'EmployeeDetailPage.tsx',
+    'HrRequestsPage.tsx',
+    'PayrollPage.tsx',
+    'PayrollAdjustmentPage.tsx',
+    'PayslipPage.tsx',
+  ]) {
+    const content = readFileSync(src('features', 'hr', 'pages', page), 'utf8')
+    assert.doesNotMatch(content, /HrModuleTabs/)
+  }
 })

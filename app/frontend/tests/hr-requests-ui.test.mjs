@@ -116,7 +116,8 @@ test('SCR-HRM-04 UI places ApprovalHistoryCard inside Đơn cần duyệt tab an
 
   assert.match(pageSource, /data-testid="hrm04-tab-mine"/)
   assert.match(pageSource, /data-testid="hrm04-tab-pending"/)
-  assert.match(pageSource, /<HrModuleTabs/)
+  assert.match(pageSource, /MY_REQUESTS_PAGE_SIZE = 10/)
+  assert.doesNotMatch(pageSource, /HrModuleTabs/)
 
   const afterMineStart = pageSource.split("activeTab === 'mine' ? (")[1] ?? ''
   const [mineBranch = '', pendingBranch = ''] = afterMineStart.split(') : (\n          <div className="space-y-4">')

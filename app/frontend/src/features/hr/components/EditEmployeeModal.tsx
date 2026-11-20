@@ -400,10 +400,6 @@ function EditEmployeeModalForm({
             </div>
           )}
 
-          <div className="rounded-xl bg-indigo-50/70 px-3.5 py-3 text-xs text-slate-600">
-            Chỉ Admin được thay đổi vai trò hoặc trạng thái. Mọi thay đổi được lưu trong lịch sử.
-          </div>
-
           {generalError && (
             <div
               className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs text-rose-700"

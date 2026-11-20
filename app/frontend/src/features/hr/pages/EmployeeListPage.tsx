@@ -9,7 +9,6 @@ import { MainLayout } from '@/components/layout'
 import { useAuth } from '@/features/auth/auth.hook'
 import { workspacePathFor } from '@/features/workspace/workspace.route'
 import { AddEmployeeModal } from '../components/AddEmployeeModal'
-import { HrModuleTabs } from '../components/HrModuleTabs'
 import { HR_EMPLOYEE_STATUS_LABELS } from '../hr-employees.mock'
 import { useHrEmployeesQuery } from '../hr-employees.hook'
 import type { BackendRoleName, HrEmployeeStatus } from '../hr-employees.type'
@@ -100,8 +99,6 @@ export default function EmployeeListPage() {
       user={currentUser}
     >
       <div className="space-y-6">
-        <HrModuleTabs />
-
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard
             description="Tài khoản nội bộ đang quản lý"

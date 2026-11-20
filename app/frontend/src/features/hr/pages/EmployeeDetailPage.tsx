@@ -7,7 +7,6 @@ import { useAuth } from '@/features/auth/auth.hook'
 import { workspacePathFor } from '@/features/workspace/workspace.route'
 import { EditEmployeeModal } from '../components/EditEmployeeModal'
 import { EmployeeRecentShiftsCard } from '../components/EmployeeRecentShiftsCard'
-import { HrModuleTabs } from '../components/HrModuleTabs'
 import { HR_EMPLOYEE_STATUS_LABELS } from '../hr-employees.mock'
 import { useHrEmployeeDetailQuery } from '../hr-employees.hook'
 import { formatHrRoleLabel, isHrAdmin, resolveHrRoleCode } from '../hr-role.util'
@@ -81,8 +80,6 @@ export default function EmployeeDetailPage() {
       user={currentUser}
     >
       <div className="space-y-6">
-        <HrModuleTabs />
-
         {isLoading ? (
           <Card>
             <p className="py-8 text-center text-xs text-slate-500">

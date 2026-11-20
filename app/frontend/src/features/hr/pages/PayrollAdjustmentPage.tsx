@@ -9,7 +9,6 @@ import { MainLayout } from '@/components/layout'
 import { useAuth } from '@/features/auth/auth.hook'
 import { workspacePathFor } from '@/features/workspace/workspace.route'
 import { cn } from '@/lib/cn'
-import { HrModuleTabs } from '../components/HrModuleTabs'
 import {
   useCreateNextPeriodAdjustmentMutation,
   useHrPayrollPeriodQuery,
@@ -150,8 +149,6 @@ export default function PayrollAdjustmentPage() {
       user={currentUser}
     >
       <div className="space-y-6">
-        <HrModuleTabs />
-
         {!isAdmin ? (
           <Card padding="lg" title="Bạn chưa có quyền lập điều chỉnh bảng lương">
             <p className="text-sm text-slate-600">

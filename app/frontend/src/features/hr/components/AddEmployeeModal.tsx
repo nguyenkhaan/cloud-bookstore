@@ -307,10 +307,6 @@ function AddEmployeeModalForm({
             </div>
           </div>
 
-          <div className="rounded-xl bg-indigo-50/70 px-3.5 py-3 text-xs text-slate-600">
-            Nhân viên tự thiết lập mật khẩu qua email. Admin không xem được mật khẩu cá nhân.
-          </div>
-
           {generalError && (
             <div
               className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs text-rose-700"

@@ -56,6 +56,12 @@ test('SCR-HRM-06 routes, components, and unified terminology exist without forbi
     /path="\/hr\/payslip\/:employeeId"\s+element=\{<RequireSession><PayslipPage\s*\/>/,
   )
 
+  const payslipPageSource = readFileSync(
+    src('features', 'hr', 'pages', 'PayslipPage.tsx'),
+    'utf8',
+  )
+  assert.doesNotMatch(payslipPageSource, /HrModuleTabs/)
+
   const disputePanelSource = readFileSync(
     src('features', 'hr', 'components', 'PayslipDisputePanel.tsx'),
     'utf8',
