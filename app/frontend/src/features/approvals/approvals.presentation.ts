@@ -76,17 +76,17 @@ export function approvalGeneralStatusMeta(status: ApprovalStatus | undefined): {
 }
 
 export function conditionGradeMeta(grade?: string | null): { label: string; className: string } {
-  const g = (grade ?? '').toUpperCase()
-  if (g.includes('A')) {
+  const g = (grade ?? '').toUpperCase().replace(/^GRADE_/, '')
+  if (g === 'A') {
     return { label: 'Grade A (Mới 90-99%)', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
   }
-  if (g.includes('B')) {
+  if (g === 'B') {
     return { label: 'Grade B (Tốt 75-89%)', className: 'bg-blue-50 text-blue-700 border-blue-200' }
   }
-  if (g.includes('C')) {
+  if (g === 'C') {
     return { label: 'Grade C (Khá 60-74%)', className: 'bg-amber-50 text-amber-700 border-amber-200' }
   }
-  if (g.includes('D')) {
+  if (g === 'D') {
     return { label: 'Grade D (Cũ <60%)', className: 'bg-rose-50 text-rose-700 border-rose-200' }
   }
   return { label: grade ?? 'Chưa thẩm định', className: 'bg-slate-50 text-slate-600 border-slate-200' }

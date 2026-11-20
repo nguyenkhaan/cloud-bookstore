@@ -1,3 +1,4 @@
+import { usePermissions } from '@/hooks/usePermissions'
 import { useId, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -40,6 +41,7 @@ export default function CustomerDetailPage() {
   const { id = '' } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { session, signOut } = useAuth()
+  const { can } = usePermissions()
   const tabsBaseId = useId()
 
   const { data: customer, isLoading, isError, error } = useCustomer(id)
@@ -47,10 +49,11 @@ export default function CustomerDetailPage() {
 
   // Warehouse (INVENTORY_MANAGER) chỉ được xem tab thu mua (CUS-003).
   // Nếu TS báo không có `roleCode`, đổi theo field thật trong features/auth/auth.type.ts.
-  const canViewFullHistory = session?.user?.roleCode !== 'INVENTORY_MANAGER'
-  const { data: summary } = useCustomerHistorySummary(id, canViewFullHistory)
+  const canViewFullHistory = can('CustomerHistory.GetSummary')
+  const { data: summaryData } = useCustomerHistorySummary(id, canViewFullHistory)
+  const summary = canViewFullHistory ? summaryData : undefined
 
-  const [activeTab, setActiveTab] = useState<HistoryTabId>(canViewFullHistory ? 'rentals' : 'buybacks')
+  const [selectedTab, setActiveTab] = useState<HistoryTabId>('rentals')
   const [isNationalIdRevealed, setIsNationalIdRevealed] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
@@ -136,7 +139,9 @@ export default function CustomerDetailPage() {
     { id: 'buybacks', label: 'Bán sách cũ', count: summary?.buybackCount ?? 0 },
     { id: 'violations', label: 'Vi phạm & Ghi chú', count: (summary?.violationCount ?? 0) + violationCount },
   ]
-  const tabs = canViewFullHistory ? allTabs : allTabs.filter((tab) => tab.id === 'buybacks')
+  const historyPermissions = { rentals: 'GetRentals', sales: 'GetSales', buybacks: 'GetBuybacks', violations: 'GetViolations' }
+  const tabs = allTabs.filter(tab => can(`CustomerHistory.${historyPermissions[tab.id]}`))
+  const activeTab = tabs.find(tab => tab.id === selectedTab)?.id ?? tabs[0]?.id
   const blocksNewRental = customer.isFlagged || Boolean(summary?.blocksNewRental)
 
   const lateReturnCount = summary?.lateReturnCount ?? 0
@@ -363,6 +368,7 @@ export default function CustomerDetailPage() {
                   className="min-h-[44px]"
                   fullWidth
                   icon={<Pencil aria-hidden="true" className="size-4" />}
+                  disabled={!can("Customers.UpdateCustomer")}
                   onClick={() => setIsEditDialogOpen(true)}
                   type="button"
                   variant="primary"
@@ -383,6 +389,7 @@ export default function CustomerDetailPage() {
                         : <Lock aria-hidden="true" className="size-4" />
                   }
                   loading={updateCustomerMutation.isPending}
+                  disabled={!can("Customers.UpdateCustomer")}
                   onClick={handleToggleRentalLock}
                   type="button"
                   variant="secondary"
@@ -500,7 +507,8 @@ export default function CustomerDetailPage() {
                         </div>
                         <Button
                             className="min-h-[44px]"
-                            onClick={() => setIsEditDialogOpen(true)}
+                            disabled={!can("Customers.UpdateCustomer")}
+                  onClick={() => setIsEditDialogOpen(true)}
                             size="sm"
                             type="button"
                             variant="outline"
@@ -511,7 +519,7 @@ export default function CustomerDetailPage() {
                     </div>
                 )}
 
-                <CustomerHistoryPanel customerId={customer.id} key={activeTab} tab={activeTab} />
+                {activeTab ? <CustomerHistoryPanel customerId={customer.id} key={activeTab} tab={activeTab} /> : <p className="text-sm text-slate-500">B?n ch?a ???c c?p quy?n xem l?ch s? giao d?ch.</p>}
               </div>
 
               {/* Operational Status Banner */}

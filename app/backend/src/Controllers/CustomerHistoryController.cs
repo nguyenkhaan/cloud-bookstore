@@ -1,3 +1,4 @@
+using backend.src.Configurations;
 ﻿using backend.src.Dto.Common;
 using backend.src.Dto.CustomerDto;
 using backend.src.Models.Enums;
@@ -16,7 +17,7 @@ public class CustomerHistoryController(CustomerHistoryService historyService) : 
         $"{nameof(RoleName.ADMIN)},{nameof(RoleName.CASHIER)},{nameof(RoleName.INVENTORY_MANAGER)}";
 
     [HttpGet("summary")]
-    [Authorize(Roles = FullAccess)]
+    [Permission(FullAccess)]
     [ProducesResponseType<CustomerHistorySummaryResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CustomerHistorySummaryResponse>> GetSummary(
@@ -24,7 +25,7 @@ public class CustomerHistoryController(CustomerHistoryService historyService) : 
         Ok(await historyService.GetSummaryAsync(customerId, cancellationToken));
 
     [HttpGet("rentals")]
-    [Authorize(Roles = FullAccess)]
+    [Permission(FullAccess)]
     [ProducesResponseType<PagedResult<CustomerRentalHistoryItem>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -33,7 +34,7 @@ public class CustomerHistoryController(CustomerHistoryService historyService) : 
         Ok(await historyService.GetRentalsAsync(customerId, query, cancellationToken));
 
     [HttpGet("sales")]
-    [Authorize(Roles = FullAccess)]
+    [Permission(FullAccess)]
     [ProducesResponseType<PagedResult<CustomerSaleHistoryItem>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -42,7 +43,7 @@ public class CustomerHistoryController(CustomerHistoryService historyService) : 
         Ok(await historyService.GetSalesAsync(customerId, query, cancellationToken));
 
     [HttpGet("buybacks")]
-    [Authorize(Roles = BuybackAccess)]
+    [Permission(BuybackAccess)]
     [ProducesResponseType<PagedResult<CustomerBuybackHistoryItem>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -51,7 +52,7 @@ public class CustomerHistoryController(CustomerHistoryService historyService) : 
         Ok(await historyService.GetBuybacksAsync(customerId, query, cancellationToken));
 
     [HttpGet("violations")]
-    [Authorize(Roles = FullAccess)]
+    [Permission(FullAccess)]
     [ProducesResponseType<PagedResult<CustomerViolationItem>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

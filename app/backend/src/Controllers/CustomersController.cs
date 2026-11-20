@@ -1,3 +1,4 @@
+using backend.src.Configurations;
 using backend.src.Dto.Common;
 using backend.src.Dto.CustomerDto;
 using backend.src.Models.Enums;
@@ -9,7 +10,7 @@ namespace backend.src.Controllers;
 
 [ApiController]
 [Route("api/customers")]
-[Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)},{nameof(RoleName.CASHIER)}")]
+[Permission($"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)},{nameof(RoleName.CASHIER)}")]
 public class CustomersController(CustomerService customerService) : ControllerBase
 {
     [HttpGet]
@@ -79,7 +80,7 @@ public class CustomersController(CustomerService customerService) : ControllerBa
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [Permission($"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
