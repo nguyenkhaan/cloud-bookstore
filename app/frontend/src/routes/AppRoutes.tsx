@@ -20,6 +20,7 @@ import DashboardPage from '@/features/dashboard/pages/DashboardPage'
 import BookSeriesPage from '@/features/bookseries/pages/BookSeriesPage'
 import PosPage from '@/features/pos/pages/PosPage'
 import PosShiftPage from '@/features/pos/pages/PosShiftPage'
+import PosCustomerDisplayPage from '@/features/pos/pages/PosCustomerDisplayPage'
 import HumanResourcesPage from '@/features/hr/pages/HumanResourcesPage'
 import ShiftRecordsPage from '@/features/hr/pages/ShiftRecordsPage'
 import AttendancePage from '@/features/hr/pages/AttendancePage'
@@ -86,6 +87,7 @@ export default function AppRoutes() {
       <Route path="/profile" element={<RequireSession><ProfileSecurityPage /></RequireSession>} />
       <Route path="/dashboard" element={<RequireSession><DashboardRoute /></RequireSession>} />
       <Route path="/pos" element={<RequireSession><PosPage /></RequireSession>} />
+      <Route path="/pos/customer-display" element={<RequireSession><PosCustomerDisplayPage /></RequireSession>} />
       <Route path="/pos/shift" element={<RequireSession><PosShiftPage /></RequireSession>} />
       <Route path="/customers" element={<RequireSession><CustomerListPage /></RequireSession>} />
       <Route path="/customers/:id" element={<RequireSession><CustomerDetailPage /></RequireSession>} />
