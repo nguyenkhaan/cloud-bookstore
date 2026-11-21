@@ -9,7 +9,7 @@ import { catalogPaths } from '../catalog.route'
 import { useSeriesQuery, useTitlesQuery } from '../catalog.hook'
 import type { CopyAvailability } from '../catalog.type'
 import { CatalogDialog } from '../components/CatalogDialog'
-import { CatalogWorkspace } from '../components/CatalogWorkspace'
+import { WarehouseWorkspace } from '../components/WarehouseWorkspace'
 
 type ReceiptLineItem = {
   id: string
@@ -337,7 +337,7 @@ export default function StockReceiptsPage() {
   }
 
   return (
-    <CatalogWorkspace
+    <WarehouseWorkspace
       action={
         <Button
           onClick={() => notify.success('Đã lưu bản nháp phiếu nhập kho INB-20261018-012.')}
@@ -348,7 +348,7 @@ export default function StockReceiptsPage() {
       }
       title="Lập & Quản lý Phiếu nhập kho từ NCC"
     >
-      <p className="-mt-3 text-xs font-mono text-slate-500">
+      <p className="text-xs font-mono text-slate-500">
         INB-20261018-012 - Người lập: {creatorName} - 18/10/2026
       </p>
 
@@ -378,9 +378,9 @@ export default function StockReceiptsPage() {
         </button>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px] items-start">
-        <div className="space-y-5">
-          <Card className="p-5 space-y-4" padding="none">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_310px] items-start">
+        <div className="space-y-6">
+          <Card bodyClassName="space-y-5" padding="lg">
             <h2 className="text-sm font-bold text-slate-900">Thông tin nhà cung cấp</h2>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -420,7 +420,7 @@ export default function StockReceiptsPage() {
             </div>
           </Card>
 
-          <Card className="p-5 space-y-4" padding="none">
+          <Card bodyClassName="space-y-5" padding="lg">
             <div>
               <h2 className="text-sm font-bold text-slate-900">Bước 1 - Danh mục nhập đã xác nhận</h2>
               <p className="mt-0.5 text-xs text-slate-500">
@@ -540,7 +540,7 @@ export default function StockReceiptsPage() {
             </div>
           </Card>
 
-          <Card className="p-5 space-y-4" padding="none">
+          <Card bodyClassName="space-y-5" padding="lg">
             <div>
               <h2 className="text-sm font-bold text-slate-900">Bước 2 - Thiết lập giá bán & Sinh Barcode</h2>
               <p className="mt-0.5 text-xs text-slate-500">
@@ -643,7 +643,7 @@ export default function StockReceiptsPage() {
             </div>
           </Card>
 
-          <Card className="p-5 space-y-3" padding="none">
+          <Card bodyClassName="space-y-3.5" padding="lg">
             <h2 className="text-sm font-bold text-slate-900">Hoàn tất giá bán niêm yết</h2>
             <div className="flex flex-wrap items-center gap-4">
               <Button
@@ -716,7 +716,7 @@ export default function StockReceiptsPage() {
           </Card>
         </div>
 
-        <Card className="p-5 space-y-4 lg:sticky lg:top-20" padding="none">
+        <Card bodyClassName="space-y-5" className="lg:sticky lg:top-20" padding="lg">
           <h2 className="text-sm font-bold text-slate-900">Giá trị & Công nợ</h2>
 
           <div className="space-y-2.5 border-b border-slate-100 pb-4 text-xs">
@@ -903,6 +903,6 @@ export default function StockReceiptsPage() {
           </div>
         </CatalogDialog>
       )}
-    </CatalogWorkspace>
+    </WarehouseWorkspace>
   )
 }

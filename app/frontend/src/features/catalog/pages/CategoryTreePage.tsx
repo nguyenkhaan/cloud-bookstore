@@ -462,11 +462,11 @@ export default function CategoryTreePage() {
       }
       title="Thể loại sách & Cây danh mục"
     >
-      <p className="-mt-3 text-xs text-slate-500">
+      <p className="text-xs text-slate-500">
         Tổ chức danh mục theo cách độc giả tìm thấy sách.
       </p>
 
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_220px] sm:items-center">
+      <div className="grid gap-3.5 sm:grid-cols-[minmax(0,1fr)_220px] sm:items-center">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
           <input
@@ -488,8 +488,8 @@ export default function CategoryTreePage() {
         />
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[340px_minmax(0,1fr)] items-start">
-        <Card className="p-4" padding="none">
+      <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)] items-start">
+        <Card padding="md">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div>
               <h2 className="text-sm font-bold text-slate-900">Cây danh mục</h2>
@@ -527,8 +527,8 @@ export default function CategoryTreePage() {
           </div>
         </Card>
 
-        <div className="space-y-5">
-          <Card className="p-5" padding="none">
+        <div className="space-y-6">
+          <Card padding="lg">
             <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4">
               <div>
                 <div className="flex items-center gap-2.5">
@@ -564,7 +564,7 @@ export default function CategoryTreePage() {
               )}
             </div>
 
-            <form className="mt-4 space-y-4" onSubmit={(e) => void handleSave(e)}>
+            <form className="mt-5 space-y-5" onSubmit={(e) => void handleSave(e)}>
               {formError && (
                 <div className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs text-rose-700" role="alert">
                   {formError}

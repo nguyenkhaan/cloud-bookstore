@@ -28,17 +28,9 @@ export function CatalogWorkspace({ action, children, screenCode, title }: Catalo
 
   const isCategoriesActive = location.pathname.startsWith(catalogPaths.categoryList)
   const isSeriesActive = location.pathname.startsWith(catalogPaths.seriesList)
-  const isSuppliersActive = location.pathname.startsWith(catalogPaths.suppliers)
-  const isStockReceiptsActive = location.pathname.startsWith(catalogPaths.stockReceipts)
-  const isStockOutActive = location.pathname.startsWith(catalogPaths.stockOut)
-  const isCheckActive = location.pathname.startsWith(catalogPaths.inventoryCheck)
   const isTitlesActive =
     !isCategoriesActive &&
     !isSeriesActive &&
-    !isSuppliersActive &&
-    !isStockReceiptsActive &&
-    !isStockOutActive &&
-    !isCheckActive &&
     (location.pathname.startsWith(catalogPaths.titleList) ||
       location.pathname.startsWith('/catalog/editions') ||
       location.pathname.startsWith('/catalog/copies'))
@@ -54,8 +46,8 @@ export function CatalogWorkspace({ action, children, screenCode, title }: Catalo
       screenCode={screenCode}
       user={currentUser}
     >
-      <div className="space-y-5">
-        <nav aria-label="Điều hướng catalog" className="flex w-fit max-w-full gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1 shadow-2xs">
+      <div className="space-y-6">
+        <nav aria-label="Điều hướng quản lý sách" className="flex w-fit max-w-full gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1 shadow-2xs">
           <Link
             aria-current={isCategoriesActive ? 'page' : undefined}
             className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
@@ -88,50 +80,6 @@ export function CatalogWorkspace({ action, children, screenCode, title }: Catalo
             to={catalogPaths.titleList}
           >
             Đầu sách
-          </Link>
-          <Link
-            aria-current={isSuppliersActive ? 'page' : undefined}
-            className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
-              isSuppliersActive
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-            }`}
-            to={catalogPaths.suppliers}
-          >
-            Nhà cung cấp
-          </Link>
-          <Link
-            aria-current={isStockReceiptsActive ? 'page' : undefined}
-            className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
-              isStockReceiptsActive
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-            }`}
-            to={catalogPaths.stockReceipts}
-          >
-            Nhập kho NCC
-          </Link>
-          <Link
-            aria-current={isStockOutActive ? 'page' : undefined}
-            className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
-              isStockOutActive
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-            }`}
-            to={catalogPaths.stockOut}
-          >
-            Xuất kho
-          </Link>
-          <Link
-            aria-current={isCheckActive ? 'page' : undefined}
-            className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
-              isCheckActive
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-            }`}
-            to={catalogPaths.inventoryCheck}
-          >
-            Kiểm kê kho
           </Link>
         </nav>
         {children}

@@ -7,7 +7,7 @@ import { notify } from '@/components/common/Toast'
 import { useAllBookCopiesQuery } from '@/features/approvals/approvals.hook'
 import { approvalsService } from '@/features/approvals/approvals.service'
 import { useAuth } from '@/features/auth/auth.hook'
-import { CatalogWorkspace } from '../components/CatalogWorkspace'
+import { WarehouseWorkspace } from '../components/WarehouseWorkspace'
 
 type StockOutType = 'DISPOSAL_DAMAGED' | 'DISCONTINUED_CIRCULATION' | 'LOST_WRITE_OFF' | 'RETURN_SUPPLIER'
 
@@ -243,7 +243,7 @@ export default function StockOutPage() {
   }
 
   return (
-    <CatalogWorkspace
+    <WarehouseWorkspace
       action={
         <Button
           onClick={() => notify.success('Đã lưu bản nháp phiếu xuất kho OUT-20261018-004.')}
@@ -254,7 +254,7 @@ export default function StockOutPage() {
       }
       title="Lập Phiếu xuất kho ngoài bán hàng"
     >
-      <p className="-mt-3 text-xs font-mono text-slate-500">
+      <p className="text-xs font-mono text-slate-500">
         OUT-20261018-004 - Xuất hủy / Ngừng lưu hành - Không phát sinh doanh thu bán lẻ
       </p>
 
@@ -267,9 +267,9 @@ export default function StockOutPage() {
         </span>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] items-start">
-        <div className="space-y-5">
-          <Card className="p-5 space-y-4" padding="none">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] items-start">
+        <div className="space-y-6">
+          <Card bodyClassName="space-y-5" padding="lg">
             <h2 className="text-sm font-bold text-slate-900">Thông tin phiếu xuất</h2>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -308,7 +308,7 @@ export default function StockOutPage() {
             </label>
           </Card>
 
-          <Card className="p-5 space-y-4" padding="none">
+          <Card bodyClassName="space-y-5" padding="lg">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-bold text-slate-900">Bản sách được chọn</h2>
               {selectableCopyOptions.length > 0 && (
@@ -447,8 +447,8 @@ export default function StockOutPage() {
           </Card>
         </div>
 
-        <div className="space-y-5">
-          <Card className="p-5 space-y-3.5" padding="none">
+        <div className="space-y-6">
+          <Card bodyClassName="space-y-4" padding="lg">
             <h2 className="text-sm font-bold text-slate-900">Bằng chứng hiện trạng</h2>
 
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-100 aspect-16/10 flex items-center justify-center">
@@ -492,7 +492,7 @@ export default function StockOutPage() {
             </Button>
           </Card>
 
-          <Card className="p-5 space-y-4" padding="none">
+          <Card bodyClassName="space-y-4" padding="lg">
             <h2 className="text-sm font-bold text-slate-900">Trạng thái phê duyệt</h2>
 
             <div>
@@ -558,6 +558,6 @@ export default function StockOutPage() {
           </Card>
         </div>
       </div>
-    </CatalogWorkspace>
+    </WarehouseWorkspace>
   )
 }

@@ -56,13 +56,13 @@ export default function SeriesListPage() {
   return (
     <CatalogWorkspace
       action={<Button onClick={() => setIsDialogOpen(true)}>+ Tạo bộ sách mới</Button>}
-      title="Quản lý Bộ sách & Tiến độ đủ bộ (Series / Boxset)"
+      title="Quản lý Bộ sách & Tiến độ đủ bộ"
     >
-      <p className="-mt-3 text-xs text-slate-500">
+      <p className="text-xs text-slate-500">
         Theo dõi ma trận tập, mức độ hoàn thiện của từng bộ truyện và hỗ trợ đóng gói bán/thuê trọn bộ.
       </p>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <Metric description="Manga, Comic, Tiểu thuyết" label="Tổng số Bộ sách" tone="indigo" value={String(series.length)} />
         <Metric description="Đủ điều kiện cho thuê trọn bộ" label="Tỷ lệ đủ bộ trung bình" tone="emerald" value={`${averageCompletion}%`} />
         <Metric description="Đủ bộ sẵn sàng bán combo" label="Bộ đã hoàn thiện 100%" tone="indigo" value={String(completedSeries)} />

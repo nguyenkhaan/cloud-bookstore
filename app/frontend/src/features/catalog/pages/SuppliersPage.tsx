@@ -7,7 +7,7 @@ import type { SelectOption } from '@/components/common'
 import { notify } from '@/components/common/Toast'
 import { catalogPaths } from '../catalog.route'
 import { CatalogDialog } from '../components/CatalogDialog'
-import { CatalogWorkspace } from '../components/CatalogWorkspace'
+import { WarehouseWorkspace } from '../components/WarehouseWorkspace'
 
 export type SupplierProfile = {
   id: string
@@ -308,41 +308,41 @@ export default function SuppliersPage() {
   }
 
   return (
-    <CatalogWorkspace
+    <WarehouseWorkspace
       action={<Button onClick={() => setIsAddDialogOpen(true)}>+ Thêm nhà cung cấp</Button>}
       title="Đối tác & Nhà cung cấp"
     >
-      <p className="-mt-3 text-xs text-slate-500">
+      <p className="text-xs text-slate-500">
         Quản lý hồ sơ pháp lý, đầu mối liên hệ và công nợ nhập hàng.
       </p>
 
-      <section className="grid gap-4 md:grid-cols-3">
-        <Card className="p-5" padding="none">
+      <section className="grid gap-5 md:grid-cols-3">
+        <Card padding="lg">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span>Đối tác đang hợp tác</span>
             <ArrowUpRight className="h-4 w-4 text-slate-400" />
           </div>
-          <p className="mt-2 text-2xl font-black text-slate-900">{stats.activeCount}</p>
+          <p className="mt-2.5 text-2xl font-black text-slate-900">{stats.activeCount}</p>
           <p className="mt-2 text-xs text-slate-500">
             {stats.distributors} nhà phân phối - {stats.publishers} NXB
           </p>
         </Card>
 
-        <Card className="p-5" padding="none">
+        <Card padding="lg">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span>Giá trị nhập tháng này</span>
             <ArrowUpRight className="h-4 w-4 text-slate-400" />
           </div>
-          <p className="mt-2 text-2xl font-black text-slate-900">{formatVnd(stats.totalImport)}</p>
+          <p className="mt-2.5 text-2xl font-black text-slate-900">{formatVnd(stats.totalImport)}</p>
           <p className="mt-2 text-xs text-slate-500">Chứng từ hợp lệ đã xác nhận</p>
         </Card>
 
-        <Card className="p-5" padding="none">
+        <Card padding="lg">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span>Công nợ phải trả</span>
             <ArrowUpRight className="h-4 w-4 text-slate-400" />
           </div>
-          <p className="mt-2 text-2xl font-black text-amber-600">{formatVnd(stats.totalDebt)}</p>
+          <p className="mt-2.5 text-2xl font-black text-amber-600">{formatVnd(stats.totalDebt)}</p>
           <p className="mt-2 text-xs text-slate-500">{stats.unpaidReceipts} phiếu chưa thanh toán</p>
         </Card>
       </section>
@@ -462,7 +462,7 @@ export default function SuppliersPage() {
       </Card>
 
       {selectedSupplier && (
-        <Card className="p-5" padding="none">
+        <Card padding="lg">
           <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4">
             <div>
               <h2 className="text-base font-bold text-slate-900">Hồ sơ nhà cung cấp đang chọn</h2>
@@ -475,7 +475,7 @@ export default function SuppliersPage() {
             </Button>
           </div>
 
-          <form className="mt-4 space-y-4" onSubmit={handleSaveSelected}>
+          <form className="mt-5 space-y-5" onSubmit={handleSaveSelected}>
             <div className="grid gap-4 md:grid-cols-3">
               <TextField
                 label="Tên pháp lý"
@@ -630,6 +630,6 @@ export default function SuppliersPage() {
           </form>
         </CatalogDialog>
       )}
-    </CatalogWorkspace>
+    </WarehouseWorkspace>
   )
 }

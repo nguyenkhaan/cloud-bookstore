@@ -112,10 +112,14 @@ export default function AppRoutes() {
       <Route path="/catalog/titles/:titleId" element={<RequireSession><TitleDetailPage /></RequireSession>} />
       <Route path="/catalog/editions/:editionId" element={<RequireSession><EditionDetailPage /></RequireSession>} />
       <Route path="/catalog/copies/:copyId" element={<RequireSession><CopyDetailPage /></RequireSession>} />
-      <Route path="/catalog/suppliers" element={<RequireSession><SuppliersPage /></RequireSession>} />
-      <Route path="/catalog/stock-receipts" element={<RequireSession><StockReceiptsPage /></RequireSession>} />
-      <Route path="/catalog/stock-out" element={<RequireSession><StockOutPage /></RequireSession>} />
-      <Route path="/catalog/inventory-check" element={<RequireSession><InventoryCheckPage /></RequireSession>} />
+      <Route path="/suppliers" element={<RequireSession><SuppliersPage /></RequireSession>} />
+      <Route path="/stock-receipts" element={<RequireSession><StockReceiptsPage /></RequireSession>} />
+      <Route path="/stock-out" element={<RequireSession><StockOutPage /></RequireSession>} />
+      <Route path="/inventory-check" element={<RequireSession><InventoryCheckPage /></RequireSession>} />
+      <Route path="/catalog/suppliers" element={<RequireSession><Navigate replace to="/suppliers" /></RequireSession>} />
+      <Route path="/catalog/stock-receipts" element={<RequireSession><Navigate replace to="/stock-receipts" /></RequireSession>} />
+      <Route path="/catalog/stock-out" element={<RequireSession><Navigate replace to="/stock-out" /></RequireSession>} />
+      <Route path="/catalog/inventory-check" element={<RequireSession><Navigate replace to="/inventory-check" /></RequireSession>} />
       <Route path="*" element={<NotFound />} />  
     </Routes>
   )

@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button, StatCard } from '@/components/common'
 import { notify } from '@/components/common/Toast'
-import { CatalogWorkspace } from '../components/CatalogWorkspace'
+import { WarehouseWorkspace } from '../components/WarehouseWorkspace'
 import { getCopyByBarcode } from '../catalog.service'
 import type { BookCopy } from '../catalog.type'
 import { CreateAdjustmentModal } from '@/features/approvals/components/CreateAdjustmentModal'
@@ -96,7 +96,7 @@ export default function InventoryCheckPage() {
   const items = pageResult?.items ?? []
 
   return (
-    <CatalogWorkspace
+    <WarehouseWorkspace
       action={
         <div className="flex gap-2">
           <Button onClick={() => openModal()} variant="primary">
@@ -308,6 +308,6 @@ export default function InventoryCheckPage() {
           navigate('/approvals')
         }}
       />
-    </CatalogWorkspace>
+    </WarehouseWorkspace>
   )
 }
