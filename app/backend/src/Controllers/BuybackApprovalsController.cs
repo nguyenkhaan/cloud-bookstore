@@ -1,3 +1,4 @@
+using backend.src.Configurations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using backend.src.Dto.ApprovalDto;
@@ -18,7 +19,7 @@ public class BuybackApprovalsController(BuybackApprovalService service) : Contro
     private const string AdminRole = nameof(RoleName.ADMIN);
 
     [HttpGet]
-    [Authorize(Roles = StaffRoles)]
+    [Permission(StaffRoles)]
     [ProducesResponseType<PagedResult<BuybackApprovalItemResponse>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<BuybackApprovalItemResponse>>> GetRequests(
         [FromQuery] ApprovalQuery query,
@@ -29,7 +30,7 @@ public class BuybackApprovalsController(BuybackApprovalService service) : Contro
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = StaffRoles)]
+    [Permission(StaffRoles)]
     [ProducesResponseType<BuybackApprovalDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<BuybackApprovalDetailResponse>> GetById(
@@ -41,7 +42,7 @@ public class BuybackApprovalsController(BuybackApprovalService service) : Contro
     }
 
     [HttpPost]
-    [Authorize(Roles = StaffRoles)]
+    [Permission(StaffRoles)]
     [ProducesResponseType<BuybackApprovalDetailResponse>(StatusCodes.Status201Created)]
     public async Task<ActionResult<BuybackApprovalDetailResponse>> Create(
         [FromBody] CreateBuybackApprovalRequestDto request,

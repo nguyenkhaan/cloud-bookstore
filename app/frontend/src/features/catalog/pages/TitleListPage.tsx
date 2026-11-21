@@ -1,3 +1,4 @@
+import { usePermissions } from '@/hooks/usePermissions'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Button, Card, SelectBox, TextField } from '@/components/common'
@@ -11,6 +12,7 @@ import { TitleRowDeleteAction } from '../components/TitleRowDeleteAction'
 import { EmptyState, ErrorState, LoadingRows } from './SeriesListPage'
 
 export default function TitleListPage() {
+  const { can } = usePermissions()
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const [isEditorOpen, setIsEditorOpen] = useState(false)
@@ -27,7 +29,7 @@ export default function TitleListPage() {
 
   return (
     <CatalogWorkspace
-      action={<Button onClick={() => setIsEditorOpen(true)}>+ Thêm đầu sách</Button>}
+      action={can("BookTitles.CreateTitle") && <Button onClick={() => setIsEditorOpen(true)}>+ Thêm đầu sách</Button>}
       title="Danh mục đầu sách"
     >
       <Card className="overflow-hidden" padding="none">
@@ -54,7 +56,7 @@ export default function TitleListPage() {
                       <p className="mt-1 text-xs text-slate-500">{title.author || 'Chưa cập nhật tác giả'} {title.volumeLabel ? `• ${title.volumeLabel}` : ''}</p>
                     </div>
                     <div className="flex items-center gap-1">
-                      <TitleRowDeleteAction title={title} />
+                      {can("BookTitles.DeleteTitle") && <TitleRowDeleteAction title={title} />}
                       <ActiveBadge active={title.isActive} />
                     </div>
                   </div>

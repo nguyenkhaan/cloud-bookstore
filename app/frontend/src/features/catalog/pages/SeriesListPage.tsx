@@ -1,3 +1,4 @@
+import { usePermissions } from '@/hooks/usePermissions'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
@@ -11,6 +12,7 @@ import { SeriesCardActions } from '../components/SeriesCardActions'
 import { SeriesCoverStack } from '../components/SeriesCoverStack'
 
 export default function SeriesListPage() {
+  const { can } = usePermissions()
   const [search, setSearch] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [name, setName] = useState('')
@@ -41,7 +43,7 @@ export default function SeriesListPage() {
 
   return (
     <CatalogWorkspace
-      action={<Button onClick={() => setIsDialogOpen(true)}>+ Tạo bộ sách mới</Button>}
+      action={can("BookSeries.CreateBookSeries") && <Button onClick={() => setIsDialogOpen(true)}>+ Tạo bộ sách mới</Button>}
       title="Quản lý Bộ sách & tiến độ đủ bộ"
     >
       <section className="grid gap-4 md:grid-cols-3">
