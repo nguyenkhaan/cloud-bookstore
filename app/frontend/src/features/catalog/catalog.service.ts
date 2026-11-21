@@ -17,13 +17,18 @@ import type {
   CreateCopyRequest,
   CreateEditionRequest,
   CreateSeriesRequest,
+  CreateSupplierRequest,
   SaveTitleRequest,
+  SupplierItem,
+  SupplierListFilters,
+  SupplierStats,
   TitleListFilters,
   UpdateCategoryRequest,
   UpdateCopyRequest,
   UpdateCopyStatusRequest,
   UpdateEditionRequest,
   UpdateSeriesRequest,
+  UpdateSupplierRequest,
 } from './catalog.type'
 
 type QueryValue = string | number | boolean | null | undefined
@@ -38,6 +43,7 @@ const endpoints = {
   copies: '/book-copies',
   editions: '/editions',
   series: '/book-series',
+  suppliers: '/suppliers',
   titles: '/book-titles',
 } as const
 
@@ -149,6 +155,57 @@ export async function updateCategoryStatus(categoryId: string, isActive: boolean
 export async function deleteCategory(categoryId: string): Promise<void> {
   await requestData(() =>
     privateClient.delete<void>(`${endpoints.categories}/${encodeURIComponent(categoryId)}`),
+  )
+}
+
+export async function listSuppliers(filters: SupplierListFilters = {}): Promise<SupplierItem[]> {
+  const response = await requestData(() =>
+    privateClient.get<CatalogListResponse<SupplierItem>>(endpoints.suppliers, {
+      params: params({
+        Search: filters.search,
+        IsActive: filters.isActive,
+        HasPending: filters.hasPending,
+        Page: filters.page ?? 1,
+        PageSize: filters.pageSize ?? 50,
+      }),
+    }),
+  )
+  return listFrom(response)
+}
+
+export async function getSupplierStats(): Promise<SupplierStats> {
+  return requestData(() =>
+    privateClient.get<SupplierStats>(`${endpoints.suppliers}/stats`),
+  )
+}
+
+export async function getSupplier(supplierId: string): Promise<SupplierItem> {
+  return requestData(() =>
+    privateClient.get<SupplierItem>(`${endpoints.suppliers}/${encodeURIComponent(supplierId)}`),
+  )
+}
+
+export async function createSupplier(request: CreateSupplierRequest): Promise<SupplierItem> {
+  return requestData(() =>
+    privateClient.post<SupplierItem>(endpoints.suppliers, request),
+  )
+}
+
+export async function updateSupplier(supplierId: string, request: UpdateSupplierRequest): Promise<SupplierItem> {
+  return requestData(() =>
+    privateClient.put<SupplierItem>(`${endpoints.suppliers}/${encodeURIComponent(supplierId)}`, request),
+  )
+}
+
+export async function updateSupplierStatus(supplierId: string, isActive: boolean): Promise<SupplierItem> {
+  return requestData(() =>
+    privateClient.patch<SupplierItem>(`${endpoints.suppliers}/${encodeURIComponent(supplierId)}/status`, { isActive }),
+  )
+}
+
+export async function deleteSupplier(supplierId: string): Promise<void> {
+  await requestData(() =>
+    privateClient.delete<void>(`${endpoints.suppliers}/${encodeURIComponent(supplierId)}`),
   )
 }
 

@@ -254,6 +254,7 @@ builder.Services.AddScoped<EmployeeService>();
 builder.Services.AddScoped<AuditLogService>();
 builder.Services.AddScoped<UploadIntentService>();
 builder.Services.AddScoped<CategoryService>();
+builder.Services.AddScoped<SupplierService>();
 builder.Services.AddScoped<BookSeriesService>();
 builder.Services.AddScoped<TitleService>();
 builder.Services.AddScoped<EditionService>();

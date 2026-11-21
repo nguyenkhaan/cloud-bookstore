@@ -2,124 +2,22 @@ import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowUpRight, Search } from 'lucide-react'
-import { Button, Card, SelectBox, TextField } from '@/components/common'
+import { Button, Card, ConfirmationDialog, SelectBox, TextField } from '@/components/common'
 import type { SelectOption } from '@/components/common'
 import { notify } from '@/components/common/Toast'
+import { useAuth } from '@/features/auth/auth.hook'
 import { catalogPaths } from '../catalog.route'
+import {
+  useCreateSupplierMutation,
+  useDeleteSupplierMutation,
+  useSuppliersQuery,
+  useSupplierStatsQuery,
+  useUpdateSupplierMutation,
+  useUpdateSupplierStatusMutation,
+} from '../catalog.hook'
+import type { SupplierItem } from '../catalog.type'
 import { CatalogDialog } from '../components/CatalogDialog'
 import { WarehouseWorkspace } from '../components/WarehouseWorkspace'
-
-export type SupplierProfile = {
-  id: string
-  code: string
-  name: string
-  legalName: string
-  partnerType: 'PUBLISHER' | 'DISTRIBUTOR'
-  contactPerson: string
-  phone: string
-  email: string
-  taxCode: string
-  address: string
-  paymentTerms: string
-  bankAccount: string
-  monthlyImportAmount: number
-  outstandingDebt: number
-  unpaidReceiptCount: number
-  isActive: boolean
-}
-
-const INITIAL_SUPPLIERS: SupplierProfile[] = [
-  {
-    id: 'sup-1',
-    code: 'NCC-001',
-    name: 'NXB Kim Đồng',
-    legalName: 'Nhà xuất bản Kim Đồng',
-    partnerType: 'PUBLISHER',
-    contactPerson: 'Mai Thảo',
-    phone: '028 3930 5247',
-    email: 'doitac@kimdong.example',
-    taxCode: '0100108240',
-    address: '248 Cống Quỳnh, Quận 1, TP.HCM',
-    paymentTerms: 'TERM_30',
-    bankAccount: 'VCB - 5678 - NXB Kim Đồng',
-    monthlyImportAmount: 16000000,
-    outstandingDebt: 3000000,
-    unpaidReceiptCount: 1,
-    isActive: true,
-  },
-  {
-    id: 'sup-2',
-    code: 'NCC-002',
-    name: 'NXB Trẻ',
-    legalName: 'Công ty TNHH MTV Nhà xuất bản Trẻ',
-    partnerType: 'PUBLISHER',
-    contactPerson: 'Lê Thành',
-    phone: '028 3931 6289',
-    email: 'kinhdoanh@nxbtre.example',
-    taxCode: '0300527159',
-    address: '161B Lý Chính Thắng, Quận 3, TP.HCM',
-    paymentTerms: 'TERM_30',
-    bankAccount: 'ACB - 8892 - NXB Trẻ',
-    monthlyImportAmount: 12000000,
-    outstandingDebt: 3000000,
-    unpaidReceiptCount: 1,
-    isActive: true,
-  },
-  {
-    id: 'sup-3',
-    code: 'NCC-003',
-    name: 'Phân phối Minh Long',
-    legalName: 'Công ty TNHH Văn hóa Minh Long',
-    partnerType: 'DISTRIBUTOR',
-    contactPerson: 'Hoàng Mai',
-    phone: '0908 212 333',
-    email: 'phanphoi@minhlongbook.example',
-    taxCode: '0102643512',
-    address: '35 Nguyễn Thị Minh Khai, Quận 1, TP.HCM',
-    paymentTerms: 'TERM_15',
-    bankAccount: 'TCB - 3310 - Văn hóa Minh Long',
-    monthlyImportAmount: 8000000,
-    outstandingDebt: 2000000,
-    unpaidReceiptCount: 1,
-    isActive: true,
-  },
-  {
-    id: 'sup-4',
-    code: 'NCC-004',
-    name: 'Sách Nhã Nam',
-    legalName: 'Công ty Cổ phần Văn hóa và Truyền thông Nhã Nam',
-    partnerType: 'DISTRIBUTOR',
-    contactPerson: 'Thu Vân',
-    phone: '0903 889 122',
-    email: 'hopdong@nhanam.example',
-    taxCode: '0101601450',
-    address: '015 Lô B Chung cư 43 Hồ Văn Huê, Phú Nhuận, TP.HCM',
-    paymentTerms: 'IMMEDIATE',
-    bankAccount: 'MBB - 1450 - Văn hóa Nhã Nam',
-    monthlyImportAmount: 4000000,
-    outstandingDebt: 0,
-    unpaidReceiptCount: 0,
-    isActive: true,
-  },
-  {
-    id: 'sup-5',
-    code: 'NCC-005',
-    name: 'IPM Việt Nam',
-    legalName: 'Công ty Cổ phần Xuất bản và Truyền thông IPM',
-    partnerType: 'DISTRIBUTOR',
-    contactPerson: 'Đức Minh',
-    phone: '024 3783 4180',
-    email: 'ipm@ipmvn.example',
-    taxCode: '0102219081',
-    address: '110 Nguyễn Ngọc Nại, Thanh Xuân, Hà Nội',
-    paymentTerms: 'TERM_30',
-    bankAccount: 'BIDV - 9081 - Xuất bản IPM',
-    monthlyImportAmount: 0,
-    outstandingDebt: 0,
-    unpaidReceiptCount: 0,
-    isActive: false,
-  },
-]
 
 const STATUS_FILTER_OPTIONS: SelectOption<'ACTIVE' | 'ALL' | 'INACTIVE'>[] = [
   { value: 'ACTIVE', label: 'Đang hợp tác' },
@@ -127,16 +25,10 @@ const STATUS_FILTER_OPTIONS: SelectOption<'ACTIVE' | 'ALL' | 'INACTIVE'>[] = [
   { value: 'INACTIVE', label: 'Ngừng hợp tác' },
 ]
 
-const DEBT_FILTER_OPTIONS: SelectOption<'ALL' | 'HAS_DEBT' | 'NO_DEBT'>[] = [
+const DEBT_FILTER_OPTIONS: SelectOption<'ALL' | 'HAS_PENDING' | 'NO_PENDING'>[] = [
   { value: 'ALL', label: 'Công nợ: Tất cả' },
-  { value: 'HAS_DEBT', label: 'Còn công nợ' },
-  { value: 'NO_DEBT', label: 'Không nợ' },
-]
-
-const PAYMENT_TERM_OPTIONS: SelectOption<string>[] = [
-  { value: 'TERM_30', label: 'Công nợ 30 ngày' },
-  { value: 'TERM_15', label: 'Công nợ 15 ngày' },
-  { value: 'IMMEDIATE', label: 'Thanh toán ngay khi nhận hàng' },
+  { value: 'HAS_PENDING', label: 'Còn phiếu chờ xử lý' },
+  { value: 'NO_PENDING', label: 'Không có phiếu chờ' },
 ]
 
 function formatVnd(amount: number): string {
@@ -145,175 +37,186 @@ function formatVnd(amount: number): string {
 
 export default function SuppliersPage() {
   const navigate = useNavigate()
-  const [suppliers, setSuppliers] = useState<SupplierProfile[]>(INITIAL_SUPPLIERS)
+  const { session } = useAuth()
+  const canEdit = ['ADMIN', 'INVENTORY_MANAGER'].includes(session?.user?.roleCode ?? 'ADMIN')
+
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'ACTIVE' | 'ALL' | 'INACTIVE'>('ACTIVE')
-  const [debtFilter, setDebtFilter] = useState<'ALL' | 'HAS_DEBT' | 'NO_DEBT'>('ALL')
-  const [selectedId, setSelectedId] = useState<string>(INITIAL_SUPPLIERS[0].id)
+  const [statusFilter, setStatusFilter] = useState<'ACTIVE' | 'ALL' | 'INACTIVE'>('ALL')
+  const [debtFilter, setDebtFilter] = useState<'ALL' | 'HAS_PENDING' | 'NO_PENDING'>('ALL')
+  const [selectedId, setSelectedId] = useState<string>('')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
 
   const [newName, setNewName] = useState('')
-  const [newLegalName, setNewLegalName] = useState('')
-  const [newContactPerson, setNewContactPerson] = useState('')
   const [newPhone, setNewPhone] = useState('')
-  const [newEmail, setNewEmail] = useState('')
   const [newTaxCode, setNewTaxCode] = useState('')
   const [newAddress, setNewAddress] = useState('')
-  const [newPaymentTerms, setNewPaymentTerms] = useState('TERM_30')
-  const [newBankAccount, setNewBankAccount] = useState('')
   const [addError, setAddError] = useState('')
+
+  const [editName, setEditName] = useState('')
+  const [editPhone, setEditPhone] = useState('')
+  const [editTaxCode, setEditTaxCode] = useState('')
+  const [editAddress, setEditAddress] = useState('')
+  const [editError, setEditError] = useState('')
+
+  const suppliersQuery = useSuppliersQuery({
+    search: search.trim() || undefined,
+    isActive: statusFilter === 'ALL' ? undefined : statusFilter === 'ACTIVE',
+    hasPending: debtFilter === 'ALL' ? undefined : debtFilter === 'HAS_PENDING',
+  })
+  const statsQuery = useSupplierStatsQuery()
+
+  const createSupplier = useCreateSupplierMutation()
+  const updateSupplier = useUpdateSupplierMutation()
+  const updateStatus = useUpdateSupplierStatusMutation()
+  const deleteSupplier = useDeleteSupplierMutation()
+
+  const suppliers = useMemo(() => suppliersQuery.data ?? [], [suppliersQuery.data])
+  const stats = statsQuery.data
 
   const selectedSupplier = useMemo(
     () => suppliers.find((s) => s.id === selectedId) ?? suppliers[0] ?? null,
     [suppliers, selectedId],
   )
 
-  const [editLegalName, setEditLegalName] = useState(INITIAL_SUPPLIERS[0].legalName)
-  const [editEmail, setEditEmail] = useState(INITIAL_SUPPLIERS[0].email)
-  const [editPaymentTerms, setEditPaymentTerms] = useState(INITIAL_SUPPLIERS[0].paymentTerms)
-  const [editAddress, setEditAddress] = useState(INITIAL_SUPPLIERS[0].address)
-  const [editBankAccount, setEditBankAccount] = useState(INITIAL_SUPPLIERS[0].bankAccount)
-  const [editPhone, setEditPhone] = useState(INITIAL_SUPPLIERS[0].phone)
-  const [editTaxCode, setEditTaxCode] = useState(INITIAL_SUPPLIERS[0].taxCode)
-
-  const handleSelectSupplier = (supplier: SupplierProfile) => {
+  const handleSelectSupplier = (supplier: SupplierItem) => {
     setSelectedId(supplier.id)
-    setEditLegalName(supplier.legalName)
-    setEditEmail(supplier.email)
-    setEditPaymentTerms(supplier.paymentTerms)
-    setEditAddress(supplier.address)
-    setEditBankAccount(supplier.bankAccount)
-    setEditPhone(supplier.phone)
-    setEditTaxCode(supplier.taxCode)
+    setEditName(supplier.name)
+    setEditPhone(supplier.phone ?? '')
+    setEditTaxCode(supplier.taxCode ?? '')
+    setEditAddress(supplier.address ?? '')
+    setEditError('')
   }
 
-  const filteredSuppliers = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    return suppliers.filter((s) => {
-      if (statusFilter === 'ACTIVE' && !s.isActive) return false
-      if (statusFilter === 'INACTIVE' && s.isActive) return false
-      if (debtFilter === 'HAS_DEBT' && s.outstandingDebt <= 0) return false
-      if (debtFilter === 'NO_DEBT' && s.outstandingDebt > 0) return false
-      if (q) {
-        return (
-          s.name.toLowerCase().includes(q) ||
-          s.code.toLowerCase().includes(q) ||
-          s.taxCode.toLowerCase().includes(q) ||
-          s.phone.toLowerCase().includes(q) ||
-          s.contactPerson.toLowerCase().includes(q)
-        )
-      }
-      return true
-    })
-  }, [suppliers, search, statusFilter, debtFilter])
-
-  const stats = useMemo(() => {
-    const activeList = suppliers.filter((s) => s.isActive)
-    const publishers = activeList.filter((s) => s.partnerType === 'PUBLISHER').length
-    const distributors = activeList.length - publishers
-    const totalImport = suppliers.reduce((sum, s) => sum + s.monthlyImportAmount, 0)
-    const totalDebt = suppliers.reduce((sum, s) => sum + s.outstandingDebt, 0)
-    const unpaidReceipts = suppliers.reduce((sum, s) => sum + s.unpaidReceiptCount, 0)
-    return {
-      activeCount: activeList.length,
-      publishers,
-      distributors,
-      totalImport,
-      totalDebt,
-      unpaidReceipts,
+  const currentForm = useMemo(() => {
+    if (!selectedSupplier) {
+      return { name: '', phone: '', taxCode: '', address: '' }
     }
-  }, [suppliers])
+    if (selectedId === selectedSupplier.id) {
+      return {
+        name: editName,
+        phone: editPhone,
+        taxCode: editTaxCode,
+        address: editAddress,
+      }
+    }
+    return {
+      name: selectedSupplier.name,
+      phone: selectedSupplier.phone ?? '',
+      taxCode: selectedSupplier.taxCode ?? '',
+      address: selectedSupplier.address ?? '',
+    }
+  }, [selectedSupplier, selectedId, editName, editPhone, editTaxCode, editAddress])
 
-  const handleSaveSelected = (event: FormEvent<HTMLFormElement>) => {
+  const ensureEditSynced = () => {
+    if (selectedSupplier && selectedId !== selectedSupplier.id) {
+      setSelectedId(selectedSupplier.id)
+      setEditName(selectedSupplier.name)
+      setEditPhone(selectedSupplier.phone ?? '')
+      setEditTaxCode(selectedSupplier.taxCode ?? '')
+      setEditAddress(selectedSupplier.address ?? '')
+    }
+  }
+
+  const handleSaveSelected = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!selectedSupplier) return
-    if (!editLegalName.trim()) {
-      notify.error('Tên pháp lý nhà cung cấp không được để trống.')
+    const trimmedName = currentForm.name.trim()
+    if (!trimmedName) {
+      setEditError('Tên nhà cung cấp không được để trống.')
       return
     }
-    setSuppliers((prev) =>
-      prev.map((s) =>
-        s.id === selectedSupplier.id
-          ? {
-              ...s,
-              legalName: editLegalName.trim(),
-              email: editEmail.trim(),
-              paymentTerms: editPaymentTerms,
-              address: editAddress.trim(),
-              bankAccount: editBankAccount.trim(),
-              phone: editPhone.trim(),
-              taxCode: editTaxCode.trim(),
-            }
-          : s,
-      ),
-    )
-    notify.success(`Đã lưu cập nhật hồ sơ nhà cung cấp "${selectedSupplier.name}".`)
+    setEditError('')
+    try {
+      const updated = await updateSupplier.mutateAsync({
+        supplierId: selectedSupplier.id,
+        request: {
+          name: trimmedName,
+          phone: currentForm.phone.trim() || null,
+          taxCode: currentForm.taxCode.trim() || null,
+          address: currentForm.address.trim() || null,
+          isActive: selectedSupplier.isActive,
+        },
+      })
+      handleSelectSupplier(updated)
+      notify.success(`Đã lưu cập nhật hồ sơ nhà cung cấp "${updated.name}".`)
+    } catch (error) {
+      setEditError(error instanceof Error ? error.message : 'Không thể cập nhật nhà cung cấp.')
+    }
   }
 
-  const handleToggleActive = () => {
+  const handleToggleActive = async () => {
     if (!selectedSupplier) return
     const nextState = !selectedSupplier.isActive
-    setSuppliers((prev) =>
-      prev.map((s) => (s.id === selectedSupplier.id ? { ...s, isActive: nextState } : s)),
-    )
-    notify.success(
-      nextState
-        ? `Đã mở lại hợp tác với "${selectedSupplier.name}".`
-        : `Đã tạm ngừng hợp tác với "${selectedSupplier.name}".`,
-    )
+    setEditError('')
+    try {
+      const updated = await updateStatus.mutateAsync({
+        supplierId: selectedSupplier.id,
+        isActive: nextState,
+      })
+      handleSelectSupplier(updated)
+      notify.success(
+        nextState
+          ? `Đã mở lại hợp tác với "${updated.name}".`
+          : `Đã ngừng hợp tác với "${updated.name}".`,
+      )
+    } catch (error) {
+      setEditError(error instanceof Error ? error.message : 'Không thể đổi trạng thái nhà cung cấp.')
+    }
   }
 
-  const handleCreateSupplier = (event: FormEvent<HTMLFormElement>) => {
+  const handleCreateSupplier = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!newName.trim()) {
       setAddError('Vui lòng nhập tên nhà cung cấp.')
       return
     }
-    if (newTaxCode.trim() && suppliers.some((s) => s.taxCode === newTaxCode.trim())) {
-      setAddError('Mã số thuế này đã tồn tại trong danh sách đối tác.')
-      return
-    }
     setAddError('')
-    const nextNumber = suppliers.length + 1
-    const created: SupplierProfile = {
-      id: `sup-${Date.now()}`,
-      code: `NCC-${String(nextNumber).padStart(3, '0')}`,
-      name: newName.trim(),
-      legalName: newLegalName.trim() || newName.trim(),
-      partnerType: newName.toLowerCase().includes('nxb') ? 'PUBLISHER' : 'DISTRIBUTOR',
-      contactPerson: newContactPerson.trim() || 'Phòng kinh doanh',
-      phone: newPhone.trim() || '028 3800 0000',
-      email: newEmail.trim() || 'lienhe@doitac.example',
-      taxCode: newTaxCode.trim() || `01009988${nextNumber}`,
-      address: newAddress.trim() || 'TP. Hồ Chí Minh',
-      paymentTerms: newPaymentTerms,
-      bankAccount: newBankAccount.trim() || 'Chưa cập nhật tài khoản',
-      monthlyImportAmount: 0,
-      outstandingDebt: 0,
-      unpaidReceiptCount: 0,
-      isActive: true,
+    try {
+      const created = await createSupplier.mutateAsync({
+        name: newName.trim(),
+        phone: newPhone.trim() || null,
+        taxCode: newTaxCode.trim() || null,
+        address: newAddress.trim() || null,
+        isActive: true,
+      })
+      handleSelectSupplier(created)
+      setIsAddDialogOpen(false)
+      setNewName('')
+      setNewPhone('')
+      setNewTaxCode('')
+      setNewAddress('')
+      notify.success(`Đã thêm nhà cung cấp "${created.name}" (${created.code}).`)
+    } catch (error) {
+      setAddError(error instanceof Error ? error.message : 'Không thể tạo nhà cung cấp.')
     }
-    setSuppliers((prev) => [created, ...prev])
-    handleSelectSupplier(created)
-    setIsAddDialogOpen(false)
-    setNewName('')
-    setNewLegalName('')
-    setNewContactPerson('')
-    setNewPhone('')
-    setNewEmail('')
-    setNewTaxCode('')
-    setNewAddress('')
-    setNewBankAccount('')
-    notify.success(`Đã thêm nhà cung cấp "${created.name}" (${created.code}).`)
+  }
+
+  const handleDelete = async () => {
+    if (!selectedSupplier) return
+    setDeleteError('')
+    try {
+      await deleteSupplier.mutateAsync(selectedSupplier.id)
+      setConfirmDeleteOpen(false)
+      setSelectedId('')
+      notify.success(`Đã xóa nhà cung cấp "${selectedSupplier.name}".`)
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : 'Không thể xóa nhà cung cấp.')
+    }
   }
 
   return (
     <WarehouseWorkspace
-      action={<Button onClick={() => setIsAddDialogOpen(true)}>+ Thêm nhà cung cấp</Button>}
+      action={
+        canEdit ? (
+          <Button onClick={() => setIsAddDialogOpen(true)}>+ Thêm nhà cung cấp</Button>
+        ) : undefined
+      }
       title="Đối tác & Nhà cung cấp"
     >
       <p className="text-xs text-slate-500">
-        Quản lý hồ sơ pháp lý, đầu mối liên hệ và công nợ nhập hàng.
+        Quản lý hồ sơ pháp lý, đầu mối liên hệ và lịch sử phiếu nhập hàng từ đối tác.
       </p>
 
       <section className="grid gap-5 md:grid-cols-3">
@@ -322,28 +225,34 @@ export default function SuppliersPage() {
             <span>Đối tác đang hợp tác</span>
             <ArrowUpRight className="h-4 w-4 text-slate-400" />
           </div>
-          <p className="mt-2.5 text-2xl font-black text-slate-900">{stats.activeCount}</p>
+          <p className="mt-2.5 text-2xl font-black text-slate-900">{stats?.activeCount ?? 0}</p>
           <p className="mt-2 text-xs text-slate-500">
-            {stats.distributors} nhà phân phối - {stats.publishers} NXB
+            Tổng {stats?.totalCount ?? 0} đối tác ({stats?.inactiveCount ?? 0} ngừng hợp tác)
           </p>
         </Card>
 
         <Card padding="lg">
           <div className="flex items-center justify-between text-xs text-slate-500">
-            <span>Giá trị nhập tháng này</span>
+            <span>Tổng giá trị đã nhập</span>
             <ArrowUpRight className="h-4 w-4 text-slate-400" />
           </div>
-          <p className="mt-2.5 text-2xl font-black text-slate-900">{formatVnd(stats.totalImport)}</p>
-          <p className="mt-2 text-xs text-slate-500">Chứng từ hợp lệ đã xác nhận</p>
+          <p className="mt-2.5 text-2xl font-black text-slate-900">
+            {formatVnd(stats?.totalImportAmount ?? 0)}
+          </p>
+          <p className="mt-2 text-xs text-slate-500">Chứng từ hợp lệ đã xác nhận hoàn tất</p>
         </Card>
 
         <Card padding="lg">
           <div className="flex items-center justify-between text-xs text-slate-500">
-            <span>Công nợ phải trả</span>
+            <span>Phiếu nhập đang xử lý</span>
             <ArrowUpRight className="h-4 w-4 text-slate-400" />
           </div>
-          <p className="mt-2.5 text-2xl font-black text-amber-600">{formatVnd(stats.totalDebt)}</p>
-          <p className="mt-2 text-xs text-slate-500">{stats.unpaidReceipts} phiếu chưa thanh toán</p>
+          <p className="mt-2.5 text-2xl font-black text-amber-600">
+            {formatVnd(stats?.totalPendingAmount ?? 0)}
+          </p>
+          <p className="mt-2 text-xs text-slate-500">
+            {stats?.pendingReceiptCount ?? 0} phiếu nháp / chờ duyệt
+          </p>
         </Card>
       </section>
 
@@ -351,10 +260,10 @@ export default function SuppliersPage() {
         <div className="space-y-4 p-5">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-900">Danh sách nhà cung cấp</h2>
-            <span className="text-xs text-slate-400">•••</span>
+            <span className="text-xs text-slate-500">{suppliers.length} đối tác</span>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_180px]">
+          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_190px_190px]">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
               <input
@@ -392,22 +301,36 @@ export default function SuppliersPage() {
             <thead className="bg-slate-50/90 text-slate-600 font-semibold">
               <tr>
                 <th className="px-5 py-3 text-left" scope="col">Đối tác / Mã</th>
-                <th className="px-4 py-3 text-left" scope="col">Đầu mối liên hệ</th>
+                <th className="px-4 py-3 text-left" scope="col">Số điện thoại & Địa chỉ</th>
                 <th className="px-4 py-3 text-left" scope="col">Mã số thuế</th>
-                <th className="px-4 py-3 text-left" scope="col">Nhập tháng này</th>
-                <th className="px-4 py-3 text-left" scope="col">Công nợ</th>
+                <th className="px-4 py-3 text-left" scope="col">Tổng giá trị nhập</th>
+                <th className="px-4 py-3 text-left" scope="col">Đang xử lý</th>
                 <th className="px-5 py-3 text-left" scope="col">Trạng thái</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredSuppliers.length === 0 ? (
+              {suppliersQuery.isLoading ? (
+                <tr>
+                  <td className="px-5 py-10 text-center text-slate-400" colSpan={6}>
+                    Đang tải danh sách nhà cung cấp...
+                  </td>
+                </tr>
+              ) : suppliersQuery.error ? (
+                <tr>
+                  <td className="px-5 py-10 text-center text-rose-700" colSpan={6}>
+                    {suppliersQuery.error instanceof Error
+                      ? suppliersQuery.error.message
+                      : 'Không thể tải danh sách nhà cung cấp.'}
+                  </td>
+                </tr>
+              ) : suppliers.length === 0 ? (
                 <tr>
                   <td className="px-5 py-10 text-center text-slate-500" colSpan={6}>
-                    Không tìm thấy nhà cung cấp phù hợp với bộ lọc.
+                    Chưa có nhà cung cấp nào phù hợp với bộ lọc. Nhấn &ldquo;+ Thêm nhà cung cấp&rdquo; để tạo mới.
                   </td>
                 </tr>
               ) : (
-                filteredSuppliers.map((supplier) => {
+                suppliers.map((supplier) => {
                   const isSelected = selectedSupplier?.id === supplier.id
                   return (
                     <tr
@@ -421,14 +344,14 @@ export default function SuppliersPage() {
                         {supplier.name} - <span className="font-mono text-indigo-700">{supplier.code}</span>
                       </td>
                       <td className="px-4 py-4 text-slate-600">
-                        {supplier.contactPerson} - {supplier.phone}
+                        {[supplier.phone, supplier.address].filter(Boolean).join(' - ') || '—'}
                       </td>
-                      <td className="px-4 py-4 font-mono text-slate-600">{supplier.taxCode}</td>
+                      <td className="px-4 py-4 font-mono text-slate-600">{supplier.taxCode || '—'}</td>
                       <td className="px-4 py-4 text-slate-700 font-medium">
-                        {formatVnd(supplier.monthlyImportAmount)}
+                        {formatVnd(supplier.totalImportAmount)} ({supplier.receiptCount} phiếu)
                       </td>
                       <td className="px-4 py-4 font-semibold text-slate-700">
-                        {formatVnd(supplier.outstandingDebt)}
+                        {formatVnd(supplier.pendingAmount)}
                       </td>
                       <td className="px-5 py-4">
                         {supplier.isActive ? (
@@ -448,17 +371,6 @@ export default function SuppliersPage() {
             </tbody>
           </table>
         </div>
-
-        <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3.5 text-xs text-slate-500">
-          <span>
-            Hiển thị 1–{filteredSuppliers.length} trong {suppliers.length} đối tác
-          </span>
-          <div className="flex items-center gap-1">
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-indigo-50 font-bold text-indigo-700">
-              1
-            </span>
-          </div>
-        </div>
       </Card>
 
       {selectedSupplier && (
@@ -470,55 +382,79 @@ export default function SuppliersPage() {
                 {selectedSupplier.code} - {selectedSupplier.name}
               </p>
             </div>
-            <Button onClick={handleToggleActive} type="button" variant="ghost">
-              {selectedSupplier.isActive ? 'Ngừng hợp tác' : 'Kích hoạt lại'}
-            </Button>
+            {canEdit && (
+              <div className="flex items-center gap-2">
+                <Button
+                  disabled={updateStatus.isPending}
+                  onClick={() => void handleToggleActive()}
+                  type="button"
+                  variant="outline"
+                >
+                  {selectedSupplier.isActive ? 'Ngừng hợp tác' : 'Kích hoạt lại'}
+                </Button>
+                {selectedSupplier.receiptCount === 0 && (
+                  <Button
+                    onClick={() => {
+                      setDeleteError('')
+                      setConfirmDeleteOpen(true)
+                    }}
+                    type="button"
+                    variant="ghost"
+                  >
+                    Xóa
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
 
-          <form className="mt-5 space-y-5" onSubmit={handleSaveSelected}>
-            <div className="grid gap-4 md:grid-cols-3">
-              <TextField
-                label="Tên pháp lý"
-                onChange={(e) => setEditLegalName(e.target.value)}
-                required
-                value={editLegalName}
-              />
-              <TextField
-                label="Email nhận chứng từ"
-                onChange={(e) => setEditEmail(e.target.value)}
-                type="email"
-                value={editEmail}
-              />
-              <SelectBox
-                label="Điều khoản thanh toán"
-                onChange={(val) => setEditPaymentTerms(val)}
-                options={PAYMENT_TERM_OPTIONS}
-                searchable={false}
-                value={editPaymentTerms}
-              />
-            </div>
+          <form className="mt-5 space-y-5" onSubmit={(e) => void handleSaveSelected(e)}>
+            {editError && (
+              <div className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs text-rose-700" role="alert">
+                {editError}
+              </div>
+            )}
 
             <div className="grid gap-4 md:grid-cols-3">
               <TextField
-                label="Địa chỉ"
-                onChange={(e) => setEditAddress(e.target.value)}
-                value={editAddress}
-              />
-              <TextField
-                label="Số điện thoại & Mã số thuế"
+                disabled={!canEdit}
+                label="Tên pháp lý / Tên nhà cung cấp *"
                 onChange={(e) => {
-                  const parts = e.target.value.split('-')
-                  setEditPhone(parts[0]?.trim() ?? '')
-                  if (parts[1]) setEditTaxCode(parts[1].trim())
+                  ensureEditSynced()
+                  setEditName(e.target.value)
                 }}
-                value={`${editPhone} - MST: ${editTaxCode}`}
+                required
+                value={currentForm.name}
               />
               <TextField
-                label="Tài khoản ngân hàng"
-                onChange={(e) => setEditBankAccount(e.target.value)}
-                value={editBankAccount}
+                disabled={!canEdit}
+                label="Số điện thoại liên hệ"
+                onChange={(e) => {
+                  ensureEditSynced()
+                  setEditPhone(e.target.value)
+                }}
+                value={currentForm.phone}
+              />
+              <TextField
+                disabled={!canEdit}
+                label="Mã số thuế"
+                onChange={(e) => {
+                  ensureEditSynced()
+                  setEditTaxCode(e.target.value)
+                }}
+                value={currentForm.taxCode}
               />
             </div>
+
+            <TextField
+              disabled={!canEdit}
+              label="Địa chỉ trụ sở"
+              onChange={(e) => {
+                ensureEditSynced()
+                setEditAddress(e.target.value)
+              }}
+              value={currentForm.address}
+            />
 
             <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 px-4 py-3 text-xs text-indigo-950 flex items-center gap-2.5">
               <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-indigo-600 text-[10px] font-bold text-indigo-700">
@@ -530,11 +466,15 @@ export default function SuppliersPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3 pt-1">
-              <Button type="submit" variant="primary">
-                Lưu hồ sơ
-              </Button>
+              {canEdit && (
+                <Button loading={updateSupplier.isPending} type="submit" variant="primary">
+                  Lưu hồ sơ
+                </Button>
+              )}
               <Button
-                onClick={() => navigate(`${catalogPaths.stockReceipts}?supplierId=${encodeURIComponent(selectedSupplier.id)}`)}
+                onClick={() =>
+                  navigate(`${catalogPaths.stockReceipts}?supplierId=${encodeURIComponent(selectedSupplier.id)}`)
+                }
                 type="button"
                 variant="outline"
               >
@@ -547,55 +487,31 @@ export default function SuppliersPage() {
 
       {isAddDialogOpen && (
         <CatalogDialog onClose={() => setIsAddDialogOpen(false)} title="Thêm nhà cung cấp mới">
-          <form className="space-y-4" onSubmit={handleCreateSupplier}>
+          <form className="space-y-4" onSubmit={(e) => void handleCreateSupplier(e)}>
             {addError && (
               <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700" role="alert">
                 {addError}
               </p>
             )}
+            <TextField
+              label="Tên nhà cung cấp *"
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="VD: NXB Kim Đồng"
+              required
+              value={newName}
+            />
             <div className="grid gap-3 sm:grid-cols-2">
               <TextField
-                label="Tên gọi đối tác *"
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="VD: NXB Kim Đồng"
-                required
-                value={newName}
-              />
-              <TextField
-                label="Tên pháp lý đầy đủ"
-                onChange={(e) => setNewLegalName(e.target.value)}
-                placeholder="VD: Nhà xuất bản Kim Đồng"
-                value={newLegalName}
-              />
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <TextField
-                label="Người liên hệ"
-                onChange={(e) => setNewContactPerson(e.target.value)}
-                placeholder="VD: Mai Thảo"
-                value={newContactPerson}
-              />
-              <TextField
-                label="Số điện thoại *"
+                label="Số điện thoại"
                 onChange={(e) => setNewPhone(e.target.value)}
                 placeholder="VD: 028 3930 5247"
-                required
                 value={newPhone}
               />
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
               <TextField
                 label="Mã số thuế"
                 onChange={(e) => setNewTaxCode(e.target.value)}
                 placeholder="VD: 0100108240"
                 value={newTaxCode}
-              />
-              <TextField
-                label="Email nhận chứng từ"
-                onChange={(e) => setNewEmail(e.target.value)}
-                placeholder="doitac@example.com"
-                type="email"
-                value={newEmail}
               />
             </div>
             <TextField
@@ -604,31 +520,39 @@ export default function SuppliersPage() {
               placeholder="Số nhà, đường, quận/huyện, tỉnh/thành phố"
               value={newAddress}
             />
-            <div className="grid gap-3 sm:grid-cols-2">
-              <SelectBox
-                label="Điều khoản thanh toán"
-                onChange={(val) => setNewPaymentTerms(val)}
-                options={PAYMENT_TERM_OPTIONS}
-                searchable={false}
-                value={newPaymentTerms}
-              />
-              <TextField
-                label="Tài khoản ngân hàng"
-                onChange={(e) => setNewBankAccount(e.target.value)}
-                placeholder="Ngân hàng - Số TK - Chủ TK"
-                value={newBankAccount}
-              />
-            </div>
             <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
               <Button onClick={() => setIsAddDialogOpen(false)} type="button" variant="ghost">
                 Hủy
               </Button>
-              <Button type="submit" variant="primary">
+              <Button loading={createSupplier.isPending} type="submit" variant="primary">
                 Tạo nhà cung cấp
               </Button>
             </div>
           </form>
         </CatalogDialog>
+      )}
+
+      {confirmDeleteOpen && selectedSupplier && (
+        <ConfirmationDialog
+          actions={
+            <>
+              <Button onClick={() => setConfirmDeleteOpen(false)} variant="ghost">
+                Hủy
+              </Button>
+              <Button
+                loading={deleteSupplier.isPending}
+                onClick={() => void handleDelete()}
+                variant="danger"
+              >
+                {deleteSupplier.isPending ? 'Đang xóa…' : 'Xóa nhà cung cấp'}
+              </Button>
+            </>
+          }
+          error={deleteError}
+          message={`Bạn có chắc chắn muốn xóa nhà cung cấp "${selectedSupplier.name}"? Chỉ nhà cung cấp chưa phát sinh phiếu nhập kho mới có thể xóa.`}
+          onClose={() => setConfirmDeleteOpen(false)}
+          title={`Xóa ${selectedSupplier.name}`}
+        />
       )}
     </WarehouseWorkspace>
   )

@@ -7,6 +7,7 @@ import {
   createCopyLabel,
   createEdition,
   createSeries,
+  createSupplier,
   createTitle,
   deleteCategory,
   deleteCopy,
@@ -15,6 +16,7 @@ import {
   deleteEditionImage,
   deleteSeries,
   deleteSeriesImage,
+  deleteSupplier,
   deleteTitle,
   deleteTitleImage,
   getCategory,
@@ -23,12 +25,15 @@ import {
   getCopyHistory,
   getEdition,
   getSeries,
+  getSupplier,
+  getSupplierStats,
   getTitle,
   listCategories,
   listCopies,
   listAvailableReceiptLines,
   listEditions,
   listSeries,
+  listSuppliers,
   listTitles,
   replaceCopyImage,
   replaceEditionImage,
@@ -42,6 +47,8 @@ import {
   updateEditionStatus,
   updateSeries,
   updateSeriesStatus,
+  updateSupplier,
+  updateSupplierStatus,
   updateTitle,
   updateTitleStatus,
 } from './catalog.service'
@@ -52,13 +59,16 @@ import type {
   CreateCopyRequest,
   CreateEditionRequest,
   CreateSeriesRequest,
+  CreateSupplierRequest,
   SaveTitleRequest,
+  SupplierListFilters,
   TitleListFilters,
   UpdateCategoryRequest,
   UpdateCopyRequest,
   UpdateCopyStatusRequest,
   UpdateEditionRequest,
   UpdateSeriesRequest,
+  UpdateSupplierRequest,
 } from './catalog.type'
 import type { CloudinaryUploadResultRequest } from '@/features/uploads/upload.type'
 
@@ -75,6 +85,9 @@ export const catalogQueryKeys = {
   editions: (titleId: string) => ['catalog', 'titles', titleId, 'editions'] as const,
   series: (search: string) => ['catalog', 'series', search] as const,
   seriesDetail: (seriesId: string) => ['catalog', 'series', 'detail', seriesId] as const,
+  suppliers: (filters: SupplierListFilters = {}) => ['catalog', 'suppliers', filters] as const,
+  supplierStats: () => ['catalog', 'suppliers', 'stats'] as const,
+  supplierDetail: (supplierId: string) => ['catalog', 'suppliers', 'detail', supplierId] as const,
   title: (titleId: string) => ['catalog', 'titles', titleId] as const,
   titles: (filters: TitleListFilters = {}) => ['catalog', 'titles', filters] as const,
 }
@@ -82,6 +95,28 @@ export const catalogQueryKeys = {
 // ----------------------------------------------------------------------
 // QUERY HOOKS
 // ----------------------------------------------------------------------
+
+export function useSuppliersQuery(filters: SupplierListFilters = {}) {
+  return useQuery({
+    queryKey: catalogQueryKeys.suppliers(filters),
+    queryFn: () => listSuppliers(filters),
+  })
+}
+
+export function useSupplierStatsQuery() {
+  return useQuery({
+    queryKey: catalogQueryKeys.supplierStats(),
+    queryFn: () => getSupplierStats(),
+  })
+}
+
+export function useSupplierDetailQuery(supplierId: string) {
+  return useQuery({
+    queryKey: catalogQueryKeys.supplierDetail(supplierId),
+    queryFn: () => getSupplier(supplierId),
+    enabled: Boolean(supplierId),
+  })
+}
 
 export function useCategoriesQuery(search = '') {
   return useQuery({ queryKey: catalogQueryKeys.categories(search), queryFn: () => listCategories(search) })
@@ -261,6 +296,40 @@ export function useCatalogBreadcrumbs(): BreadcrumbItem[] {
 // ----------------------------------------------------------------------
 // SERIES MUTATION HOOKS
 // ----------------------------------------------------------------------
+
+export function useCreateSupplierMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (request: CreateSupplierRequest) => createSupplier(request),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'suppliers'] }),
+  })
+}
+
+export function useUpdateSupplierMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ supplierId, request }: { supplierId: string; request: UpdateSupplierRequest }) =>
+      updateSupplier(supplierId, request),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'suppliers'] }),
+  })
+}
+
+export function useUpdateSupplierStatusMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ supplierId, isActive }: { supplierId: string; isActive: boolean }) =>
+      updateSupplierStatus(supplierId, isActive),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'suppliers'] }),
+  })
+}
+
+export function useDeleteSupplierMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (supplierId: string) => deleteSupplier(supplierId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'suppliers'] }),
+  })
+}
 
 export function useCreateCategoryMutation() {
   const queryClient = useQueryClient()

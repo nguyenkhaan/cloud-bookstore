@@ -30,6 +30,53 @@ export type UpdateCategoryRequest = {
   isActive?: boolean
 }
 
+export type SupplierItem = {
+  id: string
+  code: string
+  name: string
+  phone: string | null
+  address: string | null
+  taxCode: string | null
+  isActive: boolean
+  receiptCount: number
+  totalImportAmount: number
+  pendingAmount: number
+  pendingReceiptCount: number
+}
+
+export type SupplierStats = {
+  activeCount: number
+  inactiveCount: number
+  totalCount: number
+  totalImportAmount: number
+  totalPendingAmount: number
+  pendingReceiptCount: number
+}
+
+export type SupplierListFilters = {
+  search?: string
+  isActive?: boolean
+  hasPending?: boolean
+  page?: number
+  pageSize?: number
+}
+
+export type CreateSupplierRequest = {
+  name: string
+  phone?: string | null
+  address?: string | null
+  taxCode?: string | null
+  isActive?: boolean
+}
+
+export type UpdateSupplierRequest = {
+  name: string
+  phone?: string | null
+  address?: string | null
+  taxCode?: string | null
+  isActive?: boolean
+}
+
 export type BookSeriesTitleSummary = {
   id: string
   name: string
