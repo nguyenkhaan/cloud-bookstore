@@ -25,6 +25,7 @@ export const posTabs = [
   { id: 'rental', label: 'Cho thuê', screenCode: 'SCR-POS-03' },
   { id: 'renewal', label: 'Gia hạn', screenCode: 'SCR-POS-04' },
   { id: 'return', label: 'Trả & quyết toán', screenCode: 'SCR-POS-05' },
+  { id: 'buyback', label: 'Thu mua sách cũ', screenCode: 'SCR-POS-06' },
 ] as const
 
 export const copyFixtures: BookCopyFixture[] = [

@@ -8,6 +8,7 @@ import { workspacePathFor } from '@/features/workspace/workspace.route'
 import { posPaths } from '../pos.route'
 import type { DamageApprovalPath, PosTab, QuickSeriesFixture, ReturnLineFixture } from '../pos-transaction.type'
 import { DamageReviewModal } from '../components/DamageReviewModal'
+import { PosBuybackPanel } from '../components/PosBuybackPanel'
 import { PosRentalPanel } from '../components/PosRentalPanel'
 import { PosRenewalPanel } from '../components/PosRenewalPanel'
 import { PosReturnPanel } from '../components/PosReturnPanel'
@@ -62,6 +63,13 @@ export default function PosWorkspacePage() {
         {activeTab === 'rental' && <PosRentalPanel />}
         {activeTab === 'renewal' && <PosRenewalPanel />}
         {activeTab === 'return' && <PosReturnPanel damageApprovalStatus={damageApprovalStatus} onOpenDamageReview={(line) => setDamageTarget(line)} />}
+        {activeTab === 'buyback' && (
+          <PosBuybackPanel
+            onConsumeQuickPickerBatch={() => setQuickPickerPreview(undefined)}
+            onOpenQuickPicker={() => setIsQuickPickerOpen(true)}
+            quickPickerBatch={quickPickerPreview}
+          />
+        )}
       </div>
       <QuickSeriesPickerModal open={isQuickPickerOpen} onClose={() => setIsQuickPickerOpen(false)} onApply={(fixture) => setQuickPickerPreview(fixture)} />
       <DamageReviewModal open={damageTarget !== null} copy={damageTarget ?? undefined} onClose={() => setDamageTarget(null)} onConfirm={(path: DamageApprovalPath) => { setDamageApprovalStatus(path === 'local-admin' ? 'Admin đã duyệt tại chỗ' : 'Đã gửi Trung tâm Phê duyệt · Chờ Admin'); setDamageTarget(null) }} />
