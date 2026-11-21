@@ -8,6 +8,7 @@ import ForgotPasswordPage from '@/features/auth/pages/ForgotPasswordPage'
 import ResetPasswordPage from '@/features/auth/pages/ResetPasswordPage'
 import FirstChangePasswordPage from '@/features/auth/pages/FirstChangePasswordPage'
 import ProfileSecurityPage from '@/features/auth/pages/ProfileSecurityPage'
+import CategoryTreePage from '@/features/catalog/pages/CategoryTreePage'
 import CopyDetailPage from '@/features/catalog/pages/CopyDetailPage'
 import EditionDetailPage from '@/features/catalog/pages/EditionDetailPage'
 import InventoryCheckPage from '@/features/catalog/pages/InventoryCheckPage'
@@ -102,6 +103,7 @@ export default function AppRoutes() {
       <Route path="/reports" element={<RequireSession><ReportsPage /></RequireSession>} />
       <Route path="/settings" element={<RequireSession><SettingsPage /></RequireSession>} />
       <Route path="/book-series" element={<RequireSession><BookSeriesPage /></RequireSession>} />
+      <Route path="/catalog/categories" element={<RequireSession><CategoryTreePage /></RequireSession>} />
       <Route path="/catalog/series" element={<RequireSession><SeriesListPage /></RequireSession>} />
       <Route path="/catalog/titles" element={<RequireSession><TitleListPage /></RequireSession>} />
       <Route path="/catalog/titles/:titleId" element={<RequireSession><TitleDetailPage /></RequireSession>} />

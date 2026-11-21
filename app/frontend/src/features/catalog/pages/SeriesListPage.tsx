@@ -9,6 +9,7 @@ import { CatalogDialog } from '../components/CatalogDialog'
 import { CatalogWorkspace } from '../components/CatalogWorkspace'
 import { SeriesCardActions } from '../components/SeriesCardActions'
 import { SeriesCoverStack } from '../components/SeriesCoverStack'
+import { SeriesVolumeMatrixPanel } from '../components/SeriesVolumeMatrixPanel'
 
 export default function SeriesListPage() {
   const [search, setSearch] = useState('')
@@ -38,17 +39,37 @@ export default function SeriesListPage() {
 
   const series = seriesQuery.data ?? []
   const completedSeries = series.filter((item) => item.expectedVolumeCount && item.titleCount === item.expectedVolumeCount).length
+  const incompleteSeries = series.filter((item) => !item.expectedVolumeCount || item.titleCount !== item.expectedVolumeCount).length
+  const averageCompletion =
+    series.length > 0
+      ? Math.round(
+          (series.reduce((sum, item) => {
+            const exp = item.expectedVolumeCount ?? Math.max(item.titleCount ?? 0, 10)
+            const cur = item.titleCount ?? 0
+            return sum + (exp > 0 ? Math.min(100, (cur / exp) * 100) : 0)
+          }, 0) /
+            series.length) *
+            10,
+        ) / 10
+      : 0
 
   return (
     <CatalogWorkspace
       action={<Button onClick={() => setIsDialogOpen(true)}>+ Tạo bộ sách mới</Button>}
-      title="Quản lý Bộ sách & tiến độ đủ bộ"
+      title="Quản lý Bộ sách & Tiến độ đủ bộ (Series / Boxset)"
     >
-      <section className="grid gap-4 md:grid-cols-3">
-        <Metric label="Tổng số bộ sách" tone="indigo" value={String(series.length)} />
-        <Metric label="Đang hoạt động" tone="emerald" value={String(completedSeries)} />
-        <Metric label="Cần bổ sung" tone="amber" value={String(series.filter((item) => item.expectedVolumeCount && item.titleCount !== item.expectedVolumeCount).length)} />
+      <p className="-mt-3 text-xs text-slate-500">
+        Theo dõi ma trận tập, mức độ hoàn thiện của từng bộ truyện và hỗ trợ đóng gói bán/thuê trọn bộ.
+      </p>
+
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Metric description="Manga, Comic, Tiểu thuyết" label="Tổng số Bộ sách" tone="indigo" value={String(series.length)} />
+        <Metric description="Đủ điều kiện cho thuê trọn bộ" label="Tỷ lệ đủ bộ trung bình" tone="emerald" value={`${averageCompletion}%`} />
+        <Metric description="Đủ bộ sẵn sàng bán combo" label="Bộ đã hoàn thiện 100%" tone="indigo" value={String(completedSeries)} />
+        <Metric description="Ưu tiên thu mua từ khách" label="Bộ khuyết tập cần săn" tone="amber" value={String(incompleteSeries)} />
       </section>
+
+      <SeriesVolumeMatrixPanel series={series} />
 
       <Card className="overflow-hidden" padding="none">
         <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -126,9 +147,25 @@ export default function SeriesListPage() {
   )
 }
 
-function Metric({ label, tone, value }: { label: string; tone: 'amber' | 'emerald' | 'indigo'; value: string }) {
+function Metric({
+  description,
+  label,
+  tone,
+  value,
+}: {
+  description?: string
+  label: string
+  tone: 'amber' | 'emerald' | 'indigo'
+  value: string
+}) {
   const tones = { amber: 'bg-amber-50 text-amber-700', emerald: 'bg-emerald-50 text-emerald-700', indigo: 'bg-indigo-50 text-indigo-700' }
-  return <Card className="p-5" padding="none"><p className="text-xs text-slate-500">{label}</p><p className={`mt-2 w-fit rounded-lg px-2.5 py-1 text-2xl font-black ${tones[tone]}`}>{value}</p></Card>
+  return (
+    <Card className="p-5" padding="none">
+      <p className="text-xs text-slate-500">{label}</p>
+      <p className={`mt-2 w-fit rounded-lg px-2.5 py-1 text-2xl font-black ${tones[tone]}`}>{value}</p>
+      {description && <p className="mt-2 text-xs font-medium text-slate-500">{description}</p>}
+    </Card>
+  )
 }
 
 export function LoadingRows() {

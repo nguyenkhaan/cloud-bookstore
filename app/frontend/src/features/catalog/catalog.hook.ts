@@ -2,11 +2,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMatch, useSearchParams } from 'react-router-dom'
 import type { BreadcrumbItem } from '@/components/common/Breadcrumb'
 import {
+  createCategory,
   createCopy,
   createCopyLabel,
   createEdition,
   createSeries,
   createTitle,
+  deleteCategory,
   deleteCopy,
   deleteCopyImage,
   deleteEdition,
@@ -15,12 +17,14 @@ import {
   deleteSeriesImage,
   deleteTitle,
   deleteTitleImage,
+  getCategory,
   getCopy,
   getCopyByBarcode,
   getCopyHistory,
   getEdition,
   getSeries,
   getTitle,
+  listCategories,
   listCopies,
   listAvailableReceiptLines,
   listEditions,
@@ -30,6 +34,8 @@ import {
   replaceEditionImage,
   replaceSeriesImage,
   replaceTitleImage,
+  updateCategory,
+  updateCategoryStatus,
   updateCopy,
   updateCopyStatus,
   updateEdition,
@@ -42,11 +48,13 @@ import {
 import { catalogPaths } from './catalog.route'
 import type {
   BookEdition,
+  CreateCategoryRequest,
   CreateCopyRequest,
   CreateEditionRequest,
   CreateSeriesRequest,
   SaveTitleRequest,
   TitleListFilters,
+  UpdateCategoryRequest,
   UpdateCopyRequest,
   UpdateCopyStatusRequest,
   UpdateEditionRequest,
@@ -56,6 +64,8 @@ import type { CloudinaryUploadResultRequest } from '@/features/uploads/upload.ty
 
 export const catalogQueryKeys = {
   all: ['catalog'] as const,
+  categories: (search: string) => ['catalog', 'categories', search] as const,
+  category: (categoryId: string) => ['catalog', 'categories', 'detail', categoryId] as const,
   copies: (editionId: string) => ['catalog', 'editions', editionId, 'copies'] as const,
   copy: (copyId: string) => ['catalog', 'copies', copyId] as const,
   copyByBarcode: (barcode: string) => ['catalog', 'copies', 'by-barcode', barcode] as const,
@@ -72,6 +82,18 @@ export const catalogQueryKeys = {
 // ----------------------------------------------------------------------
 // QUERY HOOKS
 // ----------------------------------------------------------------------
+
+export function useCategoriesQuery(search = '') {
+  return useQuery({ queryKey: catalogQueryKeys.categories(search), queryFn: () => listCategories(search) })
+}
+
+export function useCategoryQuery(categoryId: string) {
+  return useQuery({
+    queryKey: catalogQueryKeys.category(categoryId),
+    queryFn: () => getCategory(categoryId),
+    enabled: Boolean(categoryId),
+  })
+}
 
 export function useSeriesQuery(search = '') {
   return useQuery({ queryKey: catalogQueryKeys.series(search), queryFn: () => listSeries(search) })
@@ -153,12 +175,12 @@ function editionLabel(edition?: Pick<BookEdition, 'editionStatement' | 'isbn'>) 
  */
 export function useCatalogBreadcrumbs(): BreadcrumbItem[] {
   const [searchParams] = useSearchParams()
+  const isCategoryList = Boolean(useMatch(catalogPaths.categoryList))
   const isTitleList = Boolean(useMatch(catalogPaths.titleList))
   const isInventoryCheck = Boolean(useMatch(catalogPaths.inventoryCheck))
   const titleMatch = useMatch('/catalog/titles/:titleId')
   const editionMatch = useMatch('/catalog/editions/:editionId')
   const copyMatch = useMatch('/catalog/copies/:copyId')
-  // const seriesMatch = useMatch("/catalog/series/:seriesId")
   const listSeriesId = isTitleList ? searchParams.get('seriesId') ?? '' : ''
   const seriesDetailQuery = useSeriesDetailQuery(listSeriesId)
 
@@ -170,6 +192,12 @@ export function useCatalogBreadcrumbs(): BreadcrumbItem[] {
   const title = titleQuery.data
 
   const root: BreadcrumbItem = { label: CATALOG_ROOT_LABEL, to: catalogPaths.seriesList }
+  if (isCategoryList) {
+    return [
+      root,
+      { label: 'Thể loại sách & Cây danh mục' },
+    ]
+  }
   if (isInventoryCheck) {
     return [
       root,
@@ -212,6 +240,40 @@ export function useCatalogBreadcrumbs(): BreadcrumbItem[] {
 // ----------------------------------------------------------------------
 // SERIES MUTATION HOOKS
 // ----------------------------------------------------------------------
+
+export function useCreateCategoryMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (request: CreateCategoryRequest) => createCategory(request),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'categories'] }),
+  })
+}
+
+export function useUpdateCategoryMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ categoryId, request }: { categoryId: string; request: UpdateCategoryRequest }) =>
+      updateCategory(categoryId, request),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'categories'] }),
+  })
+}
+
+export function useUpdateCategoryStatusMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ categoryId, isActive }: { categoryId: string; isActive: boolean }) =>
+      updateCategoryStatus(categoryId, isActive),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'categories'] }),
+  })
+}
+
+export function useDeleteCategoryMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (categoryId: string) => deleteCategory(categoryId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'categories'] }),
+  })
+}
 
 export function useCreateSeriesMutation() {
   const queryClient = useQueryClient()

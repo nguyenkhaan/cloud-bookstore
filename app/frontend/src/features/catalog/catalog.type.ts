@@ -6,6 +6,40 @@ export type CopyStatus = 'PENDING_RECEIPT' | 'AVAILABLE' | 'RENTED' | 'SOLD' | '
 export type CopyAvailability = 'BOTH' | 'SALE_ONLY' | 'RENTAL_ONLY'
 export type ConditionGrade = 'A' | 'B' | 'C' | 'D'
 
+export type BookCategory = {
+  id: string
+  parentId: string | null
+  parentName?: string | null
+  name: string
+  isActive: boolean
+}
+
+export type BookCategoryDetail = BookCategory & {
+  subCategories: BookCategory[]
+}
+
+export type CreateCategoryRequest = {
+  name: string
+  parentId?: string | null
+  isActive?: boolean
+}
+
+export type UpdateCategoryRequest = {
+  name: string
+  parentId?: string | null
+  isActive?: boolean
+}
+
+export type BookSeriesTitleSummary = {
+  id: string
+  name: string
+  volumeLabel?: string | null
+  author?: string | null
+  originalPublishYear?: number | null
+  isActive: boolean
+  imageUrl?: string | null
+}
+
 export type BookSeries = {
   id: string
   name: string
@@ -14,11 +48,14 @@ export type BookSeries = {
   isActive: boolean
   titleCount?: number
   expectedVolumeCount?: number | null
+  titles?: BookSeriesTitleSummary[]
 }
 
 export type BookTitle = {
   id: string
   seriesId: string | null
+  categoryId?: string | null
+  categoryName?: string | null
   name: string
   volumeLabel: string | null
   author: string | null

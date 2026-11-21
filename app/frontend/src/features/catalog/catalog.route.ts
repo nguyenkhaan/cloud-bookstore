@@ -1,6 +1,7 @@
 const catalogRoot = '/catalog'
 
 export const catalogPaths = {
+  categoryList: `${catalogRoot}/categories`,
   seriesList: `${catalogRoot}/series`,
   titleList: `${catalogRoot}/titles`,
   titleDetail: (titleId: string) => `${catalogRoot}/titles/${encodeURIComponent(titleId)}`,

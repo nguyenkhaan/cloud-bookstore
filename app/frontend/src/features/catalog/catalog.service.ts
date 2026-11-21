@@ -4,6 +4,8 @@ import { privateClient } from '@/api/client'
 import { uploadImage } from '@/features/uploads/upload.service'
 import type { CloudinaryUploadResultRequest, UploadedImage } from '@/features/uploads/upload.type'
 import type {
+  BookCategory,
+  BookCategoryDetail,
   BookCopy,
   BookCopyHistoryItem,
   BookCopyLabelResponse,
@@ -11,11 +13,13 @@ import type {
   BookEdition,
   BookSeries,
   BookTitle,
+  CreateCategoryRequest,
   CreateCopyRequest,
   CreateEditionRequest,
   CreateSeriesRequest,
   SaveTitleRequest,
   TitleListFilters,
+  UpdateCategoryRequest,
   UpdateCopyRequest,
   UpdateCopyStatusRequest,
   UpdateEditionRequest,
@@ -30,6 +34,7 @@ type SeriesResponse = BookSeries & { titlesCount?: number; imageUrl?: string | n
 type CopyResponse = BookCopy & { imageUrl?: string | null }
 
 const endpoints = {
+  categories: '/categories',
   copies: '/book-copies',
   editions: '/editions',
   series: '/book-series',
@@ -106,6 +111,45 @@ export async function listSeries(search = ''): Promise<BookSeries[]> {
     privateClient.get<CatalogListResponse<SeriesResponse>>(endpoints.series, { params: params({ Name: search }) }),
   )
   return listFrom(response).map(seriesForView)
+}
+
+export async function listCategories(search = ''): Promise<BookCategory[]> {
+  const response = await requestData(() =>
+    privateClient.get<CatalogListResponse<BookCategory>>(endpoints.categories, {
+      params: params({ Name: search, PageSize: 100 }),
+    }),
+  )
+  return listFrom(response)
+}
+
+export async function getCategory(categoryId: string): Promise<BookCategoryDetail> {
+  return requestData(() =>
+    privateClient.get<BookCategoryDetail>(`${endpoints.categories}/${encodeURIComponent(categoryId)}`),
+  )
+}
+
+export async function createCategory(request: CreateCategoryRequest): Promise<BookCategory> {
+  return requestData(() =>
+    privateClient.post<BookCategory>(endpoints.categories, request),
+  )
+}
+
+export async function updateCategory(categoryId: string, request: UpdateCategoryRequest): Promise<BookCategory> {
+  return requestData(() =>
+    privateClient.put<BookCategory>(`${endpoints.categories}/${encodeURIComponent(categoryId)}`, request),
+  )
+}
+
+export async function updateCategoryStatus(categoryId: string, isActive: boolean): Promise<BookCategory> {
+  return requestData(() =>
+    privateClient.patch<BookCategory>(`${endpoints.categories}/${encodeURIComponent(categoryId)}/status`, { isActive }),
+  )
+}
+
+export async function deleteCategory(categoryId: string): Promise<void> {
+  await requestData(() =>
+    privateClient.delete<void>(`${endpoints.categories}/${encodeURIComponent(categoryId)}`),
+  )
 }
 
 export async function getSeries(seriesId: string): Promise<BookSeries> {
