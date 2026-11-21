@@ -13,6 +13,7 @@ import CopyDetailPage from '@/features/catalog/pages/CopyDetailPage'
 import EditionDetailPage from '@/features/catalog/pages/EditionDetailPage'
 import InventoryCheckPage from '@/features/catalog/pages/InventoryCheckPage'
 import SeriesListPage from '@/features/catalog/pages/SeriesListPage'
+import StockAlertsPage from '@/features/catalog/pages/StockAlertsPage'
 import StockOutPage from '@/features/catalog/pages/StockOutPage'
 import StockReceiptsPage from '@/features/catalog/pages/StockReceiptsPage'
 import SuppliersPage from '@/features/catalog/pages/SuppliersPage'
@@ -116,10 +117,12 @@ export default function AppRoutes() {
       <Route path="/stock-receipts" element={<RequireSession><StockReceiptsPage /></RequireSession>} />
       <Route path="/stock-out" element={<RequireSession><StockOutPage /></RequireSession>} />
       <Route path="/inventory-check" element={<RequireSession><InventoryCheckPage /></RequireSession>} />
+      <Route path="/stock-alerts" element={<RequireSession><StockAlertsPage /></RequireSession>} />
       <Route path="/catalog/suppliers" element={<RequireSession><Navigate replace to="/suppliers" /></RequireSession>} />
       <Route path="/catalog/stock-receipts" element={<RequireSession><Navigate replace to="/stock-receipts" /></RequireSession>} />
       <Route path="/catalog/stock-out" element={<RequireSession><Navigate replace to="/stock-out" /></RequireSession>} />
       <Route path="/catalog/inventory-check" element={<RequireSession><Navigate replace to="/inventory-check" /></RequireSession>} />
+      <Route path="/catalog/stock-alerts" element={<RequireSession><Navigate replace to="/stock-alerts" /></RequireSession>} />
       <Route path="*" element={<NotFound />} />  
     </Routes>
   )

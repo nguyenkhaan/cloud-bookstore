@@ -12,4 +12,5 @@ export const catalogPaths = {
   stockReceipts: '/stock-receipts',
   stockOut: '/stock-out',
   inventoryCheck: '/inventory-check',
+  stockAlerts: '/stock-alerts',
 } as const

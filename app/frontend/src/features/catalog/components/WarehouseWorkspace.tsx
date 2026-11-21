@@ -29,6 +29,7 @@ export function WarehouseWorkspace({ action, children, screenCode, title }: Ware
   const isStockReceiptsActive = location.pathname.startsWith(catalogPaths.stockReceipts)
   const isStockOutActive = location.pathname.startsWith(catalogPaths.stockOut)
   const isCheckActive = location.pathname.startsWith(catalogPaths.inventoryCheck)
+  const isAlertsActive = location.pathname.startsWith(catalogPaths.stockAlerts)
 
   const breadcrumbs: BreadcrumbItem[] = [
     { label: 'NCC & Kho', to: catalogPaths.suppliers },
@@ -91,6 +92,17 @@ export function WarehouseWorkspace({ action, children, screenCode, title }: Ware
             to={catalogPaths.inventoryCheck}
           >
             Kiểm kê kho
+          </Link>
+          <Link
+            aria-current={isAlertsActive ? 'page' : undefined}
+            className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
+              isAlertsActive
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            }`}
+            to={catalogPaths.stockAlerts}
+          >
+            Cảnh báo tồn
           </Link>
         </nav>
         {children}
