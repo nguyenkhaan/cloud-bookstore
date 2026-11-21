@@ -247,3 +247,107 @@ export type TitleListFilters = {
   author?: string
   isActive?: boolean
 }
+
+export type StockReceiptStatus =
+  | 'DRAFT'
+  | 'PENDING_APPROVAL'
+  | 'APPROVED'
+  | 'COMPLETED'
+  | 'CANCELLED'
+  | 'REJECTED'
+
+export type StockReceiptSourceType = 'SUPPLIER' | 'CUSTOMER_BUYBACK'
+
+export type StockReceiptSummary = {
+  id: string
+  code: string
+  sourceType: StockReceiptSourceType
+  supplierId?: string | null
+  supplierCode?: string | null
+  supplierName?: string | null
+  status: StockReceiptStatus
+  totalAmount: number
+  lineCount: number
+  totalCopies: number
+  generatedCopyCount: number
+  note?: string | null
+  createdBy: string
+  createdByName?: string | null
+  createdAt: string
+  completedAt?: string | null
+}
+
+export type StockReceiptLineItem = {
+  id: string
+  editionId: string
+  titleId: string
+  titleName: string
+  volumeLabel?: string | null
+  isbn?: string | null
+  publisher?: string | null
+  publishYear?: number | null
+  editionStatement?: string | null
+  format?: string | null
+  coverPrice: number
+  quantity: number
+  unitCost: number
+  conditionGrade: ConditionGrade
+  conditionNote?: string | null
+  availability: CopyAvailability
+  sellingPrice?: number | null
+  rentalRate?: number | null
+  generatedCopyCount: number
+  firstBarcode?: string | null
+  lastBarcode?: string | null
+  barcodes: string[]
+  copyStatus?: CopyStatus | null
+}
+
+export type StockReceiptDetail = StockReceiptSummary & {
+  lines: StockReceiptLineItem[]
+}
+
+export type StockReceiptListFilters = {
+  search?: string
+  supplierId?: string
+  status?: StockReceiptStatus
+  sourceType?: StockReceiptSourceType
+  page?: number
+  pageSize?: number
+}
+
+export type CreateStockReceiptLineRequest = {
+  editionId: string
+  quantity: number
+  unitCost: number
+  conditionGrade?: ConditionGrade
+  availability?: CopyAvailability
+  conditionNote?: string | null
+}
+
+export type CreateStockReceiptRequest = {
+  supplierId: string
+  note?: string | null
+  lines: CreateStockReceiptLineRequest[]
+}
+
+export type UpdateStockReceiptRequest = CreateStockReceiptRequest
+
+export type CompleteStockReceiptLinePricingRequest = {
+  lineId?: string | null
+  editionId?: string | null
+  sellingPrice?: number | null
+  rentalRate?: number | null
+  availability?: CopyAvailability | null
+  shelfCode?: string | null
+}
+
+export type CompleteStockReceiptRequest = {
+  activateImmediately?: boolean
+  note?: string | null
+  lines?: CompleteStockReceiptLinePricingRequest[]
+}
+
+export type ActivateStockReceiptCopiesRequest = {
+  lines?: CompleteStockReceiptLinePricingRequest[]
+}

@@ -1,18 +1,31 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, Printer, Search, Trash2 } from 'lucide-react'
+import { Check, Plus, Printer, Search, Trash2 } from 'lucide-react'
 import { Button, Card, SelectBox, TextField } from '@/components/common'
 import type { SelectOption } from '@/components/common'
 import { notify } from '@/components/common/Toast'
 import { useAuth } from '@/features/auth/auth.hook'
 import { catalogPaths } from '../catalog.route'
-import { useSeriesQuery, useTitlesQuery } from '../catalog.hook'
-import type { CopyAvailability } from '../catalog.type'
+import {
+  useActivateStockReceiptCopiesMutation,
+  useAllEditionsQuery,
+  useCompleteStockReceiptMutation,
+  useCreateStockReceiptMutation,
+  useSeriesQuery,
+  useStockReceiptsQuery,
+  useSuppliersQuery,
+  useTitlesQuery,
+  useUpdateStockReceiptMutation,
+} from '../catalog.hook'
+import { getStockReceipt } from '../catalog.service'
+import type { CopyAvailability, StockReceiptDetail } from '../catalog.type'
 import { CatalogDialog } from '../components/CatalogDialog'
 import { WarehouseWorkspace } from '../components/WarehouseWorkspace'
 
 type ReceiptLineItem = {
   id: string
+  lineId?: string
+  editionId: string
   titleName: string
   isbn: string
   editionInfo: string
@@ -24,27 +37,13 @@ type ReceiptLineItem = {
   sellingPrice: number
   rentalRate: number
   availability: CopyAvailability
+  firstBarcode?: string | null
+  lastBarcode?: string | null
+  barcodes: string[]
   barcodeStart: number
   barcodeEnd: number
   status: 'PENDING_BARCODE' | 'BARCODE_GENERATED' | 'AVAILABLE'
 }
-
-type RecentReceiptSummary = {
-  id: string
-  code: string
-  supplierName: string
-  receiptDate: string
-  totalAmount: number
-  debtAmount: number
-  status: 'COMPLETED' | 'IMPORTED_DEBT' | 'DRAFT'
-}
-
-const SUPPLIER_OPTIONS: SelectOption<string>[] = [
-  { value: 'sup-1', label: 'NCC-001 - NXB Kim Đồng' },
-  { value: 'sup-2', label: 'NCC-002 - NXB Trẻ' },
-  { value: 'sup-3', label: 'NCC-003 - Phân phối Minh Long' },
-  { value: 'sup-4', label: 'NCC-004 - Sách Nhã Nam' },
-]
 
 const PAYMENT_STATUS_OPTIONS: SelectOption<string>[] = [
   { value: 'PARTIAL', label: 'Thanh toán một phần' },
@@ -58,106 +57,52 @@ const AVAILABILITY_OPTIONS: SelectOption<CopyAvailability>[] = [
   { value: 'RENTAL_ONLY', label: 'Chỉ cho thuê' },
 ]
 
-const INITIAL_LINES: ReceiptLineItem[] = [
-  {
-    id: 'line-1',
-    titleName: 'Doraemon - Tập 01',
-    isbn: '9786042223121',
-    editionInfo: 'Kim Đồng - 2024',
-    formatInfo: '11 x 18 cm',
-    discountPct: 37.5,
-    quantity: 20,
-    unitCost: 25000,
-    coverPrice: 40000,
-    sellingPrice: 36000,
-    rentalRate: 2500,
-    availability: 'BOTH',
-    barcodeStart: 8001,
-    barcodeEnd: 8020,
-    status: 'PENDING_BARCODE',
-  },
-  {
-    id: 'line-2',
-    titleName: 'Conan - Tập 10',
-    isbn: '978-604-2-09359-5',
-    editionInfo: 'Kim Đồng - Tái bản 2024',
-    formatInfo: '11 x 18 cm',
-    discountPct: 33.33,
-    quantity: 10,
-    unitCost: 30000,
-    coverPrice: 45000,
-    sellingPrice: 42000,
-    rentalRate: 3000,
-    availability: 'BOTH',
-    barcodeStart: 8021,
-    barcodeEnd: 8030,
-    status: 'PENDING_BARCODE',
-  },
-  {
-    id: 'line-3',
-    titleName: 'One Piece - Tập 01',
-    isbn: 'ISBN chờ xác nhận',
-    editionInfo: 'Kim Đồng - 2024',
-    formatInfo: '11 x 18 cm',
-    discountPct: 42.86,
-    quantity: 15,
-    unitCost: 20000,
-    coverPrice: 35000,
-    sellingPrice: 32000,
-    rentalRate: 2000,
-    availability: 'BOTH',
-    barcodeStart: 8031,
-    barcodeEnd: 8045,
-    status: 'PENDING_BARCODE',
-  },
-]
-
-const INITIAL_RECENT_RECEIPTS: RecentReceiptSummary[] = [
-  {
-    id: 'rec-1',
-    code: 'INB-20261017-011',
-    supplierName: 'NXB Trẻ',
-    receiptDate: '17/10/2026',
-    totalAmount: 2450000,
-    debtAmount: 0,
-    status: 'COMPLETED',
-  },
-  {
-    id: 'rec-2',
-    code: 'INB-20261016-010',
-    supplierName: 'Kim Đồng',
-    receiptDate: '16/10/2026',
-    totalAmount: 1800000,
-    debtAmount: 800000,
-    status: 'IMPORTED_DEBT',
-  },
-]
-
 function formatVnd(amount: number): string {
   return `${amount.toLocaleString('vi-VN')}đ`
 }
 
-function formatBarcode(num: number): string {
-  return `BC-${num}`
+function formatPreviewBarcode(num: number): string {
+  return `BC${String(num).padStart(8, '0')}`
+}
+
+function formatDateVi(iso?: string | null): string {
+  if (!iso) return '-'
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return d.toLocaleDateString('vi-VN')
 }
 
 export default function StockReceiptsPage() {
   const navigate = useNavigate()
   const { session } = useAuth()
-  const creatorName = session?.user?.name ?? 'Lê Minh Khoa'
+  const creatorName = session?.user?.name ?? 'Nhân viên kho'
+  const lineSeqRef = useRef(1)
 
+  const suppliersQuery = useSuppliersQuery({ isActive: true })
+  const seriesQuery = useSeriesQuery()
+  const titlesQuery = useTitlesQuery()
+  const editionsQuery = useAllEditionsQuery()
+  const receiptsQuery = useStockReceiptsQuery({ pageSize: 20 })
+
+  const createReceiptMutation = useCreateStockReceiptMutation()
+  const updateReceiptMutation = useUpdateStockReceiptMutation()
+  const completeReceiptMutation = useCompleteStockReceiptMutation()
+  const activateCopiesMutation = useActivateStockReceiptCopiesMutation()
+
+  const [activeReceiptId, setActiveReceiptId] = useState<string | null>(null)
+  const [activeReceiptCode, setActiveReceiptCode] = useState<string>('PN-NHAP-MOI')
   const [step, setStep] = useState<1 | 2>(1)
-  const [supplierId, setSupplierId] = useState('sup-1')
-  const [invoiceInfo, setInvoiceInfo] = useState('18/10/2026 - KD-1026-882')
-  const [contactDeliverer, setContactDeliverer] = useState('Nguyễn Hữu An - 028 3930 8888')
+  const [supplierId, setSupplierId] = useState('')
+  const [invoiceInfo, setInvoiceInfo] = useState('Hóa đơn nhập kho NCC')
+  const [contactDeliverer, setContactDeliverer] = useState('')
   const [warehouseLocation, setWarehouseLocation] = useState('Cơ sở 01 - Kho chính')
   const [paymentStatus, setPaymentStatus] = useState('PARTIAL')
-  const [paidAmount, setPaidAmount] = useState(600000)
-  const [dueDate, setDueDate] = useState('25/10/2026')
-  const [lines, setLines] = useState<ReceiptLineItem[]>(INITIAL_LINES)
+  const [paidAmount, setPaidAmount] = useState(100000)
+  const [dueDate, setDueDate] = useState('30 ngày sau ngày nhập')
+  const [lines, setLines] = useState<ReceiptLineItem[] | null>(null)
+  const [selectedEditionId, setSelectedEditionId] = useState('')
   const [quickSearch, setQuickSearch] = useState('')
   const [receiptStage, setReceiptStage] = useState<'DRAFT' | 'BARCODE_READY' | 'AVAILABLE'>('DRAFT')
-  const [recentReceipts, setRecentReceipts] = useState<RecentReceiptSummary[]>(INITIAL_RECENT_RECEIPTS)
 
   const [isSeriesModalOpen, setIsSeriesModalOpen] = useState(false)
   const [batchSeriesId, setBatchSeriesId] = useState('')
@@ -165,27 +110,53 @@ export default function StockReceiptsPage() {
   const [batchToVol, setBatchToVol] = useState('5')
   const [batchQuantityEach, setBatchQuantityEach] = useState('5')
   const [batchUnitCost, setBatchUnitCost] = useState('25000')
-  const [batchCoverPrice, setBatchCoverPrice] = useState('40000')
 
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false)
 
-  const seriesQuery = useSeriesQuery()
-  const titlesQuery = useTitlesQuery()
+  const suppliers = useMemo(() => suppliersQuery.data ?? [], [suppliersQuery.data])
+  const titles = useMemo(() => titlesQuery.data ?? [], [titlesQuery.data])
+  const editions = useMemo(() => editionsQuery.data ?? [], [editionsQuery.data])
+  const recentReceipts = useMemo(() => receiptsQuery.data ?? [], [receiptsQuery.data])
+
+  const effectiveSupplierId = supplierId || (suppliers[0]?.id ?? '')
+  const effectiveSelectedEditionId = selectedEditionId || (editions[0]?.id ?? '')
+
+  const titlesById = useMemo(() => {
+    const map = new Map<string, (typeof titles)[number]>()
+    for (const t of titles) {
+      map.set(t.id, t)
+    }
+    return map
+  }, [titles])
+
+  const supplierOptions = useMemo<SelectOption<string>[]>(() => {
+    return suppliers.map((s) => ({
+      value: s.id,
+      label: `${s.code} - ${s.name}`,
+    }))
+  }, [suppliers])
+
+  const editionOptions = useMemo<SelectOption<string>[]>(() => {
+    return editions.map((ed) => {
+      const title = titlesById.get(ed.titleId)
+      const titleLabel = title
+        ? `${title.name}${title.volumeLabel ? ` (${title.volumeLabel})` : ''}`
+        : 'Đầu sách'
+      const isbnPart = ed.isbn ? `ISBN ${ed.isbn}` : 'Chưa có ISBN'
+      const pubPart = [ed.publisher, ed.publishYear].filter(Boolean).join(' ')
+      return {
+        value: ed.id,
+        label: `${titleLabel} - ${isbnPart}${pubPart ? ` - ${pubPart}` : ''}`,
+      }
+    })
+  }, [editions, titlesById])
 
   const seriesOptions = useMemo<SelectOption<string>[]>(() => {
-    const apiSeries = seriesQuery.data ?? []
-    if (apiSeries.length > 0) {
-      return apiSeries.map((s) => ({ value: s.id, label: s.name }))
-    }
-    return [
-      { value: 's-conan', label: 'Thám tử lừng danh Conan' },
-      { value: 's-doraemon', label: 'Doraemon Truyện ngắn' },
-      { value: 's-onepiece', label: 'One Piece' },
-    ]
+    return (seriesQuery.data ?? []).map((s) => ({ value: s.id, label: s.name }))
   }, [seriesQuery.data])
 
   const recomputeBarcodes = (items: ReceiptLineItem[]): ReceiptLineItem[] => {
-    let cursor = 8001
+    let cursor = 1
     return items.map((item) => {
       const qty = Math.max(1, item.quantity)
       const start = cursor
@@ -195,24 +166,161 @@ export default function StockReceiptsPage() {
     })
   }
 
+  const defaultLines = useMemo<ReceiptLineItem[]>(() => {
+    if (editions.length === 0 || titles.length === 0) return []
+    let cursor = 1
+    return editions.slice(0, 3).map((ed, idx) => {
+      const title = titlesById.get(ed.titleId)
+      const cover = ed.coverPrice > 0 ? ed.coverPrice : 60000
+      const cost = Math.round(cover * 0.65)
+      const selling = cover
+      const discount = cover > 0 ? Math.round(((cover - cost) / cover) * 10000) / 100 : 0
+      const start = cursor
+      const end = cursor + 4
+      cursor = end + 1
+
+      return {
+        id: `line-init-${idx + 1}`,
+        editionId: ed.id,
+        titleName: title
+          ? `${title.name}${title.volumeLabel ? ` - ${title.volumeLabel}` : ''}`
+          : 'Đầu sách',
+        isbn: ed.isbn ?? 'Chưa có ISBN',
+        editionInfo: [ed.publisher ?? 'NXB', ed.publishYear ?? 2025].join(' - '),
+        formatInfo: ed.format ?? '11 x 18 cm',
+        discountPct: discount,
+        quantity: 5,
+        unitCost: cost,
+        coverPrice: cover,
+        sellingPrice: selling,
+        rentalRate: Math.max(2000, Math.round(selling / 15 / 500) * 500),
+        availability: 'BOTH' as CopyAvailability,
+        barcodes: [],
+        barcodeStart: start,
+        barcodeEnd: end,
+        status: 'PENDING_BARCODE' as const,
+      }
+    })
+  }, [editions, titles, titlesById])
+
+  const activeLines = lines ?? defaultLines
+
   const totals = useMemo(() => {
-    const totalCopies = lines.reduce((sum, l) => sum + l.quantity, 0)
-    const totalAmount = lines.reduce((sum, l) => sum + l.quantity * l.unitCost, 0)
+    const totalCopies = activeLines.reduce((sum, l) => sum + l.quantity, 0)
+    const totalAmount = activeLines.reduce((sum, l) => sum + l.quantity * l.unitCost, 0)
     const effectivePaid =
       paymentStatus === 'PAID' ? totalAmount : paymentStatus === 'UNPAID' ? 0 : Math.min(paidAmount, totalAmount)
     const debtAmount = Math.max(0, totalAmount - effectivePaid)
     return {
       totalCopies,
-      totalTitles: lines.length,
+      totalTitles: activeLines.length,
       totalAmount,
       effectivePaid,
       debtAmount,
     }
-  }, [lines, paymentStatus, paidAmount])
+  }, [activeLines, paymentStatus, paidAmount])
+
+  const applyReceiptDetailToState = (detail: StockReceiptDetail) => {
+    setActiveReceiptId(detail.id)
+    setActiveReceiptCode(detail.code)
+    if (detail.supplierId) {
+      setSupplierId(detail.supplierId)
+    }
+    if (detail.note) {
+      setInvoiceInfo(detail.note)
+    }
+
+    const allAvailable =
+      detail.lines.length > 0 &&
+      detail.lines.every((l) => l.generatedCopyCount > 0 && l.copyStatus === 'AVAILABLE')
+    const anyGenerated = detail.lines.some((l) => l.generatedCopyCount > 0)
+
+    if (allAvailable) {
+      setReceiptStage('AVAILABLE')
+    } else if (detail.status === 'COMPLETED' || anyGenerated) {
+      setReceiptStage('BARCODE_READY')
+    } else {
+      setReceiptStage('DRAFT')
+    }
+
+    const mappedLines: ReceiptLineItem[] = detail.lines.map((l) => {
+      const cover = l.coverPrice > 0 ? l.coverPrice : Math.max(l.unitCost, 50000)
+      const selling = l.sellingPrice && l.sellingPrice > 0 ? l.sellingPrice : cover
+      const rental =
+        l.rentalRate && l.rentalRate > 0
+          ? l.rentalRate
+          : Math.max(2000, Math.round(selling / 15 / 500) * 500)
+      const discount =
+        cover > 0 ? Math.max(0, Math.round(((cover - l.unitCost) / cover) * 10000) / 100) : 0
+
+      const lineStatus: ReceiptLineItem['status'] =
+        l.copyStatus === 'AVAILABLE'
+          ? 'AVAILABLE'
+          : l.generatedCopyCount > 0
+            ? 'BARCODE_GENERATED'
+            : 'PENDING_BARCODE'
+
+      return {
+        id: l.id,
+        lineId: l.id,
+        editionId: l.editionId,
+        titleName: `${l.titleName}${l.volumeLabel ? ` - ${l.volumeLabel}` : ''}`,
+        isbn: l.isbn ?? 'Chưa có ISBN',
+        editionInfo: [l.publisher ?? 'NXB', l.publishYear ?? 2025].join(' - '),
+        formatInfo: l.format ?? l.editionStatement ?? 'Bìa mềm',
+        discountPct: discount,
+        quantity: l.quantity,
+        unitCost: l.unitCost,
+        coverPrice: cover,
+        sellingPrice: selling,
+        rentalRate: rental,
+        availability: l.availability,
+        firstBarcode: l.firstBarcode,
+        lastBarcode: l.lastBarcode,
+        barcodes: l.barcodes,
+        barcodeStart: 1,
+        barcodeEnd: l.quantity,
+        status: lineStatus,
+      }
+    })
+
+    setLines(recomputeBarcodes(mappedLines))
+  }
+
+  const handleLoadReceipt = async (receiptId: string) => {
+    try {
+      const detail = await getStockReceipt(receiptId)
+      applyReceiptDetailToState(detail)
+      notify.success(`Đã nạp phiếu nhập ${detail.code}.`)
+    } catch (err) {
+      notify.error(err instanceof Error ? err.message : 'Không thể tải chi tiết phiếu nhập.')
+    }
+  }
+
+  const handleResetNewDraft = () => {
+    setActiveReceiptId(null)
+    setActiveReceiptCode('PN-NHAP-MOI')
+    setReceiptStage('DRAFT')
+    setStep(1)
+    setLines((prev) =>
+      recomputeBarcodes(
+        (prev ?? defaultLines).map((l) => ({
+          ...l,
+          lineId: undefined,
+          firstBarcode: null,
+          lastBarcode: null,
+          barcodes: [],
+          status: 'PENDING_BARCODE',
+        })),
+      ),
+    )
+    notify.success('Đã khởi tạo biểu mẫu phiếu nhập mới.')
+  }
 
   const handleUpdateLine = (id: string, patch: Partial<ReceiptLineItem>) => {
     setLines((prev) => {
-      const next = prev.map((item) => {
+      const base = prev ?? defaultLines
+      const next = base.map((item) => {
         if (item.id !== id) return item
         const updated = { ...item, ...patch }
         if (updated.coverPrice > 0) {
@@ -228,41 +336,87 @@ export default function StockReceiptsPage() {
   }
 
   const handleRemoveLine = (id: string) => {
-    if (lines.length <= 1) {
+    if (activeLines.length <= 1) {
       notify.error('Phiếu nhập cần ít nhất 1 dòng sách.')
       return
     }
-    setLines((prev) => recomputeBarcodes(prev.filter((l) => l.id !== id)))
+    setLines((prev) => recomputeBarcodes((prev ?? defaultLines).filter((l) => l.id !== id)))
+  }
+
+  const buildLineFromEdition = (editionId: string, quantity = 5, customCost?: number): ReceiptLineItem | null => {
+    const ed = editions.find((e) => e.id === editionId)
+    if (!ed) return null
+    const title = titlesById.get(ed.titleId)
+    const cover = ed.coverPrice > 0 ? ed.coverPrice : 60000
+    const cost = customCost ?? Math.round(cover * 0.65)
+    const selling = cover
+    const discount = cover > 0 ? Math.max(0, Math.round(((cover - cost) / cover) * 10000) / 100) : 0
+    const seq = lineSeqRef.current++
+
+    return {
+      id: `line-${seq}`,
+      editionId: ed.id,
+      titleName: title
+        ? `${title.name}${title.volumeLabel ? ` - ${title.volumeLabel}` : ''}`
+        : 'Đầu sách',
+      isbn: ed.isbn ?? 'Chưa có ISBN',
+      editionInfo: [ed.publisher ?? 'NXB', ed.publishYear ?? 2025].join(' - '),
+      formatInfo: ed.format ?? ed.editionStatement ?? '11 x 18 cm',
+      discountPct: discount,
+      quantity,
+      unitCost: cost,
+      coverPrice: cover,
+      sellingPrice: selling,
+      rentalRate: Math.max(2000, Math.round(selling / 15 / 500) * 500),
+      availability: 'BOTH',
+      barcodes: [],
+      barcodeStart: 1,
+      barcodeEnd: quantity,
+      status: 'PENDING_BARCODE',
+    }
+  }
+
+  const handleAddSelectedEdition = () => {
+    if (!effectiveSelectedEditionId) {
+      notify.error('Vui lòng chọn một ấn bản để thêm vào phiếu.')
+      return
+    }
+    const existing = activeLines.find((l) => l.editionId === effectiveSelectedEditionId)
+    if (existing) {
+      handleUpdateLine(existing.id, { quantity: existing.quantity + 5 })
+      notify.success(`Đã cộng thêm 5 cuốn cho "${existing.titleName}".`)
+      return
+    }
+    const newLine = buildLineFromEdition(effectiveSelectedEditionId, 5)
+    if (!newLine) return
+    setLines((prev) => recomputeBarcodes([...(prev ?? defaultLines), newLine]))
+    notify.success(`Đã thêm "${newLine.titleName}" vào phiếu nhập.`)
   }
 
   const handleQuickAddTitle = (e: React.FormEvent) => {
     e.preventDefault()
-    const term = quickSearch.trim()
-    if (!term) return
-
-    const matchedTitle = (titlesQuery.data ?? []).find(
-      (t) => t.name.toLowerCase().includes(term.toLowerCase()),
-    )
-
-    const newLine: ReceiptLineItem = {
-      id: `line-${Date.now()}`,
-      titleName: matchedTitle ? matchedTitle.name : term,
-      isbn: /^\d{10,13}$/.test(term.replace(/-/g, '')) ? term : '978-604-2-18290-4',
-      editionInfo: 'Kim Đồng - 2025',
-      formatInfo: '11 x 18 cm',
-      discountPct: 35,
-      quantity: 10,
-      unitCost: 26000,
-      coverPrice: 40000,
-      sellingPrice: 38000,
-      rentalRate: 2500,
-      availability: 'BOTH',
-      barcodeStart: 8001,
-      barcodeEnd: 8010,
-      status: 'PENDING_BARCODE',
+    const term = quickSearch.trim().toLowerCase()
+    if (!term) {
+      handleAddSelectedEdition()
+      return
     }
 
-    setLines((prev) => recomputeBarcodes([...prev, newLine]))
+    const matchedEdition = editions.find((ed) => {
+      const title = titlesById.get(ed.titleId)
+      const isbnMatch = ed.isbn?.toLowerCase().replace(/-/g, '').includes(term.replace(/-/g, ''))
+      const titleMatch = title?.name.toLowerCase().includes(term)
+      return Boolean(isbnMatch || titleMatch)
+    })
+
+    if (!matchedEdition) {
+      notify.error(`Không tìm thấy ấn bản nào khớp với "${quickSearch}".`)
+      return
+    }
+
+    const newLine = buildLineFromEdition(matchedEdition.id, 5)
+    if (!newLine) return
+
+    setLines((prev) => recomputeBarcodes([...(prev ?? defaultLines), newLine]))
     setQuickSearch('')
     notify.success(`Đã thêm "${newLine.titleName}" vào phiếu nhập.`)
   }
@@ -270,86 +424,186 @@ export default function StockReceiptsPage() {
   const handleBatchSeriesImport = (e: React.FormEvent) => {
     e.preventDefault()
     const fromVol = Math.max(1, Number(batchFromVol) || 1)
-    const toVol = Math.min(fromVol + 19, Math.max(fromVol, Number(batchToVol) || fromVol))
+    const toVol = Math.max(fromVol, Number(batchToVol) || fromVol)
     const qty = Math.max(1, Number(batchQuantityEach) || 5)
     const cost = Math.max(1000, Number(batchUnitCost) || 25000)
-    const cover = Math.max(cost, Number(batchCoverPrice) || 40000)
-    const seriesLabel =
-      seriesOptions.find((s) => s.value === batchSeriesId)?.label ?? seriesOptions[0]?.label ?? 'Bộ truyện'
+
+    const seriesTitles = titles.filter((t) => t.seriesId === batchSeriesId)
+    const seriesTitleIds = new Set(seriesTitles.map((t) => t.id))
+    const seriesEditions = editions.filter((ed) => seriesTitleIds.has(ed.titleId))
+
+    const targetEditions =
+      seriesEditions.length > 0
+        ? seriesEditions.slice(0, toVol - fromVol + 1)
+        : editions.slice(0, Math.min(5, toVol - fromVol + 1))
+
+    if (targetEditions.length === 0) {
+      notify.error('Chưa có ấn bản nào trong hệ thống để thêm theo bộ.')
+      return
+    }
 
     const generated: ReceiptLineItem[] = []
-    for (let vol = fromVol; vol <= toVol; vol++) {
-      generated.push({
-        id: `batch-${Date.now()}-${vol}`,
-        titleName: `${seriesLabel} - Tập ${String(vol).padStart(2, '0')}`,
-        isbn: `978-604-2-${String(10000 + vol)}`,
-        editionInfo: 'Tái bản 2025',
-        formatInfo: '11 x 18 cm',
-        discountPct: Math.round(((cover - cost) / cover) * 10000) / 100,
-        quantity: qty,
-        unitCost: cost,
-        coverPrice: cover,
-        sellingPrice: Math.round(cover * 0.9),
-        rentalRate: 2500,
-        availability: 'BOTH',
-        barcodeStart: 0,
-        barcodeEnd: 0,
-        status: 'PENDING_BARCODE',
+    for (const ed of targetEditions) {
+      const built = buildLineFromEdition(ed.id, qty, cost)
+      if (built) generated.push(built)
+    }
+
+    setLines((prev) => recomputeBarcodes([...(prev ?? defaultLines), ...generated]))
+    setIsSeriesModalOpen(false)
+    notify.success(`Đã thêm ${generated.length} ấn bản vào phiếu nhập.`)
+  }
+
+  const saveDraftInternalAsync = async (): Promise<StockReceiptDetail | null> => {
+    if (!effectiveSupplierId) {
+      notify.error('Vui lòng chọn nhà cung cấp.')
+      return null
+    }
+    if (activeLines.length === 0) {
+      notify.error('Phiếu nhập phải có ít nhất 1 dòng sách.')
+      return null
+    }
+
+    const noteParts = [invoiceInfo.trim(), contactDeliverer.trim(), warehouseLocation.trim()].filter(Boolean)
+    const payload = {
+      supplierId: effectiveSupplierId,
+      note: noteParts.join(' | '),
+      lines: activeLines.map((l) => ({
+        editionId: l.editionId,
+        quantity: l.quantity,
+        unitCost: l.unitCost,
+        conditionGrade: 'A' as const,
+        availability: l.availability,
+      })),
+    }
+
+    if (activeReceiptId && receiptStage === 'DRAFT') {
+      return await updateReceiptMutation.mutateAsync({
+        receiptId: activeReceiptId,
+        request: payload,
       })
     }
 
-    setLines((prev) => recomputeBarcodes([...prev, ...generated]))
-    setIsSeriesModalOpen(false)
-    notify.success(`Đã thêm ${generated.length} tập thuộc bộ "${seriesLabel}" vào phiếu nhập.`)
+    return await createReceiptMutation.mutateAsync(payload)
   }
 
-  const handleConfirmGenerateBarcodes = () => {
-    for (const line of lines) {
+  const handleSaveDraft = async () => {
+    try {
+      const saved = await saveDraftInternalAsync()
+      if (!saved) return
+      applyReceiptDetailToState(saved)
+      notify.success(`Đã lưu bản nháp phiếu nhập kho ${saved.code}.`)
+    } catch (err) {
+      notify.error(err instanceof Error ? err.message : 'Không thể lưu bản nháp phiếu nhập.')
+    }
+  }
+
+  const handleConfirmGenerateBarcodes = async () => {
+    for (const line of activeLines) {
       if (line.sellingPrice <= 0) {
         notify.error(`Vui lòng nhập Giá bán niêm yết hợp lệ cho "${line.titleName}".`)
         return
       }
     }
-    setLines((prev) => prev.map((l) => ({ ...l, status: 'BARCODE_GENERATED' })))
-    setReceiptStage('BARCODE_READY')
-    setStep(2)
-    notify.success(`Đã xác nhận phiếu nhập và sinh ${totals.totalCopies} mã CopyBarcode độc bản!`)
+
+    try {
+      let receiptId = activeReceiptId
+      let currentLines = activeLines
+
+      if (!receiptId || receiptStage === 'DRAFT') {
+        const saved = await saveDraftInternalAsync()
+        if (!saved) return
+        receiptId = saved.id
+        currentLines = activeLines.map((uiLine, idx) => ({
+          ...uiLine,
+          lineId: saved.lines[idx]?.id ?? uiLine.lineId,
+        }))
+      }
+
+      const completed = await completeReceiptMutation.mutateAsync({
+        receiptId,
+        request: {
+          activateImmediately: false,
+          note: [invoiceInfo.trim(), contactDeliverer.trim(), warehouseLocation.trim()].filter(Boolean).join(' | '),
+          lines: currentLines.map((l) => ({
+            lineId: l.lineId,
+            editionId: l.editionId,
+            sellingPrice: l.sellingPrice,
+            rentalRate: l.rentalRate,
+            availability: l.availability,
+          })),
+        },
+      })
+
+      applyReceiptDetailToState(completed)
+      setReceiptStage('BARCODE_READY')
+      setStep(2)
+      notify.success(
+        `Đã xác nhận phiếu ${completed.code} và sinh ${completed.generatedCopyCount} mã CopyBarcode độc bản!`,
+      )
+    } catch (err) {
+      notify.error(err instanceof Error ? err.message : 'Không thể hoàn tất phiếu nhập kho.')
+    }
   }
 
-  const handleActivateAvailable = () => {
-    setLines((prev) => prev.map((l) => ({ ...l, status: 'AVAILABLE' })))
-    setReceiptStage('AVAILABLE')
-    const supplierLabel =
-      SUPPLIER_OPTIONS.find((s) => s.value === supplierId)?.label.split(' - ')[1] ?? 'Nhà cung cấp'
-    setRecentReceipts((prev) => [
-      {
-        id: `rec-${Date.now()}`,
-        code: 'INB-20261018-012',
-        supplierName: supplierLabel,
-        receiptDate: '18/10/2026',
-        totalAmount: totals.totalAmount,
-        debtAmount: totals.debtAmount,
-        status: totals.debtAmount > 0 ? 'IMPORTED_DEBT' : 'COMPLETED',
-      },
-      ...prev,
-    ])
-    notify.success(`Đã chuyển toàn bộ ${totals.totalCopies} bản sách sang trạng thái Khả dụng (AVAILABLE)!`)
+  const handleActivateAvailable = async () => {
+    if (!activeReceiptId) {
+      notify.error('Vui lòng xác nhận nhập kho & sinh Barcode trước khi mở bán.')
+      return
+    }
+
+    try {
+      const activated = await activateCopiesMutation.mutateAsync({
+        receiptId: activeReceiptId,
+        request: {
+          lines: activeLines.map((l) => ({
+            lineId: l.lineId,
+            editionId: l.editionId,
+            sellingPrice: l.sellingPrice,
+            rentalRate: l.rentalRate,
+            availability: l.availability,
+          })),
+        },
+      })
+
+      applyReceiptDetailToState(activated)
+      setReceiptStage('AVAILABLE')
+      notify.success(
+        `Đã chuyển toàn bộ ${activated.generatedCopyCount} bản sách của phiếu ${activated.code} sang trạng thái Khả dụng (AVAILABLE)!`,
+      )
+    } catch (err) {
+      notify.error(err instanceof Error ? err.message : 'Không thể kích hoạt trạng thái Khả dụng.')
+    }
   }
+
+  const isBusy =
+    createReceiptMutation.isPending ||
+    updateReceiptMutation.isPending ||
+    completeReceiptMutation.isPending ||
+    activateCopiesMutation.isPending
 
   return (
     <WarehouseWorkspace
       action={
-        <Button
-          onClick={() => notify.success('Đã lưu bản nháp phiếu nhập kho INB-20261018-012.')}
-          variant="outline"
-        >
-          Lưu bản nháp
-        </Button>
+        <div className="flex items-center gap-2">
+          {activeReceiptId && (
+            <Button onClick={handleResetNewDraft} type="button" variant="ghost">
+              <Plus className="mr-1 h-4 w-4" />
+              Tạo phiếu mới
+            </Button>
+          )}
+          <Button
+            disabled={isBusy || receiptStage !== 'DRAFT'}
+            onClick={() => void handleSaveDraft()}
+            variant="outline"
+          >
+            {createReceiptMutation.isPending || updateReceiptMutation.isPending ? 'Đang lưu...' : 'Lưu bản nháp'}
+          </Button>
+        </div>
       }
       title="Lập & Quản lý Phiếu nhập kho từ NCC"
     >
       <p className="text-xs font-mono text-slate-500">
-        INB-20261018-012 - Người lập: {creatorName} - 18/10/2026
+        {activeReceiptCode} - Người lập: {creatorName}
       </p>
 
       <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-indigo-100 bg-indigo-50/50 p-2">
@@ -386,11 +640,15 @@ export default function StockReceiptsPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <SelectBox
                 label="Nhà cung cấp *"
-                onChange={(val) => setSupplierId(val)}
-                options={SUPPLIER_OPTIONS}
+                onChange={(val) => {
+                  setSupplierId(val)
+                  const found = suppliers.find((s) => s.id === val)
+                  if (found?.phone) setContactDeliverer(found.phone)
+                }}
+                options={supplierOptions}
                 placeholder="Chọn nhà cung cấp..."
                 searchPlaceholder="Tìm mã hoặc tên NCC..."
-                value={supplierId}
+                value={effectiveSupplierId}
               />
               <TextField
                 label="Ngày nhập / Hóa đơn"
@@ -424,8 +682,27 @@ export default function StockReceiptsPage() {
             <div>
               <h2 className="text-sm font-bold text-slate-900">Bước 1 - Danh mục nhập đã xác nhận</h2>
               <p className="mt-0.5 text-xs text-slate-500">
-                Mặc định Grade A, mỗi bản vật lý nhận một Barcode riêng.
+                Mặc định Grade A, mỗi bản vật lý nhận một Barcode riêng từ hệ thống.
               </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] items-end">
+              <SelectBox
+                label="Chọn nhanh Ấn bản từ danh mục"
+                onChange={(val) => setSelectedEditionId(val)}
+                options={editionOptions}
+                placeholder="Chọn ấn bản sách..."
+                searchPlaceholder="Tìm theo tên đầu sách hoặc ISBN..."
+                value={effectiveSelectedEditionId}
+              />
+              <Button
+                disabled={receiptStage !== 'DRAFT'}
+                onClick={handleAddSelectedEdition}
+                type="button"
+                variant="secondary"
+              >
+                + Thêm ấn bản đã chọn
+              </Button>
             </div>
 
             <form className="flex flex-wrap gap-2" onSubmit={handleQuickAddTitle}>
@@ -435,18 +712,19 @@ export default function StockReceiptsPage() {
                   aria-label="Tìm đầu sách hoặc ISBN để thêm vào phiếu"
                   className="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-2.5 pl-10 pr-4 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-hidden"
                   onChange={(e) => setQuickSearch(e.target.value)}
-                  placeholder="Tìm đầu sách, ISBN để thêm vào phiếu..."
+                  placeholder="Hoặc quét/nhập tên đầu sách, ISBN để thêm nhanh..."
                   type="text"
                   value={quickSearch}
                 />
               </div>
-              <Button type="submit" variant="secondary">
-                + Thêm dòng sách
+              <Button disabled={receiptStage !== 'DRAFT'} type="submit" variant="outline">
+                Tìm & Thêm
               </Button>
             </form>
 
             <div className="space-y-1.5">
               <Button
+                disabled={receiptStage !== 'DRAFT'}
                 onClick={() => {
                   if (!batchSeriesId && seriesOptions[0]) setBatchSeriesId(seriesOptions[0].value)
                   setIsSeriesModalOpen(true)
@@ -477,7 +755,7 @@ export default function StockReceiptsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {lines.map((line) => (
+                  {activeLines.map((line) => (
                     <tr className="hover:bg-slate-50/60" key={line.id}>
                       <td className="px-4 py-3.5 font-bold text-slate-900 align-top">
                         {line.titleName}
@@ -494,6 +772,7 @@ export default function StockReceiptsPage() {
                         <input
                           aria-label={`Số lượng nhập ${line.titleName}`}
                           className="w-18 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold text-slate-900 focus:border-indigo-500 focus:outline-hidden"
+                          disabled={receiptStage !== 'DRAFT'}
                           min={1}
                           onChange={(e) =>
                             handleUpdateLine(line.id, { quantity: Math.max(1, Number(e.target.value) || 1) })
@@ -506,6 +785,7 @@ export default function StockReceiptsPage() {
                         <input
                           aria-label={`Giá vốn ${line.titleName}`}
                           className="w-24 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-800 focus:border-indigo-500 focus:outline-hidden"
+                          disabled={receiptStage !== 'DRAFT'}
                           min={0}
                           onChange={(e) =>
                             handleUpdateLine(line.id, { unitCost: Math.max(0, Number(e.target.value) || 0) })
@@ -521,7 +801,8 @@ export default function StockReceiptsPage() {
                       <td className="px-2 py-3.5 text-center align-top">
                         <button
                           aria-label={`Xóa dòng ${line.titleName}`}
-                          className="rounded-lg p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                          className="rounded-lg p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40"
+                          disabled={receiptStage !== 'DRAFT'}
                           onClick={() => handleRemoveLine(line.id)}
                           type="button"
                         >
@@ -536,7 +817,7 @@ export default function StockReceiptsPage() {
 
             <div className="rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-xs text-amber-900">
               Tổng cộng <strong>{totals.totalCopies} bản sách</strong> trên{' '}
-              <strong>{totals.totalTitles} đầu sách</strong> - Mỗi bản vật lý sẽ được cấp một mã CopyBarcode duy nhất khi xác nhận.
+              <strong>{totals.totalTitles} đầu sách</strong> - Mỗi bản vật lý sẽ được cấp một mã CopyBarcode duy nhất từ sequence khi xác nhận.
             </div>
           </Card>
 
@@ -556,68 +837,72 @@ export default function StockReceiptsPage() {
                     <th className="px-3 py-3 text-left" scope="col">Giá bán niêm yết *</th>
                     <th className="px-3 py-3 text-left" scope="col">Thuê/ngày</th>
                     <th className="px-3 py-3 text-left" scope="col">Kênh sử dụng</th>
-                    <th className="px-3 py-3 text-left" scope="col">Dải Barcode dự kiến</th>
+                    <th className="px-3 py-3 text-left" scope="col">Dải Barcode</th>
                     <th className="px-4 py-3 text-left" scope="col">Trạng thái</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {lines.map((line) => (
-                    <tr className="hover:bg-slate-50/60" key={line.id}>
-                      <td className="px-4 py-3.5 font-bold text-slate-900">{line.titleName}</td>
-                      <td className="px-3 py-3.5">
-                        <input
-                          aria-label={`Giá bán niêm yết ${line.titleName}`}
-                          className="w-28 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold text-indigo-700 focus:border-indigo-500 focus:outline-hidden"
-                          min={1000}
-                          onChange={(e) =>
-                            handleUpdateLine(line.id, { sellingPrice: Math.max(0, Number(e.target.value) || 0) })
-                          }
-                          step={1000}
-                          type="number"
-                          value={line.sellingPrice}
-                        />
-                      </td>
-                      <td className="px-3 py-3.5">
-                        <input
-                          aria-label={`Đơn giá thuê mỗi ngày ${line.titleName}`}
-                          className="w-24 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs text-slate-800 focus:border-indigo-500 focus:outline-hidden"
-                          min={0}
-                          onChange={(e) =>
-                            handleUpdateLine(line.id, { rentalRate: Math.max(0, Number(e.target.value) || 0) })
-                          }
-                          step={500}
-                          type="number"
-                          value={line.rentalRate}
-                        />
-                      </td>
-                      <td className="px-3 py-3.5 min-w-38">
-                        <SelectBox
-                          hideLabel
-                          label={`Kênh sử dụng ${line.titleName}`}
-                          onChange={(val) => handleUpdateLine(line.id, { availability: val })}
-                          options={AVAILABILITY_OPTIONS}
-                          searchable={false}
-                          value={line.availability}
-                        />
-                      </td>
-                      <td className="px-3 py-3.5 font-mono text-slate-600">
-                        {formatBarcode(line.barcodeStart)} → {formatBarcode(line.barcodeEnd)}
-                      </td>
-                      <td className="px-4 py-3.5">
-                        {line.status === 'AVAILABLE' ? (
-                          <span className="inline-flex rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
-                            Khả dụng (AVAILABLE)
-                          </span>
-                        ) : line.status === 'BARCODE_GENERATED' ? (
-                          <span className="inline-flex rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 border border-indigo-200">
-                            Đã sinh Barcode
-                          </span>
-                        ) : (
-                          <span className="text-slate-500">Chờ hoàn tất nhập</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                  {activeLines.map((line) => {
+                    const barcodeRangeText =
+                      line.firstBarcode && line.lastBarcode
+                        ? `${line.firstBarcode} → ${line.lastBarcode}`
+                        : `Dự kiến (${line.quantity} mã)`
+                    return (
+                      <tr className="hover:bg-slate-50/60" key={line.id}>
+                        <td className="px-4 py-3.5 font-bold text-slate-900">{line.titleName}</td>
+                        <td className="px-3 py-3.5">
+                          <input
+                            aria-label={`Giá bán niêm yết ${line.titleName}`}
+                            className="w-28 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold text-indigo-700 focus:border-indigo-500 focus:outline-hidden"
+                            min={1000}
+                            onChange={(e) =>
+                              handleUpdateLine(line.id, { sellingPrice: Math.max(0, Number(e.target.value) || 0) })
+                            }
+                            step={1000}
+                            type="number"
+                            value={line.sellingPrice}
+                          />
+                        </td>
+                        <td className="px-3 py-3.5">
+                          <input
+                            aria-label={`Đơn giá thuê mỗi ngày ${line.titleName}`}
+                            className="w-24 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs text-slate-800 focus:border-indigo-500 focus:outline-hidden"
+                            min={0}
+                            onChange={(e) =>
+                              handleUpdateLine(line.id, { rentalRate: Math.max(0, Number(e.target.value) || 0) })
+                            }
+                            step={500}
+                            type="number"
+                            value={line.rentalRate}
+                          />
+                        </td>
+                        <td className="px-3 py-3.5 min-w-38">
+                          <SelectBox
+                            hideLabel
+                            label={`Kênh sử dụng ${line.titleName}`}
+                            onChange={(val) => handleUpdateLine(line.id, { availability: val })}
+                            options={AVAILABILITY_OPTIONS}
+                            searchable={false}
+                            value={line.availability}
+                          />
+                        </td>
+                        <td className="px-3 py-3.5 font-mono text-slate-600">{barcodeRangeText}</td>
+                        <td className="px-4 py-3.5">
+                          {line.status === 'AVAILABLE' ? (
+                            <span className="inline-flex rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+                              Khả dụng (AVAILABLE)
+                            </span>
+                          ) : line.status === 'BARCODE_GENERATED' ? (
+                            <span className="inline-flex rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 border border-indigo-200">
+                              Đã sinh Barcode
+                            </span>
+                          ) : (
+                            <span className="text-slate-500">Chờ hoàn tất nhập</span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
@@ -630,8 +915,13 @@ export default function StockReceiptsPage() {
               <Button onClick={() => setStep(1)} type="button" variant="outline">
                 &lt; Quay lại bước 1
               </Button>
-              <Button onClick={handleConfirmGenerateBarcodes} type="button" variant="primary">
-                Xác nhận nhập kho & Sinh Barcode
+              <Button
+                disabled={isBusy || receiptStage !== 'DRAFT'}
+                onClick={() => void handleConfirmGenerateBarcodes()}
+                type="button"
+                variant="primary"
+              >
+                {completeReceiptMutation.isPending ? 'Đang sinh Barcode...' : 'Xác nhận nhập kho & Sinh Barcode'}
               </Button>
               <Button
                 onClick={() => setIsPrintModalOpen(true)}
@@ -647,12 +937,12 @@ export default function StockReceiptsPage() {
             <h2 className="text-sm font-bold text-slate-900">Hoàn tất giá bán niêm yết</h2>
             <div className="flex flex-wrap items-center gap-4">
               <Button
-                disabled={receiptStage === 'DRAFT' || receiptStage === 'AVAILABLE'}
-                onClick={handleActivateAvailable}
+                disabled={isBusy || receiptStage === 'DRAFT' || receiptStage === 'AVAILABLE'}
+                onClick={() => void handleActivateAvailable()}
                 type="button"
                 variant="secondary"
               >
-                Xác nhận giá bán → Chuyển Khả dụng
+                {activateCopiesMutation.isPending ? 'Đang kích hoạt...' : 'Xác nhận giá bán → Chuyển Khả dụng'}
               </Button>
               <p className="text-xs text-slate-500 flex-1">
                 Chỉ bật sau khi phiếu được duyệt và đã sinh Barcode. Xác nhận giá bán cho đủ {totals.totalCopies} bản để mở bán / cho thuê.
@@ -663,9 +953,9 @@ export default function StockReceiptsPage() {
           {receiptStage !== 'DRAFT' && (
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50/90 p-4 text-xs text-emerald-900 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="font-semibold text-emerald-800">Sau duyệt - Trạng thái phiếu nhập</p>
+                <p className="font-semibold text-emerald-800">Sau duyệt - Trạng thái phiếu nhập ({activeReceiptCode})</p>
                 <p className="mt-1">
-                  Phiếu nhập đã duyệt thành công. Đã sinh <strong>{totals.totalCopies} mã CopyBarcode</strong>.
+                  Phiếu nhập đã xác nhận thành công. Đã sinh <strong>{totals.totalCopies} mã CopyBarcode</strong> trong cơ sở dữ liệu.
                 </p>
               </div>
               <button
@@ -680,8 +970,9 @@ export default function StockReceiptsPage() {
           )}
 
           <Card className="overflow-hidden" padding="none">
-            <div className="px-5 py-4 border-b border-slate-100">
-              <h2 className="text-sm font-bold text-slate-900">Phiếu nhập gần đây</h2>
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h2 className="text-sm font-bold text-slate-900">Phiếu nhập gần đây ({recentReceipts.length})</h2>
+              <span className="text-[11px] text-slate-500">Nhấn vào dòng bất kỳ để xem chi tiết & mã vạch đã sinh</span>
             </div>
 
             <div className="overflow-x-auto">
@@ -690,26 +981,52 @@ export default function StockReceiptsPage() {
                   <tr>
                     <th className="px-5 py-3 text-left" scope="col">Mã phiếu / NCC</th>
                     <th className="px-4 py-3 text-left" scope="col">Ngày nhập</th>
+                    <th className="px-4 py-3 text-left" scope="col">Số lượng</th>
                     <th className="px-4 py-3 text-left" scope="col">Giá trị</th>
-                    <th className="px-4 py-3 text-left" scope="col">Công nợ</th>
                     <th className="px-5 py-3 text-left" scope="col">Trạng thái</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {recentReceipts.map((rec) => (
-                    <tr className="hover:bg-slate-50/70" key={rec.id}>
-                      <td className="px-5 py-3.5">
-                        <span className="font-mono font-bold text-slate-900 block">{rec.code}</span>
-                        <span className="text-slate-600">{rec.supplierName}</span>
-                      </td>
-                      <td className="px-4 py-3.5 text-slate-500">{rec.receiptDate}</td>
-                      <td className="px-4 py-3.5 font-medium text-slate-800">{formatVnd(rec.totalAmount)}</td>
-                      <td className="px-4 py-3.5 font-medium text-slate-700">{formatVnd(rec.debtAmount)}</td>
-                      <td className="px-5 py-3.5 text-slate-600">
-                        {rec.status === 'COMPLETED' ? 'Hoàn tất' : 'Đã nhập - Còn nợ'}
+                  {recentReceipts.length === 0 ? (
+                    <tr>
+                      <td className="px-5 py-6 text-center text-slate-400" colSpan={5}>
+                        Chưa có phiếu nhập kho nào.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    recentReceipts.map((rec) => (
+                      <tr
+                        className={`cursor-pointer transition hover:bg-slate-50/70 ${
+                          activeReceiptId === rec.id ? 'bg-indigo-50/60' : ''
+                        }`}
+                        key={rec.id}
+                        onClick={() => void handleLoadReceipt(rec.id)}
+                      >
+                        <td className="px-5 py-3.5">
+                          <span className="font-mono font-bold text-slate-900 block">{rec.code}</span>
+                          <span className="text-slate-600">{rec.supplierName ?? 'Nhà cung cấp'}</span>
+                        </td>
+                        <td className="px-4 py-3.5 text-slate-500">{formatDateVi(rec.createdAt)}</td>
+                        <td className="px-4 py-3.5 text-slate-700">
+                          {rec.totalCopies} cuốn ({rec.generatedCopyCount} mã vạch)
+                        </td>
+                        <td className="px-4 py-3.5 font-medium text-slate-800">{formatVnd(rec.totalAmount)}</td>
+                        <td className="px-5 py-3.5">
+                          {rec.status === 'COMPLETED' ? (
+                            <span className="inline-flex rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+                              Hoàn tất
+                            </span>
+                          ) : rec.status === 'DRAFT' ? (
+                            <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-800 border border-amber-200">
+                              Bản nháp
+                            </span>
+                          ) : (
+                            <span className="text-slate-600">{rec.status}</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -772,14 +1089,14 @@ export default function StockReceiptsPage() {
               </span>
             ) : (
               <span className="inline-flex items-center rounded-lg bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800 border border-amber-200">
-                Chờ duyệt nhập kho
+                Bản nháp - Chờ xác nhận nhập kho
               </span>
             )}
           </div>
 
           <div className="text-[11px] text-slate-500 space-y-0.5 border-t border-slate-100 pt-3">
-            <p>Chứng từ: <strong>hoa-don-KD-882.pdf - 240 KB</strong></p>
-            <p>Đã đính kèm, chưa quyết toán công nợ.</p>
+            <p>Mã phiếu: <strong>{activeReceiptCode}</strong></p>
+            <p>Mọi thao tác xác nhận nhập kho & sinh CopyBarcode đều được lưu nhật ký kiểm toán.</p>
           </div>
         </Card>
       </div>
@@ -824,26 +1141,16 @@ export default function StockReceiptsPage() {
                 value={batchQuantityEach}
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <TextField
-                label="Giá vốn / cuốn (VNĐ)"
-                min={0}
-                onChange={(e) => setBatchUnitCost(e.target.value)}
-                required
-                type="number"
-                value={batchUnitCost}
-              />
-              <TextField
-                label="Giá bìa niêm yết (VNĐ)"
-                min={0}
-                onChange={(e) => setBatchCoverPrice(e.target.value)}
-                required
-                type="number"
-                value={batchCoverPrice}
-              />
-            </div>
+            <TextField
+              label="Giá vốn / cuốn (VNĐ)"
+              min={0}
+              onChange={(e) => setBatchUnitCost(e.target.value)}
+              required
+              type="number"
+              value={batchUnitCost}
+            />
             <p className="text-xs text-slate-500">
-              Hệ thống sẽ tự động tách từng tập thành một dòng nhập kho độc lập và cấp dải CopyBarcode riêng cho từng cuốn.
+              Hệ thống sẽ lấy danh sách ấn bản thuộc bộ sách đã chọn và cấp dải CopyBarcode riêng cho từng cuốn.
             </p>
             <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
               <Button onClick={() => setIsSeriesModalOpen(false)} type="button" variant="ghost">
@@ -867,23 +1174,27 @@ export default function StockReceiptsPage() {
               Xem trước mẫu tem nhiệt dán gáy sách (kích thước chuẩn 50mm x 30mm):
             </p>
             <div className="grid gap-3 sm:grid-cols-2 max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-3">
-              {lines.map((line) => (
-                <div
-                  className="rounded-lg border border-dashed border-slate-300 bg-white p-3 text-center shadow-2xs"
-                  key={line.id}
-                >
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                    CLOUD BOOKSTORE
-                  </p>
-                  <p className="mt-1 font-mono text-sm font-black tracking-wider text-slate-900">
-                    || ||| || |||| {formatBarcode(line.barcodeStart)}
-                  </p>
-                  <p className="mt-0.5 truncate text-xs font-bold text-slate-800">{line.titleName}</p>
-                  <p className="mt-0.5 text-xs font-semibold text-indigo-700">
-                    Giá bán: {formatVnd(line.sellingPrice)} ({line.quantity} tem: {formatBarcode(line.barcodeStart)} → {formatBarcode(line.barcodeEnd)})
-                  </p>
-                </div>
-              ))}
+              {activeLines.map((line) => {
+                const firstCode = line.firstBarcode ?? formatPreviewBarcode(line.barcodeStart)
+                const lastCode = line.lastBarcode ?? formatPreviewBarcode(line.barcodeEnd)
+                return (
+                  <div
+                    className="rounded-lg border border-dashed border-slate-300 bg-white p-3 text-center shadow-2xs"
+                    key={line.id}
+                  >
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                      CLOUD BOOKSTORE
+                    </p>
+                    <p className="mt-1 font-mono text-sm font-black tracking-wider text-slate-900">
+                      || ||| || |||| {firstCode}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs font-bold text-slate-800">{line.titleName}</p>
+                    <p className="mt-0.5 text-xs font-semibold text-indigo-700">
+                      Giá bán: {formatVnd(line.sellingPrice)} ({line.quantity} tem: {firstCode} → {lastCode})
+                    </p>
+                  </div>
+                )
+              })}
             </div>
             <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
               <Button onClick={() => setIsPrintModalOpen(false)} type="button" variant="ghost">

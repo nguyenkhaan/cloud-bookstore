@@ -2,11 +2,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMatch, useSearchParams } from 'react-router-dom'
 import type { BreadcrumbItem } from '@/components/common/Breadcrumb'
 import {
+  activateStockReceiptCopies,
+  cancelStockReceipt,
+  completeStockReceipt,
   createCategory,
   createCopy,
   createCopyLabel,
   createEdition,
   createSeries,
+  createStockReceipt,
   createSupplier,
   createTitle,
   deleteCategory,
@@ -25,14 +29,17 @@ import {
   getCopyHistory,
   getEdition,
   getSeries,
+  getStockReceipt,
   getSupplier,
   getSupplierStats,
   getTitle,
+  listAllEditions,
   listCategories,
   listCopies,
   listAvailableReceiptLines,
   listEditions,
   listSeries,
+  listStockReceipts,
   listSuppliers,
   listTitles,
   replaceCopyImage,
@@ -47,6 +54,7 @@ import {
   updateEditionStatus,
   updateSeries,
   updateSeriesStatus,
+  updateStockReceipt,
   updateSupplier,
   updateSupplierStatus,
   updateTitle,
@@ -54,13 +62,17 @@ import {
 } from './catalog.service'
 import { catalogPaths } from './catalog.route'
 import type {
+  ActivateStockReceiptCopiesRequest,
   BookEdition,
+  CompleteStockReceiptRequest,
   CreateCategoryRequest,
   CreateCopyRequest,
   CreateEditionRequest,
   CreateSeriesRequest,
+  CreateStockReceiptRequest,
   CreateSupplierRequest,
   SaveTitleRequest,
+  StockReceiptListFilters,
   SupplierListFilters,
   TitleListFilters,
   UpdateCategoryRequest,
@@ -68,6 +80,7 @@ import type {
   UpdateCopyStatusRequest,
   UpdateEditionRequest,
   UpdateSeriesRequest,
+  UpdateStockReceiptRequest,
   UpdateSupplierRequest,
 } from './catalog.type'
 import type { CloudinaryUploadResultRequest } from '@/features/uploads/upload.type'
@@ -88,6 +101,9 @@ export const catalogQueryKeys = {
   suppliers: (filters: SupplierListFilters = {}) => ['catalog', 'suppliers', filters] as const,
   supplierStats: () => ['catalog', 'suppliers', 'stats'] as const,
   supplierDetail: (supplierId: string) => ['catalog', 'suppliers', 'detail', supplierId] as const,
+  stockReceipts: (filters: StockReceiptListFilters = {}) => ['catalog', 'stock-receipts', filters] as const,
+  stockReceiptDetail: (receiptId: string) => ['catalog', 'stock-receipts', 'detail', receiptId] as const,
+  allEditions: () => ['catalog', 'editions', 'all'] as const,
   title: (titleId: string) => ['catalog', 'titles', titleId] as const,
   titles: (filters: TitleListFilters = {}) => ['catalog', 'titles', filters] as const,
 }
@@ -95,6 +111,28 @@ export const catalogQueryKeys = {
 // ----------------------------------------------------------------------
 // QUERY HOOKS
 // ----------------------------------------------------------------------
+
+export function useStockReceiptsQuery(filters: StockReceiptListFilters = {}) {
+  return useQuery({
+    queryKey: catalogQueryKeys.stockReceipts(filters),
+    queryFn: () => listStockReceipts(filters),
+  })
+}
+
+export function useStockReceiptDetailQuery(receiptId: string) {
+  return useQuery({
+    queryKey: catalogQueryKeys.stockReceiptDetail(receiptId),
+    queryFn: () => getStockReceipt(receiptId),
+    enabled: Boolean(receiptId),
+  })
+}
+
+export function useAllEditionsQuery() {
+  return useQuery({
+    queryKey: catalogQueryKeys.allEditions(),
+    queryFn: () => listAllEditions(),
+  })
+}
 
 export function useSuppliersQuery(filters: SupplierListFilters = {}) {
   return useQuery({
@@ -296,6 +334,62 @@ export function useCatalogBreadcrumbs(): BreadcrumbItem[] {
 // ----------------------------------------------------------------------
 // SERIES MUTATION HOOKS
 // ----------------------------------------------------------------------
+
+export function useCreateStockReceiptMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (request: CreateStockReceiptRequest) => createStockReceipt(request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog', 'stock-receipts'] })
+      queryClient.invalidateQueries({ queryKey: ['catalog', 'suppliers'] })
+    },
+  })
+}
+
+export function useUpdateStockReceiptMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ receiptId, request }: { receiptId: string; request: UpdateStockReceiptRequest }) =>
+      updateStockReceipt(receiptId, request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog', 'stock-receipts'] })
+      queryClient.invalidateQueries({ queryKey: ['catalog', 'suppliers'] })
+    },
+  })
+}
+
+export function useCompleteStockReceiptMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ receiptId, request }: { receiptId: string; request?: CompleteStockReceiptRequest }) =>
+      completeStockReceipt(receiptId, request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog'] })
+    },
+  })
+}
+
+export function useActivateStockReceiptCopiesMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ receiptId, request }: { receiptId: string; request?: ActivateStockReceiptCopiesRequest }) =>
+      activateStockReceiptCopies(receiptId, request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog'] })
+    },
+  })
+}
+
+export function useCancelStockReceiptMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (receiptId: string) => cancelStockReceipt(receiptId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog', 'stock-receipts'] })
+      queryClient.invalidateQueries({ queryKey: ['catalog', 'suppliers'] })
+    },
+  })
+}
 
 export function useCreateSupplierMutation() {
   const queryClient = useQueryClient()

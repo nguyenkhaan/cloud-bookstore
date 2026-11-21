@@ -17,8 +17,12 @@ import type {
   CreateCopyRequest,
   CreateEditionRequest,
   CreateSeriesRequest,
+  CreateStockReceiptRequest,
   CreateSupplierRequest,
   SaveTitleRequest,
+  StockReceiptDetail,
+  StockReceiptListFilters,
+  StockReceiptSummary,
   SupplierItem,
   SupplierListFilters,
   SupplierStats,
@@ -28,7 +32,10 @@ import type {
   UpdateCopyStatusRequest,
   UpdateEditionRequest,
   UpdateSeriesRequest,
+  UpdateStockReceiptRequest,
   UpdateSupplierRequest,
+  CompleteStockReceiptRequest,
+  ActivateStockReceiptCopiesRequest,
 } from './catalog.type'
 
 type QueryValue = string | number | boolean | null | undefined
@@ -43,6 +50,7 @@ const endpoints = {
   copies: '/book-copies',
   editions: '/editions',
   series: '/book-series',
+  stockReceipts: '/stock-receipts',
   suppliers: '/suppliers',
   titles: '/book-titles',
 } as const
@@ -333,6 +341,67 @@ export async function listEditions(titleId: string): Promise<BookEdition[]> {
     }),
   )
   return listFrom(response).map(editionForView)
+}
+
+export async function listAllEditions(): Promise<BookEdition[]> {
+  const response = await requestData(() =>
+    privateClient.get<CatalogListResponse<EditionResponse>>(endpoints.editions, {
+      params: params({ IsActive: true, PageSize: 100 }),
+    }),
+  )
+  return listFrom(response).map(editionForView)
+}
+
+export async function listStockReceipts(filters: StockReceiptListFilters = {}): Promise<StockReceiptSummary[]> {
+  const response = await requestData(() =>
+    privateClient.get<CatalogListResponse<StockReceiptSummary>>(endpoints.stockReceipts, {
+      params: params({
+        Search: filters.search,
+        SupplierId: filters.supplierId,
+        Status: filters.status,
+        SourceType: filters.sourceType,
+        Page: filters.page ?? 1,
+        PageSize: filters.pageSize ?? 20,
+      }),
+    }),
+  )
+  return listFrom(response)
+}
+
+export async function getStockReceipt(receiptId: string): Promise<StockReceiptDetail> {
+  return requestData(() =>
+    privateClient.get<StockReceiptDetail>(`${endpoints.stockReceipts}/${encodeURIComponent(receiptId)}`),
+  )
+}
+
+export async function createStockReceipt(request: CreateStockReceiptRequest): Promise<StockReceiptDetail> {
+  return requestData(() =>
+    privateClient.post<StockReceiptDetail>(endpoints.stockReceipts, request),
+  )
+}
+
+export async function updateStockReceipt(receiptId: string, request: UpdateStockReceiptRequest): Promise<StockReceiptDetail> {
+  return requestData(() =>
+    privateClient.put<StockReceiptDetail>(`${endpoints.stockReceipts}/${encodeURIComponent(receiptId)}`, request),
+  )
+}
+
+export async function completeStockReceipt(receiptId: string, request: CompleteStockReceiptRequest = {}): Promise<StockReceiptDetail> {
+  return requestData(() =>
+    privateClient.post<StockReceiptDetail>(`${endpoints.stockReceipts}/${encodeURIComponent(receiptId)}/complete`, request),
+  )
+}
+
+export async function activateStockReceiptCopies(receiptId: string, request: ActivateStockReceiptCopiesRequest = {}): Promise<StockReceiptDetail> {
+  return requestData(() =>
+    privateClient.post<StockReceiptDetail>(`${endpoints.stockReceipts}/${encodeURIComponent(receiptId)}/activate`, request),
+  )
+}
+
+export async function cancelStockReceipt(receiptId: string): Promise<StockReceiptDetail> {
+  return requestData(() =>
+    privateClient.post<StockReceiptDetail>(`${endpoints.stockReceipts}/${encodeURIComponent(receiptId)}/cancel`),
+  )
 }
 
 export async function getEdition(editionId: string): Promise<BookEdition> {
