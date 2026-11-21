@@ -177,6 +177,9 @@ export function useCatalogBreadcrumbs(): BreadcrumbItem[] {
   const [searchParams] = useSearchParams()
   const isCategoryList = Boolean(useMatch(catalogPaths.categoryList))
   const isTitleList = Boolean(useMatch(catalogPaths.titleList))
+  const isSuppliers = Boolean(useMatch(catalogPaths.suppliers))
+  const isStockReceipts = Boolean(useMatch(catalogPaths.stockReceipts))
+  const isStockOut = Boolean(useMatch(catalogPaths.stockOut))
   const isInventoryCheck = Boolean(useMatch(catalogPaths.inventoryCheck))
   const titleMatch = useMatch('/catalog/titles/:titleId')
   const editionMatch = useMatch('/catalog/editions/:editionId')
@@ -196,6 +199,24 @@ export function useCatalogBreadcrumbs(): BreadcrumbItem[] {
     return [
       root,
       { label: 'Thể loại sách & Cây danh mục' },
+    ]
+  }
+  if (isSuppliers) {
+    return [
+      root,
+      { label: 'Đối tác & Nhà cung cấp' },
+    ]
+  }
+  if (isStockReceipts) {
+    return [
+      root,
+      { label: 'Lập & Quản lý Phiếu nhập kho từ NCC' },
+    ]
+  }
+  if (isStockOut) {
+    return [
+      root,
+      { label: 'Lập Phiếu xuất kho ngoài bán hàng' },
     ]
   }
   if (isInventoryCheck) {

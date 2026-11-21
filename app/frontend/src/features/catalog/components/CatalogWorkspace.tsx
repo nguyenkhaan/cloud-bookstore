@@ -28,10 +28,16 @@ export function CatalogWorkspace({ action, children, screenCode, title }: Catalo
 
   const isCategoriesActive = location.pathname.startsWith(catalogPaths.categoryList)
   const isSeriesActive = location.pathname.startsWith(catalogPaths.seriesList)
+  const isSuppliersActive = location.pathname.startsWith(catalogPaths.suppliers)
+  const isStockReceiptsActive = location.pathname.startsWith(catalogPaths.stockReceipts)
+  const isStockOutActive = location.pathname.startsWith(catalogPaths.stockOut)
   const isCheckActive = location.pathname.startsWith(catalogPaths.inventoryCheck)
   const isTitlesActive =
     !isCategoriesActive &&
     !isSeriesActive &&
+    !isSuppliersActive &&
+    !isStockReceiptsActive &&
+    !isStockOutActive &&
     !isCheckActive &&
     (location.pathname.startsWith(catalogPaths.titleList) ||
       location.pathname.startsWith('/catalog/editions') ||
@@ -82,6 +88,39 @@ export function CatalogWorkspace({ action, children, screenCode, title }: Catalo
             to={catalogPaths.titleList}
           >
             Đầu sách
+          </Link>
+          <Link
+            aria-current={isSuppliersActive ? 'page' : undefined}
+            className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
+              isSuppliersActive
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            }`}
+            to={catalogPaths.suppliers}
+          >
+            Nhà cung cấp
+          </Link>
+          <Link
+            aria-current={isStockReceiptsActive ? 'page' : undefined}
+            className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
+              isStockReceiptsActive
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            }`}
+            to={catalogPaths.stockReceipts}
+          >
+            Nhập kho NCC
+          </Link>
+          <Link
+            aria-current={isStockOutActive ? 'page' : undefined}
+            className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
+              isStockOutActive
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            }`}
+            to={catalogPaths.stockOut}
+          >
+            Xuất kho
           </Link>
           <Link
             aria-current={isCheckActive ? 'page' : undefined}
