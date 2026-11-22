@@ -351,3 +351,56 @@ export type CompleteStockReceiptRequest = {
 export type ActivateStockReceiptCopiesRequest = {
   lines?: CompleteStockReceiptLinePricingRequest[]
 }
+
+export type EditionStockAlertItem = {
+  editionId: string
+  titleId: string
+  titleName: string
+  volumeLabel?: string | null
+  editionStatement?: string | null
+  isbn?: string | null
+  publisher?: string | null
+  publishYear?: number | null
+  coverPrice: number
+  minStockSale: number
+  minStockRental: number
+  availableSale: number
+  availableRental: number
+  rentedCount: number
+  totalPhysical: number
+  pendingImportCount: number
+  saleDeficit: number
+  rentalDeficit: number
+  suggestedRestockCount: number
+  isSaleLow: boolean
+  isRentalLow: boolean
+  severity: string
+  severityLabel: string
+  suggestionText: string
+  preferredSupplierId?: string | null
+  preferredSupplierCode?: string | null
+  preferredSupplierName?: string | null
+}
+
+export type EditionStockAlertDashboard = {
+  alertEditionCount: number
+  rentalLowEditionCount: number
+  pendingImportCopiesCount: number
+  pendingImportEditionCount: number
+  latestPendingReceiptCode?: string | null
+  totalSuggestedRestockCount: number
+  items: EditionStockAlertItem[]
+}
+
+export type EditionStockAlertFilters = {
+  search?: string
+  channel?: string
+  severity?: string
+  supplierId?: string
+  onlyAlerts?: boolean
+}
+
+export type UpdateEditionThresholdsRequest = {
+  minStockSale: number
+  minStockRental: number
+}

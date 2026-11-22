@@ -36,6 +36,10 @@ import type {
   UpdateSupplierRequest,
   CompleteStockReceiptRequest,
   ActivateStockReceiptCopiesRequest,
+  EditionStockAlertDashboard,
+  EditionStockAlertFilters,
+  EditionStockAlertItem,
+  UpdateEditionThresholdsRequest,
 } from './catalog.type'
 
 type QueryValue = string | number | boolean | null | undefined
@@ -350,6 +354,32 @@ export async function listAllEditions(): Promise<BookEdition[]> {
     }),
   )
   return listFrom(response).map(editionForView)
+}
+
+export async function getEditionStockAlerts(filters: EditionStockAlertFilters = {}): Promise<EditionStockAlertDashboard> {
+  return requestData(() =>
+    privateClient.get<EditionStockAlertDashboard>(`${endpoints.editions}/stock-alerts`, {
+      params: params({
+        Search: filters.search,
+        Channel: filters.channel,
+        Severity: filters.severity,
+        SupplierId: filters.supplierId,
+        OnlyAlerts: filters.onlyAlerts,
+      }),
+    }),
+  )
+}
+
+export async function updateEditionThresholds(
+  editionId: string,
+  request: UpdateEditionThresholdsRequest,
+): Promise<EditionStockAlertItem> {
+  return requestData(() =>
+    privateClient.patch<EditionStockAlertItem>(
+      `${endpoints.editions}/${encodeURIComponent(editionId)}/thresholds`,
+      request,
+    ),
+  )
 }
 
 export async function listStockReceipts(filters: StockReceiptListFilters = {}): Promise<StockReceiptSummary[]> {

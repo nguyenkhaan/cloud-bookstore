@@ -25,6 +25,24 @@ public class EditionService(
     private const string ActionReplaceImage = "REPLACE_IMAGE";
     private const string ActionDeleteImage = "DELETE_IMAGE";
 
+    public Task<EditionStockAlertDashboardResponse> GetStockAlertsAsync(
+        EditionStockAlertQuery query,
+        CancellationToken cancellationToken = default)
+        => EditionStockAlertHelper.GetStockAlertsAsync(dbContext, query, cancellationToken);
+
+    public Task<EditionStockAlertItemResponse> UpdateEditionThresholdsAsync(
+        Guid id,
+        UpdateEditionThresholdsRequest request,
+        AuditLogContext auditContext,
+        CancellationToken cancellationToken = default)
+        => EditionStockAlertHelper.UpdateThresholdsAsync(
+            dbContext,
+            auditLogService,
+            id,
+            request,
+            auditContext,
+            cancellationToken);
+
     public async Task<PagedResult<EditionResponse>> GetEditionsAsync(
         EditionQuery query,
         CancellationToken cancellationToken = default)

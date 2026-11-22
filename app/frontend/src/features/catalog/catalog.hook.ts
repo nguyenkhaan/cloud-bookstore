@@ -28,6 +28,7 @@ import {
   getCopyByBarcode,
   getCopyHistory,
   getEdition,
+  getEditionStockAlerts,
   getSeries,
   getStockReceipt,
   getSupplier,
@@ -52,6 +53,7 @@ import {
   updateCopyStatus,
   updateEdition,
   updateEditionStatus,
+  updateEditionThresholds,
   updateSeries,
   updateSeriesStatus,
   updateStockReceipt,
@@ -71,6 +73,7 @@ import type {
   CreateSeriesRequest,
   CreateStockReceiptRequest,
   CreateSupplierRequest,
+  EditionStockAlertFilters,
   SaveTitleRequest,
   StockReceiptListFilters,
   SupplierListFilters,
@@ -79,6 +82,7 @@ import type {
   UpdateCopyRequest,
   UpdateCopyStatusRequest,
   UpdateEditionRequest,
+  UpdateEditionThresholdsRequest,
   UpdateSeriesRequest,
   UpdateStockReceiptRequest,
   UpdateSupplierRequest,
@@ -103,6 +107,7 @@ export const catalogQueryKeys = {
   supplierDetail: (supplierId: string) => ['catalog', 'suppliers', 'detail', supplierId] as const,
   stockReceipts: (filters: StockReceiptListFilters = {}) => ['catalog', 'stock-receipts', filters] as const,
   stockReceiptDetail: (receiptId: string) => ['catalog', 'stock-receipts', 'detail', receiptId] as const,
+  stockAlerts: (filters: EditionStockAlertFilters = {}) => ['catalog', 'editions', 'stock-alerts', filters] as const,
   allEditions: () => ['catalog', 'editions', 'all'] as const,
   title: (titleId: string) => ['catalog', 'titles', titleId] as const,
   titles: (filters: TitleListFilters = {}) => ['catalog', 'titles', filters] as const,
@@ -111,6 +116,24 @@ export const catalogQueryKeys = {
 // ----------------------------------------------------------------------
 // QUERY HOOKS
 // ----------------------------------------------------------------------
+
+export function useEditionStockAlertsQuery(filters: EditionStockAlertFilters = {}) {
+  return useQuery({
+    queryKey: catalogQueryKeys.stockAlerts(filters),
+    queryFn: () => getEditionStockAlerts(filters),
+  })
+}
+
+export function useUpdateEditionThresholdsMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ editionId, request }: { editionId: string; request: UpdateEditionThresholdsRequest }) =>
+      updateEditionThresholds(editionId, request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog', 'editions'] })
+    },
+  })
+}
 
 export function useStockReceiptsQuery(filters: StockReceiptListFilters = {}) {
   return useQuery({
