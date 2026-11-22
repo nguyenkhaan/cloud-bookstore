@@ -155,7 +155,7 @@ export const approvalsService = {
   async getOverviewStats(): Promise<ApprovalsOverviewStats> {
     try {
       return await requestData(() =>
-        privateClient.get<ApprovalsOverviewStats>('/api/approvals/overview/stats')
+        privateClient.get<ApprovalsOverviewStats>('/approvals/overview/stats')
       )
     } catch {
       // Fallback calculation from individual services if needed
@@ -183,75 +183,75 @@ export const approvalsService = {
   // --- Tab 1: Buyback Approvals ---
   async getBuybacks(query: ApprovalQuery): Promise<PagedResult<BuybackApprovalItem>> {
     return requestData(() =>
-      privateClient.get<PagedResult<BuybackApprovalItem>>('/api/approvals/buyback', { params: query })
+      privateClient.get<PagedResult<BuybackApprovalItem>>('/approvals/buyback', { params: query })
     )
   },
 
   async getBuybackDetail(id: string): Promise<BuybackApprovalDetail> {
     return requestData(() =>
-      privateClient.get<BuybackApprovalDetail>(`/api/approvals/buyback/${id}`)
+      privateClient.get<BuybackApprovalDetail>(`/approvals/buyback/${id}`)
     )
   },
 
   async updateBuybackStatus(id: string, dto: UpdateApprovalStatusRequest): Promise<BuybackApprovalDetail> {
     return requestData(() =>
-      privateClient.patch<BuybackApprovalDetail>(`/api/approvals/buyback/${id}/status`, dto)
+      privateClient.patch<BuybackApprovalDetail>(`/approvals/buyback/${id}/status`, dto)
     )
   },
 
   async createBuyback(dto: CreateBuybackApprovalRequest): Promise<BuybackApprovalDetail> {
     return requestData(() =>
-      privateClient.post<BuybackApprovalDetail>('/api/approvals/buyback', dto)
+      privateClient.post<BuybackApprovalDetail>('/approvals/buyback', dto)
     )
   },
 
   // --- Tab 2: Damage Penalty Approvals ---
   async getDamagePenalties(query: ApprovalQuery): Promise<PagedResult<DamagePenaltyApprovalItem>> {
     return requestData(() =>
-      privateClient.get<PagedResult<DamagePenaltyApprovalItem>>('/api/approvals/damage-penalty', { params: query })
+      privateClient.get<PagedResult<DamagePenaltyApprovalItem>>('/approvals/damage-penalty', { params: query })
     )
   },
 
   async getDamagePenaltyDetail(id: string): Promise<DamagePenaltyApprovalDetail> {
     return requestData(() =>
-      privateClient.get<DamagePenaltyApprovalDetail>(`/api/approvals/damage-penalty/${id}`)
+      privateClient.get<DamagePenaltyApprovalDetail>(`/approvals/damage-penalty/${id}`)
     )
   },
 
   async updateDamagePenaltyStatus(id: string, dto: UpdateApprovalStatusRequest): Promise<DamagePenaltyApprovalDetail> {
     return requestData(() =>
-      privateClient.patch<DamagePenaltyApprovalDetail>(`/api/approvals/damage-penalty/${id}/status`, dto)
+      privateClient.patch<DamagePenaltyApprovalDetail>(`/approvals/damage-penalty/${id}/status`, dto)
     )
   },
 
   async createDamagePenalty(dto: CreateDamagePenaltyApprovalRequest): Promise<DamagePenaltyApprovalDetail> {
     return requestData(() =>
-      privateClient.post<DamagePenaltyApprovalDetail>('/api/approvals/damage-penalty', dto)
+      privateClient.post<DamagePenaltyApprovalDetail>('/approvals/damage-penalty', dto)
     )
   },
 
   // --- Tab 4: Disposal & Reversal Approvals ---
   async getDisposalReversals(query: ApprovalQuery): Promise<PagedResult<DisposalReversalApprovalItem>> {
     return requestData(() =>
-      privateClient.get<PagedResult<DisposalReversalApprovalItem>>('/api/approvals/disposal-reversal', { params: query })
+      privateClient.get<PagedResult<DisposalReversalApprovalItem>>('/approvals/disposal-reversal', { params: query })
     )
   },
 
   async getDisposalReversalDetail(id: string): Promise<DisposalReversalApprovalDetail> {
     return requestData(() =>
-      privateClient.get<DisposalReversalApprovalDetail>(`/api/approvals/disposal-reversal/${id}`)
+      privateClient.get<DisposalReversalApprovalDetail>(`/approvals/disposal-reversal/${id}`)
     )
   },
 
   async updateDisposalReversalStatus(id: string, dto: UpdateApprovalStatusRequest): Promise<DisposalReversalApprovalDetail> {
     return requestData(() =>
-      privateClient.patch<DisposalReversalApprovalDetail>(`/api/approvals/disposal-reversal/${id}/status`, dto)
+      privateClient.patch<DisposalReversalApprovalDetail>(`/approvals/disposal-reversal/${id}/status`, dto)
     )
   },
 
   async createDisposalReversal(dto: CreateDisposalReversalApprovalRequest): Promise<DisposalReversalApprovalDetail> {
     return requestData(() =>
-      privateClient.post<DisposalReversalApprovalDetail>('/api/approvals/disposal-reversal', dto)
+      privateClient.post<DisposalReversalApprovalDetail>('/approvals/disposal-reversal', dto)
     )
   },
 
@@ -274,7 +274,7 @@ export const approvalsService = {
 
   async getAdjustmentsRaw(query: InventoryAdjustmentQuery): Promise<ApiPaged<ApiAdjustment>> {
     return requestData(() =>
-      privateClient.get<ApiPaged<ApiAdjustment>>('/api/inventory-adjustment-requests', {
+      privateClient.get<ApiPaged<ApiAdjustment>>('/inventory-adjustment-requests', {
         params: {
           Page: query.page,
           PageSize: query.pageSize,
@@ -291,14 +291,14 @@ export const approvalsService = {
 
   async getAdjustmentDetail(id: string): Promise<InventoryAdjustmentDetail> {
     const raw = await requestData<ApiAdjustment>(() =>
-      privateClient.get<ApiAdjustment>(`/api/inventory-adjustment-requests/${id}`)
+      privateClient.get<ApiAdjustment>(`/inventory-adjustment-requests/${id}`)
     )
     return mapApiToDetail(raw)
   },
 
   async getStats(): Promise<InventoryAdjustmentStats> {
     const raw = await requestData<ApiStats>(() =>
-      privateClient.get<ApiStats>('/api/inventory-adjustment-requests/stats')
+      privateClient.get<ApiStats>('/inventory-adjustment-requests/stats')
     )
     return {
       total: raw.totalCount ?? 0,
@@ -312,7 +312,7 @@ export const approvalsService = {
 
   async createAdjustment(dto: CreateInventoryAdjustmentRequest): Promise<InventoryAdjustmentDetail> {
     const raw = await requestData<ApiAdjustment>(() =>
-      privateClient.post<ApiAdjustment>('/api/inventory-adjustment-requests', dto)
+      privateClient.post<ApiAdjustment>('/inventory-adjustment-requests', dto)
     )
     return mapApiToDetail(raw)
   },
@@ -322,7 +322,7 @@ export const approvalsService = {
     dto: UpdateInventoryAdjustmentStatusRequest
   ): Promise<InventoryAdjustmentDetail> {
     const raw = await requestData<ApiAdjustment>(() =>
-      privateClient.patch<ApiAdjustment>(`/api/inventory-adjustment-requests/${id}/status`, {
+      privateClient.patch<ApiAdjustment>(`/inventory-adjustment-requests/${id}/status`, {
         status: dto.status,
         reason: dto.rejectionReason ?? dto.note,
       })
@@ -332,7 +332,7 @@ export const approvalsService = {
 
   async cancelAdjustment(id: string, dto: CancelInventoryAdjustmentRequest): Promise<InventoryAdjustmentDetail> {
     const raw = await requestData<ApiAdjustment>(() =>
-      privateClient.post<ApiAdjustment>(`/api/inventory-adjustment-requests/${id}/cancel`, dto)
+      privateClient.post<ApiAdjustment>(`/inventory-adjustment-requests/${id}/cancel`, dto)
     )
     return mapApiToDetail(raw)
   },
@@ -350,7 +350,7 @@ export const approvalsService = {
       }[]
     }
     const response = await requestData<CopyListResponse>(() =>
-      privateClient.get<CopyListResponse>('/api/book-copies', {
+      privateClient.get<CopyListResponse>('/book-copies', {
         params: { pageSize: 100 },
       })
     )

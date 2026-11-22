@@ -95,6 +95,36 @@ public sealed class EditionAndCopyImageServiceTests
     }
 
     [Fact]
+    public async Task UpdateEdition_writes_audit_log_when_cover_price_changes()
+    {
+        var databaseName = NewDatabaseName();
+        var actorId = Guid.NewGuid();
+        await using var dbContext = CreateDbContext(databaseName);
+        var title = new TitleModel { Name = "Conan" };
+        var edition = new EditionModel { TitleId = title.Id, CoverPrice = 25_000 };
+        dbContext.Titles.Add(title);
+        dbContext.Editions.Add(edition);
+        dbContext.Employees.Add(NewEmployee(actorId));
+        await dbContext.SaveChangesAsync();
+        var service = CreateEditionService(dbContext, new FakeCloudinaryService());
+
+        var response = await service.UpdateEditionAsync(
+            edition.Id,
+            new UpdateEditionRequest(CoverPrice: 30_000),
+            new AuditLogContext(actorId, null));
+
+        Assert.Equal(30_000, response.CoverPrice);
+        await using var verifyContext = CreateDbContext(databaseName);
+        var audit = await verifyContext.AuditLogs.SingleAsync();
+        Assert.Equal("EDITION_UPDATE", audit.Action);
+        Assert.Equal("Edition", audit.EntityType);
+        Assert.Equal(edition.Id, audit.EntityId);
+        Assert.Contains("\"CoverPrice\":25000", audit.BeforeData);
+        Assert.Contains("\"CoverPrice\":30000", audit.AfterData);
+        Assert.Contains("giá bìa", audit.Reason, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task GetBookCopyDetail_resolves_copy_and_edition_image_urls()
     {
         await using var dbContext = CreateDbContext(NewDatabaseName());

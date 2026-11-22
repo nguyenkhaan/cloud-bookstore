@@ -57,6 +57,9 @@ export interface paths {
                     EntityId?: string;
                     From?: string;
                     To?: string;
+                    Search?: string;
+                    Page?: number;
+                    PageSize?: number;
                     Limit?: number;
                     Offset?: number;
                 };
@@ -71,7 +74,109 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfAuditLogResponse"];
+                        "application/json": components["schemas"]["PagedResultOfAuditLogResponse"];
+                        "text/json": components["schemas"]["PagedResultOfAuditLogResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/audit/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AuditLogDetailResponse"];
+                        "application/json": components["schemas"]["AuditLogDetailResponse"];
+                        "text/json": components["schemas"]["AuditLogDetailResponse"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/audit/metadata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AuditLogMetadataResponse"];
+                        "application/json": components["schemas"]["AuditLogMetadataResponse"];
+                        "text/json": components["schemas"]["AuditLogMetadataResponse"];
+                    };
                 };
             };
         };
@@ -897,6 +1002,84 @@ export interface paths {
                 };
                 /** @description Forbidden */
                 403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/book-copies/{id}/shelf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateBookCopyShelfRequest"];
+                    "text/json": components["schemas"]["UpdateBookCopyShelfRequest"];
+                    "application/*+json": components["schemas"]["UpdateBookCopyShelfRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BookCopyDetailResponse"];
+                        "application/json": components["schemas"]["BookCopyDetailResponse"];
+                        "text/json": components["schemas"]["BookCopyDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -4771,6 +4954,232 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reports/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    date?: string;
+                    trendRange?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["OverviewReportResponse"];
+                        "application/json": components["schemas"]["OverviewReportResponse"];
+                        "text/json": components["schemas"]["OverviewReportResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/revenue-expense": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    From?: string;
+                    To?: string;
+                    Source?: string;
+                    Method?: components["schemas"]["PaymentMethod"];
+                    Search?: string;
+                    Page?: number;
+                    PageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RevenueExpenseReportResponse"];
+                        "application/json": components["schemas"]["RevenueExpenseReportResponse"];
+                        "text/json": components["schemas"]["RevenueExpenseReportResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/revenue-expense/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    From?: string;
+                    To?: string;
+                    Source?: string;
+                    Method?: components["schemas"]["PaymentMethod"];
+                    Search?: string;
+                    Page?: number;
+                    PageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfRevenueExpenseDocumentRowDto"];
+                        "application/json": components["schemas"]["PagedResultOfRevenueExpenseDocumentRowDto"];
+                        "text/json": components["schemas"]["PagedResultOfRevenueExpenseDocumentRowDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/deposit-reconciliation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    From?: string;
+                    To?: string;
+                    Status?: string;
+                    Search?: string;
+                    Page?: number;
+                    PageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DepositReconciliationReportResponse"];
+                        "application/json": components["schemas"]["DepositReconciliationReportResponse"];
+                        "text/json": components["schemas"]["DepositReconciliationReportResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/tax-declaration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    PeriodType?: string;
+                    Year?: number;
+                    PeriodValue?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["TaxDeclarationReportResponse"];
+                        "application/json": components["schemas"]["TaxDeclarationReportResponse"];
+                        "text/json": components["schemas"]["TaxDeclarationReportResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/settings/my-permissions": {
         parameters: {
             query?: never;
@@ -5260,6 +5669,38 @@ export interface components {
         };
         /** @enum {unknown} */
         ApprovalStatus: "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "COMPLETED" | "REJECTED" | "CANCELLED";
+        AuditLogDetailResponse: {
+            log: components["schemas"]["AuditLogResponse"];
+            relatedEvents: components["schemas"]["AuditLogResponse"][];
+        };
+        AuditLogMetadataResponse: {
+            entityTypes: string[];
+            actions: string[];
+            isInventoryScoped: boolean;
+        };
+        AuditLogResponse: {
+            /** Format: uuid */
+            id: string;
+            logCode: string;
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            actorId: null | string;
+            actorName: null | string;
+            actorRole: null | string;
+            actorEmail: null | string;
+            ipAddress: null | string;
+            userAgent: null | string;
+            correlationId: null | string;
+            action: string;
+            entityType: string;
+            /** Format: uuid */
+            entityId: string;
+            entityLabel: null | string;
+            beforeData: null | string;
+            afterData: null | string;
+            reason: null | string;
+        };
         AuthenticationResponse: {
             accessToken: string;
             refreshToken: string;
@@ -5348,6 +5789,24 @@ export interface components {
             beforeData: null | string;
             afterData: null | string;
             reason: null | string;
+            metadata?: null | components["schemas"]["BookCopyHistoryMetadata"];
+        };
+        BookCopyHistoryMetadata: {
+            /** Format: int64 */
+            costPrice?: null | number;
+            supplierName?: null | string;
+            customerName?: null | string;
+            /** Format: int64 */
+            depositAmount?: null | number;
+            copyCondition?: null | components["schemas"]["CopyCondition"];
+            /** Format: int64 */
+            refundAmount?: null | number;
+            /** Format: int64 */
+            additionalAmountDue?: null | number;
+            shelfCode?: null | string;
+            /** Format: int64 */
+            sellingPrice?: null | number;
+            returnStatus?: null | string;
         };
         BookCopyLabelRequest: {
             reason?: null | string;
@@ -5583,6 +6042,8 @@ export interface components {
         };
         /** @enum {unknown} */
         ConditionGrade: "A" | "B" | "C" | "D";
+        /** @enum {unknown} */
+        CopyCondition: "NORMAL" | "DAMAGED" | "LOST" | null;
         CreateBookCopyRequest: {
             /** Format: uuid */
             editionId: string;
@@ -5979,6 +6440,57 @@ export interface components {
             basis: string;
             settlementRule: string;
         };
+        DepositReconciliationReportResponse: {
+            /** Format: date */
+            fromDate: string;
+            /** Format: date */
+            toDate: string;
+            /** Format: int64 */
+            openingDepositBalance: number;
+            /** Format: int64 */
+            collectedInPeriod: number;
+            /** Format: int64 */
+            refundedInPeriod: number;
+            /** Format: int64 */
+            deductedFeeInPeriod: number;
+            /** Format: int64 */
+            lostRetainedInPeriod: number;
+            /** Format: int64 */
+            deductedAndLostTotalInPeriod: number;
+            /** Format: int64 */
+            closingDepositBalance: number;
+            /** Format: int32 */
+            totalActiveObligationSlips: number;
+            /** Format: int64 */
+            cashObligationAmount: number;
+            /** Format: int64 */
+            bankObligationAmount: number;
+            /** Format: int64 */
+            suggestedCashActualBalance: number;
+            alertBannerMessage: null | string;
+            slips: components["schemas"]["PagedResultOfDepositReconciliationSlipRowDto"];
+        };
+        DepositReconciliationSlipRowDto: {
+            /** Format: uuid */
+            slipId: string;
+            slipNo: string;
+            /** Format: uuid */
+            customerId: string;
+            customerName: string;
+            customerPhone: string;
+            /** Format: int64 */
+            depositCollected: number;
+            /** Format: int64 */
+            settledDeduction: number;
+            /** Format: int64 */
+            refundedAmount: number;
+            /** Format: int64 */
+            currentlyHeld: number;
+            statusCode: string;
+            statusLabel: string;
+            /** Format: date-time */
+            dueAt: null | string;
+        };
         DisposalReversalApprovalDetailResponse: {
             /** Format: uuid */
             id: string;
@@ -6101,6 +6613,15 @@ export interface components {
         };
         EmailTestResponse: {
             status: string;
+        };
+        ExpenseBreakdownDto: {
+            /** Format: int64 */
+            customerBuyback: number;
+            /** Format: int64 */
+            supplierImport: number;
+            /** Format: int64 */
+            approvedPayroll: number;
+            payrollPeriodCode: string;
         };
         ForgotPasswordRequest: {
             email: string;
@@ -6227,6 +6748,27 @@ export interface components {
             email: string;
             password: string;
         };
+        LowStockAlertRowDto: {
+            /** Format: uuid */
+            editionId: string;
+            /** Format: uuid */
+            titleId: string;
+            displayTitle: string;
+            /** Format: int32 */
+            saleAvailable: number;
+            /** Format: int32 */
+            minStockSale: number;
+            /** Format: int32 */
+            rentalAvailable: number;
+            /** Format: int32 */
+            minStockRental: number;
+            /** Format: int32 */
+            totalAvailable: number;
+            /** Format: int32 */
+            totalMinRequired: number;
+            /** Format: int32 */
+            suggestedReplenishQty: number;
+        };
         MembershipPolicyConfigDto: {
             tiers: components["schemas"]["MembershipTierItemDto"][];
             /** Format: date-time */
@@ -6272,6 +6814,120 @@ export interface components {
         };
         /** @enum {unknown} */
         MetadataSource: "MANUAL" | "GOOGLE_BOOKS" | "OPEN_LIBRARY" | null;
+        OverdueCustomerRowDto: {
+            /** Format: uuid */
+            slipId: string;
+            slipNo: string;
+            /** Format: uuid */
+            customerId: string;
+            customerName: string;
+            customerPhone: string;
+            /** Format: date-time */
+            earliestDueAt: string;
+            /** Format: int32 */
+            daysOverdue: number;
+            /** Format: int32 */
+            activeCopyCount: number;
+        };
+        OverviewAttentionDto: {
+            /** Format: int32 */
+            overdueSlipCount: number;
+            /** Format: int32 */
+            overdueOver7DaysCustomerCount: number;
+            /** Format: int32 */
+            lowStockEditionCount: number;
+            /** Format: int32 */
+            outOfStockEditionCount: number;
+            /** Format: int32 */
+            pendingReceiptCopyCount: number;
+            /** Format: int32 */
+            vietQrPendingOrFailedCount: number;
+            /** Format: double */
+            vietQrTargetPct: number;
+        };
+        OverviewReportResponse: {
+            /** Format: date */
+            dateVn: string;
+            /** Format: date-time */
+            generatedAtUtc: string;
+            trendRange: string;
+            isCashierScoped: boolean;
+            storeScopeLabel: string;
+            /** Format: int64 */
+            totalSettledRevenueToday: number;
+            /** Format: int64 */
+            salesRevenueToday: number;
+            /** Format: int64 */
+            rentalRevenueToday: number;
+            /** Format: int64 */
+            cashDrawerBalance: number;
+            /** Format: int32 */
+            activeCashSessionCount: number;
+            /** Format: int64 */
+            heldDepositsBalance: number;
+            /** Format: int32 */
+            circulatingRentalSlipCount: number;
+            /** Format: int32 */
+            overdueRentalSlipCount: number;
+            /** Format: double */
+            vietQrSuccessRatePct: number;
+            /** Format: int32 */
+            vietQrSucceededCount: number;
+            /** Format: int32 */
+            vietQrTotalCount: number;
+            /** Format: int64 */
+            trendTotalAmount: number;
+            trendPoints: components["schemas"]["OverviewTrendPointDto"][];
+            revenueStructure: components["schemas"]["OverviewRevenueStructureDto"];
+            topRentedTitles: components["schemas"]["TopRentedTitleDto"][];
+            attention: components["schemas"]["OverviewAttentionDto"];
+            lowStockAlerts: components["schemas"]["LowStockAlertRowDto"][];
+            overdueCustomers: components["schemas"]["OverdueCustomerRowDto"][];
+        };
+        OverviewRevenueStructureDto: {
+            /** Format: int64 */
+            salesAmount: number;
+            /** Format: int64 */
+            rentalFeeAmount: number;
+            /** Format: int64 */
+            penaltyAmount: number;
+            /** Format: int64 */
+            lostBookAmount: number;
+            /** Format: int64 */
+            totalAmount: number;
+            /** Format: double */
+            salesPct: number;
+            /** Format: double */
+            rentalFeePct: number;
+            /** Format: double */
+            penaltyPct: number;
+            /** Format: double */
+            lostBookPct: number;
+        };
+        OverviewTrendPointDto: {
+            /** Format: date */
+            date: string;
+            label: string;
+            /** Format: int64 */
+            salesAmount: number;
+            /** Format: int64 */
+            rentalAndPenaltyAmount: number;
+            /** Format: int64 */
+            totalAmount: number;
+        };
+        PagedResultOfAuditLogResponse: {
+            items: components["schemas"]["AuditLogResponse"][];
+            /** Format: int32 */
+            totalCount: number;
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
         PagedResultOfBookCopyResponse: {
             items: components["schemas"]["BookCopyResponse"][];
             /** Format: int32 */
@@ -6402,6 +7058,19 @@ export interface components {
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
+        PagedResultOfDepositReconciliationSlipRowDto: {
+            items: components["schemas"]["DepositReconciliationSlipRowDto"][];
+            /** Format: int32 */
+            totalCount: number;
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
         PagedResultOfDisposalReversalApprovalItemResponse: {
             items: components["schemas"]["DisposalReversalApprovalItemResponse"][];
             /** Format: int32 */
@@ -6441,6 +7110,32 @@ export interface components {
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
+        PagedResultOfRevenueExpenseDocumentRowDto: {
+            items: components["schemas"]["RevenueExpenseDocumentRowDto"][];
+            /** Format: int32 */
+            totalCount: number;
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
+        PagedResultOfRevenueExpenseSourceRowDto: {
+            items: components["schemas"]["RevenueExpenseSourceRowDto"][];
+            /** Format: int32 */
+            totalCount: number;
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
         PagedResultOfTitleResponse: {
             items: components["schemas"]["TitleResponse"][];
             /** Format: int32 */
@@ -6454,6 +7149,8 @@ export interface components {
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
+        /** @enum {unknown} */
+        PaymentMethod: "CASH" | "BANK_TRANSFER" | null;
         ProblemDetails: {
             type?: null | string;
             title?: null | string;
@@ -6523,6 +7220,74 @@ export interface components {
             token: string;
             newPassword: string;
         };
+        RevenueBreakdownDto: {
+            /** Format: int64 */
+            counterSales: number;
+            /** Format: int64 */
+            lostBookRetained: number;
+            /** Format: int64 */
+            settledRentFees: number;
+            /** Format: int64 */
+            settledExtensionFees: number;
+            /** Format: int64 */
+            settledPenalties: number;
+        };
+        RevenueExpenseDocumentRowDto: {
+            /** Format: uuid */
+            documentId: string;
+            documentCode: string;
+            /** Format: date-time */
+            occurredAt: string;
+            sourceKey: string;
+            sourceLabel: string;
+            counterpartyName: string;
+            /** Format: int64 */
+            amount: number;
+            paymentMethodLabel: string;
+            statusLabel: string;
+        };
+        RevenueExpenseReportResponse: {
+            /** Format: date */
+            fromDate: string;
+            /** Format: date */
+            toDate: string;
+            storeScopeLabel: string;
+            /** Format: int64 */
+            totalRevenue: number;
+            /** Format: int64 */
+            totalExpense: number;
+            /** Format: int64 */
+            netOperatingDifference: number;
+            revenueBreakdown: components["schemas"]["RevenueBreakdownDto"];
+            expenseBreakdown: components["schemas"]["ExpenseBreakdownDto"];
+            trendBuckets: components["schemas"]["RevenueExpenseTrendBucketDto"][];
+            sources: components["schemas"]["PagedResultOfRevenueExpenseSourceRowDto"];
+        };
+        RevenueExpenseSourceRowDto: {
+            sourceKey: string;
+            sourceLabel: string;
+            codePattern: string;
+            /** Format: int32 */
+            documentCount: number;
+            quantityLabel: string;
+            /** Format: int64 */
+            revenueAmount: null | number;
+            /** Format: int64 */
+            expenseAmount: null | number;
+            paymentChannelLabel: string;
+            statusLabel: string;
+        };
+        RevenueExpenseTrendBucketDto: {
+            label: string;
+            /** Format: date */
+            fromDate: string;
+            /** Format: date */
+            toDate: string;
+            /** Format: int64 */
+            revenueAmount: number;
+            /** Format: int64 */
+            expenseAmount: number;
+        };
         /** @enum {unknown} */
         RoleName: "ADMIN" | "CASHIER" | "INVENTORY_MANAGER";
         SaleLineSummary: {
@@ -6568,6 +7333,59 @@ export interface components {
         };
         /** @enum {unknown} */
         StockReceiptSourceType: "SUPPLIER" | "CUSTOMER_BUYBACK";
+        TaxDeclarationReportResponse: {
+            periodType: string;
+            /** Format: int32 */
+            year: number;
+            /** Format: int32 */
+            periodValue: number;
+            /** Format: date */
+            fromDate: string;
+            /** Format: date */
+            toDate: string;
+            periodLabel: string;
+            storeScopeLabel: string;
+            /** Format: date-time */
+            generatedAtUtc: string;
+            /** Format: int64 */
+            totalTaxableRevenue: number;
+            /** Format: int64 */
+            totalEligibleExpense: number;
+            /** Format: int64 */
+            netDifference: number;
+            hasFullSourceReconciliation: boolean;
+            revenueItems: components["schemas"]["TaxRevenueItemDto"][];
+            expenseItems: components["schemas"]["TaxExpenseItemDto"][];
+            excludedItems: components["schemas"]["TaxExcludedItemDto"][];
+        };
+        TaxExcludedItemDto: {
+            itemKey: string;
+            title: string;
+            /** Format: int64 */
+            amount: number;
+            treatmentNote: string;
+        };
+        TaxExpenseItemDto: {
+            itemKey: string;
+            title: string;
+            requiredDocuments: string;
+            sourceTrace: string;
+            /** Format: int32 */
+            documentCount: number;
+            /** Format: int64 */
+            amount: number;
+            isVerified: boolean;
+        };
+        TaxRevenueItemDto: {
+            itemKey: string;
+            title: string;
+            recognitionRule: string;
+            sourceTrace: string;
+            /** Format: int32 */
+            documentCount: number;
+            /** Format: int64 */
+            amount: number;
+        };
         TitleDetailResponse: {
             /** Format: uuid */
             id: string;
@@ -6626,6 +7444,15 @@ export interface components {
             editionsCount: number;
             imageUrl: null | string;
         };
+        TopRentedTitleDto: {
+            /** Format: uuid */
+            titleId: string;
+            titleName: string;
+            volumeLabel: null | string;
+            displayName: string;
+            /** Format: int32 */
+            rentalCount: number;
+        };
         UpdateApprovalStatusRequestDto: {
             status: components["schemas"]["ApprovalStatus"];
             reason: null | string;
@@ -6641,6 +7468,10 @@ export interface components {
             rentalRate?: null | number;
             shelfCode?: null | string;
             imageUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
+        };
+        UpdateBookCopyShelfRequest: {
+            shelfCode: null | string;
+            reason: string;
         };
         UpdateBookCopyStatusRequest: {
             status: null | components["schemas"]["BookCopyStatus"];

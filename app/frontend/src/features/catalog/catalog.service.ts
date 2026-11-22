@@ -17,6 +17,7 @@ import type {
   SaveTitleRequest,
   TitleListFilters,
   UpdateCopyRequest,
+  UpdateCopyShelfRequest,
   UpdateCopyStatusRequest,
   UpdateEditionRequest,
   UpdateSeriesRequest,
@@ -339,6 +340,13 @@ export async function deleteCopy(copyId: string): Promise<void> {
 export async function updateCopyStatus(copyId: string, request: UpdateCopyStatusRequest): Promise<BookCopy> {
   const response = await requestData(() =>
     privateClient.patch<CopyResponse>(`${endpoints.copies}/${encodeURIComponent(copyId)}/status`, request),
+  )
+  return copyForView(response)
+}
+
+export async function updateCopyShelf(copyId: string, request: UpdateCopyShelfRequest): Promise<BookCopy> {
+  const response = await requestData(() =>
+    privateClient.patch<CopyResponse>(`${endpoints.copies}/${encodeURIComponent(copyId)}/shelf`, request),
   )
   return copyForView(response)
 }

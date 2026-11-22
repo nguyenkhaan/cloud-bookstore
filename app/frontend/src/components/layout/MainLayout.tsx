@@ -46,7 +46,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         )}
 
         <div
-            className={`fixed inset-y-0 left-0 z-40 lg:static transition-transform duration-300 lg:translate-x-0 ${
+            className={`fixed inset-y-0 left-0 z-40 lg:static transition-transform duration-300 lg:translate-x-0 print:hidden ${
                 isMobileOpen ? 'translate-x-0' : '-translate-x-full'
             }`}
         >
