@@ -5,7 +5,7 @@ import vm from 'node:vm'
 import ts from 'typescript'
 
 // Run the real component handlers with deterministic query results and hook state.
-function mount(file, name, data) {
+function mount(file, name, data, roleCode = 'ADMIN') {
   const slots = [], effects = [], requests = []
   let cursor, changed, tree
   const query = { data, isLoading: false, isError: false, refetch: () => { query.retries++ }, retries: 0, saveResult: data }
@@ -34,16 +34,16 @@ function mount(file, name, data) {
   vm.runInNewContext(code, { exports, React, require: id => {
     if (id === 'react') return React
     if (id.endsWith('settings.hook')) return hooks
-    if (id === 'react-router-dom') return { useLocation: () => location, useNavigate: () => () => {} }
-    if (id.endsWith('auth.hook')) return { useAuth: () => ({ session: { user: { roleCode: 'ADMIN' } } }) }
-    if (id.endsWith('settings.route')) return { settingsPaths: {} }
+    if (id === 'react-router-dom') return { Navigate: 'Navigate', useLocation: () => location, useNavigate: () => () => {} }
+    if (id.endsWith('auth.hook')) return { useAuth: () => ({ session: { user: { roleCode } } }) }
+    if (id.endsWith('settings.route')) return { settingsPaths: { rental: '/settings/rental', tiers: '/settings/tiers', rbac: '/admin/settings/rbac', integrations: '/admin/settings/integrations' } }
     return { ...panels, Button: 'button', TextField: 'input', ConfirmationDialog: 'confirmation', notify: { success() {}, error() {} }, MainLayout: 'MainLayout', SettingsTabBar: 'SettingsTabBar' }
   } })
-  function render() {
+  function render(props = { isAdmin: true }) {
     let count = 0
     do {
       changed = false; cursor = 0
-      tree = exports[name]({ isAdmin: true })
+      tree = exports[name](props)
       effects.splice(0).forEach(fn => fn())
       assert.ok(++count < 20, 'render must settle')
     } while (changed)
@@ -174,6 +174,23 @@ test('switching settings tabs keeps visited panels mounted and hidden', () => {
   assert.ok(rentalPanel, 'rental panel must remain mounted')
   assert.ok(page.find(n => n.props?.hidden === true && n.props.children.flat().includes(rentalPanel)))
   assert.ok(page.find(n => n.type === 'ScrSys02MembershipTiers'))
+})
+
+test('admin settings tabs are hidden from staff and direct admin URLs redirect before mounting', () => {
+  const staffTabs = mount('components/SettingsTabBar.tsx', 'SettingsTabBar')
+  staffTabs.render({ activeTab: 'rental', onSelectTab() {}, isAdmin: false })
+  assert.equal(staffTabs.nodes().filter(n => n.type === 'button').length, 2)
+  staffTabs.render({ activeTab: 'rental', onSelectTab() {}, isAdmin: true })
+  assert.equal(staffTabs.nodes().filter(n => n.type === 'button').length, 4)
+
+  const staffPage = mount('pages/SettingsPage.tsx', 'default', undefined, 'CASHIER')
+  staffPage.location.pathname = '/admin/settings/rbac'; staffPage.render()
+  assert.equal(staffPage.find(n => n.type === 'Navigate')?.props.to, '/settings/rental')
+  assert.equal(staffPage.find(n => n.type === 'ScrSys03RbacMatrix'), undefined)
+
+  const adminPage = mount('pages/SettingsPage.tsx', 'default')
+  adminPage.location.pathname = '/admin/settings/rbac'; adminPage.render()
+  assert.ok(adminPage.find(n => n.type === 'ScrSys03RbacMatrix'))
 })
 
 test('RBAC uses three boolean grants, locks protected rights and preserves dirty edits on refetch', async () => {

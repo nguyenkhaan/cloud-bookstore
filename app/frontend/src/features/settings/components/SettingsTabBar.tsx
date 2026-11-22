@@ -25,7 +25,7 @@ export const SettingsTabBar: React.FC<SettingsTabBarProps> = ({ activeTab, onSel
     <div className="flex flex-col gap-3 pb-2 border-b border-slate-200">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-2 overflow-x-auto py-1">
-          {TABS.map((tab) => {
+          {TABS.filter(tab => isAdmin || (tab.key !== 'rbac' && tab.key !== 'integrations')).map((tab) => {
             const isActive = activeTab === tab.key
             return (
               <button
@@ -57,7 +57,7 @@ export const SettingsTabBar: React.FC<SettingsTabBarProps> = ({ activeTab, onSel
                 : 'bg-slate-100 text-slate-600 border border-slate-200'
             }`}
           >
-            {isAdmin ? 'Admin · Có quyền chỉnh sửa' : 'Quản lý / Nhân viên · Chỉ xem'}
+            {isAdmin ? 'Admin · Có quyền chỉnh sửa' : 'Chỉ xem chính sách'}
           </span>
         </div>
       </div>

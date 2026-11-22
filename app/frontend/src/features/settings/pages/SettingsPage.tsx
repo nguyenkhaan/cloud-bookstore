@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { MainLayout } from '@/components/layout'
 import { useAuth } from '@/features/auth/auth.hook'
 import { SettingsTabBar } from '../components/SettingsTabBar'
@@ -21,9 +21,9 @@ export default function SettingsPage() {
   // Determine active tab from current URL pathname
   const activeTab: SystemTabKey = useMemo(() => {
     const path = location.pathname
-    if (path.includes('/settings/tiers')) return 'tiers'
-    if (path.includes('/settings/rbac')) return 'rbac'
-    if (path.includes('/settings/integrations')) return 'integrations'
+    if (path === settingsPaths.tiers) return 'tiers'
+    if (path === settingsPaths.rbac) return 'rbac'
+    if (path === settingsPaths.integrations) return 'integrations'
     return 'rental'
   }, [location.pathname])
 
@@ -75,6 +75,10 @@ export default function SettingsPage() {
     }
   }, [activeTab])
 
+  if (!isAdmin && (activeTab === 'rbac' || activeTab === 'integrations')) {
+    return <Navigate replace to={settingsPaths.rental} />
+  }
+
   return (
     <MainLayout
       currentPath="settings"
@@ -113,12 +117,12 @@ export default function SettingsPage() {
             <ScrSys02MembershipTiers isAdmin={isAdmin} />
           </div>
         )}
-        {visitedTabs.includes('rbac') && (
+        {isAdmin && visitedTabs.includes('rbac') && (
           <div hidden={activeTab !== 'rbac'}>
             <ScrSys03RbacMatrix isAdmin={isAdmin} />
           </div>
         )}
-        {visitedTabs.includes('integrations') && (
+        {isAdmin && visitedTabs.includes('integrations') && (
           <div hidden={activeTab !== 'integrations'}>
             <ScrSys04Integrations isAdmin={isAdmin} />
           </div>

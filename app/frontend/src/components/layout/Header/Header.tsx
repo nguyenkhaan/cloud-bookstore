@@ -78,6 +78,9 @@ export const Header: React.FC<HeaderProps> = ({
                   <div className="text-xs font-semibold text-slate-900">{currentUser.name}</div>
                   <div className="text-[11px] text-slate-600">{currentUser.role}</div>
                 </div>
+                {auth?.session?.user?.roleCode === 'ADMIN' && (
+                    <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-indigo-700">Admin</span>
+                )}
               </Link>
           )}
         </div>
