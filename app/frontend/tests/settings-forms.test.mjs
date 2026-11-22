@@ -5,11 +5,12 @@ import vm from 'node:vm'
 import ts from 'typescript'
 
 // Run the real component handlers with deterministic query results and hook state.
-function mount(file, name, data) {
+function mount(file, name, data, options = {}) {
   const slots = [], effects = [], requests = []
   let cursor, changed, tree
   const query = { data, isLoading: false, isError: false, refetch: () => { query.retries++ }, retries: 0, saveResult: data }
-  const location = { pathname: '/settings/rental' }
+  const location = { pathname: options.pathname ?? '/settings/rental' }
+  const navigations = []
   const React = {
     createElement: (type, props, ...children) => ({ type, props: { ...props, children } }),
     useState(initial) {
@@ -34,16 +35,16 @@ function mount(file, name, data) {
   vm.runInNewContext(code, { exports, React, require: id => {
     if (id === 'react') return React
     if (id.endsWith('settings.hook')) return hooks
-    if (id === 'react-router-dom') return { useLocation: () => location, useNavigate: () => () => {} }
-    if (id.endsWith('auth.hook')) return { useAuth: () => ({ session: { user: { roleCode: 'ADMIN' } } }) }
-    if (id.endsWith('settings.route')) return { settingsPaths: {} }
+    if (id === 'react-router-dom') return { useLocation: () => location, useNavigate: () => path => navigations.push(path) }
+    if (id.endsWith('auth.hook')) return { useAuth: () => ({ session: { user: { roleCode: options.roleCode ?? 'ADMIN' } } }) }
+    if (id.endsWith('settings.route')) return { settingsPaths: { rental: '/settings/rental', tiers: '/settings/tiers', rbac: '/settings/rbac', integrations: '/settings/integrations' } }
     return { ...panels, Button: 'button', TextField: 'input', ConfirmationDialog: 'confirmation', notify: { success() {}, error() {} }, MainLayout: 'MainLayout', SettingsTabBar: 'SettingsTabBar' }
   } })
   function render() {
     let count = 0
     do {
       changed = false; cursor = 0
-      tree = exports[name]({ isAdmin: true })
+      tree = exports[name](options.props ?? { isAdmin: true })
       effects.splice(0).forEach(fn => fn())
       assert.ok(++count < 20, 'render must settle')
     } while (changed)
@@ -59,7 +60,7 @@ function mount(file, name, data) {
   const input = id => find(n => n.props?.id === id)
   const button = label => find(n => n.type === 'button' && text(n).includes(label))
   render()
-  return { query, location, requests, render, nodes: () => nodes(tree), input, button, find }
+  return { query, location, navigations, requests, render, nodes: () => nodes(tree), input, button, find }
 }
 
 const rental = { maxExtensions: 3, extensionDaysPerTime: 8, gracePeriodHours: 1, latePenaltyRatePct: 160, damagePenalties: [], changeReason: 'Server reason' }
@@ -174,6 +175,43 @@ test('switching settings tabs keeps visited panels mounted and hidden', () => {
   assert.ok(rentalPanel, 'rental panel must remain mounted')
   assert.ok(page.find(n => n.props?.hidden === true && n.props.children.flat().includes(rentalPanel)))
   assert.ok(page.find(n => n.type === 'ScrSys02MembershipTiers'))
+})
+
+test('settings navigation belongs below the page title without screen-code or role-status clutter', () => {
+  const pageSource = readFileSync(new URL('../src/features/settings/pages/SettingsPage.tsx', import.meta.url), 'utf8')
+  const tabSource = readFileSync(new URL('../src/features/settings/components/SettingsTabBar.tsx', import.meta.url), 'utf8')
+  const rentalSource = readFileSync(new URL('../src/features/settings/components/ScrSys01RentalPolicy.tsx', import.meta.url), 'utf8')
+  const integrationsSource = readFileSync(new URL('../src/features/settings/components/ScrSys04Integrations.tsx', import.meta.url), 'utf8')
+
+  assert.match(pageSource, /pageHeaderContent=\{<SettingsTabBar activeTab=\{activeTab\} isAdmin=\{isAdmin\} onSelectTab=\{handleSelectTab\} \/>\}/)
+  assert.doesNotMatch(pageSource, /screenCode=/)
+  assert.doesNotMatch(pageSource, /max-w-7xl/)
+  assert.match(tabSource, /<nav aria-label="Các mục cấu hình hệ thống"/)
+  assert.doesNotMatch(tabSource, /SCR-SYS-/)
+  assert.doesNotMatch(tabSource, /Chỉ xem|Có quyền chỉnh sửa/)
+  assert.doesNotMatch(rentalSource, /Chính sách vận hành · Chỉ Admin được thay đổi · Quản lý chỉ xem/)
+  assert.doesNotMatch(rentalSource, /Góc nhìn Quản lý/)
+  assert.doesNotMatch(integrationsSource, /không được truy cập màn hình này/)
+})
+
+test('non-admin users are not offered Settings tabs whose APIs are Admin-only', () => {
+  const bar = mount('components/SettingsTabBar.tsx', 'SettingsTabBar', undefined, {
+    props: { activeTab: 'rental', isAdmin: false, onSelectTab() {} },
+  })
+
+  assert.ok(bar.button('Tham số thuê'))
+  assert.ok(bar.button('Hạng thành viên'))
+  assert.equal(bar.button('Ma trận phân quyền'), undefined)
+  assert.equal(bar.button('Tích hợp'), undefined)
+})
+
+test('a non-admin direct link to Integrations returns to an accessible Settings tab', () => {
+  const page = mount('pages/SettingsPage.tsx', 'default', undefined, {
+    pathname: '/settings/integrations',
+    roleCode: 'CASHIER',
+  })
+
+  assert.deepEqual(page.navigations, ['/settings/rental'])
 })
 
 test('RBAC uses three boolean grants, locks protected rights and preserves dirty edits on refetch', async () => {

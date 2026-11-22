@@ -33,12 +33,7 @@ export function ScrSys03RbacMatrix({ isAdmin }: { isAdmin: boolean }) {
   if (query.isError) return <div role="alert"><p>Không thể tải phân quyền. Chưa thể chỉnh sửa.</p><Button onClick={() => void query.refetch()}>Thử lại</Button></div>
   if (query.isPending) return <p role="status">Đang tải phân quyền…</p>
 
-  return <section className="space-y-5" aria-labelledby="rbac-heading">
-    <div>
-      <h1 id="rbac-heading" className="text-2xl font-bold text-slate-900">Ma trận phân quyền</h1>
-      <p className="mt-2 text-sm text-slate-600">Cấp hoặc thu hồi quyền theo từng thao tác đang được triển khai. Thay đổi có hiệu lực ngay khi lưu.</p>
-      <p className="mt-1 text-xs text-slate-500">Các quyền chỉ dành Admin được khóa theo quy định. Các màn hình chưa có API nghiệp vụ chưa nằm trong bảng này.</p>
-    </div>
+  return <section className="space-y-5" aria-label="Ma trận phân quyền">
     <TextField label="Tìm nghiệp vụ hoặc thao tác" value={search} onChange={e => setSearch(e.target.value)} />
     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
       <table className="w-full text-left text-sm">
