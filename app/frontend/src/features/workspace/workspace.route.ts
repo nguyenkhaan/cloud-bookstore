@@ -4,6 +4,7 @@ export const workspacePaths = {
   overview: '/dashboard',
   pos: '/pos',
   inventory: catalogPaths.seriesList,
+  warehouse: catalogPaths.suppliers,
   customers: '/customers',
   hr: '/hr',
   'admin-hr': '/admin/hr',

@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import {
   DashboardIcon,
   InventoryIcon,
+  WarehouseIcon,
   HeadphonesIcon,
   PanelToggleIcon,
   ExternalLinkIcon,
@@ -51,7 +52,8 @@ export interface SidebarProps {
 const DEFAULT_NAV_ITEMS: NavItem[] = [
   { id: 'overview', label: 'Tổng quan', icon: DashboardIcon },
   { id: 'pos', label: 'Quầy giao dịch', icon: PosIcon },
-  { id: 'inventory', label: 'Kho & đầu sách', icon: InventoryIcon },
+  { id: 'inventory', label: 'Quản lý sách', icon: InventoryIcon },
+  { id: 'warehouse', label: 'NCC & Kho', icon: WarehouseIcon },
   { id: 'customers', label: 'Khách hàng', icon: CustomerIcon },
   { id: 'hr', label: 'Điểm danh', icon: StaffIcon },
   { id: 'admin-hr', label: 'Nhân sự', icon: StaffIcon },
@@ -76,7 +78,8 @@ export function canAccessNavItem(id: string, roleCode?: string): boolean {
 export function navLabelFor(id: string): string {
   const labels: Record<string, string> = {
     overview: 'Tổng quan',
-    inventory: 'Kho & đầu sách',
+    inventory: 'Quản lý sách',
+    warehouse: 'NCC & Kho',
     pos: 'Quầy giao dịch',
     customers: 'Khách hàng',
     hr: 'Điểm danh',

@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Button, Card, ConfirmationDialog } from '@/components/common'
+import { BarcodeLabelsPrintModal } from '@/components/common/BarcodeLabel/BarcodeLabelsPrintModal'
 import { usePermissions } from '@/hooks/usePermissions'
 import { catalogPaths } from '../catalog.route'
-import { useCopyQuery, useDeleteCopyMutation, useEditionQuery, useTitleQuery, useUpdateCopyMutation, useUpdateCopyStatusMutation } from '../catalog.hook'
+import { useCopyQuery, useCreateCopyLabelMutation, useDeleteCopyMutation, useEditionQuery, useTitleQuery, useUpdateCopyMutation, useUpdateCopyStatusMutation } from '../catalog.hook'
 import { availabilityLabel, formatVnd } from '../catalog.presentation'
 import type { UpdateCopyRequest } from '../catalog.type'
 import { CopyStatusBadge } from '../components/CatalogStatusBadge'
@@ -17,8 +18,7 @@ export default function CopyDetailPage() {
   const { copyId = '' } = useParams()
   const navigate = useNavigate()
   const { can } = usePermissions()
-  const [dialog, setDialog] = useState<'edit' | 'delete' | null>(null)
-  const [isLifecycleOpen, setIsLifecycleOpen] = useState(false)
+  const [dialog, setDialog] = useState<'edit' | 'delete' | 'print' | null>(null)
   const [actionError, setActionError] = useState('')
   const copyQuery = useCopyQuery(copyId)
   const copy = copyQuery.data
@@ -27,6 +27,7 @@ export default function CopyDetailPage() {
   const updateCopy = useUpdateCopyMutation()
   const updateStatus = useUpdateCopyStatusMutation()
   const deleteCopy = useDeleteCopyMutation()
+  const createLabel = useCreateCopyLabelMutation()
 
   if (copyQuery.isLoading) return <CatalogWorkspace title="Bản sách vật lý"><LoadingRows /></CatalogWorkspace>
   if (!copy || copyQuery.error) return <CatalogWorkspace title="Bản sách vật lý"><ErrorState message="Không tìm thấy bản sách yêu cầu." /></CatalogWorkspace>
@@ -43,8 +44,13 @@ export default function CopyDetailPage() {
   }
   const canDiscontinue = !['RENTED', 'SOLD', 'DISPOSED', 'DISCONTINUED'].includes(copy.status)
 
+  const handlePrintLabel = () => {
+    void createLabel.mutateAsync(copyId).catch(() => null)
+    setDialog('print')
+  }
+
   return <CatalogWorkspace
-    action={<div className="flex flex-wrap gap-2"><Button onClick={() => setIsLifecycleOpen(true)} variant="outline">Lịch sử vòng đời 360°</Button><Button onClick={() => setDialog('edit')} variant="secondary">Chỉnh sửa</Button><Button onClick={() => { setActionError(''); setDialog('delete') }} variant="outline">Xóa</Button>{can("BookCopies.UpdateBookCopyStatus") && canDiscontinue && <Button disabled={updateStatus.isPending} onClick={() => void handleDiscontinue()} variant="ghost">Ngừng sử dụng</Button>}</div>}
+    action={<div className="flex flex-wrap gap-2"><Button onClick={handlePrintLabel} variant="outline">In tem Barcode</Button><Button onClick={() => setDialog('edit')} variant="secondary">Chỉnh sửa</Button><Button onClick={() => { setActionError(''); setDialog('delete') }} variant="outline">Xóa</Button>{can("BookCopies.UpdateBookCopyStatus") && canDiscontinue && <Button disabled={updateStatus.isPending} onClick={() => void handleDiscontinue()} variant="ghost">Ngừng sử dụng</Button>}</div>}
     title={copy.copyBarcode}>
     {actionError && <p className="text-sm text-rose-700" role="alert">{actionError}</p>}
     <Card padding="none"><div className="flex flex-col gap-5 p-5 sm:flex-row">
@@ -59,7 +65,22 @@ export default function CopyDetailPage() {
     </div></Card>
     {dialog === 'edit' && <CopyEditorDialog copy={copy} editionId={copy.editionId} editionImageUrl={copy.editionImageUrl || editionQuery.data?.coverImageUrl} onClose={() => setDialog(null)} onSave={async (request) => { await updateCopy.mutateAsync({ copyId, request: request as UpdateCopyRequest }) }} />}
     {dialog === 'delete' && <ConfirmationDialog actions={<><Button onClick={() => setDialog(null)} variant="ghost">Hủy</Button><Button loading={deleteCopy.isPending} onClick={() => void handleDelete()} variant="danger">Xóa bản sách</Button></>} error={actionError} message="Chỉ xóa hẳn bản chưa có lịch sử bán, thuê hoặc kiểm kê. Nếu đã có lịch sử, hãy ngừng sử dụng; bản đã bán tự không còn khả dụng." onClose={() => setDialog(null)} title={`Xóa ${copy.copyBarcode}`} />}
-    <BookCopyLifecycleDrawer copyId={isLifecycleOpen ? copy.id : null} initialCopy={copy} onClose={() => setIsLifecycleOpen(false)} />
+    {dialog === 'print' && (
+      <BarcodeLabelsPrintModal
+        batchCode={copy.copyBarcode}
+        items={[
+          {
+            barcode: copy.copyBarcode,
+            titleName: titleQuery.data?.name || 'Bản sách vật lý',
+            sellingPrice: copy.sellingPrice ?? 0,
+            grade: copy.conditionGrade,
+            subtitle: copy.shelfCode ? `Kệ: ${copy.shelfCode}` : null,
+          },
+        ]}
+        onClose={() => setDialog(null)}
+        title={`In tem CopyBarcode (${copy.copyBarcode})`}
+      />
+    )}
   </CatalogWorkspace>
 }
 

@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button, StatCard } from '@/components/common'
 import { notify } from '@/components/common/Toast'
-import { CatalogWorkspace } from '../components/CatalogWorkspace'
+import { WarehouseWorkspace } from '../components/WarehouseWorkspace'
 import { getCopyByBarcode } from '../catalog.service'
 import type { BookCopy } from '../catalog.type'
 import { CreateAdjustmentModal } from '@/features/approvals/components/CreateAdjustmentModal'
@@ -96,7 +96,7 @@ export default function InventoryCheckPage() {
   const items = pageResult?.items ?? []
 
   return (
-    <CatalogWorkspace
+    <WarehouseWorkspace
       action={
         <div className="flex gap-2">
           <Button onClick={() => openModal()} variant="primary">
@@ -133,12 +133,17 @@ export default function InventoryCheckPage() {
           />
         </div>
 
-        <section aria-label="Tra cứu bản sách bằng mã vạch" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs space-y-4">
-          <div>
-            <h3 className="text-sm font-bold text-slate-900">Quét kiểm kê bằng CopyBarcode</h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Quét hoặc nhập CopyBarcode để đối chiếu trạng thái thực tế với hệ thống. Không tự động điều chỉnh tồn kho khi chưa được phê duyệt.
-            </p>
+        <section aria-label="Tra cứu bản sách bằng mã vạch" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-2xs space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">Quét kiểm kê tốc độ cao</h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Người kiểm: {currentUserId ?? 'Thủ kho'} - Không tự động điều chỉnh tồn khi chưa được phê duyệt.
+              </p>
+            </div>
+            <span className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800 border border-amber-200">
+              Đang kiểm đếm & đối soát
+            </span>
           </div>
 
           <form className="flex gap-2" onSubmit={(e) => void handleScanSubmit(e)}>
@@ -178,10 +183,10 @@ export default function InventoryCheckPage() {
           )}
         </section>
 
-        <section aria-label="Danh sách đề nghị điều chỉnh" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs space-y-4">
+        <section aria-label="Danh sách đề nghị điều chỉnh" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-2xs space-y-5">
           <div>
-            <h3 className="text-sm font-bold text-slate-900">Đối soát sai lệch đã ghi nhận</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Các đề nghị điều chỉnh kho phát sinh từ kiểm kê, lấy trực tiếp từ hệ thống.</p>
+            <h3 className="text-sm font-bold text-slate-900">Bảng đối soát thực tế</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Phân biệt sai lệch đã xác minh với bản chưa quét; các đề nghị điều chỉnh kho lấy trực tiếp từ hệ thống.</p>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
@@ -289,6 +294,18 @@ export default function InventoryCheckPage() {
             </div>
           )}
         </section>
+
+        <section aria-label="Hành động đề nghị điều chỉnh" className="rounded-2xl border border-indigo-200 bg-indigo-50/40 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h3 className="text-sm font-bold text-slate-900">Hành động đề nghị điều chỉnh</h3>
+            <p className="text-xs text-slate-600">
+              Lập phiếu đề nghị điều chỉnh kho sau khi hoàn tất đối soát. Khi được duyệt: bản thiếu chuyển Thất lạc; không cập nhật tồn tự động khi chỉ mới quét.
+            </p>
+          </div>
+          <Button onClick={() => openModal()} variant="primary">
+            Lập Phiếu Đề nghị Điều chỉnh Kho →
+          </Button>
+        </section>
       </div>
 
       <AdjustmentDetailDrawer
@@ -308,6 +325,6 @@ export default function InventoryCheckPage() {
           navigate('/approvals')
         }}
       />
-    </CatalogWorkspace>
+    </WarehouseWorkspace>
   )
 }

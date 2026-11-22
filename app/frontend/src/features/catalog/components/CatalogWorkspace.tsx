@@ -25,11 +25,11 @@ export function CatalogWorkspace({ action, children, title }: CatalogWorkspacePr
 
   const currentUser = session?.user ?? { name: 'Khách', role: 'Chưa xác thực' }
 
+  const isCategoriesActive = location.pathname.startsWith(catalogPaths.categoryList)
   const isSeriesActive = location.pathname.startsWith(catalogPaths.seriesList)
-  const isCheckActive = location.pathname.startsWith(catalogPaths.inventoryCheck)
   const isTitlesActive =
+    !isCategoriesActive &&
     !isSeriesActive &&
-    !isCheckActive &&
     (location.pathname.startsWith(catalogPaths.titleList) ||
       location.pathname.startsWith('/catalog/editions') ||
       location.pathname.startsWith('/catalog/copies'))
@@ -44,8 +44,19 @@ export function CatalogWorkspace({ action, children, title }: CatalogWorkspacePr
       pageTitle={title}
       user={currentUser}
     >
-      <div className="space-y-5">
-        <nav aria-label="Điều hướng catalog" className="flex w-fit max-w-full gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1 shadow-2xs">
+      <div className="space-y-6">
+        <nav aria-label="Điều hướng quản lý sách" className="flex w-fit max-w-full gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1 shadow-2xs">
+          <Link
+            aria-current={isCategoriesActive ? 'page' : undefined}
+            className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
+              isCategoriesActive
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            }`}
+            to={catalogPaths.categoryList}
+          >
+            Thể loại
+          </Link>
           <Link
             aria-current={isSeriesActive ? 'page' : undefined}
             className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
@@ -67,17 +78,6 @@ export function CatalogWorkspace({ action, children, title }: CatalogWorkspacePr
             to={catalogPaths.titleList}
           >
             Đầu sách
-          </Link>
-          <Link
-            aria-current={isCheckActive ? 'page' : undefined}
-            className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
-              isCheckActive
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-            }`}
-            to={catalogPaths.inventoryCheck}
-          >
-            Kiểm kê kho
           </Link>
         </nav>
         {children}

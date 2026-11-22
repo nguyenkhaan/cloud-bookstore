@@ -19,6 +19,35 @@ public class EditionsController(EditionService editionService) : ControllerBase
     private const string WriteRoles =
         $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}";
 
+    [HttpGet("stock-alerts")]
+    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)},{nameof(RoleName.CASHIER)}")]
+    [ProducesResponseType<EditionStockAlertDashboardResponse>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<EditionStockAlertDashboardResponse>> GetStockAlerts(
+        [FromQuery] EditionStockAlertQuery query,
+        CancellationToken cancellationToken)
+    {
+        var result = await editionService.GetStockAlertsAsync(query, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPatch("{id:guid}/thresholds")]
+    [Authorize(Roles = WriteRoles)]
+    [ProducesResponseType<EditionStockAlertItemResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<EditionStockAlertItemResponse>> UpdateEditionThresholds(
+        [FromRoute] Guid id,
+        [FromBody] UpdateEditionThresholdsRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await editionService.UpdateEditionThresholdsAsync(
+            id,
+            request,
+            BuildAuditContext(),
+            cancellationToken);
+        return Ok(result);
+    }
+
     [HttpGet]
     [Permission($"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)},{nameof(RoleName.CASHIER)}")]
     [ProducesResponseType<PagedResult<EditionResponse>>(StatusCodes.Status200OK)]

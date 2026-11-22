@@ -1,4 +1,4 @@
-export type PosTab = 'sale' | 'rental' | 'renewal' | 'return'
+export type PosTab = 'sale' | 'rental' | 'renewal' | 'return' | 'buyback'
 
 export type PaymentMethod = 'cash' | 'vietqr'
 export type PaymentStatus = 'idle' | 'pending' | 'success' | 'error'
