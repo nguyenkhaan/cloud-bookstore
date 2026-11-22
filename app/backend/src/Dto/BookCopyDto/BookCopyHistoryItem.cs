@@ -1,4 +1,19 @@
-﻿namespace backend.src.Dto.BookCopyDto;
+using backend.src.Models.Enums;
+
+namespace backend.src.Dto.BookCopyDto;
+
+public record BookCopyHistoryMetadata(
+    long? CostPrice = null,
+    string? SupplierName = null,
+    string? CustomerName = null,
+    long? DepositAmount = null,
+    CopyCondition? CopyCondition = null,
+    long? RefundAmount = null,
+    long? AdditionalAmountDue = null,
+    string? ShelfCode = null,
+    long? SellingPrice = null,
+    string? ReturnStatus = null
+);
 
 public record BookCopyHistoryItem(
     DateTime OccurredAt,
@@ -11,5 +26,6 @@ public record BookCopyHistoryItem(
     string? ActorName,
     string? BeforeData,
     string? AfterData,
-    string? Reason
+    string? Reason,
+    BookCopyHistoryMetadata? Metadata = null
 );

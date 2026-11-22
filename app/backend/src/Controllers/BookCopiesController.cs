@@ -1,4 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using backend.src.Dto.AuditLogDto;
 using backend.src.Dto.BookCopyDto;
@@ -65,7 +65,7 @@ public class BookCopiesController(BookCopyService bookCopyService) : ControllerB
         [FromRoute] Guid id,
         CancellationToken cancellationToken)
     {
-        var result = await bookCopyService.GetBookCopyHistoryAsync(id, cancellationToken);
+        var result = await bookCopyService.GetBookCopyHistoryAsync(id, CanViewCost(), cancellationToken);
         return Ok(result);
     }
 
@@ -130,6 +130,21 @@ public class BookCopiesController(BookCopyService bookCopyService) : ControllerB
     {
         var result = await bookCopyService.UpdateBookCopyStatusAsync(
             id, request, User.IsInRole(nameof(RoleName.ADMIN)), BuildAuditContext(), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPatch("{id:guid}/shelf")]
+    [Authorize(Roles = WriteRoles)]
+    [ProducesResponseType<BookCopyDetailResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<BookCopyDetailResponse>> UpdateBookCopyShelf(
+        [FromRoute] Guid id,
+        [FromBody] UpdateBookCopyShelfRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await bookCopyService.UpdateShelfCodeAsync(id, request, BuildAuditContext(), cancellationToken);
         return Ok(result);
     }
 
