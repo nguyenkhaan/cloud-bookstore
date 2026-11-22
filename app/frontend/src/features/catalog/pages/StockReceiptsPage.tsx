@@ -2,6 +2,10 @@ import { useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Check, Plus, Printer, Search, Trash2 } from 'lucide-react'
 import { Button, Card, SelectBox, TextField } from '@/components/common'
+import {
+  BarcodeLabelsPrintModal,
+  type PrintableBarcodeLabelItem,
+} from '@/components/common/BarcodeLabel/BarcodeLabelsPrintModal'
 import type { SelectOption } from '@/components/common'
 import { notify } from '@/components/common/Toast'
 import { catalogPaths } from '../catalog.route'
@@ -1163,54 +1167,33 @@ export default function StockReceiptsPage() {
       )}
 
       {isPrintModalOpen && (
-        <CatalogDialog
+        <BarcodeLabelsPrintModal
+          batchCode={activeReceiptCode}
+          items={activeLines.flatMap((line): PrintableBarcodeLabelItem[] => {
+            if (line.barcodes.length > 0) {
+              return line.barcodes.map((bc) => ({
+                barcode: bc,
+                titleName: line.titleName,
+                sellingPrice: line.sellingPrice,
+                grade: 'A',
+                subtitle: 'Đã sinh mã trong DB',
+              }))
+            }
+            const list: PrintableBarcodeLabelItem[] = []
+            for (let num = line.barcodeStart; num <= line.barcodeEnd; num++) {
+              list.push({
+                barcode: formatPreviewBarcode(num),
+                titleName: line.titleName,
+                sellingPrice: line.sellingPrice,
+                grade: 'A',
+                subtitle: 'Mã dự kiến (chờ hoàn tất nhập)',
+              })
+            }
+            return list
+          })}
           onClose={() => setIsPrintModalOpen(false)}
-          title={`In nhãn CopyBarcode đợt nhập (${totals.totalCopies} tem nhiệt)`}
-        >
-          <div className="space-y-4">
-            <p className="text-xs text-slate-600">
-              Xem trước mẫu tem nhiệt dán gáy sách (kích thước chuẩn 50mm x 30mm):
-            </p>
-            <div className="grid gap-3 sm:grid-cols-2 max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-3">
-              {activeLines.map((line) => {
-                const firstCode = line.firstBarcode ?? formatPreviewBarcode(line.barcodeStart)
-                const lastCode = line.lastBarcode ?? formatPreviewBarcode(line.barcodeEnd)
-                return (
-                  <div
-                    className="rounded-lg border border-dashed border-slate-300 bg-white p-3 text-center shadow-2xs"
-                    key={line.id}
-                  >
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                      CLOUD BOOKSTORE
-                    </p>
-                    <p className="mt-1 font-mono text-sm font-black tracking-wider text-slate-900">
-                      || ||| || |||| {firstCode}
-                    </p>
-                    <p className="mt-0.5 truncate text-xs font-bold text-slate-800">{line.titleName}</p>
-                    <p className="mt-0.5 text-xs font-semibold text-indigo-700">
-                      Giá bán: {formatVnd(line.sellingPrice)} ({line.quantity} tem: {firstCode} → {lastCode})
-                    </p>
-                  </div>
-                )
-              })}
-            </div>
-            <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
-              <Button onClick={() => setIsPrintModalOpen(false)} type="button" variant="ghost">
-                Đóng
-              </Button>
-              <Button
-                onClick={() => {
-                  setIsPrintModalOpen(false)
-                  notify.success(`Đã gửi lệnh in ${totals.totalCopies} tem CopyBarcode ra máy in nhiệt!`)
-                }}
-                type="button"
-                variant="primary"
-              >
-                In toàn bộ {totals.totalCopies} tem (Ctrl+P)
-              </Button>
-            </div>
-          </div>
-        </CatalogDialog>
+          title={`In nhãn CopyBarcode đợt nhập kho (${totals.totalCopies} tem nhiệt)`}
+        />
       )}
     </WarehouseWorkspace>
   )

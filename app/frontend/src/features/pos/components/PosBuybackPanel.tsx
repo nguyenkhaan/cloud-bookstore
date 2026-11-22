@@ -1,124 +1,40 @@
-import { useMemo, useState } from 'react'
-import { BookOpen, Printer, Trash2 } from 'lucide-react'
-import { Button, Card, SelectBox, TextField } from '@/components/common'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Plus, Printer } from 'lucide-react'
+import { Button, Card, TextField } from '@/components/common'
+import {
+  BarcodeLabelsPrintModal,
+  type PrintableBarcodeLabelItem,
+} from '@/components/common/BarcodeLabel/BarcodeLabelsPrintModal'
 import type { SelectOption } from '@/components/common'
 import { notify } from '@/components/common/Toast'
+import { listAllEditions, listTitles } from '@/features/catalog/catalog.service'
+import type { BookEdition, BookTitle } from '@/features/catalog/catalog.type'
 import type { QuickSeriesFixture } from '../pos-transaction.type'
 import { formatVnd } from '../pos-transaction.utils'
+import { PosBuybackConfirmDialog } from './buyback/PosBuybackConfirmDialog'
+import { PosBuybackEvaluatorCard } from './buyback/PosBuybackEvaluatorCard'
+import { PosBuybackLinesTableCard } from './buyback/PosBuybackLinesTableCard'
+import { PosBuybackSummarySidebar } from './buyback/PosBuybackSummarySidebar'
+import {
+  completeCustomerBuyback,
+  createCustomerBuyback,
+  fetchRecentBuybacks,
+  lookupBuybackIsbn,
+} from './buyback/pos-buyback.api'
+import {
+  CASH_DRAWER_BEFORE,
+  EXCEED_REASON_OPTIONS,
+  GRADE_META,
+  SINGLE_ITEM_APPROVAL_LIMIT,
+  SLIP_TOTAL_APPROVAL_LIMIT,
+  type BuybackApprovalStage,
+  type BuybackGrade,
+  type BuybackLineItem,
+  type BuybackPayoutMethod,
+  type CustomerBuybackDetailDto,
+} from './buyback/pos-buyback.utils'
 
-type BuybackGrade = 'A' | 'B' | 'C' | 'D'
-
-export type BuybackLineItem = {
-  id: string
-  titleName: string
-  grade: BuybackGrade
-  buyPrice: number
-  expectedSellingPrice: number
-  barcodePreview: string
-  needsApproval: boolean
-}
-
-const GRADE_OPTIONS: SelectOption<BuybackGrade>[] = [
-  { value: 'A', label: 'A' },
-  { value: 'B', label: 'B' },
-  { value: 'C', label: 'C' },
-  { value: 'D', label: 'D' },
-]
-
-const EXCEED_REASON_OPTIONS: SelectOption<string>[] = [
-  {
-    value: 'Bộ đặc biệt đủ bìa áo, chất lượng tốt, nhu cầu cao.',
-    label: 'Bộ đặc biệt đủ bìa áo, chất lượng tốt, nhu cầu cao.',
-  },
-  {
-    value: 'Ấn bản giới hạn đã ngừng in, nhiều khách hỏi thuê.',
-    label: 'Ấn bản giới hạn đã ngừng in, nhiều khách hỏi thuê.',
-  },
-  {
-    value: 'Trọn bộ đủ tập không khuyết, tiết kiệm chi phí săn lẻ.',
-    label: 'Trọn bộ đủ tập không khuyết, tiết kiệm chi phí săn lẻ.',
-  },
-]
-
-const GRADE_META: Record<
-  BuybackGrade,
-  { badgeLabel: string; minPct: number; maxPct: number; defaultPct: number }
-> = {
-  A: { badgeLabel: 'A - 90–99%', minPct: 0.6, maxPct: 0.7, defaultPct: 0.65 },
-  B: { badgeLabel: 'B - 70–89%', minPct: 0.5, maxPct: 0.6, defaultPct: 0.55 },
-  C: { badgeLabel: 'C - 50–69%', minPct: 0.3, maxPct: 0.45, defaultPct: 0.4 },
-  D: { badgeLabel: 'D - <50%', minPct: 0.15, maxPct: 0.25, defaultPct: 0.2 },
-}
-
-const INITIAL_BUYBACK_LINES: BuybackLineItem[] = [
-  {
-    id: 'bb-1',
-    titleName: 'Doraemon - Tuyển tập đặc biệt',
-    grade: 'B',
-    buyPrice: 220000,
-    expectedSellingPrice: 300000,
-    barcodePreview: 'Chờ duyệt → Sinh mã',
-    needsApproval: true,
-  },
-  {
-    id: 'bb-2',
-    titleName: 'Conan - Tập 01',
-    grade: 'B',
-    buyPrice: 95000,
-    expectedSellingPrice: 140000,
-    barcodePreview: 'BC-BUY-31',
-    needsApproval: false,
-  },
-  {
-    id: 'bb-3',
-    titleName: 'Conan - Tập 03',
-    grade: 'A',
-    buyPrice: 100000,
-    expectedSellingPrice: 150000,
-    barcodePreview: 'BC-BUY-32',
-    needsApproval: false,
-  },
-  {
-    id: 'bb-4',
-    titleName: 'Conan - Tập 05',
-    grade: 'B',
-    buyPrice: 95000,
-    expectedSellingPrice: 140000,
-    barcodePreview: 'BC-BUY-33',
-    needsApproval: false,
-  },
-  {
-    id: 'bb-5',
-    titleName: 'Conan - Tập 10',
-    grade: 'C',
-    buyPrice: 90000,
-    expectedSellingPrice: 130000,
-    barcodePreview: 'BC-BUY-34',
-    needsApproval: false,
-  },
-  {
-    id: 'bb-6',
-    titleName: 'Nhà giả kim - Bản 1',
-    grade: 'A',
-    buyPrice: 100000,
-    expectedSellingPrice: 150000,
-    barcodePreview: 'BC-BUY-35',
-    needsApproval: false,
-  },
-  {
-    id: 'bb-7',
-    titleName: 'Nhà giả kim - Bản 2',
-    grade: 'A',
-    buyPrice: 100000,
-    expectedSellingPrice: 150000,
-    barcodePreview: 'BC-BUY-36',
-    needsApproval: false,
-  },
-]
-
-const SINGLE_ITEM_APPROVAL_LIMIT = 200000
-const SLIP_TOTAL_APPROVAL_LIMIT = 1000000
-const CASH_DRAWER_BEFORE = 6065000
+export type { BuybackLineItem }
 
 interface PosBuybackPanelProps {
   onOpenQuickPicker: () => void
@@ -131,24 +47,73 @@ export function PosBuybackPanel({
   quickPickerBatch,
   onConsumeQuickPickerBatch,
 }: PosBuybackPanelProps) {
-  const [sellerName, setSellerName] = useState('Lê Hoàng Nam')
-  const [sellerPhone, setSellerPhone] = useState('0918 567 890')
+  const seqRef = useRef(1)
 
-  const [isbnQuery, setIsbnQuery] = useState('9786042227211')
-  const [currentTitle, setCurrentTitle] = useState('Doraemon - Tuyển tập đặc biệt')
-  const [currentAuthorPublisher, setCurrentAuthorPublisher] = useState('Fujiko F. Fujio - NXB Kim Đồng')
-  const [currentCoverPrice, setCurrentCoverPrice] = useState(350000)
+  const [editions, setEditions] = useState<BookEdition[]>([])
+  const [titles, setTitles] = useState<BookTitle[]>([])
+  const [recentBuybacks, setRecentBuybacks] = useState<CustomerBuybackDetailDto[]>([])
+
+  const [activeBuybackId, setActiveBuybackId] = useState<string | null>(null)
+  const [activeBuybackCode, setActiveBuybackCode] = useState('BUY-NHAP-MOI')
+  const [sellerName, setSellerName] = useState('')
+  const [sellerPhone, setSellerPhone] = useState('')
+
+  const [selectedEditionId, setSelectedEditionId] = useState('')
+  const [isbnQuery, setIsbnQuery] = useState('')
+  const [currentTitle, setCurrentTitle] = useState('')
+  const [currentAuthorPublisher, setCurrentAuthorPublisher] = useState('')
+  const [currentCoverPrice, setCurrentCoverPrice] = useState(0)
   const [isManualEntry, setIsManualEntry] = useState(false)
+  const [isLookingUp, setIsLookingUp] = useState(false)
 
   const [selectedGrade, setSelectedGrade] = useState<BuybackGrade>('B')
-  const [agreedBuyPrice, setAgreedBuyPrice] = useState(220000)
-  const [expectedSalePrice, setExpectedSalePrice] = useState(300000)
+  const [agreedBuyPrice, setAgreedBuyPrice] = useState(0)
+  const [expectedSalePrice, setExpectedSalePrice] = useState(0)
 
-  const [lines, setLines] = useState<BuybackLineItem[]>(INITIAL_BUYBACK_LINES)
-  const [payoutMethod, setPayoutMethod] = useState<'CASH' | 'BANK_TRANSFER'>('CASH')
+  const [lines, setLines] = useState<BuybackLineItem[]>([])
+  const [payoutMethod, setPayoutMethod] = useState<BuybackPayoutMethod>('CASH')
   const [exceedReason, setExceedReason] = useState(EXCEED_REASON_OPTIONS[0].value)
-  const [managerPin, setManagerPin] = useState('1234')
-  const [approvalStatus, setApprovalStatus] = useState<'PENDING' | 'APPROVED' | 'COMPLETED'>('PENDING')
+  const [managerPin, setManagerPin] = useState('')
+  const [approvalStatus, setApprovalStatus] = useState<BuybackApprovalStage>('DRAFT')
+  const [isBusy, setIsBusy] = useState(false)
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false)
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    Promise.all([
+      listAllEditions().catch(() => []),
+      listTitles().catch(() => []),
+      fetchRecentBuybacks().catch(() => []),
+    ]).then(([edList, titleList, buybackList]) => {
+      if (!active) return
+      setEditions(edList)
+      setTitles(titleList)
+      setRecentBuybacks(buybackList)
+    })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const titlesById = useMemo(() => {
+    const map = new Map<string, BookTitle>()
+    for (const t of titles) {
+      map.set(t.id, t)
+    }
+    return map
+  }, [titles])
+
+  const editionOptions = useMemo<SelectOption<string>[]>(() => {
+    return editions.map((ed) => {
+      const t = titlesById.get(ed.titleId)
+      const name = t ? `${t.name}${t.volumeLabel ? ` (${t.volumeLabel})` : ''}` : 'Đầu sách'
+      return {
+        value: ed.id,
+        label: `${name} - ${ed.isbn ? `ISBN ${ed.isbn}` : 'Chưa có ISBN'}`,
+      }
+    })
+  }, [editions, titlesById])
 
   if (quickPickerBatch && quickPickerBatch.selectedVolumes.length > 0) {
     const startNumber = 31 + lines.length
@@ -157,11 +122,12 @@ export function PosBuybackPanel({
       const overLimit = price > SINGLE_ITEM_APPROVAL_LIMIT
       return {
         id: `quick-${startNumber + idx}-${vol}`,
+        editionId: editions[0]?.id ?? null,
         titleName: `${quickPickerBatch.seriesName} - ${vol.replace('T.', 'Tập ')}`,
         grade: quickPickerBatch.grade,
         buyPrice: price,
         expectedSellingPrice: quickPickerBatch.expectedSalePricePerVolume,
-        barcodePreview: overLimit ? 'Chờ duyệt → Sinh mã' : `BC-BUY-${startNumber + idx}`,
+        barcodePreview: overLimit ? 'Chờ duyệt → Sinh mã' : 'Chờ chi tiền → Sinh mã',
         needsApproval: overLimit,
       }
     })
@@ -195,6 +161,90 @@ export function PosBuybackPanel({
     }
   }, [lines, payoutMethod])
 
+  const applyBuybackDetail = (detail: CustomerBuybackDetailDto) => {
+    setActiveBuybackId(detail.id)
+    setActiveBuybackCode(detail.code)
+    setSellerName(detail.sellerName)
+    setSellerPhone(detail.sellerPhone)
+    setPayoutMethod(detail.payoutMethod)
+
+    if (detail.status === 'COMPLETED') {
+      setApprovalStatus('COMPLETED')
+    } else if (detail.status === 'APPROVED') {
+      setApprovalStatus('APPROVED')
+    } else {
+      setApprovalStatus('PENDING')
+    }
+
+    const mappedLines: BuybackLineItem[] = []
+    for (const l of detail.lines) {
+      if (l.barcodes.length > 0) {
+        for (const bc of l.barcodes) {
+          mappedLines.push({
+            id: `${l.id}-${bc}`,
+            editionId: l.editionId,
+            isbn: l.isbn,
+            titleName: l.titleName,
+            grade: l.conditionGrade,
+            buyPrice: l.agreedBuyPrice,
+            expectedSellingPrice: l.expectedSellingPrice,
+            barcodePreview: bc,
+            needsApproval: l.overSingleLimit,
+          })
+        }
+      } else {
+        mappedLines.push({
+          id: l.id,
+          editionId: l.editionId,
+          isbn: l.isbn,
+          titleName: l.titleName,
+          grade: l.conditionGrade,
+          buyPrice: l.agreedBuyPrice,
+          expectedSellingPrice: l.expectedSellingPrice,
+          barcodePreview:
+            detail.status === 'APPROVED' ? 'Đã duyệt → Chờ chi' : 'Chờ duyệt → Sinh mã',
+          needsApproval: l.overSingleLimit,
+        })
+      }
+    }
+    setLines(mappedLines)
+  }
+
+  const handleResetNewBuyback = () => {
+    setActiveBuybackId(null)
+    setActiveBuybackCode('BUY-NHAP-MOI')
+    setSellerName('')
+    setSellerPhone('')
+    setSelectedEditionId('')
+    setIsbnQuery('')
+    setCurrentTitle('')
+    setCurrentAuthorPublisher('')
+    setCurrentCoverPrice(0)
+    setAgreedBuyPrice(0)
+    setExpectedSalePrice(0)
+    setManagerPin('')
+    setApprovalStatus('DRAFT')
+    setLines([])
+    notify.success('Đã tạo phiếu thu mua mới (trống). Hãy quét ISBN hoặc chọn sách để định giá.')
+  }
+
+  const handleSelectEditionOption = (editionId: string) => {
+    setSelectedEditionId(editionId)
+    const ed = editions.find((e) => e.id === editionId)
+    if (!ed) return
+    const t = titlesById.get(ed.titleId)
+    const cover = ed.coverPrice > 0 ? ed.coverPrice : 80000
+    const meta = GRADE_META[selectedGrade]
+    const suggested = Math.round((cover * meta.defaultPct) / 1000) * 1000
+
+    setCurrentTitle(t ? `${t.name}${t.volumeLabel ? ` - ${t.volumeLabel}` : ''}` : 'Đầu sách')
+    setCurrentAuthorPublisher([t?.author, ed.publisher].filter(Boolean).join(' - ') || 'NXB')
+    setCurrentCoverPrice(cover)
+    setIsbnQuery(ed.isbn ?? '')
+    setAgreedBuyPrice(suggested)
+    setExpectedSalePrice(Math.round((suggested * 1.4) / 1000) * 1000)
+  }
+
   const handleSelectGrade = (grade: BuybackGrade) => {
     setSelectedGrade(grade)
     const meta = GRADE_META[grade]
@@ -203,128 +253,231 @@ export function PosBuybackPanel({
     setExpectedSalePrice(Math.round((suggested * 1.4) / 1000) * 1000)
   }
 
-  const handleIsbnLookup = (e: React.FormEvent) => {
+  const handleIsbnLookup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const clean = isbnQuery.trim()
     if (!clean) return
-    if (clean.endsWith('3595') || clean.includes('09359')) {
-      setCurrentTitle('Thám tử lừng danh Conan - Tập 10')
-      setCurrentAuthorPublisher('Gosho Aoyama - NXB Kim Đồng')
-      setCurrentCoverPrice(45000)
-      setAgreedBuyPrice(25000)
-      setExpectedSalePrice(36000)
-      notify.success('Đã tra cứu metadata ấn bản từ ISBN.')
-    } else {
-      notify.success(`Đã tra cứu ISBN ${clean}: ${currentTitle}`)
+
+    setIsLookingUp(true)
+    try {
+      const found = await lookupBuybackIsbn(clean)
+      setSelectedEditionId(found.editionId)
+      setCurrentTitle(found.titleName)
+      setCurrentAuthorPublisher(
+        [found.author, found.publisher, found.publishYear].filter(Boolean).join(' - ') || 'Ấn bản kho',
+      )
+      setCurrentCoverPrice(found.coverPrice)
+      const meta = GRADE_META[selectedGrade]
+      const suggested = Math.round((found.coverPrice * meta.defaultPct) / 1000) * 1000
+      setAgreedBuyPrice(suggested)
+      setExpectedSalePrice(Math.round((suggested * 1.4) / 1000) * 1000)
+      notify.success(`Đã tra cứu từ DB: "${found.titleName}" (Giá bìa ${formatVnd(found.coverPrice)}).`)
+    } catch (err) {
+      notify.error(err instanceof Error ? err.message : 'Không tìm thấy ISBN trong danh mục.')
+    } finally {
+      setIsLookingUp(false)
     }
   }
 
   const handleAddEvaluatedBook = () => {
     if (!currentTitle.trim()) {
-      notify.error('Vui lòng nhập tên sách trước khi thêm.')
+      notify.error('Vui lòng quét ISBN hoặc nhập tên sách trước khi thêm.')
+      return
+    }
+    if (agreedBuyPrice <= 0) {
+      notify.error('Vui lòng nhập Giá thỏa thuận thực tế (> 0đ) trước khi thêm.')
       return
     }
     const overLimit = agreedBuyPrice > SINGLE_ITEM_APPROVAL_LIMIT
-    const nextSeq = 31 + lines.length
+    const seq = seqRef.current++
     const newItem: BuybackLineItem = {
-      id: `bb-${Date.now()}`,
+      id: `bb-${seq}`,
+      editionId: selectedEditionId || (editions[0]?.id ?? null),
+      isbn: isbnQuery.trim() || null,
       titleName: currentTitle.trim(),
       grade: selectedGrade,
       buyPrice: agreedBuyPrice,
-      expectedSellingPrice: expectedSalePrice,
-      barcodePreview: overLimit && approvalStatus !== 'APPROVED' ? 'Chờ duyệt → Sinh mã' : `BC-BUY-${nextSeq}`,
+      expectedSellingPrice: expectedSalePrice > 0 ? expectedSalePrice : Math.round((agreedBuyPrice * 1.4) / 1000) * 1000,
+      barcodePreview: overLimit ? 'Chờ duyệt → Sinh mã' : 'Chờ chi tiền → Sinh mã',
       needsApproval: overLimit,
     }
     setLines((prev) => [newItem, ...prev])
-    if (overLimit && approvalStatus === 'APPROVED') {
-      setApprovalStatus('PENDING')
-    }
     notify.success(`Đã thêm "${newItem.titleName}" vào danh sách thu mua.`)
   }
 
   const handleUpdateLine = (id: string, patch: Partial<BuybackLineItem>) => {
     setLines((prev) =>
-      prev.map((item, idx) => {
+      prev.map((item) => {
         if (item.id !== id) return item
         const updated = { ...item, ...patch }
-        const over = updated.buyPrice > SINGLE_ITEM_APPROVAL_LIMIT
-        updated.needsApproval = over
-        updated.barcodePreview =
-          over && approvalStatus !== 'APPROVED' ? 'Chờ duyệt → Sinh mã' : `BC-BUY-${30 + idx + 1}`
+        updated.needsApproval = updated.buyPrice > SINGLE_ITEM_APPROVAL_LIMIT
         return updated
       }),
     )
   }
 
   const handleRemoveLine = (id: string) => {
-    if (lines.length <= 1) {
-      notify.error('Phiếu thu mua cần ít nhất 1 cuốn sách.')
-      return
-    }
     setLines((prev) => prev.filter((item) => item.id !== id))
   }
 
-  const handleRequestApproval = () => {
+  const refreshRecentList = async () => {
+    const list = await fetchRecentBuybacks().catch(() => null)
+    if (list) setRecentBuybacks(list)
+  }
+
+  const handleRequestApproval = async () => {
     if (!sellerName.trim() || !sellerPhone.trim()) {
-      notify.error('Thiếu người bán: Bắt buộc nhập họ tên và số điện thoại.')
+      notify.error('Thiếu người bán: Bắt buộc nhập họ tên và số điện thoại (BR-BUY-001).')
       return
     }
-    if (managerPin.trim().length >= 4) {
-      setApprovalStatus('APPROVED')
-      setLines((prev) =>
-        prev.map((item, idx) => ({
-          ...item,
-          barcodePreview: `BC-BUY-${31 + idx}`,
+    if (lines.length === 0) {
+      notify.error('Phiếu thu mua cần ít nhất 1 cuốn sách.')
+      return
+    }
+
+    setIsBusy(true)
+    try {
+      const created = await createCustomerBuyback({
+        sellerName: sellerName.trim(),
+        sellerPhone: sellerPhone.trim(),
+        payoutMethod,
+        exceedReason,
+        managerPin: managerPin.trim() || null,
+        completeImmediately: false,
+        lines: lines.map((l) => ({
+          editionId: l.editionId,
+          isbn: l.isbn,
+          titleName: l.titleName,
+          conditionGrade: l.grade,
+          agreedBuyPrice: l.buyPrice,
+          expectedSellingPrice: l.expectedSellingPrice,
+          quantity: 1,
         })),
-      )
-      notify.success('Admin đã xác nhận phê duyệt giá thu mua vượt hạn mức!')
-    } else {
-      setApprovalStatus('PENDING')
-      notify.success('Đã gửi yêu cầu duyệt giá thu mua vượt hạn mức sang Trung tâm Phê duyệt!')
+      })
+
+      applyBuybackDetail(created)
+      await refreshRecentList()
+
+      if (created.status === 'APPROVED') {
+        notify.success(
+          `Đã lập phiếu ${created.code} và xác nhận phê duyệt giá thu mua! Nhấn "Lập phiếu thu mua & Chi tiền" để sinh mã vạch.`,
+        )
+      } else {
+        notify.success(`Đã gửi phiếu thu mua ${created.code} sang Trung tâm Phê duyệt!`)
+      }
+    } catch (err) {
+      notify.error(err instanceof Error ? err.message : 'Không thể gửi phiếu thu mua.')
+    } finally {
+      setIsBusy(false)
     }
   }
 
-  const handleCompleteBuyback = () => {
+  const handleOpenCompleteConfirm = () => {
     if (!sellerName.trim() || !sellerPhone.trim()) {
-      notify.error('Thiếu người bán: Bắt buộc họ tên và số điện thoại trước khi lập phiếu.')
+      notify.error('Thiếu người bán: Bắt buộc họ tên và số điện thoại trước khi lập phiếu (BR-BUY-001).')
       return
     }
-    if (summary.requiresApproval && approvalStatus === 'PENDING') {
-      notify.error('Phiếu có sách vượt hạn mức. Vui lòng gửi duyệt giá trước khi chi tiền.')
+    if (lines.length === 0) {
+      notify.error('Phiếu thu mua cần ít nhất 1 cuốn sách.')
       return
     }
-    setApprovalStatus('COMPLETED')
-    setLines((prev) =>
-      prev.map((item, idx) => ({
-        ...item,
-        barcodePreview: `BC-BUY-${31 + idx}`,
-      })),
-    )
-    notify.success(
-      `Đã hoàn tất phiếu thu mua BUY-20261018-0012, chi ${formatVnd(summary.totalPayout)} và sinh ${summary.totalCopies} mã CopyBarcode!`,
-    )
+    setIsConfirmDialogOpen(true)
   }
+
+  const handleCompleteBuyback = async () => {
+    if (!sellerName.trim() || !sellerPhone.trim()) {
+      notify.error('Thiếu người bán: Bắt buộc họ tên và số điện thoại trước khi lập phiếu (BR-BUY-001).')
+      return
+    }
+    if (lines.length === 0) {
+      notify.error('Phiếu thu mua cần ít nhất 1 cuốn sách.')
+      return
+    }
+
+    setIsBusy(true)
+    try {
+      let detail: CustomerBuybackDetailDto
+      if (activeBuybackId) {
+        detail = await completeCustomerBuyback(activeBuybackId, {
+          payoutMethod,
+          managerPin: managerPin.trim() || null,
+          note: exceedReason,
+        })
+      } else {
+        detail = await createCustomerBuyback({
+          sellerName: sellerName.trim(),
+          sellerPhone: sellerPhone.trim(),
+          payoutMethod,
+          exceedReason,
+          managerPin: managerPin.trim() || null,
+          completeImmediately: true,
+          lines: lines.map((l) => ({
+            editionId: l.editionId,
+            isbn: l.isbn,
+            titleName: l.titleName,
+            conditionGrade: l.grade,
+            agreedBuyPrice: l.buyPrice,
+            expectedSellingPrice: l.expectedSellingPrice,
+            quantity: 1,
+          })),
+        })
+      }
+
+      setIsConfirmDialogOpen(false)
+      applyBuybackDetail(detail)
+      await refreshRecentList()
+      notify.success(
+        `Đã hoàn tất phiếu ${detail.code}, chi ${formatVnd(detail.totalAmount)} (${detail.paymentNo ?? payoutMethod}) và sinh ${detail.generatedCopyCount} mã CopyBarcode độc bản!`,
+      )
+    } catch (err) {
+      notify.error(err instanceof Error ? err.message : 'Không thể hoàn tất phiếu thu mua.')
+    } finally {
+      setIsBusy(false)
+    }
+  }
+
+  const printableLabels = useMemo<PrintableBarcodeLabelItem[]>(() => {
+    return lines.map((line, idx) => {
+      const hasRealBarcode = /^BC/i.test(line.barcodePreview)
+      const code = hasRealBarcode
+        ? line.barcodePreview
+        : `BC-PREVIEW-${String(idx + 1).padStart(4, '0')}`
+      return {
+        barcode: code,
+        titleName: line.titleName,
+        sellingPrice: line.expectedSellingPrice,
+        grade: line.grade,
+        subtitle: hasRealBarcode ? 'Đã sinh trong kho' : 'Mã xem trước (chờ chi tiền)',
+      }
+    })
+  }, [lines])
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-slate-900">Thu mua sách cũ từ khách hàng</h2>
-          <p className="mt-1 text-xs font-mono text-slate-500">
-            BUY-20261018-0012 - Định danh người bán để lưu chứng từ chi phí hợp lệ.
-          </p>
         </div>
 
-        <Button
-          onClick={() =>
-            notify.success(`Đã mở bản in nhiệt cho ${summary.totalCopies} mã CopyBarcode độc bản!`)
-          }
-          type="button"
-          variant="outline"
-        >
-          <Printer className="mr-1.5 h-4 w-4" />
-          In hàng loạt mã Barcode độc bản
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            icon={<Plus className="h-4 w-4" />}
+            onClick={handleResetNewBuyback}
+            type="button"
+            variant="ghost"
+          >
+            Phiếu thu mua mới
+          </Button>
+          <Button
+            disabled={summary.totalCopies === 0}
+            icon={<Printer className="h-4 w-4" />}
+            onClick={() => setIsPrintModalOpen(true)}
+            type="button"
+            variant="outline"
+          >
+            In hàng loạt mã Barcode độc bản
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_330px] items-start">
@@ -332,7 +485,7 @@ export function PosBuybackPanel({
           <Card bodyClassName="space-y-4" padding="lg">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-slate-900">Thông tin người bán bắt buộc</h3>
-              <span className="text-xs text-slate-400">•••</span>
+              <span className="text-xs text-slate-400">---</span>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -353,354 +506,86 @@ export function PosBuybackPanel({
             </div>
           </Card>
 
-          <Card bodyClassName="space-y-5" padding="lg">
-            <div>
-              <Button onClick={onOpenQuickPicker} type="button" variant="outline">
-                + Thu mua theo Bộ truyện (Series Quick-Picker)
-              </Button>
-            </div>
+          <PosBuybackEvaluatorCard
+            agreedBuyPrice={agreedBuyPrice}
+            currentAuthorPublisher={currentAuthorPublisher}
+            currentCoverPrice={currentCoverPrice}
+            currentTitle={currentTitle}
+            editionOptions={editionOptions}
+            expectedSalePrice={expectedSalePrice}
+            isbnQuery={isbnQuery}
+            isCurrentItemOverLimit={isCurrentItemOverLimit}
+            isLookingUp={isLookingUp}
+            isManualEntry={isManualEntry}
+            onAddEvaluatedBook={handleAddEvaluatedBook}
+            onChangeAgreedBuyPrice={setAgreedBuyPrice}
+            onChangeAuthorPublisher={setCurrentAuthorPublisher}
+            onChangeCoverPrice={setCurrentCoverPrice}
+            onChangeExpectedSalePrice={setExpectedSalePrice}
+            onChangeIsbnQuery={setIsbnQuery}
+            onChangeTitle={setCurrentTitle}
+            onIsbnLookup={(e) => void handleIsbnLookup(e)}
+            onOpenQuickPicker={onOpenQuickPicker}
+            onSelectEditionOption={handleSelectEditionOption}
+            onSelectGrade={handleSelectGrade}
+            onToggleManualEntry={() => setIsManualEntry((prev) => !prev)}
+            selectedEditionId={selectedEditionId}
+            selectedGrade={selectedGrade}
+            suggestedRangeText={suggestedRangeText}
+          />
 
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-900">Tra cứu & Định giá sách</h3>
-              <span className="text-xs text-slate-400">•••</span>
-            </div>
-
-            <form onSubmit={handleIsbnLookup}>
-              <div className="relative">
-                <input
-                  aria-label="Tra cứu ISBN sách thu mua"
-                  className="w-full rounded-xl border-2 border-indigo-200 bg-indigo-50/25 py-3 pl-4 pr-20 font-mono text-sm font-bold text-indigo-700 placeholder:text-slate-400 focus:border-indigo-600 focus:bg-white focus:outline-hidden"
-                  onChange={(e) => setIsbnQuery(e.target.value)}
-                  placeholder="ISBN 9786042227211 - Tra cứu ISBN (Enter)"
-                  type="text"
-                  value={`ISBN ${isbnQuery} - Tra cứu ISBN (Enter)`}
-                />
-                <button
-                  className="absolute right-3 top-2.5 rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700 hover:bg-indigo-100"
-                  type="submit"
-                >
-                  Enter
-                </button>
-              </div>
-              <p className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                Máy quét đang lắng nghe - Quét ISBN để tìm ấn bản
-              </p>
-            </form>
-
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-9 shrink-0 items-center justify-center rounded-md bg-indigo-900 text-white shadow-2xs">
-                  <BookOpen className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-900">{currentTitle}</p>
-                  <p className="mt-0.5 text-[11px] text-slate-500">
-                    {currentAuthorPublisher} - Giá bìa {formatVnd(currentCoverPrice)}
-                  </p>
-                </div>
-              </div>
-
-              <Button
-                onClick={() => setIsManualEntry((prev) => !prev)}
-                type="button"
-                variant="outline"
-              >
-                {isManualEntry ? 'Đóng nhập tay' : 'Nhập tay nếu không có ISBN'}
-              </Button>
-            </div>
-
-            {isManualEntry && (
-              <div className="grid gap-3 rounded-xl border border-indigo-100 bg-indigo-50/30 p-3.5 sm:grid-cols-3">
-                <TextField
-                  label="Tên sách / Tập *"
-                  onChange={(e) => setCurrentTitle(e.target.value)}
-                  value={currentTitle}
-                />
-                <TextField
-                  label="Tác giả & Nhà xuất bản"
-                  onChange={(e) => setCurrentAuthorPublisher(e.target.value)}
-                  value={currentAuthorPublisher}
-                />
-                <TextField
-                  label="Giá bìa tham chiếu (VNĐ)"
-                  onChange={(e) => setCurrentCoverPrice(Math.max(0, Number(e.target.value) || 0))}
-                  type="number"
-                  value={String(currentCoverPrice)}
-                />
-              </div>
-            )}
-
-            <div className="flex flex-wrap gap-2">
-              {(['A', 'B', 'C', 'D'] as BuybackGrade[]).map((grade) => {
-                const isSelected = selectedGrade === grade
-                return (
-                  <button
-                    className={`rounded-xl px-4 py-2 text-xs font-bold transition ${
-                      isSelected
-                        ? 'bg-white text-indigo-700 ring-2 ring-indigo-600 shadow-2xs'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
-                    key={grade}
-                    onClick={() => handleSelectGrade(grade)}
-                    type="button"
-                  >
-                    {GRADE_META[grade].badgeLabel}
-                  </button>
-                )
-              })}
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-3">
-              <TextField
-                label="Khoảng giá mua đề xuất"
-                readOnly
-                value={suggestedRangeText}
-              />
-              <TextField
-                label="Giá thỏa thuận thực tế"
-                onChange={(e) => setAgreedBuyPrice(Math.max(0, Number(e.target.value.replace(/\D/g, '')) || 0))}
-                value={formatVnd(agreedBuyPrice)}
-              />
-              <TextField
-                label="Giá bán niêm yết dự kiến"
-                onChange={(e) => setExpectedSalePrice(Math.max(0, Number(e.target.value.replace(/\D/g, '')) || 0))}
-                value={formatVnd(expectedSalePrice)}
-              />
-            </div>
-
-            {isCurrentItemOverLimit && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-xs text-amber-900 flex items-center gap-2.5">
-                <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-amber-600 text-[10px] font-bold text-amber-700">
-                  !
-                </span>
-                <span>
-                  Cần Admin duyệt giá (Nhập PIN tại chỗ hoặc gửi sang Trung tâm Phê duyệt)
-                </span>
-              </div>
-            )}
-
-            <div>
-              <Button onClick={handleAddEvaluatedBook} type="button" variant="outline">
-                Thêm vào danh sách thu mua
-              </Button>
-            </div>
-          </Card>
-
-          <Card className="overflow-hidden" padding="none">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <h3 className="text-sm font-bold text-slate-900">Danh sách sách thu mua</h3>
-              <span className="text-xs text-slate-400">{lines.length} dòng độc lập (1 dòng = 1 cuốn)</span>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-100 text-xs">
-                <thead className="bg-slate-50/90 text-slate-600 font-semibold">
-                  <tr>
-                    <th className="px-6 py-3.5 text-left" scope="col">Tên sách</th>
-                    <th className="px-3 py-3.5 text-left" scope="col">Grade</th>
-                    <th className="px-4 py-3.5 text-left" scope="col">Giá mua</th>
-                    <th className="px-4 py-3.5 text-left" scope="col">Giá bán dự kiến</th>
-                    <th className="px-6 py-3.5 text-left" scope="col">Barcode mới</th>
-                    <th className="px-3 py-3.5 text-center" scope="col">
-                      <span className="sr-only">Xóa</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {lines.map((line) => (
-                    <tr className="hover:bg-slate-50/70" key={line.id}>
-                      <td className="px-6 py-3.5 font-bold text-slate-900">{line.titleName}</td>
-                      <td className="px-3 py-3.5 w-24">
-                        <SelectBox
-                          hideLabel
-                          label={`Grade cho ${line.titleName}`}
-                          onChange={(val) => handleUpdateLine(line.id, { grade: val })}
-                          options={GRADE_OPTIONS}
-                          searchable={false}
-                          value={line.grade}
-                        />
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <input
-                          aria-label={`Giá mua ${line.titleName}`}
-                          className="w-28 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:border-indigo-500 focus:outline-hidden"
-                          onChange={(e) =>
-                            handleUpdateLine(line.id, {
-                              buyPrice: Math.max(0, Number(e.target.value.replace(/\D/g, '')) || 0),
-                            })
-                          }
-                          type="text"
-                          value={formatVnd(line.buyPrice)}
-                        />
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <input
-                          aria-label={`Giá bán dự kiến ${line.titleName}`}
-                          className="w-28 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:border-indigo-500 focus:outline-hidden"
-                          onChange={(e) =>
-                            handleUpdateLine(line.id, {
-                              expectedSellingPrice: Math.max(0, Number(e.target.value.replace(/\D/g, '')) || 0),
-                            })
-                          }
-                          type="text"
-                          value={formatVnd(line.expectedSellingPrice)}
-                        />
-                      </td>
-                      <td className="px-6 py-3.5 font-mono text-slate-500">{line.barcodePreview}</td>
-                      <td className="px-3 py-3.5 text-center">
-                        <button
-                          aria-label={`Xóa ${line.titleName}`}
-                          className="rounded-lg p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
-                          onClick={() => handleRemoveLine(line.id)}
-                          type="button"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+          <PosBuybackLinesTableCard
+            activeBuybackId={activeBuybackId}
+            lines={lines}
+            onRemoveLine={handleRemoveLine}
+            onSelectRecentBuyback={applyBuybackDetail}
+            onUpdateLine={handleUpdateLine}
+            recentBuybacks={recentBuybacks}
+          />
         </div>
 
-        <div className="space-y-6">
-          <Card bodyClassName="space-y-4" padding="lg">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-900">Tổng kết thu mua</h3>
-              <span className="text-xs text-slate-400">•••</span>
-            </div>
-
-            <div className="space-y-2 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500">Số bản sách vật lý</span>
-                <strong className="font-bold text-slate-900">{summary.totalCopies} cuốn</strong>
-              </div>
-              <div className="flex items-baseline justify-between">
-                <span className="text-slate-500">Tổng tiền chi thực tế</span>
-                <span className="text-xl font-black text-indigo-700">{formatVnd(summary.totalPayout)}</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1">
-              <button
-                className={`rounded-lg py-2 text-xs font-bold transition ${
-                  payoutMethod === 'CASH'
-                    ? 'bg-white text-indigo-700 shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-                onClick={() => setPayoutMethod('CASH')}
-                type="button"
-              >
-                Tiền mặt từ két
-              </button>
-              <button
-                className={`rounded-lg py-2 text-xs font-bold transition ${
-                  payoutMethod === 'BANK_TRANSFER'
-                    ? 'bg-white text-indigo-700 shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-                onClick={() => setPayoutMethod('BANK_TRANSFER')}
-                type="button"
-              >
-                Chuyển khoản ngoài
-              </button>
-            </div>
-
-            <div className="space-y-2 border-t border-slate-100 pt-3 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500">Két trước chi</span>
-                <strong className="font-bold text-slate-900">{formatVnd(CASH_DRAWER_BEFORE)}</strong>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500">Két dự kiến sau chi</span>
-                <strong className="font-bold text-slate-900">{formatVnd(summary.drawerAfter)}</strong>
-              </div>
-            </div>
-
-            <SelectBox
-              label="Lý do đề xuất vượt hạn mức"
-              onChange={(val) => setExceedReason(val)}
-              options={EXCEED_REASON_OPTIONS}
-              searchable={false}
-              value={exceedReason}
-            />
-
-            <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-3">
-              <label className="block text-[11px] font-bold text-indigo-700" htmlFor="buyback-manager-pin">
-                Admin duyệt tại chỗ - PIN 4 số
-              </label>
-              <input
-                className="mt-1 w-full bg-transparent font-mono text-sm font-black tracking-widest text-indigo-950 outline-hidden"
-                id="buyback-manager-pin"
-                maxLength={6}
-                onChange={(e) => setManagerPin(e.target.value)}
-                type="password"
-                value={managerPin}
-              />
-            </div>
-
-            <div className="space-y-2.5 pt-1">
-              <Button
-                className="w-full justify-center"
-                onClick={handleRequestApproval}
-                type="button"
-                variant="primary"
-              >
-                Gửi duyệt giá vượt hạn mức
-              </Button>
-              <Button
-                className="w-full justify-center"
-                onClick={handleCompleteBuyback}
-                type="button"
-                variant="secondary"
-              >
-                Lập phiếu thu mua & Chi tiền
-              </Button>
-            </div>
-
-            <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-3.5 text-xs text-indigo-950 flex items-start gap-2.5">
-              <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-indigo-600 text-[10px] font-bold text-indigo-700">
-                i
-              </span>
-              <span className="leading-relaxed">
-                {approvalStatus === 'COMPLETED'
-                  ? `Đã hoàn tất chi tiền và sinh ${summary.totalCopies} mã CopyBarcode độc bản.`
-                  : approvalStatus === 'APPROVED'
-                    ? 'Đã được Admin duyệt giá. Nhấn "Lập phiếu thu mua & Chi tiền" để hoàn tất.'
-                    : 'Đang chờ duyệt giá. Chỉ sinh Barcode độc bản, ghi tăng kho và chi tiền sau khi được phê duyệt.'}
-              </span>
-            </div>
-          </Card>
-
-          <Card bodyClassName="space-y-3" padding="lg">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-900">Chứng từ & Chi phí</h3>
-              <span className="text-xs text-slate-400">•••</span>
-            </div>
-            <p className="text-xs leading-relaxed text-slate-500">
-              Mỗi bản sách có giá vốn thực mua, giá bán dự kiến và Barcode riêng. Chứng từ lưu tên / SĐT người bán, thời gian và người lập.
-            </p>
-            <div>
-              {approvalStatus === 'COMPLETED' ? (
-                <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 border border-emerald-200">
-                  Đã chi tiền & Sinh Barcode
-                </span>
-              ) : approvalStatus === 'APPROVED' ? (
-                <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 border border-blue-200">
-                  Đã duyệt - Chờ chi tiền
-                </span>
-              ) : (
-                <span className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800 border border-amber-200">
-                  Chờ Admin duyệt
-                </span>
-              )}
-            </div>
-          </Card>
-        </div>
+        <PosBuybackSummarySidebar
+          approvalStatus={approvalStatus}
+          drawerAfter={summary.drawerAfter}
+          exceedReason={exceedReason}
+          isBusy={isBusy}
+          managerPin={managerPin}
+          onChangeExceedReason={setExceedReason}
+          onChangeManagerPin={setManagerPin}
+          onChangePayoutMethod={setPayoutMethod}
+          onCompleteBuyback={handleOpenCompleteConfirm}
+          onRequestApproval={() => void handleRequestApproval()}
+          payoutMethod={payoutMethod}
+          requiresApproval={summary.requiresApproval}
+          totalCopies={summary.totalCopies}
+          totalPayout={summary.totalPayout}
+        />
       </div>
+
+      {isConfirmDialogOpen && (
+        <PosBuybackConfirmDialog
+          buybackCode={activeBuybackCode}
+          drawerAfter={summary.drawerAfter}
+          isSubmitting={isBusy}
+          lines={lines}
+          onClose={() => setIsConfirmDialogOpen(false)}
+          onConfirm={() => void handleCompleteBuyback()}
+          payoutMethod={payoutMethod}
+          sellerName={sellerName.trim()}
+          sellerPhone={sellerPhone.trim()}
+          totalCopies={summary.totalCopies}
+          totalPayout={summary.totalPayout}
+        />
+      )}
+
+      {isPrintModalOpen && (
+        <BarcodeLabelsPrintModal
+          batchCode={activeBuybackCode}
+          items={printableLabels}
+          onClose={() => setIsPrintModalOpen(false)}
+          title={`In nhãn CopyBarcode sách thu mua (${printableLabels.length} tem)`}
+        />
+      )}
 
       <section className="space-y-3 pt-2">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">

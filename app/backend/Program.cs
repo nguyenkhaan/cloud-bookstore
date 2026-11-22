@@ -257,6 +257,7 @@ builder.Services.AddScoped<CategoryService>();
 builder.Services.AddScoped<SupplierService>();
 builder.Services.AddScoped<StockReceiptService>();
 builder.Services.AddScoped<StockOutService>();
+builder.Services.AddScoped<CustomerBuybackService>();
 builder.Services.AddScoped<BookSeriesService>();
 builder.Services.AddScoped<TitleService>();
 builder.Services.AddScoped<EditionService>();
