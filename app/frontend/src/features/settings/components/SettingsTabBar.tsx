@@ -4,6 +4,7 @@ import type { SystemTabKey } from '../settings.type'
 interface SettingsTabBarProps {
   activeTab: SystemTabKey
   onSelectTab: (tab: SystemTabKey) => void
+  isAdmin: boolean
 }
 
 interface TabItem {
@@ -18,11 +19,13 @@ const TABS: TabItem[] = [
   { key: 'integrations', label: 'Tích hợp' },
 ]
 
-export const SettingsTabBar: React.FC<SettingsTabBarProps> = ({ activeTab, onSelectTab }) => {
+const ADMIN_ONLY_TABS = new Set<SystemTabKey>(['rbac', 'integrations'])
+
+export const SettingsTabBar: React.FC<SettingsTabBarProps> = ({ activeTab, onSelectTab, isAdmin }) => {
   return (
     <nav aria-label="Các mục cấu hình hệ thống" className="overflow-x-auto border-b border-slate-200">
       <div className="flex min-w-max gap-5">
-        {TABS.map((tab) => {
+        {TABS.filter((tab) => isAdmin || !ADMIN_ONLY_TABS.has(tab.key)).map((tab) => {
           const isActive = activeTab === tab.key
           return (
             <button

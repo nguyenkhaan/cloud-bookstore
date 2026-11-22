@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { MainLayout } from '@/components/layout'
 import { useAuth } from '@/features/auth/auth.hook'
@@ -19,13 +19,23 @@ export default function SettingsPage() {
   const isAdmin = session?.user?.roleCode === 'ADMIN'
 
   // Determine active tab from current URL pathname
-  const activeTab: SystemTabKey = useMemo(() => {
+  const requestedTab: SystemTabKey = useMemo(() => {
     const path = location.pathname
     if (path.includes('/settings/tiers')) return 'tiers'
     if (path.includes('/settings/rbac')) return 'rbac'
     if (path.includes('/settings/integrations')) return 'integrations'
     return 'rental'
   }, [location.pathname])
+
+  const activeTab: SystemTabKey = !isAdmin && (requestedTab === 'rbac' || requestedTab === 'integrations')
+    ? 'rental'
+    : requestedTab
+
+  useEffect(() => {
+    if (activeTab !== requestedTab) {
+      navigate(settingsPaths.rental, { replace: true })
+    }
+  }, [activeTab, navigate, requestedTab])
 
   const [visitedTabs, setVisitedTabs] = useState<SystemTabKey[]>([activeTab])
   if (!visitedTabs.includes(activeTab)) {
@@ -68,7 +78,7 @@ export default function SettingsPage() {
       onNavigate={(id) => navigate(`/${id}`)}
       onSignOut={signOut}
       pageTitle={breadcrumbTitle}
-      pageHeaderContent={<SettingsTabBar activeTab={activeTab} onSelectTab={handleSelectTab} />}
+      pageHeaderContent={<SettingsTabBar activeTab={activeTab} isAdmin={isAdmin} onSelectTab={handleSelectTab} />}
       breadcrumbs={[
         { label: 'Cấu hình hệ thống', to: settingsPaths.rental },
         { label: breadcrumbTitle },
