@@ -1,9 +1,12 @@
 import { createContext } from 'react'
+import { normalizeRoleCode } from '@/features/auth/role'
+import type { AppRole } from '@/features/auth/role'
 
 export type AuthUser = {
+  id?: string
   name: string
   role: string
-  roleCode?: string
+  roleCode?: AppRole
   email?: string
   avatarUrl?: string
 }
@@ -14,7 +17,7 @@ export type AuthSession = {
 }
 
 export function mapRoleToDisplay(role?: string): string {
-  switch (role) {
+  switch (normalizeRoleCode(role)) {
     case 'ADMIN':
       return 'Quản trị viên'
     case 'CASHIER':
@@ -22,20 +25,28 @@ export function mapRoleToDisplay(role?: string): string {
     case 'INVENTORY_MANAGER':
       return 'Quản lý kho'
     default:
-      return role || 'Người dùng'
+      return role?.trim() || 'Người dùng'
   }
 }
 
 export function formatUser(
-    raw?: { fullName?: string | null; role?: string | null; email?: string | null; avatarUrl?: string | null } | null,
+    raw?: {
+      id?: string | null
+      fullName?: string | null
+      role?: string | null
+      email?: string | null
+      avatarUrl?: string | null
+    } | null,
 ): AuthUser {
   if (!raw) {
-    return { name: 'Quản trị viên', role: 'Quản trị viên' }
+    return { name: 'Người dùng', role: 'Người dùng' }
   }
+  const roleCode = normalizeRoleCode(raw.role)
   return {
+    id: raw.id ?? undefined,
     name: raw.fullName || raw.email || 'Người dùng',
     role: mapRoleToDisplay(raw.role ?? undefined),
-    roleCode: raw.role ?? undefined,
+    roleCode: roleCode ?? undefined,
     email: raw.email ?? undefined,
     avatarUrl: raw.avatarUrl ?? undefined,
   }

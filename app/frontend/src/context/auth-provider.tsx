@@ -52,9 +52,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
     void getSession()
       .then((sessionData) => {
         if (active) {
-          const user = sessionData?.user ? formatUser(sessionData.user) : (readStoredUser() ?? formatUser())
-          persistStoredUser(user)
-          setSession({ authenticated: true, user })
+          const user = sessionData?.user ? formatUser(sessionData.user) : null
+          if (user?.roleCode) {
+            persistStoredUser({ ...user, roleCode: user.roleCode })
+            setSession({ authenticated: true, user })
+          } else {
+            removeStoredUser()
+            setSession(null)
+          }
         }
       })
       .catch(() => {
@@ -72,7 +77,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const login = useCallback(async (email: string, password: string) => {
     const response = await requestLogin({ email: email.trim(), password })
     const user = response?.user ? formatUser(response.user) : formatUser({ email: email.trim() })
-    persistStoredUser(user)
+    if (user.roleCode) persistStoredUser({ ...user, roleCode: user.roleCode })
     setSession({ authenticated: true, user })
   }, [requestLogin])
 

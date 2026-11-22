@@ -23,7 +23,7 @@ after(async () => {
   await server?.close()
 })
 
-test('resolveHrRoleCode handles AuthUser roleCode and ?previewRole= override', () => {
+test('resolveHrRoleCode handles AuthUser roleCode without query-string role overrides', () => {
   assert.equal(roleUtil.resolveHrRoleCode({ role: 'Quản trị viên', roleCode: 'ADMIN' }, ''), 'ADMIN')
   assert.equal(roleUtil.resolveHrRoleCode({ role: 'Nhân viên', roleCode: 'CASHIER' }, ''), 'CASHIER')
   assert.equal(
@@ -32,11 +32,11 @@ test('resolveHrRoleCode handles AuthUser roleCode and ?previewRole= override', (
   )
   assert.equal(
     roleUtil.resolveHrRoleCode({ role: 'Quản trị viên', roleCode: 'ADMIN' }, '?previewRole=CASHIER'),
-    'CASHIER',
+    'ADMIN',
   )
   assert.equal(
     roleUtil.resolveHrRoleCode({ role: 'Quản trị viên', roleCode: 'ADMIN' }, '?previewRole=INVENTORY_MANAGER'),
-    'INVENTORY_MANAGER',
+    'ADMIN',
   )
 })
 

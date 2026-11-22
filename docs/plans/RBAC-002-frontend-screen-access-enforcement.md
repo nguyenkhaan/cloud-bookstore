@@ -127,7 +127,7 @@ T01 Role/session normalization
 - Logout clears cached identity and permission queries cannot reuse the previous role key.
 - `?previewRole=` no longer changes authorization role.
 
-- [ ] **Step 1: Write failing role/session tests**
+- [x] **Step 1: Write failing role/session tests**
 
 Add tests named:
 
@@ -137,23 +137,23 @@ Add tests named:
 - `formatUser preserves BrowserSessionUser id and normalized role`;
 - `previewRole query cannot replace the authenticated role`.
 
-- [ ] **Step 2: Run the focused tests and confirm failure**
+- [x] **Step 2: Run the focused tests and confirm failure**
 
 Run: `cd app/frontend && bun run test -- tests/auth-role-session.test.mjs tests/auth-session.test.mjs tests/sidebar-role-nav.test.mjs tests/hrm-wave1-verification.test.mjs`
 
 Expected: FAIL because `role.ts` does not exist and current HR resolver accepts `previewRole`/falls back to Admin.
 
-- [ ] **Step 3: Implement role normalization and validated session cache**
+- [x] **Step 3: Implement role normalization and validated session cache**
 
 Implement the produced interfaces above. `AuthProvider` may hydrate visual identity from `sessionStorage`, but `isInitializing` remains true until `getSession()` succeeds or fails; no protected child may use cached role as authenticated proof.
 
-- [ ] **Step 4: Run focused tests**
+- [x] **Step 4: Run focused tests**
 
 Run: `cd app/frontend && bun run test -- tests/auth-role-session.test.mjs tests/auth-session.test.mjs tests/sidebar-role-nav.test.mjs tests/hrm-wave1-verification.test.mjs`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/frontend/src/features/auth/role.ts app/frontend/src/context/AuthProvider.ts app/frontend/src/context/auth-provider.tsx app/frontend/src/api/client.ts app/frontend/src/features/hr/hr-role.util.ts app/frontend/tests/auth-role-session.test.mjs app/frontend/tests/auth-session.test.mjs app/frontend/tests/sidebar-role-nav.test.mjs app/frontend/tests/hrm-wave1-verification.test.mjs
