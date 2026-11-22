@@ -57,6 +57,47 @@
   }
 }
 
+.snowfall-overlay {
+  position: fixed;
+  z-index: 10;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.snowfall-flake {
+  position: absolute;
+  top: -1rem;
+  left: var(--snow-left);
+  width: var(--snow-size);
+  height: var(--snow-size);
+  border-radius: 9999px;
+  background: rgb(255 255 255 / var(--snow-opacity));
+  border: 1px solid rgb(148 163 184 / calc(var(--snow-opacity) * 0.72));
+  box-shadow: 0 0 5px rgb(255 255 255 / 0.48), 0 1px 3px rgb(15 23 42 / 0.14);
+  animation: snowfall var(--snow-duration) linear var(--snow-delay) infinite;
+}
+
+@keyframes snowfall {
+  0% {
+    transform: translate3d(0, -2rem, 0);
+  }
+
+  50% {
+    transform: translate3d(var(--snow-drift), 50vh, 0);
+  }
+
+  100% {
+    transform: translate3d(calc(var(--snow-drift) * -1), 110vh, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce), print {
+  .snowfall-overlay {
+    display: none;
+  }
+}
+
 @media print {
   @page {
     size: A4 portrait;

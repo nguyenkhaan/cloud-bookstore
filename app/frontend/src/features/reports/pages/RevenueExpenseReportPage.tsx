@@ -10,7 +10,7 @@ import { RevenueExpenseTrendChart } from '../components/RevenueExpenseTrendChart
 import { SourceDocumentsDrawer } from '../components/SourceDocumentsDrawer'
 import { exportRevenueExpenseExcel } from '../reports.export'
 import { useRevenueExpenseReportQuery } from '../reports.hook'
-import { formatVnDateShort, formatVnd, getCurrentVnMonthRange, toNumber } from '../reports.presentation'
+import { formatVnd, getCurrentVnMonthRange, toNumber } from '../reports.presentation'
 import type {
   PaymentMethodFilter,
   RevenueExpenseFilters,
