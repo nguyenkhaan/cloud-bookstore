@@ -1,3 +1,4 @@
+using backend.src.Configurations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using backend.src.Dto.AuditLogDto;
@@ -11,7 +12,7 @@ namespace backend.src.Controllers;
 
 [ApiController]
 [Route("api/uploads")]
-[Authorize(Roles = StaffRoles)]
+[Permission(StaffRoles)]
 public sealed class UploadsController(UploadIntentService uploadIntentService) : ControllerBase
 {
     private const string StaffRoles =

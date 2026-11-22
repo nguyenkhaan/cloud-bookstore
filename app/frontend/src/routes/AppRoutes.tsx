@@ -106,6 +106,10 @@ export default function AppRoutes() {
       <Route path="/audit" element={<RequireSession><AuditPage /></RequireSession>} />
       <Route path="/reports" element={<RequireSession><ReportsPage /></RequireSession>} />
       <Route path="/settings" element={<RequireSession><SettingsPage /></RequireSession>} />
+      <Route path="/settings/rental" element={<RequireSession><SettingsPage /></RequireSession>} />
+      <Route path="/settings/tiers" element={<RequireSession><SettingsPage /></RequireSession>} />
+      <Route path="/settings/rbac" element={<RequireSession><SettingsPage /></RequireSession>} />
+      <Route path="/settings/integrations" element={<RequireSession><SettingsPage /></RequireSession>} />
       <Route path="/book-series" element={<RequireSession><BookSeriesPage /></RequireSession>} />
       <Route path="/catalog/categories" element={<RequireSession><CategoryTreePage /></RequireSession>} />
       <Route path="/catalog/series" element={<RequireSession><SeriesListPage /></RequireSession>} />

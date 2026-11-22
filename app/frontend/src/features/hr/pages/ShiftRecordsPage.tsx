@@ -1,7 +1,7 @@
 import { useContext, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AuthContext } from '@/context/AuthProvider'
-import { Badge, Button } from '@/components/common'
+import { Button } from '@/components/common'
 import { MainLayout } from '@/components/layout'
 import { workspacePathFor } from '@/features/workspace/workspace.route'
 import { ShiftDateToolbar, type ShiftStatusFilter } from '../components/ShiftDateToolbar'
@@ -30,7 +30,6 @@ export default function ShiftRecordsPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [selectedRecord, setSelectedRecord] = useState<ShiftRecordDisplay>()
   const isAdminView = currentUser.roleCode === 'ADMIN'
-  const adminActionState = 'admin-only'
   const selectedDateLabel = date === '2026-10-18' ? '18/10/2026' : date.split('-').reverse().join('/')
 
   const filteredRecords = useMemo(() => records.filter((record) => {
@@ -61,7 +60,7 @@ export default function ShiftRecordsPage() {
         <ShiftSummaryCards assignedEmployees={assignedEmployees} attendanceMissing={filteredRecords.filter((record) => record.state === 'attendance-missing').length} totalRecords={filteredRecords.length} unassignedRecords={filteredRecords.filter((record) => record.state === 'unassigned').length} />
         <ShiftRecordsTable isAdminView={isAdminView} onView={openDrawer} records={filteredRecords} />
       </div>
-      <ShiftRecordDrawer key={isDrawerOpen ? selectedRecord?.id ?? 'new' : 'closed'} onClose={() => setIsDrawerOpen(false)} onSave={(record) => { setRecords((current) => current.some((item) => item.id === record.id) ? current.map((item) => item.id === record.id ? record : item) : [...current, record]); setIsDrawerOpen(false) }} open={isDrawerOpen} record={selectedRecord} />
+      <ShiftRecordDrawer key={isDrawerOpen ? selectedRecord?.id ?? 'new' : 'closed'} onClose={() => setIsDrawerOpen(false)} onSave={(record) => { if (!isAdminView) return; setRecords((current) => current.some((item) => item.id === record.id) ? current.map((item) => item.id === record.id ? record : item) : [...current, record]); setIsDrawerOpen(false) }} open={isDrawerOpen} readOnly={!isAdminView} record={selectedRecord} />
     </MainLayout>
   )
 }

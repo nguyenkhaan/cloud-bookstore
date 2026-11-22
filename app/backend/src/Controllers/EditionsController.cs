@@ -1,3 +1,4 @@
+using backend.src.Configurations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using backend.src.Dto.AuditLogDto;
@@ -48,7 +49,7 @@ public class EditionsController(EditionService editionService) : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)},{nameof(RoleName.CASHIER)}")]
+    [Permission($"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)},{nameof(RoleName.CASHIER)}")]
     [ProducesResponseType<PagedResult<EditionResponse>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<EditionResponse>>> GetEditions(
         [FromQuery] EditionQuery query,
@@ -59,7 +60,7 @@ public class EditionsController(EditionService editionService) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)},{nameof(RoleName.CASHIER)}")]
+    [Permission($"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)},{nameof(RoleName.CASHIER)}")]
     [ProducesResponseType<EditionDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<EditionDetailResponse>> GetEditionById(
@@ -71,7 +72,7 @@ public class EditionsController(EditionService editionService) : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [Permission($"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
     [ProducesResponseType<EditionResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -85,7 +86,7 @@ public class EditionsController(EditionService editionService) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [Permission($"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
     [ProducesResponseType<EditionResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -100,7 +101,7 @@ public class EditionsController(EditionService editionService) : ControllerBase
     }
 
     [HttpPatch("{id:guid}/status")]
-    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [Permission($"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
     [ProducesResponseType<EditionResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -114,7 +115,7 @@ public class EditionsController(EditionService editionService) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [Permission($"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -127,7 +128,7 @@ public class EditionsController(EditionService editionService) : ControllerBase
     }
 
     [HttpPut("{id:guid}/image")]
-    [Authorize(Roles = WriteRoles)]
+    [Permission(WriteRoles)]
     [ProducesResponseType<EditionResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -144,7 +145,7 @@ public class EditionsController(EditionService editionService) : ControllerBase
     }
 
     [HttpDelete("{id:guid}/image")]
-    [Authorize(Roles = WriteRoles)]
+    [Permission(WriteRoles)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteEditionImage(

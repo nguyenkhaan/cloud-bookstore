@@ -1,3 +1,4 @@
+using backend.src.Configurations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using backend.src.Dto.AuditLogDto;
@@ -21,7 +22,7 @@ public class InventoryAdjustmentRequestsController(InventoryAdjustmentService ad
     private const string AdminRole = nameof(RoleName.ADMIN);
 
     [HttpGet]
-    [Authorize(Roles = StaffWriteRoles)]
+    [Permission(StaffWriteRoles)]
     [ProducesResponseType<PagedResult<InventoryAdjustmentRequestResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -34,7 +35,7 @@ public class InventoryAdjustmentRequestsController(InventoryAdjustmentService ad
     }
 
     [HttpGet("stats")]
-    [Authorize(Roles = StaffWriteRoles)]
+    [Permission(StaffWriteRoles)]
     [ProducesResponseType<InventoryAdjustmentStatsResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<InventoryAdjustmentStatsResponse>> GetStats(CancellationToken cancellationToken)
@@ -44,7 +45,7 @@ public class InventoryAdjustmentRequestsController(InventoryAdjustmentService ad
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = StaffWriteRoles)]
+    [Permission(StaffWriteRoles)]
     [ProducesResponseType<InventoryAdjustmentRequestDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -57,7 +58,7 @@ public class InventoryAdjustmentRequestsController(InventoryAdjustmentService ad
     }
 
     [HttpPost]
-    [Authorize(Roles = StaffWriteRoles)]
+    [Permission(StaffWriteRoles)]
     [ProducesResponseType<InventoryAdjustmentRequestDetailResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -93,7 +94,7 @@ public class InventoryAdjustmentRequestsController(InventoryAdjustmentService ad
     }
 
     [HttpPost("{id:guid}/cancel")]
-    [Authorize(Roles = StaffWriteRoles)]
+    [Permission(StaffWriteRoles)]
     [ProducesResponseType<InventoryAdjustmentRequestDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]

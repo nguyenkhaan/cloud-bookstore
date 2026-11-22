@@ -53,5 +53,7 @@ Feature, business rule, spec hoặc mã nguồn bị ảnh hưởng.
 | [`ADR-002`](./ADR-002-aspnet-core-backend.md) | Accepted | ASP.NET Core là backend chính thức |
 | [`ADR-003`](./ADR-003-browser-cookie-authentication.md) | Accepted | JWT browser session dùng HttpOnly cookie và synchronizer CSRF token |
 | [`ADR-005`](./ADR-005-stable-session-csrf-token-and-csrf-scope.md) | Accepted | CSRF token ổn định theo phiên; chỉ kiểm tra CSRF ở endpoint cần đăng nhập |
+| [`ADR-006`](./ADR-006-integration-secret-protection.md) | Accepted | Mã hóa secret tích hợp bằng Data Protection và giữ bền bộ khóa |
+| [`ADR-007`](./ADR-007-dynamic-role-permissions-and-immediate-config.md) | Accepted | Quyền động theo thao tác API; cấu hình hiệu lực ngay và lưu audit |
 
 Quyết định xác thực vẫn mở tại [`OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md); backend tuân theo `ADR-002`.

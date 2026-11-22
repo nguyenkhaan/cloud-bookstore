@@ -1,3 +1,4 @@
+import { usePermissions } from '@/hooks/usePermissions'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
@@ -12,6 +13,7 @@ import { SeriesCoverStack } from '../components/SeriesCoverStack'
 import { SeriesVolumeMatrixPanel } from '../components/SeriesVolumeMatrixPanel'
 
 export default function SeriesListPage() {
+  const { can } = usePermissions()
   const [search, setSearch] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [name, setName] = useState('')
@@ -55,7 +57,7 @@ export default function SeriesListPage() {
 
   return (
     <CatalogWorkspace
-      action={<Button onClick={() => setIsDialogOpen(true)}>+ Tạo bộ sách mới</Button>}
+      action={can("BookSeries.CreateBookSeries") && <Button onClick={() => setIsDialogOpen(true)}>+ Tạo bộ sách mới</Button>}
       title="Quản lý Bộ sách & Tiến độ đủ bộ"
     >
       <p className="text-xs text-slate-500">

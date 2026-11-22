@@ -523,7 +523,12 @@ public sealed class InventoryAdjustmentServiceTests
         Assert.NotNull(method);
         var authorize = method!.GetCustomAttribute<AuthorizeAttribute>();
         Assert.NotNull(authorize);
-        Assert.Equal(expectedRoles, authorize!.Roles);
+        if (authorize is backend.src.Configurations.PermissionAttribute permission)
+        {
+            Assert.Equal(backend.src.Configurations.PermissionAttribute.PolicyName, permission.Policy);
+            Assert.Equal(expectedRoles, permission.DefaultRoles);
+        }
+        else Assert.Equal(expectedRoles, authorize!.Roles);
     }
 
     private static string NewDatabaseName() => Guid.NewGuid().ToString("N");

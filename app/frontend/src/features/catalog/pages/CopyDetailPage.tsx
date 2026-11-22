@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Button, Card, ConfirmationDialog } from '@/components/common'
 import { BarcodeLabelsPrintModal } from '@/components/common/BarcodeLabel/BarcodeLabelsPrintModal'
-import { useAuth } from '@/features/auth/auth.hook'
+import { usePermissions } from '@/hooks/usePermissions'
 import { catalogPaths } from '../catalog.route'
 import { useCopyQuery, useCreateCopyLabelMutation, useDeleteCopyMutation, useEditionQuery, useTitleQuery, useUpdateCopyMutation, useUpdateCopyStatusMutation } from '../catalog.hook'
 import { availabilityLabel, formatVnd } from '../catalog.presentation'
@@ -16,8 +16,7 @@ import { ErrorState, LoadingRows } from './SeriesListPage'
 export default function CopyDetailPage() {
   const { copyId = '' } = useParams()
   const navigate = useNavigate()
-  const { session } = useAuth()
-  const canEdit = ['ADMIN', 'INVENTORY_MANAGER'].includes(session?.user?.roleCode ?? '')
+  const { can } = usePermissions()
   const [dialog, setDialog] = useState<'edit' | 'delete' | 'print' | null>(null)
   const [actionError, setActionError] = useState('')
   const copyQuery = useCopyQuery(copyId)
@@ -50,7 +49,7 @@ export default function CopyDetailPage() {
   }
 
   return <CatalogWorkspace
-    action={canEdit && <div className="flex flex-wrap gap-2"><Button onClick={handlePrintLabel} variant="outline">In tem Barcode</Button><Button onClick={() => setDialog('edit')} variant="secondary">Chỉnh sửa</Button><Button onClick={() => { setActionError(''); setDialog('delete') }} variant="outline">Xóa</Button>{canDiscontinue && <Button disabled={updateStatus.isPending} onClick={() => void handleDiscontinue()} variant="ghost">Ngừng sử dụng</Button>}</div>}
+    action={<div className="flex flex-wrap gap-2"><Button onClick={handlePrintLabel} variant="outline">In tem Barcode</Button><Button onClick={() => setDialog('edit')} variant="secondary">Chỉnh sửa</Button><Button onClick={() => { setActionError(''); setDialog('delete') }} variant="outline">Xóa</Button>{can("BookCopies.UpdateBookCopyStatus") && canDiscontinue && <Button disabled={updateStatus.isPending} onClick={() => void handleDiscontinue()} variant="ghost">Ngừng sử dụng</Button>}</div>}
     title={copy.copyBarcode}>
     {actionError && <p className="text-sm text-rose-700" role="alert">{actionError}</p>}
     <Card padding="none"><div className="flex flex-col gap-5 p-5 sm:flex-row">
