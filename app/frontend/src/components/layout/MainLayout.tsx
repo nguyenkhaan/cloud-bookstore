@@ -12,6 +12,7 @@ export interface MainLayoutProps {
   breadcrumbs?: BreadcrumbItem[];
   pageTitle?: string;
   screenCode?: string;
+  pageHeaderContent?: React.ReactNode;
   actionButton?: React.ReactNode;
   user?: {
     name: string;
@@ -28,6 +29,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                                                         breadcrumbs,
                                                         pageTitle,
                                                         screenCode,
+                                                        pageHeaderContent,
                                                         actionButton,
                                                         user,
                                                       }) => {
@@ -69,22 +71,25 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           />
 
           <main className="flex-1 px-6 py-6 overflow-y-auto">
-            {(pageTitle || screenCode || actionButton) && (
-                <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    {screenCode && (
-                        <div className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 mb-0.5">
-                          {screenCode}
-                        </div>
-                    )}
-                    {pageTitle && (
-                        <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-                          {pageTitle}
-                        </h1>
-                    )}
-                  </div>
+            {(pageTitle || screenCode || pageHeaderContent || actionButton) && (
+                <div className="mb-6">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      {screenCode && (
+                          <div className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 mb-0.5">
+                            {screenCode}
+                          </div>
+                      )}
+                      {pageTitle && (
+                          <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                            {pageTitle}
+                          </h1>
+                      )}
+                    </div>
 
-                  {actionButton && <div>{actionButton}</div>}
+                    {actionButton && <div>{actionButton}</div>}
+                  </div>
+                  {pageHeaderContent && <div className="mt-4">{pageHeaderContent}</div>}
                 </div>
             )}
 

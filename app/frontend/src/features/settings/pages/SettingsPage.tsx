@@ -62,26 +62,13 @@ export default function SettingsPage() {
     }
   }, [activeTab])
 
-  const screenCode = useMemo(() => {
-    switch (activeTab) {
-      case 'rental':
-        return 'SCR-SYS-01'
-      case 'tiers':
-        return 'SCR-SYS-02'
-      case 'rbac':
-        return 'SCR-SYS-03'
-      case 'integrations':
-        return 'SCR-SYS-04'
-    }
-  }, [activeTab])
-
   return (
     <MainLayout
       currentPath="settings"
       onNavigate={(id) => navigate(`/${id}`)}
       onSignOut={signOut}
-      screenCode={screenCode}
       pageTitle={breadcrumbTitle}
+      pageHeaderContent={<SettingsTabBar activeTab={activeTab} onSelectTab={handleSelectTab} />}
       breadcrumbs={[
         { label: 'Cấu hình hệ thống', to: settingsPaths.rental },
         { label: breadcrumbTitle },
@@ -96,13 +83,7 @@ export default function SettingsPage() {
           : undefined
       }
     >
-      <div className="flex flex-col gap-6 max-w-7xl mx-auto pb-12">
-        <SettingsTabBar
-          activeTab={activeTab}
-          onSelectTab={handleSelectTab}
-          isAdmin={isAdmin}
-        />
-
+      <div className="flex w-full flex-col gap-6 pb-12">
         {visitedTabs.includes('rental') && (
           <div hidden={activeTab !== 'rental'}>
             <ScrSys01RentalPolicy isAdmin={isAdmin} />

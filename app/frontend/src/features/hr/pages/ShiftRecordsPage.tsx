@@ -51,7 +51,7 @@ export default function ShiftRecordsPage() {
       onNavigate={(item) => { const path = workspacePathFor(item); if (path) navigate(path) }}
       onSignOut={auth?.signOut}
       pageTitle="Phân công ca"
-      screenCode="SCR-HRM-02 / NHÂN SỰ & TIỀN LƯƠNG"
+      screenCode=""
       user={currentUser}
     >
       <div className="space-y-4">

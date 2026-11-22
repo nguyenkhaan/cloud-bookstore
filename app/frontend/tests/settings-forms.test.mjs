@@ -176,6 +176,23 @@ test('switching settings tabs keeps visited panels mounted and hidden', () => {
   assert.ok(page.find(n => n.type === 'ScrSys02MembershipTiers'))
 })
 
+test('settings navigation belongs below the page title without screen-code or role-status clutter', () => {
+  const pageSource = readFileSync(new URL('../src/features/settings/pages/SettingsPage.tsx', import.meta.url), 'utf8')
+  const tabSource = readFileSync(new URL('../src/features/settings/components/SettingsTabBar.tsx', import.meta.url), 'utf8')
+  const rentalSource = readFileSync(new URL('../src/features/settings/components/ScrSys01RentalPolicy.tsx', import.meta.url), 'utf8')
+  const integrationsSource = readFileSync(new URL('../src/features/settings/components/ScrSys04Integrations.tsx', import.meta.url), 'utf8')
+
+  assert.match(pageSource, /pageHeaderContent=\{<SettingsTabBar activeTab=\{activeTab\} onSelectTab=\{handleSelectTab\} \/>\}/)
+  assert.doesNotMatch(pageSource, /screenCode=/)
+  assert.doesNotMatch(pageSource, /max-w-7xl/)
+  assert.match(tabSource, /<nav aria-label="Các mục cấu hình hệ thống"/)
+  assert.doesNotMatch(tabSource, /SCR-SYS-/)
+  assert.doesNotMatch(tabSource, /Chỉ xem|Có quyền chỉnh sửa/)
+  assert.doesNotMatch(rentalSource, /Chính sách vận hành · Chỉ Admin được thay đổi · Quản lý chỉ xem/)
+  assert.doesNotMatch(rentalSource, /Góc nhìn Quản lý/)
+  assert.doesNotMatch(integrationsSource, /không được truy cập màn hình này/)
+})
+
 test('RBAC uses three boolean grants, locks protected rights and preserves dirty edits on refetch', async () => {
   const row = { permissionCode: 'BookTitles.CreateTitle', permissionName: 'Tạo đầu sách', moduleTitle: 'Đầu sách', cashierAllowed: false, warehouseAllowed: true, adminAllowed: true, adminOnly: false }
   const locked = { ...row, permissionCode: 'Settings.UpdateRbacMatrix', permissionName: 'Quản trị quyền', warehouseAllowed: false, adminOnly: true }
