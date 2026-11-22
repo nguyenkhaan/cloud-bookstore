@@ -186,27 +186,27 @@ git commit -m "feat(rbac): normalize frontend session roles"
 - `/book-series` is `N` for all roles and is never returned as a workspace destination.
 - Admin-only screens cannot be upgraded for Employee/Inventory by child aggregation.
 
-- [ ] **Step 1: Write the expected matrix test**
+- [x] **Step 1: Write the expected matrix test**
 
 Create an explicit expectation object for `ADMIN`, `CASHIER`, and `INVENTORY_MANAGER`. Assert exact access for every route/subscreen from the spec, not only representative samples.
 
-- [ ] **Step 2: Run the matrix test and confirm failure**
+- [x] **Step 2: Run the matrix test and confirm failure**
 
 Run: `cd app/frontend && bun run test -- tests/screen-access-policy.test.mjs`
 
 Expected: FAIL because the policy module does not exist.
 
-- [ ] **Step 3: Implement the catalog and pure resolvers**
+- [x] **Step 3: Implement the catalog and pure resolvers**
 
 Keep route metadata separate from display components. Do not import React, AuthContext or TanStack Query into this file.
 
-- [ ] **Step 4: Run the matrix test**
+- [x] **Step 4: Run the matrix test**
 
 Run: `cd app/frontend && bun run test -- tests/screen-access-policy.test.mjs`
 
 Expected: PASS with every matrix row asserted.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/frontend/src/routes/screen-access.policy.ts app/frontend/tests/screen-access-policy.test.mjs
