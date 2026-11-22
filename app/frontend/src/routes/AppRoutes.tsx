@@ -33,8 +33,17 @@ import AdminAttendancePage from '@/features/hr/pages/AdminAttendancePage'
 import { adminHrPaths } from '@/features/hr/admin-hr.route'
 import ApprovalsPage from '@/features/approvals/pages/ApprovalsPage'
 import AuditPage from '@/features/audit/pages/AuditPage'
+import CopyLifecycleLookupPage from '@/features/audit/pages/CopyLifecycleLookupPage'
+import { auditPaths } from '@/features/audit/audit.route'
 import ReportsPage from '@/features/reports/pages/ReportsPage'
+import RevenueExpenseReportPage from '@/features/reports/pages/RevenueExpenseReportPage'
+import DepositReconciliationPage from '@/features/reports/pages/DepositReconciliationPage'
+import TaxDeclarationReportPage from '@/features/reports/pages/TaxDeclarationReportPage'
+import { reportsPaths } from '@/features/reports/reports.route'
 import SettingsPage from '@/features/settings/pages/SettingsPage'
+import { MainLayout } from '@/components/layout'
+import { Link, useNavigate } from 'react-router-dom'
+import { workspacePathFor } from '@/features/workspace/workspace.route'
 import { useAuth } from '@/features/auth/auth.hook'
 import NotFound from '@/features/notfound/page';
 
@@ -73,6 +82,58 @@ function RequireSession({ children }: { children: ReactNode }) {
   return children
 }
 
+function RequireRole({
+  roles,
+  currentPath,
+  children,
+}: {
+  roles: string[]
+  currentPath?: string
+  children: ReactNode
+}) {
+  const navigate = useNavigate()
+  const { session, signOut } = useAuth()
+  const roleCode = (session?.user?.roleCode ?? '').toUpperCase()
+
+  if (!roles.includes(roleCode)) {
+    return (
+      <MainLayout
+        currentPath={currentPath}
+        onNavigate={(id) => {
+          const target = workspacePathFor(id)
+          if (target) navigate(target)
+        }}
+        onSignOut={signOut}
+        pageTitle="Không có quyền truy cập"
+        breadcrumbs={[{ label: 'Không gian làm việc', to: '/dashboard' }, { label: 'Hạn chế quyền (403)' }]}
+      >
+        <div
+          role="alert"
+          className="mx-auto max-w-lg rounded-2xl border border-rose-200 bg-white p-8 text-center shadow-2xs"
+        >
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-rose-50 text-lg font-bold text-rose-600">
+            403
+          </div>
+          <h2 className="text-base font-bold text-slate-900">
+            Bạn không có quyền truy cập trang này
+          </h2>
+          <p className="mt-2 text-xs leading-relaxed text-slate-600">
+            Chức năng này chỉ dành cho vai trò được phân quyền ({roles.join(', ')}). Vui lòng liên hệ Quản trị viên nếu bạn cần cấp quyền.
+          </p>
+          <Link
+            to="/dashboard"
+            className="mt-5 inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+          >
+            Quay về Tổng quan
+          </Link>
+        </div>
+      </MainLayout>
+    )
+  }
+
+  return children
+}
+
 function DashboardRoute() {
   const { signOut } = useAuth()
   return <DashboardPage onSignOut={signOut} />
@@ -103,8 +164,66 @@ export default function AppRoutes() {
       <Route path="/admin/hr/attendance" element={<RequireSession><AdminAttendancePage /></RequireSession>} />
       <Route path="/admin/hr/shifts" element={<RequireSession><ShiftRecordsPage /></RequireSession>} />
       <Route path="/approvals" element={<RequireSession><ApprovalsPage /></RequireSession>} />
-      <Route path="/audit" element={<RequireSession><AuditPage /></RequireSession>} />
-      <Route path="/reports" element={<RequireSession><ReportsPage /></RequireSession>} />
+      <Route
+        path={auditPaths.root}
+        element={
+          <RequireSession>
+            <RequireRole roles={['ADMIN', 'INVENTORY_MANAGER']} currentPath="audit">
+              <AuditPage />
+            </RequireRole>
+          </RequireSession>
+        }
+      />
+      <Route
+        path={auditPaths.copyLifecycle}
+        element={
+          <RequireSession>
+            <RequireRole roles={['ADMIN', 'INVENTORY_MANAGER']} currentPath="audit">
+              <CopyLifecycleLookupPage />
+            </RequireRole>
+          </RequireSession>
+        }
+      />
+      <Route
+        path={reportsPaths.root}
+        element={
+          <RequireSession>
+            <RequireRole roles={['ADMIN']} currentPath="reports">
+              <ReportsPage />
+            </RequireRole>
+          </RequireSession>
+        }
+      />
+      <Route
+        path={reportsPaths.revenueExpense}
+        element={
+          <RequireSession>
+            <RequireRole roles={['ADMIN']} currentPath="reports">
+              <RevenueExpenseReportPage />
+            </RequireRole>
+          </RequireSession>
+        }
+      />
+      <Route
+        path={reportsPaths.depositReconciliation}
+        element={
+          <RequireSession>
+            <RequireRole roles={['ADMIN']} currentPath="reports">
+              <DepositReconciliationPage />
+            </RequireRole>
+          </RequireSession>
+        }
+      />
+      <Route
+        path={reportsPaths.taxDeclaration}
+        element={
+          <RequireSession>
+            <RequireRole roles={['ADMIN']} currentPath="reports">
+              <TaxDeclarationReportPage />
+            </RequireRole>
+          </RequireSession>
+        }
+      />
       <Route path="/settings" element={<RequireSession><SettingsPage /></RequireSession>} />
       <Route path="/settings/rental" element={<RequireSession><SettingsPage /></RequireSession>} />
       <Route path="/settings/tiers" element={<RequireSession><SettingsPage /></RequireSession>} />

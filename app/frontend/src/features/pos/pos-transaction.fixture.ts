@@ -21,11 +21,10 @@ export const posMockStates: PosMockStates = {
 }
 
 export const posTabs = [
-  { id: 'sale', label: 'Bán hàng', screenCode: 'SCR-POS-02' },
-  { id: 'rental', label: 'Cho thuê', screenCode: 'SCR-POS-03' },
-  { id: 'renewal', label: 'Gia hạn', screenCode: 'SCR-POS-04' },
-  { id: 'return', label: 'Trả & quyết toán', screenCode: 'SCR-POS-05' },
-  { id: 'buyback', label: 'Thu mua sách cũ', screenCode: 'SCR-POS-06' },
+  { id: 'sale', label: 'Bán hàng' },
+  { id: 'rental', label: 'Cho thuê' },
+  { id: 'renewal', label: 'Gia hạn' },
+  { id: 'return', label: 'Trả & quyết toán' },
 ] as const
 
 export const copyFixtures: BookCopyFixture[] = [
@@ -92,7 +91,6 @@ export const memberCustomer: CustomerFixture = {
 }
 
 export const saleFixture: SaleFixture = {
-  screenCode: 'SCR-POS-02',
   customer: null,
   lines: [
     { ...copyFixtures[0], discountRate: 0, lineTotal: 80000 },
@@ -106,7 +104,6 @@ export const saleFixture: SaleFixture = {
 }
 
 export const rentalFixture: RentalFixture = {
-  screenCode: 'SCR-POS-03',
   customer: memberCustomer,
   lines: [
     { ...copyFixtures[0], rentalDays: 7, rentalFeePreview: 12600, deposit: 80000 },
@@ -119,7 +116,6 @@ export const rentalFixture: RentalFixture = {
 }
 
 export const renewalFixture: RenewalFixture = {
-  screenCode: 'SCR-POS-04',
   reference: 'RENT-20261008-0041',
   customer: memberCustomer,
   rentalDate: '08/10/2026',
@@ -133,7 +129,6 @@ export const renewalFixture: RenewalFixture = {
 }
 
 export const returnFixture: ReturnFixture = {
-  screenCode: 'SCR-POS-05',
   reference: 'RENT-20261008-0038',
   customer: memberCustomer,
   originalDeposit: 300000,
@@ -148,7 +143,6 @@ export const returnFixture: ReturnFixture = {
 }
 
 export const quickSeriesFixture: QuickSeriesFixture = {
-  screenCode: 'MOD-POS-01',
   seriesName: 'Thám tử lừng danh Conan',
   publisher: 'NXB Kim Đồng · Đang phát hành',
   totalVolumes: 104,
@@ -161,7 +155,6 @@ export const quickSeriesFixture: QuickSeriesFixture = {
 }
 
 export const damageReviewFixture: DamageReviewFixture = {
-  screenCode: 'MOD-POS-02',
   reference: 'RENT-20261008-0038 · Nguyễn Thu Hà',
   copy: copyFixtures[3],
   condition: 'Sách bị ngấm nước rách 15 trang giữa',
@@ -173,7 +166,6 @@ export const damageReviewFixture: DamageReviewFixture = {
 }
 
 export const customerDisplayFixture: CustomerDisplayFixture = {
-  screenCode: 'SCR-POS-07',
   requestCode: 'POS-20261018-042',
   customerTier: 'Bạc',
   lines: [

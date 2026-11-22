@@ -132,32 +132,7 @@ export const ScrSys04Integrations: React.FC<ScrSys04IntegrationsProps> = ({ isAd
   }
 
   return (
-    <div className="flex flex-col gap-6" data-name="SCR-SYS-04 · Cấu hình Tích hợp">
-      {/* Page Title & Intro */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 mb-0.5">
-            SCR-SYS-04 / CẤU HÌNH HỆ THỐNG
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Cấu hình Tích hợp
-          </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            VietQR · Zalo OA · Metadata sách · SMTP · Chỉ Admin được truy cập
-          </p>
-        </div>
-        <div>
-          <button
-            type="button"
-            disabled={!isAdmin || updateMutation.isPending}
-            onClick={() => handleSave('all')}
-            className="px-4 py-2.5 bg-indigo-600 text-white font-semibold text-xs rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50 shadow-xs"
-          >
-            {updateMutation.isPending ? 'Đang lưu...' : 'Lưu toàn bộ cấu hình'}
-          </button>
-        </div>
-      </div>
-
+    <div className="flex flex-col gap-6">
       {/* Demo Notice Banner */}
       <div className="bg-amber-50 text-amber-800 text-xs p-3.5 rounded-xl flex items-start gap-2 border border-amber-100">
         <span className="font-bold shrink-0">ⓘ</span>
@@ -742,7 +717,7 @@ export const ScrSys04Integrations: React.FC<ScrSys04IntegrationsProps> = ({ isAd
         </div>
 
         <p className="text-xs text-slate-500 leading-relaxed">
-          Giá trị bí mật luôn được che. Chỉ nhập khóa mới khi cần thay; để trống giữ cấu hình hiện tại. Quản lý, Thu ngân và Thủ kho không được truy cập màn hình này.
+          Giá trị bí mật luôn được che. Chỉ nhập khóa mới khi cần thay; để trống giữ cấu hình hiện tại.
         </p>
       </div>
     </div>

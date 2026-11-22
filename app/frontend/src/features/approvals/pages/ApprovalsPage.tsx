@@ -16,8 +16,9 @@ import {
   formatDateTime,
   varianceMeta,
 } from '../approvals.presentation'
-import type { InventoryAdjustmentQuery, InventoryAdjustmentStatus } from '../approvals.type'
+import type { ApprovalTabKey, InventoryAdjustmentQuery, InventoryAdjustmentStatus } from '../approvals.type'
 import { AdjustmentDetailDrawer } from '../components/AdjustmentDetailDrawer'
+import { ApprovalTabBar } from '../components/ApprovalTabBar'
 import { BuybackApprovalsTable } from '../components/BuybackApprovalsTable'
 import { BuybackDetailDrawer } from '../components/BuybackDetailDrawer'
 import { CreateAdjustmentModal } from '../components/CreateAdjustmentModal'
@@ -26,13 +27,11 @@ import { DamagePenaltyDetailDrawer } from '../components/DamagePenaltyDetailDraw
 import { DisposalReversalApprovalsTable } from '../components/DisposalReversalApprovalsTable'
 import { DisposalReversalDetailDrawer } from '../components/DisposalReversalDetailDrawer'
 
-type TabKey = 'old-book-price' | 'damage-penalty' | 'inventory-adjustment' | 'disposal-reversal'
-
 export default function ApprovalsPage() {
   const navigate = useNavigate()
   const { session, signOut } = useAuth()
 
-  const [activeTab, setActiveTab] = useState<TabKey>('inventory-adjustment')
+  const [activeTab, setActiveTab] = useState<ApprovalTabKey>('inventory-adjustment')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<InventoryAdjustmentStatus | ''>('')
   const [page, setPage] = useState(1)
@@ -77,6 +76,16 @@ export default function ApprovalsPage() {
   const totalCount = overviewStats?.totalCount ?? stats?.total ?? 0
   const approvedCount = overviewStats?.approvedCount ?? ((stats?.approved ?? 0) + (stats?.applied ?? 0))
   const rejectedCount = overviewStats?.rejectedCount ?? ((stats?.rejected ?? 0) + (stats?.cancelled ?? 0))
+  const approvalCounts: Record<ApprovalTabKey, number> = {
+    'old-book-price': overviewStats?.buybackPending ?? 0,
+    'damage-penalty': overviewStats?.damagePenaltyPending ?? 0,
+    'inventory-adjustment': overviewStats?.inventoryAdjustmentPending ?? stats?.pendingApproval ?? 0,
+    'disposal-reversal': overviewStats?.disposalReversalPending ?? 0,
+  }
+
+  const handleSelectTab = (tab: ApprovalTabKey) => {
+    setActiveTab(tab)
+  }
 
   return (
     <MainLayout
@@ -95,21 +104,16 @@ export default function ApprovalsPage() {
       breadcrumbs={[
         { label: 'Không gian làm việc' },
         { label: 'Phê duyệt', to: '/approvals' },
-        { label: 'Trung tâm Phê duyệt ngoại lệ (SCR-APP-01)' },
+        { label: 'Trung tâm Phê duyệt ngoại lệ' },
       ]}
       currentPath="approvals"
       onNavigate={navigateFromSidebar}
       onSignOut={signOut}
-      pageTitle="Trung tâm Phê duyệt ngoại lệ (SCR-APP-01)"
+      pageTitle="Trung tâm Phê duyệt ngoại lệ"
+      pageHeaderContent={<ApprovalTabBar activeTab={activeTab} counts={approvalCounts} onSelectTab={handleSelectTab} />}
       user={currentUser}
     >
       <div className="space-y-6">
-        <div>
-          <p className="text-xs text-slate-500">
-            Không gian phê duyệt tập trung dành riêng cho Quản lý &amp; Admin: Duyệt giá mua cũ, phạt hư hỏng, điều chỉnh kho và xuất hủy / đảo bán
-          </p>
-        </div>
-
         {/* 4 StatCards KPI Overview */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard
@@ -137,85 +141,6 @@ export default function ApprovalsPage() {
             valueColor="default"
           />
         </div>
-
-        {/* 4 Specialized Approval Tabs */}
-        <nav aria-label="Tabs nghiệp vụ phê duyệt" className="flex flex-wrap gap-2 border-b border-slate-200 pb-2">
-          <button
-            className={`rounded-xl px-4 py-2.5 text-xs font-semibold transition inline-flex items-center gap-2 ${
-              activeTab === 'old-book-price'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200'
-            }`}
-            onClick={() => setActiveTab('old-book-price')}
-            type="button"
-          >
-            <span>Duyệt Giá Thu mua Sách cũ Vượt Hạn mức</span>
-            {(overviewStats?.buybackPending ?? 0) > 0 && (
-              <span className={`rounded-full px-2 py-0.2 text-[10px] font-bold ${
-                activeTab === 'old-book-price' ? 'bg-white text-indigo-700' : 'bg-amber-100 text-amber-800'
-              }`}>
-                {overviewStats?.buybackPending}
-              </span>
-            )}
-          </button>
-
-          <button
-            className={`rounded-xl px-4 py-2.5 text-xs font-semibold transition inline-flex items-center gap-2 ${
-              activeTab === 'damage-penalty'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200'
-            }`}
-            onClick={() => setActiveTab('damage-penalty')}
-            type="button"
-          >
-            <span>Duyệt Phạt Hư hỏng Trả sách Ngoài Khung</span>
-            {(overviewStats?.damagePenaltyPending ?? 0) > 0 && (
-              <span className={`rounded-full px-2 py-0.2 text-[10px] font-bold ${
-                activeTab === 'damage-penalty' ? 'bg-white text-indigo-700' : 'bg-amber-100 text-amber-800'
-              }`}>
-                {overviewStats?.damagePenaltyPending}
-              </span>
-            )}
-          </button>
-
-          <button
-            className={`rounded-xl px-4 py-2.5 text-xs font-semibold transition inline-flex items-center gap-2 ${
-              activeTab === 'inventory-adjustment'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200'
-            }`}
-            onClick={() => setActiveTab('inventory-adjustment')}
-            type="button"
-          >
-            <span>Duyệt Điều chỉnh Kho sau Kiểm kê</span>
-            {((overviewStats?.inventoryAdjustmentPending ?? stats?.pendingApproval) ?? 0) > 0 && (
-              <span className={`rounded-full px-2 py-0.2 text-[10px] font-bold ${
-                activeTab === 'inventory-adjustment' ? 'bg-white text-indigo-700' : 'bg-amber-100 text-amber-800'
-              }`}>
-                {overviewStats?.inventoryAdjustmentPending ?? stats?.pendingApproval}
-              </span>
-            )}
-          </button>
-
-          <button
-            className={`rounded-xl px-4 py-2.5 text-xs font-semibold transition inline-flex items-center gap-2 ${
-              activeTab === 'disposal-reversal'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200'
-            }`}
-            onClick={() => setActiveTab('disposal-reversal')}
-            type="button"
-          >
-            <span>Duyệt Xuất hủy Sách hỏng / Đảo Hóa đơn</span>
-            {(overviewStats?.disposalReversalPending ?? 0) > 0 && (
-              <span className={`rounded-full px-2 py-0.2 text-[10px] font-bold ${
-                activeTab === 'disposal-reversal' ? 'bg-white text-indigo-700' : 'bg-amber-100 text-amber-800'
-              }`}>
-                {overviewStats?.disposalReversalPending}
-              </span>
-            )}
-          </button>
-        </nav>
 
         {/* Tab 1 Content: Duyệt Giá Thu mua Sách cũ */}
         {activeTab === 'old-book-price' && (

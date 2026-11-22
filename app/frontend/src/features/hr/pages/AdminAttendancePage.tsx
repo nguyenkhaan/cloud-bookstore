@@ -44,7 +44,6 @@ export default function AdminAttendancePage() {
       onNavigate={(item) => { const path = workspacePathFor(item); if (path) navigate(path) }}
       onSignOut={auth?.signOut}
       pageTitle="Chấm công & Lương ca"
-      screenCode=""
       user={currentUser}
     >
       <div className="space-y-5">

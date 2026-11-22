@@ -1,23 +1,42 @@
-import type { DashboardOverviewMetrics } from './dashboard.type'
+import axios from 'axios'
+import { privateClient } from '@/api/client'
+import type { DashboardTrendRange, OverviewReportResponse } from './dashboard.type'
 
-/**
- * Dashboard Service
- * Note: Formal backend APIs for business overview metrics, cash drawers, and reports
- * are scheduled for Phase 06 (Cash Drawer & Payments) and Phase 12-13 (Reports & Operations).
- */
-export async function getDashboardOverviewMetrics(): Promise<DashboardOverviewMetrics> {
-  // Placeholder for future Phase 12/13 API integration
-  return {
-    settledRevenue: 8420000,
-    saleRevenue: 6200000,
-    rentalRevenue: 2220000,
-    cashBalance: 12680000,
-    activeCashDrawers: 2,
-    retainedDeposits: 18600000,
-    circulatingRentals: 84,
-    overdueRentals: 12,
-    vietQrSuccessRate: 98.4,
-    vietQrCompletedCount: 123,
-    vietQrTotalCount: 125,
+export class DashboardApiError extends Error {
+  readonly status: number
+
+  constructor(status: number, message: string) {
+    super(message)
+    this.name = 'DashboardApiError'
+    this.status = status
+  }
+}
+
+function toMessage(error: unknown): string {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data as Record<string, unknown> | undefined
+    if (data && typeof data.detail === 'string') return data.detail
+    if (data && typeof data.message === 'string') return data.message
+    if (data && typeof data.title === 'string') return data.title
+    return error.message
+  }
+  return error instanceof Error ? error.message : 'Không thể tải dữ liệu tổng quan kinh doanh.'
+}
+
+export async function getDashboardOverview(params: {
+  date?: string
+  trendRange?: DashboardTrendRange
+} = {}): Promise<OverviewReportResponse> {
+  try {
+    const query: Record<string, string> = {}
+    if (params.date) query.date = params.date
+    if (params.trendRange) query.trendRange = params.trendRange
+
+    const response = await privateClient.get<OverviewReportResponse>('/reports/overview', {
+      params: query,
+    })
+    return response.data
+  } catch (error) {
+    throw new DashboardApiError(axios.isAxiosError(error) ? (error.response?.status ?? 0) : 0, toMessage(error))
   }
 }

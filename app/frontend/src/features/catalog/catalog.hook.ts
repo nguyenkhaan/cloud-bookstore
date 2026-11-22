@@ -54,6 +54,7 @@ import {
   updateCategory,
   updateCategoryStatus,
   updateCopy,
+  updateCopyShelf,
   updateCopyStatus,
   updateEdition,
   updateEditionStatus,
@@ -86,6 +87,7 @@ import type {
   TitleListFilters,
   UpdateCategoryRequest,
   UpdateCopyRequest,
+  UpdateCopyShelfRequest,
   UpdateCopyStatusRequest,
   UpdateEditionRequest,
   UpdateEditionThresholdsRequest,
@@ -714,14 +716,32 @@ export function useUpdateCopyStatusMutation() {
   })
 }
 
+export function useUpdateCopyShelfMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ copyId, request }: { copyId: string; request: UpdateCopyShelfRequest }) =>
+      updateCopyShelf(copyId, request),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ['catalog'] })
+      void queryClient.invalidateQueries({ queryKey: catalogQueryKeys.copyHistory(variables.copyId) })
+      void queryClient.invalidateQueries({ queryKey: ['audit'] })
+    },
+  })
+}
+
 export function useDeleteCopyMutation() {
   const queryClient = useQueryClient()
   return useMutation({ mutationFn: (copyId: string) => deleteCopy(copyId), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog'] }) })
 }
 
 export function useCreateCopyLabelMutation() {
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (copyId: string) => createCopyLabel(copyId),
+    onSuccess: (_data, copyId) => {
+      void queryClient.invalidateQueries({ queryKey: catalogQueryKeys.copyHistory(copyId) })
+      void queryClient.invalidateQueries({ queryKey: ['audit'] })
+    },
   })
 }
 

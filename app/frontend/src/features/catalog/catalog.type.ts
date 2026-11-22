@@ -137,12 +137,17 @@ export type BookCopy = {
   status: CopyStatus
   conditionGrade: ConditionGrade
   conditionNote: string | null
+  costPrice?: number | null
   sellingPrice: number | null
   rentalRate: number | null
   shelfCode: string | null
   imageUrl?: string | null
   editionImageUrl?: string | null
   receiptLineId?: string
+  titleName?: string | null
+  volumeLabel?: string | null
+  editionStatement?: string | null
+  publishYear?: number | null
 }
 
 export type CreateSeriesRequest = Pick<BookSeries, 'name' | 'description'> & {
@@ -206,6 +211,24 @@ export type UpdateCopyStatusRequest = {
   reason: string
 }
 
+export type UpdateCopyShelfRequest = {
+  shelfCode?: string | null
+  reason: string
+}
+
+export type BookCopyHistoryMetadata = {
+  costPrice?: number | null
+  supplierName?: string | null
+  customerName?: string | null
+  depositAmount?: number | null
+  copyCondition?: string | null
+  refundAmount?: number | null
+  additionalAmountDue?: number | null
+  shelfCode?: string | null
+  sellingPrice?: number | null
+  returnStatus?: string | null
+}
+
 export type BookCopyHistoryItem = {
   occurredAt: string
   source: string
@@ -218,6 +241,7 @@ export type BookCopyHistoryItem = {
   beforeData?: string | null
   afterData?: string | null
   reason?: string | null
+  metadata?: BookCopyHistoryMetadata | null
 }
 
 export type BookCopyLabelResponse = {

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using backend.src.Data;
 using backend.src.Dto.AuditLogDto;
 using backend.src.Dto.Common;
@@ -21,6 +22,7 @@ public class EditionService(
 {
     private const UploadOwnerType EditionImageOwner = UploadOwnerType.EDITION_IMAGE;
     private const string AuditEntityType = "Edition";
+    private const string ActionUpdate = "EDITION_UPDATE";
     private const string ActionAttachImage = "ATTACH_IMAGE";
     private const string ActionReplaceImage = "REPLACE_IMAGE";
     private const string ActionDeleteImage = "DELETE_IMAGE";
@@ -293,6 +295,10 @@ public class EditionService(
         var (confirmedBy, confirmedByName, confirmedAt) = await EditionValidator.ResolveConfirmationAsync(
             dbContext, targetConfirmedBy, existingConfirmedAt: (request.MetadataConfirmedBy == null && actorId == null) ? edition.MetadataConfirmedAt : DateTime.UtcNow, cancellationToken: cancellationToken);
 
+        var beforeCoverPrice = edition.CoverPrice;
+        var before = ToAuditSnapshot(edition);
+        var beforeJson = JsonSerializer.Serialize(before);
+
         edition.TitleId = targetTitleId;
         edition.Isbn = meta.Isbn;
         edition.EditionStatement = meta.EditionStatement;
@@ -314,11 +320,35 @@ public class EditionService(
             edition.IsActive = request.IsActive.Value;
         }
 
+        var after = ToAuditSnapshot(edition);
+        var metadataChanged = beforeJson != JsonSerializer.Serialize(after);
+        var reason = beforeCoverPrice != edition.CoverPrice
+            ? $"Cập nhật giá bìa ấn bản ({beforeCoverPrice:N0}đ → {edition.CoverPrice:N0}đ)."
+            : "Cập nhật thông tin ấn bản.";
+
         // The image only changes through a verified upload intent; omitting it keeps the current image.
         string? replacedImageId = null;
         if (request.ImageUpload is not null)
         {
-            replacedImageId = await ApplyImageAsync(edition, request.ImageUpload, auditContext, cancellationToken);
+            if (metadataChanged)
+            {
+                await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+                replacedImageId = await ApplyImageAsync(edition, request.ImageUpload, auditContext, cancellationToken);
+                await auditLogService.CreateAuditLogEntryAsync(
+                    new CreateAuditLogEntry(ActionUpdate, AuditEntityType, edition.Id, before, after, reason, auditContext),
+                    cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+            }
+            else
+            {
+                replacedImageId = await ApplyImageAsync(edition, request.ImageUpload, auditContext, cancellationToken);
+            }
+        }
+        else if (metadataChanged)
+        {
+            await auditLogService.CreateAuditLogEntryAsync(
+                new CreateAuditLogEntry(ActionUpdate, AuditEntityType, edition.Id, before, after, reason, auditContext),
+                cancellationToken);
         }
         else
         {
@@ -498,4 +528,19 @@ public class EditionService(
             confirmedByName,
             copiesCount,
             cloudinaryService.BuildImageUrlOrNull(edition.PublicImageId, EditionImageOwner));
+
+    private static object ToAuditSnapshot(EditionModel edition) => new
+    {
+        edition.TitleId,
+        edition.Isbn,
+        edition.EditionStatement,
+        edition.PrintingStatement,
+        edition.Format,
+        edition.Publisher,
+        edition.PublishYear,
+        edition.CoverPrice,
+        edition.MinStockSale,
+        edition.MinStockRental,
+        edition.IsActive
+    };
 }

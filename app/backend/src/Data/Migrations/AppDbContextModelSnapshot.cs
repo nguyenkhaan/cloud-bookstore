@@ -45,6 +45,10 @@ namespace backend.src.Data.Migrations
                     b.Property<string>("BeforeData")
                         .HasColumnType("jsonb");
 
+                    b.Property<string>("CorrelationId")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
                     b.Property<Guid>("EntityId")
                         .HasColumnType("uuid");
 
@@ -63,6 +67,10 @@ namespace backend.src.Data.Migrations
 
                     b.Property<string>("Reason")
                         .HasColumnType("text");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.HasKey("Id");
 

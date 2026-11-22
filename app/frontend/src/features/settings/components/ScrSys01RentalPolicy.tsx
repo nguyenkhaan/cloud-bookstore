@@ -121,27 +121,7 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
   }
 
   return (
-    <div className="flex flex-col gap-6" data-name="SCR-SYS-01 · Cấu hình Tham số Thuê, Trả & Khung phạt">
-      {/* Page Title & Intro */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 mb-0.5">
-            SCR-SYS-01 / CẤU HÌNH HỆ THỐNG
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Cấu hình Tham số Thuê, Trả & Khung phạt
-          </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Chính sách vận hành · Chỉ Admin được thay đổi · Quản lý chỉ xem
-          </p>
-        </div>
-        <div>
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
-            {isAdmin ? 'Admin · Có quyền chỉnh sửa' : 'Quản lý · Chỉ xem'}
-          </span>
-        </div>
-      </div>
-
+    <div className="flex flex-col gap-6">
       {/* Sub Tabs */}
       <div className="flex items-center gap-4 bg-indigo-50/60 p-2 rounded-xl text-xs font-medium text-slate-600 border border-indigo-100/80">
         <button
@@ -419,20 +399,6 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
             </div>
           </div>
 
-          {/* Card: Góc nhìn Quản lý */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col gap-3 shadow-xs">
-            <h2 className="text-base font-semibold text-slate-900">Góc nhìn Quản lý</h2>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Có thể tra cứu chính sách. Không được thay đổi tỷ lệ, khung phạt hoặc khôi phục mặc định.
-            </p>
-            <button
-              type="button"
-              disabled
-              className="w-full py-2 px-4 bg-slate-100 text-slate-400 font-semibold text-xs rounded-xl cursor-not-allowed"
-            >
-              Lưu thay đổi (Chỉ Admin)
-            </button>
-          </div>
         </div>
       </div>
 

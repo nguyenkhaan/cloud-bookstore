@@ -1,98 +1,216 @@
-import { useNavigate } from 'react-router-dom';
-import { MainLayout } from '@/components/layout';
-import { Card, StatCard, SearchIcon } from '@/components/common';
-import { useAuth } from '@/features/auth/auth.hook';
-import { workspacePathFor } from '@/features/workspace/workspace.route';
-import type { DashboardPageProps } from '@/features/dashboard/dashboard.type';
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Calendar, Info } from 'lucide-react'
+import { StatCard } from '@/components/common'
+import { MainLayout } from '@/components/layout'
+import { useAuth } from '@/features/auth/auth.hook'
+import type { DashboardPageProps, DashboardTrendRange } from '@/features/dashboard/dashboard.type'
+import { workspacePathFor } from '@/features/workspace/workspace.route'
+import { AttentionPanel } from '../components/AttentionPanel'
+import { LowStockAlertsTable } from '../components/LowStockAlertsTable'
+import { OverdueRentalsTable } from '../components/OverdueRentalsTable'
+import { RevenueDonutChart } from '../components/RevenueDonutChart'
+import { RevenueTrendChart } from '../components/RevenueTrendChart'
+import { TopRentedTitlesCard } from '../components/TopRentedTitlesCard'
+import { useDashboardOverviewQuery } from '../dashboard.hook'
+import {
+  formatPercent,
+  formatVnd,
+  formatVnDateShort,
+  formatVnDateTimeShort,
+  getTodayVnDateInput,
+} from '../dashboard.presentation'
 
 export function DashboardPage({ onSignOut }: DashboardPageProps) {
-  const currentTab = 'overview';
-  const navigate = useNavigate();
-  const { session } = useAuth();
+  const navigate = useNavigate()
+  const { session } = useAuth()
+  const currentUser = session?.user ?? { name: 'Khách', role: 'Chưa xác thực', roleCode: '' }
+  const isAdmin = currentUser.roleCode === 'ADMIN'
 
-  const currentUser = session?.user ?? { name: 'Khách', role: 'Chưa xác thực' };
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayVnDateInput)
+  const [trendRange, setTrendRange] = useState<DashboardTrendRange>('WEEK')
+
+  const overviewQuery = useDashboardOverviewQuery(selectedDate, trendRange)
+  const data = overviewQuery.data
+
+  const todayVn = getTodayVnDateInput()
+  const dateBadgeSuffix = selectedDate === todayVn ? 'Hôm nay' : 'Theo ngày chọn'
+  const monthNumber = selectedDate.split('-')[1] ?? ''
+  const yearNumber = selectedDate.split('-')[0] ?? ''
+  const topRentedLabel = monthNumber && yearNumber ? `Tháng ${monthNumber}/${yearNumber}` : 'Tháng hiện tại'
 
   return (
     <MainLayout
       onSignOut={onSignOut}
-      currentPath={currentTab}
+      currentPath="overview"
       onNavigate={(id) => {
-        const path = workspacePathFor(id);
-        if (path) navigate(path);
+        const path = workspacePathFor(id)
+        if (path) navigate(path)
       }}
-      pageTitle={currentTab === 'overview' ? 'Tổng quan kinh doanh' : undefined}
+      pageTitle="Tổng quan kinh doanh"
       breadcrumbs={[{ label: 'Không gian làm việc' }, { label: 'Tổng quan' }]}
       user={currentUser}
+      actionButton={
+        <div className="flex items-center gap-2">
+          <label
+            htmlFor="dashboard-date-picker"
+            className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs"
+          >
+            <Calendar className="h-3.5 w-3.5 text-indigo-600" aria-hidden="true" />
+            <input
+              id="dashboard-date-picker"
+              type="date"
+              value={selectedDate}
+              onChange={(e) => {
+                if (e.target.value) setSelectedDate(e.target.value)
+              }}
+              aria-label="Chọn ngày xem tổng quan"
+              className="bg-transparent text-xs font-semibold text-slate-800 focus:outline-none cursor-pointer"
+            />
+            <span className="hidden text-slate-400 sm:inline">· {dateBadgeSuffix}</span>
+          </label>
+        </div>
+      }
     >
-      {currentTab === 'overview' ? (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between text-xs text-slate-500">
-            <span className="text-base font-bold text-black">👋 Chúc một ngày tốt lành, {currentUser.name}</span>
-          </div>
+      <div className="space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+          <p>
+            Chào <span className="font-semibold text-slate-800">{currentUser.name}</span>, đây là nhịp vận hành{' '}
+            {data?.storeScopeLabel || 'Nhà sách Mây'} ({formatVnDateShort(selectedDate)})
+            {data?.generatedAtUtc ? ` · Cập nhật ${formatVnDateTimeShort(data.generatedAtUtc)}` : ''}
+          </p>
+          {data?.isCashierScoped && (
+            <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
+              Phạm vi ca thu ngân hiện tại
+            </span>
+          )}
+        </div>
 
+        {overviewQuery.isError && (
+          <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700">
+            {overviewQuery.error instanceof Error
+              ? overviewQuery.error.message
+              : 'Không thể tải dữ liệu tổng quan kinh doanh.'}
+          </div>
+        )}
+
+        {/* Row 1: 5 KPI Cards */}
+        {overviewQuery.isLoading && !data ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="h-28 animate-pulse rounded-2xl bg-slate-200/70" />
+            ))}
+          </div>
+        ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <StatCard
               label="Bán + Thuê đã quyết toán"
-              value="8.420.000đ"
+              value={formatVnd(data?.totalSettledRevenueToday)}
               valueColor="emerald"
-              description="Bán 6.200.000đ + Thuê 2.220.000đ"
+              description={`Bán ${formatVnd(data?.salesRevenueToday)} + Thuê ${formatVnd(data?.rentalRevenueToday)}`}
             />
             <StatCard
               label="Số dư két tiền mặt"
-              value="12.680.000đ"
+              value={formatVnd(data?.cashDrawerBalance)}
               valueColor="default"
-              description="2 két đang hoạt động"
+              description={`${data?.activeCashSessionCount ?? 0} két đang hoạt động`}
             />
             <StatCard
               label="Cọc đang giữ · Nợ phải trả"
-              value="18.600.000đ"
+              value={formatVnd(data?.heldDepositsBalance)}
               valueColor="amber"
               description="KHÔNG tính vào doanh thu"
             />
             <StatCard
               label="Phiếu thuê lưu hành"
-              value="84"
+              value={data?.circulatingRentalSlipCount ?? 0}
               valueColor="default"
-              description="12 phiếu quá hạn cần thu hồi"
+              description={`${data?.overdueRentalSlipCount ?? 0} phiếu quá hạn cần thu hồi`}
             />
             <StatCard
               label="VietQR đối soát thành công"
-              value="98,4%"
+              value={formatPercent(data?.vietQrSuccessRatePct)}
               valueColor="emerald"
-              description="Mục tiêu > 95% · 123/125 lượt"
+              description={`Mục tiêu > ${data?.attention?.vietQrTargetPct ?? 95}% · ${data?.vietQrSucceededCount ?? 0}/${data?.vietQrTotalCount ?? 0} lượt`}
             />
           </div>
+        )}
 
-          <Card title="Hoạt động cần chú ý hôm nay">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="rounded-xl border border-rose-200 bg-rose-50/60 p-3 text-xs">
-                <span className="font-bold text-rose-600">12 phiếu quá hạn</span>
-                <p className="text-slate-600 mt-1 text-[11px]">8 khách đã quá hạn trên 7 ngày, ưu tiên liên hệ thu hồi.</p>
-              </div>
-              <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3 text-xs">
-                <span className="font-bold text-amber-700">18 đầu sách chạm min</span>
-                <p className="text-slate-600 mt-1 text-[11px]">5 đầu sách không còn bản khả dụng. Cần tạo phiếu nhập kho.</p>
-              </div>
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 text-xs">
-                <span className="font-bold text-emerald-700">VietQR</span>
-                <p className="text-slate-600 mt-1 text-[11px]">Tất cả giao dịch trực tuyến đã khớp lệnh thành công.</p>
-              </div>
-            </div>
-          </Card>
-        </div>
-      ) : (
-        <div className="flex min-h-75 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 mb-3">
-            <SearchIcon size={24} />
+        {/* Row 2: Trend Chart + Revenue Donut */}
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <RevenueTrendChart
+              points={data?.trendPoints ?? []}
+              totalAmount={data?.trendTotalAmount ?? 0}
+              trendRange={trendRange}
+              onChangeRange={setTrendRange}
+            />
           </div>
-          <h3 className="text-sm font-bold text-slate-800">Phân hệ đang được chuẩn bị</h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-sm">
-            Layout chung đã được gắn kết sẵn sàng cho các trang tiếp theo theo đúng kiến trúc nghiệp vụ.
-          </p>
+          <div>
+            <RevenueDonutChart
+              structure={
+                data?.revenueStructure ?? {
+                  salesAmount: 0,
+                  rentalFeeAmount: 0,
+                  penaltyAmount: 0,
+                  lostBookAmount: 0,
+                  totalAmount: 0,
+                  salesPct: 0,
+                  rentalFeePct: 0,
+                  penaltyPct: 0,
+                  lostBookPct: 0,
+                }
+              }
+            />
+          </div>
         </div>
-      )}
+
+        {/* Row 3: Top 10 Rented Titles + Attention */}
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <TopRentedTitlesCard
+              titles={data?.topRentedTitles ?? []}
+              monthLabel={topRentedLabel}
+            />
+          </div>
+          <div>
+            <AttentionPanel
+              attention={
+                data?.attention ?? {
+                  overdueSlipCount: 0,
+                  overdueOver7DaysCustomerCount: 0,
+                  lowStockEditionCount: 0,
+                  outOfStockEditionCount: 0,
+                  pendingReceiptCopyCount: 0,
+                  vietQrPendingOrFailedCount: 0,
+                  vietQrTargetPct: 95,
+                }
+              }
+              vietQrSuccessRatePct={data?.vietQrSuccessRatePct ?? 0}
+              isAdmin={isAdmin}
+            />
+          </div>
+        </div>
+
+        {/* Row 4: Low stock + Overdue > 7 days */}
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <LowStockAlertsTable
+            rows={data?.lowStockAlerts ?? []}
+            totalLowStockCount={data?.attention?.lowStockEditionCount ?? 0}
+          />
+          <OverdueRentalsTable rows={data?.overdueCustomers ?? []} />
+        </div>
+
+        {/* Role & accounting notice */}
+        <div className="flex items-start gap-2.5 rounded-xl border border-indigo-100 bg-indigo-50/70 px-4 py-3 text-xs text-indigo-700">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
+          <span>
+            Góc nhìn Thu ngân chỉ xem ca hiện tại; Quản lý kho / Admin xem toàn cửa hàng. Cọc 100% là khoản nợ phải trả, phí thuê chỉ ghi nhận khi trả và quyết toán.
+          </span>
+        </div>
+      </div>
     </MainLayout>
-  );
+  )
 }
 
 export default DashboardPage

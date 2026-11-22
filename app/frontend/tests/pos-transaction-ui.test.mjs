@@ -11,19 +11,16 @@ function readSource(...parts) {
   return existsSync(src(...parts)) ? readFileSync(src(...parts), 'utf8') : ''
 }
 
-test('POS transaction feature defines the requested screen contracts and customer-display route', () => {
+test('POS transaction feature defines its tabs and customer-display route without internal screen codes', () => {
   const routeSource = readSource('features', 'pos', 'pos.route.ts')
   const pageSource = readSource('features', 'pos', 'pages', 'PosWorkspacePage.tsx')
   const displayPageSource = readSource('features', 'pos', 'pages', 'PosCustomerDisplayPage.tsx')
   const fixtureSource = readSource('features', 'pos', 'pos-transaction.fixture.ts')
 
-  for (const screenCode of ['SCR-POS-02', 'SCR-POS-03', 'SCR-POS-04', 'SCR-POS-05', 'SCR-POS-07', 'MOD-POS-01', 'MOD-POS-02']) {
-    assert.match(`${pageSource}\n${displayPageSource}\n${fixtureSource}`, new RegExp(screenCode), `missing ${screenCode}`)
-  }
-
   assert.match(routeSource, /customerDisplay/)
   assert.match(routeSource, /customerDisplay:\s+`\$\{posRoot\}\/customer-display`/)
   assert.match(`${pageSource}\n${fixtureSource}`, /Bán hàng|Cho thuê|Gia hạn|Trả & quyết toán/)
+  assert.doesNotMatch(`${pageSource}\n${displayPageSource}\n${fixtureSource}`, /(?:SCR|MOD)-POS-\d{2}/)
 })
 
 test('POS transaction mock stays local and preserves domain identifiers', () => {

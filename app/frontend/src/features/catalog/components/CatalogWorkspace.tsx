@@ -9,11 +9,10 @@ import { catalogPaths } from '../catalog.route'
 type CatalogWorkspaceProps = {
   action?: ReactNode
   children: ReactNode
-  screenCode?: string
   title: string
 }
 
-export function CatalogWorkspace({ action, children, screenCode, title }: CatalogWorkspaceProps) {
+export function CatalogWorkspace({ action, children, title }: CatalogWorkspaceProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const { session, signOut } = useAuth()
@@ -43,7 +42,6 @@ export function CatalogWorkspace({ action, children, screenCode, title }: Catalo
       onNavigate={navigateFromSidebar}
       onSignOut={signOut}
       pageTitle={title}
-      screenCode={screenCode}
       user={currentUser}
     >
       <div className="space-y-6">

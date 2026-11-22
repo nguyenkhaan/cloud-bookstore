@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Text.Json;
 using backend.src.Data;
 using backend.src.Dto.AuditLogDto;
@@ -31,6 +31,7 @@ public class BookCopyService(
     private const string ActionCreate = "BOOK_COPY_CREATE";
     private const string ActionUpdate = "BOOK_COPY_UPDATE";
     private const string ActionStatusChange = "BOOK_COPY_STATUS_CHANGE";
+    private const string ActionShelfUpdate = "BOOK_COPY_SHELF_UPDATE";
     private const string ActionLabelReprint = "BOOK_COPY_LABEL_REPRINT";
     private const string ActionDelete = "BOOK_COPY_DELETE";
 
@@ -217,13 +218,19 @@ public class BookCopyService(
             cancellationToken);
     }
 
+    public Task<IReadOnlyList<BookCopyHistoryItem>> GetBookCopyHistoryAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+        => GetBookCopyHistoryAsync(id, canViewCost: true, cancellationToken);
+
     public async Task<IReadOnlyList<BookCopyHistoryItem>> GetBookCopyHistoryAsync(
         Guid id,
+        bool canViewCost,
         CancellationToken cancellationToken = default)
     {
         var copy = await dbContext.BookCopies.AsNoTracking()
             .Where(c => c.Id == id)
-            .Select(c => new { c.Id, c.CreatedAt, c.ReceiptLineId })
+            .Select(c => new { c.Id, c.CreatedAt, c.ReceiptLineId, c.CostPrice, c.ShelfCode })
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException($"Bản sách với ID '{id}' không tồn tại.");
 
@@ -233,17 +240,34 @@ public class BookCopyService(
         var receipt = await (from l in dbContext.StockReceiptLines.AsNoTracking()
                              where l.Id == copy.ReceiptLineId
                              join r in dbContext.StockReceipts.AsNoTracking() on l.ReceiptId equals r.Id
-                             select new { r.Id, r.Code, r.SourceType, r.CreatedBy })
+                             join sup in dbContext.Suppliers.AsNoTracking() on r.SupplierId equals sup.Id into supGroup
+                             from sup in supGroup.DefaultIfEmpty()
+                             join sel in dbContext.Customers.AsNoTracking() on r.SellerId equals sel.Id into selGroup
+                             from sel in selGroup.DefaultIfEmpty()
+                             select new
+                             {
+                                 r.Id,
+                                 r.Code,
+                                 r.SourceType,
+                                 r.CreatedBy,
+                                 l.UnitCost,
+                                 SupplierName = sup != null ? sup.Name : (sel != null ? sel.FullName : null)
+                             })
             .FirstOrDefaultAsync(cancellationToken);
         if (receipt != null)
         {
+            var sourceLabel = receipt.SourceType == StockReceiptSourceType.SUPPLIER ? "NCC" : "Thu mua cá nhân";
             items.Add(new BookCopyHistoryItem(
                 copy.CreatedAt, "RECEIPT", "RECEIPT_LINKED",
-                $"Bản sách được ghi nhận từ phiếu nhập {receipt.Code} (nguồn: {receipt.SourceType}).",
-                receipt.Id, receipt.Code, receipt.CreatedBy, null, null, null, null));
+                $"Bản sách được ghi nhận từ phiếu nhập {receipt.Code} (nguồn: {sourceLabel}).",
+                receipt.Id, receipt.Code, receipt.CreatedBy, null, null, null, null,
+                new BookCopyHistoryMetadata(
+                    CostPrice: canViewCost ? receipt.UnitCost : null,
+                    SupplierName: receipt.SupplierName,
+                    ShelfCode: copy.ShelfCode)));
         }
 
-        // Audit log: tạo, sửa, đổi trạng thái/kênh, in tem
+        // Audit log: tạo, sửa, đổi trạng thái/kênh, đổi kệ, in tem
         var audits = await dbContext.AuditLogs.AsNoTracking()
             .Where(a => a.EntityType == AuditEntityType && a.EntityId == id)
             .Select(a => new { a.Id, a.OccurredAt, a.Action, a.ActorId, a.BeforeData, a.AfterData, a.Reason })
@@ -266,12 +290,14 @@ public class BookCopyService(
             $"Kiểm kê {c.CheckCode}: dự kiến {c.ExpectedStatus}, " +
             $"{(c.IsFound ? $"ghi nhận {c.ObservedStatus?.ToString() ?? "không rõ"}" : "không tìm thấy")}" +
             $"{(c.VarianceType.HasValue ? $", chênh lệch {c.VarianceType}" : "")}.",
-            c.Id, c.CheckCode, c.CheckedBy, null, null, null, c.Note)));
+            c.Id, c.CheckCode, c.CheckedBy, null, null, null, c.Note,
+            new BookCopyHistoryMetadata(ShelfCode: copy.ShelfCode))));
 
         // Thuê / trả
         var rentals = await (from rl in dbContext.RentalLines.AsNoTracking()
                              where rl.CopyId == id
                              join s in dbContext.RentalSlips.AsNoTracking() on rl.SlipId equals s.Id
+                             join cust in dbContext.Customers.AsNoTracking() on s.CustomerId equals cust.Id
                              join ret in dbContext.Returns.AsNoTracking() on rl.ReturnId equals ret.Id into returns
                              from ret in returns.DefaultIfEmpty()
                              select new
@@ -279,14 +305,19 @@ public class BookCopyService(
                                  LineId = rl.Id,
                                  LineStatus = rl.Status,
                                  rl.DueAt,
+                                 rl.DepositAmount,
                                  rl.CopyCondition,
+                                 rl.RefundAmount,
+                                 rl.AdditionalAmountDue,
                                  SlipId = s.Id,
                                  s.SlipNo,
+                                 CustomerName = cust.FullName,
                                  SlipCreatedBy = s.CreatedBy,
                                  SlipCreatedAt = s.CreatedAt,
                                  s.ActivatedAt,
                                  ReturnId = ret != null ? (Guid?)ret.Id : null,
                                  ReturnNo = ret != null ? ret.ReturnNo : null,
+                                 ReturnStatus = ret != null ? (ReturnStatus?)ret.Status : null,
                                  ReturnedAt = ret != null ? (DateTime?)ret.ReturnedAt : null,
                                  ReturnCreatedBy = ret != null ? (Guid?)ret.CreatedBy : null
                              }).ToListAsync(cancellationToken);
@@ -295,7 +326,10 @@ public class BookCopyService(
             items.Add(new BookCopyHistoryItem(
                 r.ActivatedAt ?? r.SlipCreatedAt, "RENTAL", "RENTAL",
                 $"Thuê theo phiếu {r.SlipNo} (trạng thái dòng: {r.LineStatus}, hạn trả: {r.DueAt:dd/MM/yyyy}).",
-                r.SlipId, r.SlipNo, r.SlipCreatedBy, null, null, null, null));
+                r.SlipId, r.SlipNo, r.SlipCreatedBy, null, null, null, null,
+                new BookCopyHistoryMetadata(
+                    CustomerName: r.CustomerName,
+                    DepositAmount: r.DepositAmount)));
 
             if (r.ReturnId.HasValue && r.ReturnedAt.HasValue)
             {
@@ -303,7 +337,14 @@ public class BookCopyService(
                     r.ReturnedAt.Value, "RETURN", "RETURN",
                     $"Trả theo phiếu trả {r.ReturnNo}" +
                     $"{(r.CopyCondition.HasValue ? $" (tình trạng khi trả: {r.CopyCondition})" : "")}.",
-                    r.ReturnId, r.ReturnNo, r.ReturnCreatedBy, null, null, null, null));
+                    r.ReturnId, r.ReturnNo, r.ReturnCreatedBy, null, null, null, null,
+                    new BookCopyHistoryMetadata(
+                        CustomerName: r.CustomerName,
+                        DepositAmount: r.DepositAmount,
+                        CopyCondition: r.CopyCondition,
+                        RefundAmount: r.RefundAmount,
+                        AdditionalAmountDue: r.AdditionalAmountDue,
+                        ReturnStatus: r.ReturnStatus?.ToString())));
             }
         }
 
@@ -311,12 +352,15 @@ public class BookCopyService(
         var sales = await (from sl in dbContext.SaleInvoiceLines.AsNoTracking()
                            where sl.CopyId == id
                            join inv in dbContext.SaleInvoices.AsNoTracking() on sl.InvoiceId equals inv.Id
+                           join cust in dbContext.Customers.AsNoTracking() on inv.CustomerId equals cust.Id into custGroup
+                           from cust in custGroup.DefaultIfEmpty()
                            select new
                            {
                                LineStatus = sl.Status,
                                sl.FinalPrice,
                                InvoiceId = inv.Id,
                                inv.InvoiceNo,
+                               CustomerName = cust != null ? cust.FullName : "Khách lẻ",
                                InvoiceCreatedBy = inv.CreatedBy,
                                InvoiceCreatedAt = inv.CreatedAt,
                                inv.PaidAt
@@ -325,7 +369,10 @@ public class BookCopyService(
             s.PaidAt ?? s.InvoiceCreatedAt, "SALE",
             s.LineStatus == SaleInvoiceLineStatus.REVERSED ? "SALE_REVERSED" : "SALE",
             $"Bán theo hóa đơn {s.InvoiceNo ?? "(chưa có số)"} với giá {s.FinalPrice:N0} (trạng thái dòng: {s.LineStatus}).",
-            s.InvoiceId, s.InvoiceNo, s.InvoiceCreatedBy, null, null, null, null)));
+            s.InvoiceId, s.InvoiceNo, s.InvoiceCreatedBy, null, null, null, null,
+            new BookCopyHistoryMetadata(
+                CustomerName: s.CustomerName,
+                SellingPrice: s.FinalPrice))));
 
         // Gắn tên người thực hiện
         var actorIds = items.Where(i => i.ActorId.HasValue).Select(i => i.ActorId!.Value).Distinct().ToList();
@@ -549,6 +596,33 @@ public class BookCopyService(
         var after = copy.ToAuditSnapshot();
 
         await SaveWithAuditAsync(copy, ActionStatusChange, before, after, reason, auditContext, cancellationToken);
+        return await GetBookCopyByIdAsync(id, canViewCost: true, cancellationToken);
+    }
+
+    public async Task<BookCopyDetailResponse> UpdateShelfCodeAsync(
+        Guid id,
+        UpdateBookCopyShelfRequest request,
+        AuditLogContext auditContext,
+        CancellationToken cancellationToken = default)
+    {
+        var reason = BookCopyValidator.RequireReason(request.Reason);
+        var trimmedShelf = string.IsNullOrWhiteSpace(request.ShelfCode) ? null : request.ShelfCode.Trim();
+        if (trimmedShelf?.Length > 30)
+        {
+            throw new BadRequestException("Vị trí kệ không được vượt quá 30 ký tự.");
+        }
+
+        var copy = await dbContext.BookCopies.FirstOrDefaultAsync(c => c.Id == id, cancellationToken)
+            ?? throw new NotFoundException($"Bản sách với ID '{id}' không tồn tại.");
+
+        BookCopyValidator.EnsureEditable(copy);
+        await BookCopyValidator.EnsureNoActiveReferenceAsync(dbContext, id, cancellationToken);
+
+        var before = new { copy.CopyBarcode, copy.ShelfCode };
+        copy.ShelfCode = trimmedShelf;
+        var after = new { copy.CopyBarcode, ShelfCode = trimmedShelf };
+
+        await SaveWithAuditAsync(copy, ActionShelfUpdate, before, after, reason, auditContext, cancellationToken);
         return await GetBookCopyByIdAsync(id, canViewCost: true, cancellationToken);
     }
 
@@ -832,6 +906,7 @@ public class BookCopyService(
         ActionCreate => "Tạo bản sách vật lý.",
         ActionUpdate => "Cập nhật thông tin bản sách (Grade, tình trạng, giá, kệ hoặc kênh Bán/Thuê).",
         ActionStatusChange => "Chuyển trạng thái vòng đời của bản sách.",
+        ActionShelfUpdate => "Chuyển vị trí kệ lưu trữ bản sách.",
         ActionLabelReprint => "In/tái in tem CopyBarcode.",
         ActionDelete => "Xóa bản sách vật lý chưa phát sinh giao dịch.",
         ActionAttachImage => "Gắn ảnh cho bản sách.",

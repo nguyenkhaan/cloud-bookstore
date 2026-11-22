@@ -2,6 +2,8 @@ import type { components } from '@/contract/api-contract'
 
 export type ApprovalStatus = components['schemas']['ApprovalStatus']
 
+export type ApprovalTabKey = 'old-book-price' | 'damage-penalty' | 'inventory-adjustment' | 'disposal-reversal'
+
 export type BookCopyStatus =
   | 'PENDING_RECEIPT'
   | 'AVAILABLE'

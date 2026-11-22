@@ -4,5 +4,6 @@ namespace backend.src.Dto.AuditLogDto;
 
 public record class AuditLogContext(
     Guid? ActorId,
-    IPAddress? IpAddress)
-{ }
+    IPAddress? IpAddress,
+    string? UserAgent = null,
+    string? CorrelationId = null);

@@ -65,6 +65,13 @@ Preserve the existing bookstore identity, information hierarchy, and working beh
 - Avoid decorative gradients, excessive shadows, nested cards, and animation that does not communicate state.
 - Respect `prefers-reduced-motion`; never make motion the only indication of a state change.
 
+### Page headers and tabs
+
+- Do not add, pass, store, or render screen identifiers such as `SCR-*`, `MOD-*`, or `DRAWER-*` in UI components, page fixtures, or navigation. They belong only in project documentation and test/spec traceability, never in the product interface.
+- `MainLayout` page headers contain the page title, optional actions, and optional `pageHeaderContent`; they do not accept a screen-code prop.
+- When one feature has sibling pages, put its navigation in `pageHeaderContent` directly below the title. Use one flat, horizontally scrollable tab bar with a bottom border and an indigo active underline; do not use code badges, icon chips, filled-pill tabs, or a second tab bar inside page content.
+- Keep tab labels short, task-oriented, and free of role/status narration that users already understand from access and page context.
+
 ### Accessibility and interaction
 
 - Use semantic HTML: buttons for actions, links for navigation, headings in order, and real form controls.
