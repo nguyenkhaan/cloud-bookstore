@@ -1,3 +1,4 @@
+using backend.src.Configurations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using backend.src.Dto.ApprovalDto;
@@ -18,7 +19,7 @@ public class DamagePenaltyApprovalsController(DamagePenaltyApprovalService servi
     private const string AdminRole = nameof(RoleName.ADMIN);
 
     [HttpGet]
-    [Authorize(Roles = StaffRoles)]
+    [Permission(StaffRoles)]
     [ProducesResponseType<PagedResult<DamagePenaltyApprovalItemResponse>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<DamagePenaltyApprovalItemResponse>>> GetRequests(
         [FromQuery] ApprovalQuery query,
@@ -29,7 +30,7 @@ public class DamagePenaltyApprovalsController(DamagePenaltyApprovalService servi
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = StaffRoles)]
+    [Permission(StaffRoles)]
     [ProducesResponseType<DamagePenaltyApprovalDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<DamagePenaltyApprovalDetailResponse>> GetById(
@@ -41,7 +42,7 @@ public class DamagePenaltyApprovalsController(DamagePenaltyApprovalService servi
     }
 
     [HttpPost]
-    [Authorize(Roles = StaffRoles)]
+    [Permission(StaffRoles)]
     [ProducesResponseType<DamagePenaltyApprovalDetailResponse>(StatusCodes.Status201Created)]
     public async Task<ActionResult<DamagePenaltyApprovalDetailResponse>> Create(
         [FromBody] CreateDamagePenaltyApprovalRequestDto request,

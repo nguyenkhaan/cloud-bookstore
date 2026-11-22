@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using backend.src.Configurations;
 using backend.src.Dto.AuditLogDto;
 using backend.src.Dto.BookCopyDto;
 using backend.src.Dto.Common;
@@ -22,7 +23,7 @@ public class BookCopiesController(BookCopyService bookCopyService) : ControllerB
         $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}";
 
     [HttpGet]
-    [Authorize(Roles = ReadRoles)]
+    [Permission(ReadRoles)]
     [ProducesResponseType<PagedResult<BookCopyResponse>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<BookCopyResponse>>> GetBookCopies(
         [FromQuery] BookCopyQuery query,
@@ -33,7 +34,7 @@ public class BookCopiesController(BookCopyService bookCopyService) : ControllerB
     }
 
     [HttpGet("by-barcode/{copyBarcode}")]
-    [Authorize(Roles = ReadRoles)]
+    [Permission(ReadRoles)]
     [ProducesResponseType<BookCopyDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -46,7 +47,7 @@ public class BookCopiesController(BookCopyService bookCopyService) : ControllerB
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = ReadRoles)]
+    [Permission(ReadRoles)]
     [ProducesResponseType<BookCopyDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<BookCopyDetailResponse>> GetBookCopyById(
@@ -58,7 +59,7 @@ public class BookCopiesController(BookCopyService bookCopyService) : ControllerB
     }
 
     [HttpGet("{id:guid}/history")]
-    [Authorize(Roles = ReadRoles)]
+    [Permission(ReadRoles)]
     [ProducesResponseType<IReadOnlyList<BookCopyHistoryItem>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<IReadOnlyList<BookCopyHistoryItem>>> GetBookCopyHistory(
@@ -70,14 +71,14 @@ public class BookCopiesController(BookCopyService bookCopyService) : ControllerB
     }
 
     [HttpGet("receipt-lines")]
-    [Authorize(Roles = WriteRoles)]
+    [Permission(WriteRoles)]
     [ProducesResponseType<IReadOnlyList<AvailableReceiptLineResponse>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<AvailableReceiptLineResponse>>> GetAvailableReceiptLines(
         [FromQuery] Guid editionId, CancellationToken cancellationToken)
         => Ok(await bookCopyService.GetAvailableReceiptLinesAsync(editionId, cancellationToken));
 
     [HttpPost]
-    [Authorize(Roles = WriteRoles)]
+    [Permission(WriteRoles)]
     [ProducesResponseType<BookCopyDetailResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -91,7 +92,7 @@ public class BookCopiesController(BookCopyService bookCopyService) : ControllerB
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = WriteRoles)]
+    [Permission(WriteRoles)]
     [ProducesResponseType<BookCopyDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -106,7 +107,7 @@ public class BookCopiesController(BookCopyService bookCopyService) : ControllerB
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = WriteRoles)]
+    [Permission(WriteRoles)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -117,7 +118,7 @@ public class BookCopiesController(BookCopyService bookCopyService) : ControllerB
     }
 
     [HttpPatch("{id:guid}/status")]
-    [Authorize(Roles = WriteRoles)]
+    [Permission(WriteRoles)]
     [ProducesResponseType<BookCopyDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -134,7 +135,7 @@ public class BookCopiesController(BookCopyService bookCopyService) : ControllerB
     }
 
     [HttpPatch("{id:guid}/shelf")]
-    [Authorize(Roles = WriteRoles)]
+    [Permission(WriteRoles)]
     [ProducesResponseType<BookCopyDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -149,7 +150,7 @@ public class BookCopiesController(BookCopyService bookCopyService) : ControllerB
     }
 
     [HttpPost("{id:guid}/label")]
-    [Authorize(Roles = WriteRoles)]
+    [Permission(WriteRoles)]
     [ProducesResponseType<BookCopyLabelResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<BookCopyLabelResponse>> CreateBookCopyLabel(
@@ -162,7 +163,7 @@ public class BookCopiesController(BookCopyService bookCopyService) : ControllerB
     }
 
     [HttpPut("{id:guid}/image")]
-    [Authorize(Roles = WriteRoles)]
+    [Permission(WriteRoles)]
     [ProducesResponseType<BookCopyDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -179,7 +180,7 @@ public class BookCopiesController(BookCopyService bookCopyService) : ControllerB
     }
 
     [HttpDelete("{id:guid}/image")]
-    [Authorize(Roles = WriteRoles)]
+    [Permission(WriteRoles)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteBookCopyImage(

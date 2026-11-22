@@ -58,10 +58,10 @@ export interface paths {
                     From?: string;
                     To?: string;
                     Search?: string;
-                    Page?: number | string;
-                    PageSize?: number | string;
-                    Limit?: number | string;
-                    Offset?: number | string;
+                    Page?: number;
+                    PageSize?: number;
+                    Limit?: number;
+                    Offset?: number;
                 };
                 header?: never;
                 path?: never;
@@ -555,8 +555,8 @@ export interface paths {
                     ConditionGrade?: components["schemas"]["ConditionGrade"];
                     Status?: components["schemas"]["BookCopyStatus"];
                     Availability?: components["schemas"]["BookChannelAvailability"];
-                    Page?: number | string;
-                    PageSize?: number | string;
+                    Page?: number;
+                    PageSize?: number;
                 };
                 header?: never;
                 path?: never;
@@ -1313,8 +1313,8 @@ export interface paths {
                 query?: {
                     Name?: string;
                     IsActive?: boolean;
-                    Page?: number | string;
-                    PageSize?: number | string;
+                    Page?: number;
+                    PageSize?: number;
                 };
                 header?: never;
                 path?: never;
@@ -1757,8 +1757,8 @@ export interface paths {
                     CategoryId?: string;
                     Author?: string;
                     IsActive?: boolean;
-                    Page?: number | string;
-                    PageSize?: number | string;
+                    Page?: number;
+                    PageSize?: number;
                 };
                 header?: never;
                 path?: never;
@@ -2207,8 +2207,8 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    Page?: number | string;
-                    PageSize?: number | string;
+                    Page?: number;
+                    PageSize?: number;
                     Status?: components["schemas"]["ApprovalStatus"];
                     Search?: string;
                 };
@@ -2407,8 +2407,8 @@ export interface paths {
                     Name?: string;
                     ParentId?: string;
                     IsActive?: boolean;
-                    Page?: number | string;
-                    PageSize?: number | string;
+                    Page?: number;
+                    PageSize?: number;
                 };
                 header?: never;
                 path?: never;
@@ -2777,8 +2777,8 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    Page?: number | string;
-                    PageSize?: number | string;
+                    Page?: number;
+                    PageSize?: number;
                     Status?: string;
                     From?: string;
                     To?: string;
@@ -2844,8 +2844,8 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    Page?: number | string;
-                    PageSize?: number | string;
+                    Page?: number;
+                    PageSize?: number;
                     Status?: string;
                     From?: string;
                     To?: string;
@@ -2911,8 +2911,8 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    Page?: number | string;
-                    PageSize?: number | string;
+                    Page?: number;
+                    PageSize?: number;
                     Status?: string;
                     From?: string;
                     To?: string;
@@ -2978,8 +2978,8 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    Page?: number | string;
-                    PageSize?: number | string;
+                    Page?: number;
+                    PageSize?: number;
                     Status?: string;
                     From?: string;
                     To?: string;
@@ -3045,8 +3045,8 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    Page?: number | string;
-                    PageSize?: number | string;
+                    Page?: number;
+                    PageSize?: number;
                     Search?: string;
                     TierId?: string;
                     TierName?: string;
@@ -3367,8 +3367,8 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    Page?: number | string;
-                    PageSize?: number | string;
+                    Page?: number;
+                    PageSize?: number;
                     Status?: components["schemas"]["ApprovalStatus"];
                     Search?: string;
                 };
@@ -3564,8 +3564,8 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    Page?: number | string;
-                    PageSize?: number | string;
+                    Page?: number;
+                    PageSize?: number;
                     Status?: components["schemas"]["ApprovalStatus"];
                     Search?: string;
                 };
@@ -3764,10 +3764,10 @@ export interface paths {
                     Isbn?: string;
                     TitleId?: string;
                     Publisher?: string;
-                    PublishYear?: number | string;
+                    PublishYear?: number;
                     IsActive?: boolean;
-                    Page?: number | string;
-                    PageSize?: number | string;
+                    Page?: number;
+                    PageSize?: number;
                 };
                 header?: never;
                 path?: never;
@@ -4447,8 +4447,8 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    Page?: number | string;
-                    PageSize?: number | string;
+                    Page?: number;
+                    PageSize?: number;
                     Status?: components["schemas"]["InventoryAdjustmentStatus"];
                     RequestedStatus?: components["schemas"]["BookCopyStatus"];
                     VarianceType?: components["schemas"]["InventoryVarianceType"];
@@ -5009,8 +5009,8 @@ export interface paths {
                     Source?: string;
                     Method?: components["schemas"]["PaymentMethod"];
                     Search?: string;
-                    Page?: number | string;
-                    PageSize?: number | string;
+                    Page?: number;
+                    PageSize?: number;
                 };
                 header?: never;
                 path?: never;
@@ -5054,8 +5054,8 @@ export interface paths {
                     Source?: string;
                     Method?: components["schemas"]["PaymentMethod"];
                     Search?: string;
-                    Page?: number | string;
-                    PageSize?: number | string;
+                    Page?: number;
+                    PageSize?: number;
                 };
                 header?: never;
                 path?: never;
@@ -5098,8 +5098,8 @@ export interface paths {
                     To?: string;
                     Status?: string;
                     Search?: string;
-                    Page?: number | string;
-                    PageSize?: number | string;
+                    Page?: number;
+                    PageSize?: number;
                 };
                 header?: never;
                 path?: never;
@@ -5139,8 +5139,8 @@ export interface paths {
             parameters: {
                 query?: {
                     PeriodType?: string;
-                    Year?: number | string;
-                    PeriodValue?: number | string;
+                    Year?: number;
+                    PeriodValue?: number;
                 };
                 header?: never;
                 path?: never;
@@ -5173,6 +5173,393 @@ export interface paths {
             };
         };
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/my-permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": string[];
+                        "application/json": string[];
+                        "text/json": string[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/history/{group}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    group: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SettingsHistoryItemDto"][];
+                        "application/json": components["schemas"]["SettingsHistoryItemDto"][];
+                        "text/json": components["schemas"]["SettingsHistoryItemDto"][];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/rental-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RentalPolicyConfigDto"];
+                        "application/json": components["schemas"]["RentalPolicyConfigDto"];
+                        "text/json": components["schemas"]["RentalPolicyConfigDto"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateRentalPolicyRequest"];
+                    "text/json": components["schemas"]["UpdateRentalPolicyRequest"];
+                    "application/*+json": components["schemas"]["UpdateRentalPolicyRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RentalPolicyConfigDto"];
+                        "application/json": components["schemas"]["RentalPolicyConfigDto"];
+                        "text/json": components["schemas"]["RentalPolicyConfigDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/membership-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MembershipPolicyConfigDto"];
+                        "application/json": components["schemas"]["MembershipPolicyConfigDto"];
+                        "text/json": components["schemas"]["MembershipPolicyConfigDto"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateMembershipPolicyRequest"];
+                    "text/json": components["schemas"]["UpdateMembershipPolicyRequest"];
+                    "application/*+json": components["schemas"]["UpdateMembershipPolicyRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MembershipPolicyConfigDto"];
+                        "application/json": components["schemas"]["MembershipPolicyConfigDto"];
+                        "text/json": components["schemas"]["MembershipPolicyConfigDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/rbac-matrix": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RbacMatrixConfigDto"];
+                        "application/json": components["schemas"]["RbacMatrixConfigDto"];
+                        "text/json": components["schemas"]["RbacMatrixConfigDto"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateRbacMatrixRequest"];
+                    "text/json": components["schemas"]["UpdateRbacMatrixRequest"];
+                    "application/*+json": components["schemas"]["UpdateRbacMatrixRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RbacMatrixConfigDto"];
+                        "application/json": components["schemas"]["RbacMatrixConfigDto"];
+                        "text/json": components["schemas"]["RbacMatrixConfigDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/integrations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["IntegrationsConfigDto"];
+                        "application/json": components["schemas"]["IntegrationsConfigDto"];
+                        "text/json": components["schemas"]["IntegrationsConfigDto"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateIntegrationsRequest"];
+                    "text/json": components["schemas"]["UpdateIntegrationsRequest"];
+                    "application/*+json": components["schemas"]["UpdateIntegrationsRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["IntegrationsConfigDto"];
+                        "application/json": components["schemas"]["IntegrationsConfigDto"];
+                        "text/json": components["schemas"]["IntegrationsConfigDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         post?: never;
         delete?: never;
         options?: never;
@@ -5264,21 +5651,21 @@ export interface components {
         };
         ApprovalsOverviewStatsResponse: {
             /** Format: int32 */
-            totalCount: number | string;
+            totalCount: number;
             /** Format: int32 */
-            pendingCount: number | string;
+            pendingCount: number;
             /** Format: int32 */
-            approvedCount: number | string;
+            approvedCount: number;
             /** Format: int32 */
-            rejectedCount: number | string;
+            rejectedCount: number;
             /** Format: int32 */
-            buybackPending: number | string;
+            buybackPending: number;
             /** Format: int32 */
-            damagePenaltyPending: number | string;
+            damagePenaltyPending: number;
             /** Format: int32 */
-            inventoryAdjustmentPending: number | string;
+            inventoryAdjustmentPending: number;
             /** Format: int32 */
-            disposalReversalPending: number | string;
+            disposalReversalPending: number;
         };
         /** @enum {unknown} */
         ApprovalStatus: "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "COMPLETED" | "REJECTED" | "CANCELLED";
@@ -5325,7 +5712,7 @@ export interface components {
             id: string;
             receiptCode: string;
             /** Format: int32 */
-            remainingQuantity: number | string;
+            remainingQuantity: number;
             conditionGrade: components["schemas"]["ConditionGrade"];
             availability: components["schemas"]["BookChannelAvailability"];
         };
@@ -5343,9 +5730,9 @@ export interface components {
             format: null | string;
             publisher: null | string;
             /** Format: int16 */
-            publishYear: null | number | string;
+            publishYear: null | number;
             /** Format: int64 */
-            coverPrice: number | string;
+            coverPrice: number;
             editionImageUrl: null | string;
             editionIsActive: boolean;
             /** Format: uuid */
@@ -5364,11 +5751,11 @@ export interface components {
             status: components["schemas"]["BookCopyStatus"];
             availability: components["schemas"]["BookChannelAvailability"];
             /** Format: int64 */
-            costPrice: null | number | string;
+            costPrice: null | number;
             /** Format: int64 */
-            sellingPrice: null | number | string;
+            sellingPrice: null | number;
             /** Format: int64 */
-            rentalRate: null | number | string;
+            rentalRate: null | number;
             shelfCode: null | string;
             /** Format: date-time */
             createdAt: string;
@@ -5406,19 +5793,19 @@ export interface components {
         };
         BookCopyHistoryMetadata: {
             /** Format: int64 */
-            costPrice?: null | number | string;
+            costPrice?: null | number;
             supplierName?: null | string;
             customerName?: null | string;
             /** Format: int64 */
-            depositAmount?: null | number | string;
+            depositAmount?: null | number;
             copyCondition?: null | components["schemas"]["CopyCondition"];
             /** Format: int64 */
-            refundAmount?: null | number | string;
+            refundAmount?: null | number;
             /** Format: int64 */
-            additionalAmountDue?: null | number | string;
+            additionalAmountDue?: null | number;
             shelfCode?: null | string;
             /** Format: int64 */
-            sellingPrice?: null | number | string;
+            sellingPrice?: null | number;
             returnStatus?: null | string;
         };
         BookCopyLabelRequest: {
@@ -5435,17 +5822,17 @@ export interface components {
             author: null | string;
             publisher: null | string;
             /** Format: int16 */
-            publishYear: null | number | string;
+            publishYear: null | number;
             conditionGrade: components["schemas"]["ConditionGrade"];
             availability: components["schemas"]["BookChannelAvailability"];
             /** Format: int64 */
-            sellingPrice: null | number | string;
+            sellingPrice: null | number;
             /** Format: int64 */
-            rentalRate: null | number | string;
+            rentalRate: null | number;
             shelfCode: null | string;
             isReprint: boolean;
             /** Format: int32 */
-            printCount: number | string;
+            printCount: number;
             /** Format: date-time */
             generatedAt: string;
         };
@@ -5460,7 +5847,7 @@ export interface components {
             printingStatement: null | string;
             publisher: null | string;
             /** Format: int16 */
-            publishYear: null | number | string;
+            publishYear: null | number;
             /** Format: uuid */
             titleId: string;
             titleName: string;
@@ -5476,9 +5863,9 @@ export interface components {
             status: components["schemas"]["BookCopyStatus"];
             availability: components["schemas"]["BookChannelAvailability"];
             /** Format: int64 */
-            sellingPrice: null | number | string;
+            sellingPrice: null | number;
             /** Format: int64 */
-            rentalRate: null | number | string;
+            rentalRate: null | number;
             shelfCode: null | string;
             /** Format: date-time */
             createdAt: string;
@@ -5486,6 +5873,12 @@ export interface components {
         };
         /** @enum {unknown} */
         BookCopyStatus: "PENDING_RECEIPT" | "AVAILABLE" | "RENTED" | "SOLD" | "INVENTORY_LOCKED" | "DAMAGED" | "LOST" | "DISPOSED" | "DISCONTINUED";
+        BookMetadataIntegrationDto: {
+            priorityService: string;
+            googleBooksApiKey: string;
+            openLibraryEndpoint: string;
+            status: string;
+        };
         BookSeriesDetailResponse: {
             /** Format: uuid */
             id: string;
@@ -5506,7 +5899,7 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
             /** Format: int32 */
-            titlesCount: number | string;
+            titlesCount: number;
             imageUrl: null | string;
         };
         BookSeriesTitleSummary: {
@@ -5516,7 +5909,7 @@ export interface components {
             volumeLabel: null | string;
             author: null | string;
             /** Format: int16 */
-            originalPublishYear: null | number | string;
+            originalPublishYear: null | number;
             isActive: boolean;
             imageUrl: null | string;
         };
@@ -5540,9 +5933,9 @@ export interface components {
             customerPhone: null | string;
             status: components["schemas"]["ApprovalStatus"];
             /** Format: int64 */
-            totalAmount: number | string;
+            totalAmount: number;
             /** Format: int32 */
-            itemCount: number | string;
+            itemCount: number;
             titleSummary: string;
             reason: null | string;
             /** Format: uuid */
@@ -5568,9 +5961,9 @@ export interface components {
             customerPhone: null | string;
             status: components["schemas"]["ApprovalStatus"];
             /** Format: int64 */
-            totalAmount: number | string;
+            totalAmount: number;
             /** Format: int32 */
-            itemCount: number | string;
+            itemCount: number;
             titleSummary: string;
             reason: null | string;
             /** Format: uuid */
@@ -5593,11 +5986,11 @@ export interface components {
             isbn: null | string;
             conditionGrade: null | components["schemas"]["ConditionGrade"];
             /** Format: int64 */
-            coverPrice: number | string;
+            coverPrice: number;
             /** Format: int64 */
-            proposedPrice: number | string;
+            proposedPrice: number;
             /** Format: int32 */
-            quantity: number | string;
+            quantity: number;
             imageUrl: null | string;
         };
         BuybackLineSummary: {
@@ -5605,9 +5998,9 @@ export interface components {
             volumeLabel: null | string;
             conditionGrade: string;
             /** Format: int32 */
-            quantity: number | string;
+            quantity: number;
             /** Format: int64 */
-            unitCost: number | string;
+            unitCost: number;
         };
         CancelInventoryAdjustmentRequestDto: {
             reason?: null | string;
@@ -5640,12 +6033,12 @@ export interface components {
             uploadIntentId: string;
             publicId: string;
             /** Format: int64 */
-            version: number | string;
+            version: number;
             signature: string;
             assetId: null | string;
             format: null | string;
             /** Format: int64 */
-            bytes: null | number | string;
+            bytes: null | number;
         };
         /** @enum {unknown} */
         ConditionGrade: "A" | "B" | "C" | "D";
@@ -5660,9 +6053,9 @@ export interface components {
             availability?: null | components["schemas"]["BookChannelAvailability"];
             conditionNote?: null | string;
             /** Format: int64 */
-            sellingPrice?: null | number | string;
+            sellingPrice?: null | number;
             /** Format: int64 */
-            rentalRate?: null | number | string;
+            rentalRate?: null | number;
             shelfCode?: null | string;
             reason?: null | string;
             imageUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
@@ -5678,7 +6071,7 @@ export interface components {
             /** Format: uuid */
             customerId: null | string;
             /** Format: int64 */
-            totalAmount: number | string;
+            totalAmount: number;
             reason: string;
             lines: components["schemas"]["CreateBuybackLineDto"][];
             imageUrls?: null | string[];
@@ -5688,14 +6081,14 @@ export interface components {
             editionId: string;
             conditionGrade: components["schemas"]["ConditionGrade"];
             /** Format: int64 */
-            proposedPrice: number | string;
+            proposedPrice: number;
             /** Format: int64 */
-            sellingPriceSuggestion?: null | number | string;
+            sellingPriceSuggestion?: null | number;
             /**
              * Format: int32
              * @default 1
              */
-            quantity: number | string;
+            quantity: number;
         };
         CreateCategoryRequest: {
             name: string;
@@ -5716,9 +6109,9 @@ export interface components {
             rentalLineId: string;
             damageDescription: string;
             /** Format: double */
-            penaltyPercentage: number | string;
+            penaltyPercentage: number;
             /** Format: int64 */
-            penaltyAmount: number | string;
+            penaltyAmount: number;
             reason: string;
             imageUrls?: null | string[];
         };
@@ -5728,7 +6121,7 @@ export interface components {
             referenceId: null | string;
             referenceCode: string;
             /** Format: int64 */
-            amount: number | string;
+            amount: number;
             reason: string;
             details?: null | string;
         };
@@ -5741,22 +6134,22 @@ export interface components {
             format?: null | string;
             publisher?: null | string;
             /** Format: int16 */
-            publishYear?: null | number | string;
+            publishYear?: null | number;
             /**
              * Format: int64
              * @default 0
              */
-            coverPrice: number | string;
+            coverPrice: number;
             /**
              * Format: int32
              * @default 0
              */
-            minStockSale: number | string;
+            minStockSale: number;
             /**
              * Format: int32
              * @default 0
              */
-            minStockRental: number | string;
+            minStockRental: number;
             metadataSource?: null | components["schemas"]["MetadataSource"];
             /** Format: uuid */
             metadataConfirmedBy?: null | string;
@@ -5786,7 +6179,7 @@ export interface components {
             categoryId?: null | string;
             author?: null | string;
             /** Format: int16 */
-            originalPublishYear?: null | number | string;
+            originalPublishYear?: null | number;
             description?: null | string;
             /** @default true */
             isActive: boolean;
@@ -5800,7 +6193,7 @@ export interface components {
             /** Format: date-time */
             occurredAt: string;
             /** Format: int64 */
-            totalAmount: number | string;
+            totalAmount: number;
             isPaidOut: boolean;
             needsApproval: boolean;
             lines: components["schemas"]["BuybackLineSummary"][];
@@ -5817,9 +6210,9 @@ export interface components {
             tierId?: string;
             tierName?: string;
             /** Format: int16 */
-            tierRank?: number | string;
+            tierRank?: number;
             /** Format: int64 */
-            eligibleSpend?: number | string;
+            eligibleSpend?: number;
             isFlagged?: boolean;
             flagReason?: null | string;
             /** Format: date-time */
@@ -5832,39 +6225,39 @@ export interface components {
         };
         CustomerHistorySummaryResponse: {
             /** Format: int32 */
-            rentalCount: number | string;
+            rentalCount: number;
             /** Format: int32 */
-            saleCount: number | string;
+            saleCount: number;
             /** Format: int32 */
-            buybackCount: number | string;
+            buybackCount: number;
             /** Format: int32 */
-            violationCount: number | string;
+            violationCount: number;
             /** Format: int32 */
-            heldBookCount: number | string;
+            heldBookCount: number;
             /** Format: int32 */
-            activeSlipCount: number | string;
+            activeSlipCount: number;
             /** Format: int64 */
-            depositHeld: number | string;
+            depositHeld: number;
             /** Format: int32 */
-            lateReturnCount: number | string;
+            lateReturnCount: number;
             /** Format: int32 */
-            openOverdueCount: number | string;
+            openOverdueCount: number;
             /** Format: int64 */
-            outstandingAmount: number | string;
+            outstandingAmount: number;
             blocksNewRental: boolean;
             /** Format: int64 */
-            salesSpend: number | string;
+            salesSpend: number;
             /** Format: int64 */
-            salesDiscountTotal: number | string;
+            salesDiscountTotal: number;
             /** Format: int64 */
-            rentalSpend: number | string;
+            rentalSpend: number;
             /** Format: int64 */
-            computedEligibleSpend: number | string;
+            computedEligibleSpend: number;
             /** Format: int64 */
-            storedEligibleSpend: number | string;
+            storedEligibleSpend: number;
             eligibleSpendMismatch: boolean;
             /** Format: int64 */
-            buybackPaidTotal: number | string;
+            buybackPaidTotal: number;
             latestSale: null | components["schemas"]["CustomerLatestDocument"];
             latestBuyback: null | components["schemas"]["CustomerLatestDocument"];
         };
@@ -5875,7 +6268,7 @@ export interface components {
             /** Format: date-time */
             at: string;
             /** Format: int64 */
-            amount: number | string;
+            amount: number;
         };
         CustomerRentalHistoryItem: {
             /** Format: uuid */
@@ -5889,18 +6282,18 @@ export interface components {
             /** Format: date-time */
             dueAt: null | string;
             /** Format: int32 */
-            extensionCount: number | string;
+            extensionCount: number;
             /** Format: int32 */
-            lateDays: number | string;
+            lateDays: number;
             isOverdue: boolean;
             /** Format: int64 */
-            depositTotal: number | string;
+            depositTotal: number;
             /** Format: int64 */
-            refundTotal: number | string;
+            refundTotal: number;
             /** Format: int64 */
-            outstandingAmount: number | string;
+            outstandingAmount: number;
             /** Format: int64 */
-            countedSpend: number | string;
+            countedSpend: number;
             /** Format: uuid */
             returnId: null | string;
             returnNo: null | string;
@@ -5917,26 +6310,26 @@ export interface components {
             /** Format: date-time */
             occurredAt: string;
             /** Format: int64 */
-            subtotal: number | string;
+            subtotal: number;
             /** Format: int64 */
-            discountTotal: number | string;
+            discountTotal: number;
             /** Format: int64 */
-            totalPayable: number | string;
+            totalPayable: number;
             /** Format: int64 */
-            countedAmount: number | string;
+            countedAmount: number;
             hasReversedLines: boolean;
             isFullyReversed: boolean;
             lines: components["schemas"]["SaleLineSummary"][];
         };
         CustomerStatsDto: {
             /** Format: int32 */
-            totalCount?: number | string;
+            totalCount?: number;
             /** Format: int32 */
-            silverCount?: number | string;
+            silverCount?: number;
             /** Format: int32 */
-            goldCount?: number | string;
+            goldCount?: number;
             /** Format: int32 */
-            flaggedCount?: number | string;
+            flaggedCount?: number;
         };
         CustomerViolationItem: {
             /** Format: uuid */
@@ -5958,15 +6351,15 @@ export interface components {
             dueAt: string;
             result: string;
             /** Format: int32 */
-            lateDays: number | string;
+            lateDays: number;
             /** Format: int64 */
-            latePenalty: number | string;
+            latePenalty: number;
             /** Format: int64 */
-            damagePenalty: number | string;
+            damagePenalty: number;
             /** Format: int64 */
-            lostRetainedAmount: number | string;
+            lostRetainedAmount: number;
             /** Format: int64 */
-            outstandingAmount: number | string;
+            outstandingAmount: number;
         };
         DamagePenaltyApprovalDetailResponse: {
             /** Format: uuid */
@@ -5982,14 +6375,14 @@ export interface components {
             customerPhone: null | string;
             customerTier: null | string;
             /** Format: int64 */
-            depositAmount: number | string;
+            depositAmount: number;
             damageDescription: string;
             /** Format: double */
-            penaltyPercentage: number | string;
+            penaltyPercentage: number;
             /** Format: int64 */
-            penaltyAmount: number | string;
+            penaltyAmount: number;
             /** Format: int64 */
-            refundAmount: number | string;
+            refundAmount: number;
             status: components["schemas"]["ApprovalStatus"];
             /** Format: uuid */
             requestedBy: string;
@@ -6019,14 +6412,14 @@ export interface components {
             customerPhone: null | string;
             customerTier: null | string;
             /** Format: int64 */
-            depositAmount: number | string;
+            depositAmount: number;
             damageDescription: string;
             /** Format: double */
-            penaltyPercentage: number | string;
+            penaltyPercentage: number;
             /** Format: int64 */
-            penaltyAmount: number | string;
+            penaltyAmount: number;
             /** Format: int64 */
-            refundAmount: number | string;
+            refundAmount: number;
             status: components["schemas"]["ApprovalStatus"];
             /** Format: uuid */
             requestedBy: string;
@@ -6040,33 +6433,40 @@ export interface components {
             approvedAt: null | string;
             rejectReason: null | string;
         };
+        DamagePenaltyConfigDto: {
+            conditionName: string;
+            /** Format: double */
+            penaltyPct: number;
+            basis: string;
+            settlementRule: string;
+        };
         DepositReconciliationReportResponse: {
             /** Format: date */
             fromDate: string;
             /** Format: date */
             toDate: string;
             /** Format: int64 */
-            openingDepositBalance: number | string;
+            openingDepositBalance: number;
             /** Format: int64 */
-            collectedInPeriod: number | string;
+            collectedInPeriod: number;
             /** Format: int64 */
-            refundedInPeriod: number | string;
+            refundedInPeriod: number;
             /** Format: int64 */
-            deductedFeeInPeriod: number | string;
+            deductedFeeInPeriod: number;
             /** Format: int64 */
-            lostRetainedInPeriod: number | string;
+            lostRetainedInPeriod: number;
             /** Format: int64 */
-            deductedAndLostTotalInPeriod: number | string;
+            deductedAndLostTotalInPeriod: number;
             /** Format: int64 */
-            closingDepositBalance: number | string;
+            closingDepositBalance: number;
             /** Format: int32 */
-            totalActiveObligationSlips: number | string;
+            totalActiveObligationSlips: number;
             /** Format: int64 */
-            cashObligationAmount: number | string;
+            cashObligationAmount: number;
             /** Format: int64 */
-            bankObligationAmount: number | string;
+            bankObligationAmount: number;
             /** Format: int64 */
-            suggestedCashActualBalance: number | string;
+            suggestedCashActualBalance: number;
             alertBannerMessage: null | string;
             slips: components["schemas"]["PagedResultOfDepositReconciliationSlipRowDto"];
         };
@@ -6079,13 +6479,13 @@ export interface components {
             customerName: string;
             customerPhone: string;
             /** Format: int64 */
-            depositCollected: number | string;
+            depositCollected: number;
             /** Format: int64 */
-            settledDeduction: number | string;
+            settledDeduction: number;
             /** Format: int64 */
-            refundedAmount: number | string;
+            refundedAmount: number;
             /** Format: int64 */
-            currentlyHeld: number | string;
+            currentlyHeld: number;
             statusCode: string;
             statusLabel: string;
             /** Format: date-time */
@@ -6098,7 +6498,7 @@ export interface components {
             referenceCode: string;
             titleName: string;
             /** Format: int64 */
-            amount: number | string;
+            amount: number;
             reason: string;
             status: components["schemas"]["ApprovalStatus"];
             /** Format: uuid */
@@ -6122,7 +6522,7 @@ export interface components {
             referenceCode: string;
             titleName: string;
             /** Format: int64 */
-            amount: number | string;
+            amount: number;
             reason: string;
             status: components["schemas"]["ApprovalStatus"];
             /** Format: uuid */
@@ -6145,9 +6545,9 @@ export interface components {
             status: components["schemas"]["BookCopyStatus"];
             availability: components["schemas"]["BookChannelAvailability"];
             /** Format: int64 */
-            sellingPrice: null | number | string;
+            sellingPrice: null | number;
             /** Format: int64 */
-            rentalRate: null | number | string;
+            rentalRate: null | number;
             shelfCode: null | string;
             /** Format: date-time */
             createdAt: string;
@@ -6164,13 +6564,13 @@ export interface components {
             format: null | string;
             publisher: null | string;
             /** Format: int16 */
-            publishYear: null | number | string;
+            publishYear: null | number;
             /** Format: int64 */
-            coverPrice: number | string;
+            coverPrice: number;
             /** Format: int32 */
-            minStockSale: number | string;
+            minStockSale: number;
             /** Format: int32 */
-            minStockRental: number | string;
+            minStockRental: number;
             imageUrl: null | string;
             metadataSource: null | components["schemas"]["MetadataSource"];
             /** Format: uuid */
@@ -6193,13 +6593,13 @@ export interface components {
             format: null | string;
             publisher: null | string;
             /** Format: int16 */
-            publishYear: null | number | string;
+            publishYear: null | number;
             /** Format: int64 */
-            coverPrice: number | string;
+            coverPrice: number;
             /** Format: int32 */
-            minStockSale: number | string;
+            minStockSale: number;
             /** Format: int32 */
-            minStockRental: number | string;
+            minStockRental: number;
             imageUrl: null | string;
             metadataSource: null | components["schemas"]["MetadataSource"];
             /** Format: uuid */
@@ -6209,22 +6609,32 @@ export interface components {
             metadataConfirmedAt: null | string;
             isActive: boolean;
             /** Format: int32 */
-            copiesCount: number | string;
+            copiesCount: number;
         };
         EmailTestResponse: {
             status: string;
         };
         ExpenseBreakdownDto: {
             /** Format: int64 */
-            customerBuyback: number | string;
+            customerBuyback: number;
             /** Format: int64 */
-            supplierImport: number | string;
+            supplierImport: number;
             /** Format: int64 */
-            approvedPayroll: number | string;
+            approvedPayroll: number;
             payrollPeriodCode: string;
         };
         ForgotPasswordRequest: {
             email: string;
+        };
+        IntegrationsConfigDto: {
+            vietQr: components["schemas"]["VietQrIntegrationDto"];
+            zaloOa: components["schemas"]["ZaloOaIntegrationDto"];
+            bookMetadata: components["schemas"]["BookMetadataIntegrationDto"];
+            smtp: components["schemas"]["SmtpIntegrationDto"];
+            /** Format: date-time */
+            lastUpdatedAt: null | string;
+            lastUpdatedByName: null | string;
+            changeReason: null | string;
         };
         InventoryAdjustmentAuditItem: {
             /** Format: uuid */
@@ -6318,17 +6728,17 @@ export interface components {
         };
         InventoryAdjustmentStatsResponse: {
             /** Format: int32 */
-            pendingCount: number | string;
+            pendingCount: number;
             /** Format: int32 */
-            approvedCount: number | string;
+            approvedCount: number;
             /** Format: int32 */
-            appliedCount: number | string;
+            appliedCount: number;
             /** Format: int32 */
-            rejectedCount: number | string;
+            rejectedCount: number;
             /** Format: int32 */
-            cancelledCount: number | string;
+            cancelledCount: number;
             /** Format: int32 */
-            totalCount: number | string;
+            totalCount: number;
         };
         /** @enum {unknown} */
         InventoryAdjustmentStatus: "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "APPLIED" | "CANCELLED";
@@ -6345,36 +6755,62 @@ export interface components {
             titleId: string;
             displayTitle: string;
             /** Format: int32 */
-            saleAvailable: number | string;
+            saleAvailable: number;
             /** Format: int32 */
-            minStockSale: number | string;
+            minStockSale: number;
             /** Format: int32 */
-            rentalAvailable: number | string;
+            rentalAvailable: number;
             /** Format: int32 */
-            minStockRental: number | string;
+            minStockRental: number;
             /** Format: int32 */
-            totalAvailable: number | string;
+            totalAvailable: number;
             /** Format: int32 */
-            totalMinRequired: number | string;
+            totalMinRequired: number;
             /** Format: int32 */
-            suggestedReplenishQty: number | string;
+            suggestedReplenishQty: number;
+        };
+        MembershipPolicyConfigDto: {
+            tiers: components["schemas"]["MembershipTierItemDto"][];
+            /** Format: date-time */
+            lastUpdatedAt: null | string;
+            lastUpdatedByName: null | string;
+            changeReason: null | string;
+        };
+        MembershipTierItemDto: {
+            name: string;
+            displayName: string;
+            /** Format: int16 */
+            rankOrder: number;
+            /** Format: int64 */
+            minSpend: number;
+            /** Format: int64 */
+            maxSpend: null | number;
+            /** Format: int16 */
+            maxBooks: number;
+            /** Format: int16 */
+            maxRentalDays: number;
+            /** Format: double */
+            rentDiscountPct: number;
+            /** Format: double */
+            saleDiscountPct: number;
+            description: string;
         };
         /** @enum {unknown} */
         MembershipTierName: "REGULAR" | "SILVER" | "GOLD";
         MembershipTierPolicyResponse: {
             name: components["schemas"]["MembershipTierName"];
             /** Format: int64 */
-            minEligibleSpend: number | string;
+            minEligibleSpend: number;
             /** Format: int64 */
-            nextTierMinEligibleSpend: null | number | string;
+            nextTierMinEligibleSpend: null | number;
             /** Format: int16 */
-            maxBooks: number | string;
+            maxBooks: number;
             /** Format: int16 */
-            maxRentalDays: number | string;
+            maxRentalDays: number;
             /** Format: double */
-            saleDiscountPct: number | string;
+            saleDiscountPct: number;
             /** Format: double */
-            rentDiscountPct: number | string;
+            rentDiscountPct: number;
         };
         /** @enum {unknown} */
         MetadataSource: "MANUAL" | "GOOGLE_BOOKS" | "OPEN_LIBRARY" | null;
@@ -6389,25 +6825,25 @@ export interface components {
             /** Format: date-time */
             earliestDueAt: string;
             /** Format: int32 */
-            daysOverdue: number | string;
+            daysOverdue: number;
             /** Format: int32 */
-            activeCopyCount: number | string;
+            activeCopyCount: number;
         };
         OverviewAttentionDto: {
             /** Format: int32 */
-            overdueSlipCount: number | string;
+            overdueSlipCount: number;
             /** Format: int32 */
-            overdueOver7DaysCustomerCount: number | string;
+            overdueOver7DaysCustomerCount: number;
             /** Format: int32 */
-            lowStockEditionCount: number | string;
+            lowStockEditionCount: number;
             /** Format: int32 */
-            outOfStockEditionCount: number | string;
+            outOfStockEditionCount: number;
             /** Format: int32 */
-            pendingReceiptCopyCount: number | string;
+            pendingReceiptCopyCount: number;
             /** Format: int32 */
-            vietQrPendingOrFailedCount: number | string;
+            vietQrPendingOrFailedCount: number;
             /** Format: double */
-            vietQrTargetPct: number | string;
+            vietQrTargetPct: number;
         };
         OverviewReportResponse: {
             /** Format: date */
@@ -6418,29 +6854,29 @@ export interface components {
             isCashierScoped: boolean;
             storeScopeLabel: string;
             /** Format: int64 */
-            totalSettledRevenueToday: number | string;
+            totalSettledRevenueToday: number;
             /** Format: int64 */
-            salesRevenueToday: number | string;
+            salesRevenueToday: number;
             /** Format: int64 */
-            rentalRevenueToday: number | string;
+            rentalRevenueToday: number;
             /** Format: int64 */
-            cashDrawerBalance: number | string;
+            cashDrawerBalance: number;
             /** Format: int32 */
-            activeCashSessionCount: number | string;
+            activeCashSessionCount: number;
             /** Format: int64 */
-            heldDepositsBalance: number | string;
+            heldDepositsBalance: number;
             /** Format: int32 */
-            circulatingRentalSlipCount: number | string;
+            circulatingRentalSlipCount: number;
             /** Format: int32 */
-            overdueRentalSlipCount: number | string;
+            overdueRentalSlipCount: number;
             /** Format: double */
-            vietQrSuccessRatePct: number | string;
+            vietQrSuccessRatePct: number;
             /** Format: int32 */
-            vietQrSucceededCount: number | string;
+            vietQrSucceededCount: number;
             /** Format: int32 */
-            vietQrTotalCount: number | string;
+            vietQrTotalCount: number;
             /** Format: int64 */
-            trendTotalAmount: number | string;
+            trendTotalAmount: number;
             trendPoints: components["schemas"]["OverviewTrendPointDto"][];
             revenueStructure: components["schemas"]["OverviewRevenueStructureDto"];
             topRentedTitles: components["schemas"]["TopRentedTitleDto"][];
@@ -6450,266 +6886,266 @@ export interface components {
         };
         OverviewRevenueStructureDto: {
             /** Format: int64 */
-            salesAmount: number | string;
+            salesAmount: number;
             /** Format: int64 */
-            rentalFeeAmount: number | string;
+            rentalFeeAmount: number;
             /** Format: int64 */
-            penaltyAmount: number | string;
+            penaltyAmount: number;
             /** Format: int64 */
-            lostBookAmount: number | string;
+            lostBookAmount: number;
             /** Format: int64 */
-            totalAmount: number | string;
+            totalAmount: number;
             /** Format: double */
-            salesPct: number | string;
+            salesPct: number;
             /** Format: double */
-            rentalFeePct: number | string;
+            rentalFeePct: number;
             /** Format: double */
-            penaltyPct: number | string;
+            penaltyPct: number;
             /** Format: double */
-            lostBookPct: number | string;
+            lostBookPct: number;
         };
         OverviewTrendPointDto: {
             /** Format: date */
             date: string;
             label: string;
             /** Format: int64 */
-            salesAmount: number | string;
+            salesAmount: number;
             /** Format: int64 */
-            rentalAndPenaltyAmount: number | string;
+            rentalAndPenaltyAmount: number;
             /** Format: int64 */
-            totalAmount: number | string;
+            totalAmount: number;
         };
         PagedResultOfAuditLogResponse: {
             items: components["schemas"]["AuditLogResponse"][];
             /** Format: int32 */
-            totalCount: number | string;
+            totalCount: number;
             /** Format: int32 */
-            page: number | string;
+            page: number;
             /** Format: int32 */
-            pageSize: number | string;
+            pageSize: number;
             /** Format: int32 */
-            totalPages?: number | string;
+            totalPages?: number;
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
         PagedResultOfBookCopyResponse: {
             items: components["schemas"]["BookCopyResponse"][];
             /** Format: int32 */
-            totalCount: number | string;
+            totalCount: number;
             /** Format: int32 */
-            page: number | string;
+            page: number;
             /** Format: int32 */
-            pageSize: number | string;
+            pageSize: number;
             /** Format: int32 */
-            totalPages?: number | string;
+            totalPages?: number;
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
         PagedResultOfBookSeriesResponse: {
             items: components["schemas"]["BookSeriesResponse"][];
             /** Format: int32 */
-            totalCount: number | string;
+            totalCount: number;
             /** Format: int32 */
-            page: number | string;
+            page: number;
             /** Format: int32 */
-            pageSize: number | string;
+            pageSize: number;
             /** Format: int32 */
-            totalPages?: number | string;
+            totalPages?: number;
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
         PagedResultOfBuybackApprovalItemResponse: {
             items: components["schemas"]["BuybackApprovalItemResponse"][];
             /** Format: int32 */
-            totalCount: number | string;
+            totalCount: number;
             /** Format: int32 */
-            page: number | string;
+            page: number;
             /** Format: int32 */
-            pageSize: number | string;
+            pageSize: number;
             /** Format: int32 */
-            totalPages?: number | string;
+            totalPages?: number;
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
         PagedResultOfCategoryResponse: {
             items: components["schemas"]["CategoryResponse"][];
             /** Format: int32 */
-            totalCount: number | string;
+            totalCount: number;
             /** Format: int32 */
-            page: number | string;
+            page: number;
             /** Format: int32 */
-            pageSize: number | string;
+            pageSize: number;
             /** Format: int32 */
-            totalPages?: number | string;
+            totalPages?: number;
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
         PagedResultOfCustomerBuybackHistoryItem: {
             items: components["schemas"]["CustomerBuybackHistoryItem"][];
             /** Format: int32 */
-            totalCount: number | string;
+            totalCount: number;
             /** Format: int32 */
-            page: number | string;
+            page: number;
             /** Format: int32 */
-            pageSize: number | string;
+            pageSize: number;
             /** Format: int32 */
-            totalPages?: number | string;
+            totalPages?: number;
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
         PagedResultOfCustomerDto: {
             items: components["schemas"]["CustomerDto"][];
             /** Format: int32 */
-            totalCount: number | string;
+            totalCount: number;
             /** Format: int32 */
-            page: number | string;
+            page: number;
             /** Format: int32 */
-            pageSize: number | string;
+            pageSize: number;
             /** Format: int32 */
-            totalPages?: number | string;
+            totalPages?: number;
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
         PagedResultOfCustomerRentalHistoryItem: {
             items: components["schemas"]["CustomerRentalHistoryItem"][];
             /** Format: int32 */
-            totalCount: number | string;
+            totalCount: number;
             /** Format: int32 */
-            page: number | string;
+            page: number;
             /** Format: int32 */
-            pageSize: number | string;
+            pageSize: number;
             /** Format: int32 */
-            totalPages?: number | string;
+            totalPages?: number;
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
         PagedResultOfCustomerSaleHistoryItem: {
             items: components["schemas"]["CustomerSaleHistoryItem"][];
             /** Format: int32 */
-            totalCount: number | string;
+            totalCount: number;
             /** Format: int32 */
-            page: number | string;
+            page: number;
             /** Format: int32 */
-            pageSize: number | string;
+            pageSize: number;
             /** Format: int32 */
-            totalPages?: number | string;
+            totalPages?: number;
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
         PagedResultOfCustomerViolationItem: {
             items: components["schemas"]["CustomerViolationItem"][];
             /** Format: int32 */
-            totalCount: number | string;
+            totalCount: number;
             /** Format: int32 */
-            page: number | string;
+            page: number;
             /** Format: int32 */
-            pageSize: number | string;
+            pageSize: number;
             /** Format: int32 */
-            totalPages?: number | string;
+            totalPages?: number;
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
         PagedResultOfDamagePenaltyApprovalItemResponse: {
             items: components["schemas"]["DamagePenaltyApprovalItemResponse"][];
             /** Format: int32 */
-            totalCount: number | string;
+            totalCount: number;
             /** Format: int32 */
-            page: number | string;
+            page: number;
             /** Format: int32 */
-            pageSize: number | string;
+            pageSize: number;
             /** Format: int32 */
-            totalPages?: number | string;
+            totalPages?: number;
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
         PagedResultOfDepositReconciliationSlipRowDto: {
             items: components["schemas"]["DepositReconciliationSlipRowDto"][];
             /** Format: int32 */
-            totalCount: number | string;
+            totalCount: number;
             /** Format: int32 */
-            page: number | string;
+            page: number;
             /** Format: int32 */
-            pageSize: number | string;
+            pageSize: number;
             /** Format: int32 */
-            totalPages?: number | string;
+            totalPages?: number;
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
         PagedResultOfDisposalReversalApprovalItemResponse: {
             items: components["schemas"]["DisposalReversalApprovalItemResponse"][];
             /** Format: int32 */
-            totalCount: number | string;
+            totalCount: number;
             /** Format: int32 */
-            page: number | string;
+            page: number;
             /** Format: int32 */
-            pageSize: number | string;
+            pageSize: number;
             /** Format: int32 */
-            totalPages?: number | string;
+            totalPages?: number;
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
         PagedResultOfEditionResponse: {
             items: components["schemas"]["EditionResponse"][];
             /** Format: int32 */
-            totalCount: number | string;
+            totalCount: number;
             /** Format: int32 */
-            page: number | string;
+            page: number;
             /** Format: int32 */
-            pageSize: number | string;
+            pageSize: number;
             /** Format: int32 */
-            totalPages?: number | string;
+            totalPages?: number;
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
         PagedResultOfInventoryAdjustmentRequestResponse: {
             items: components["schemas"]["InventoryAdjustmentRequestResponse"][];
             /** Format: int32 */
-            totalCount: number | string;
+            totalCount: number;
             /** Format: int32 */
-            page: number | string;
+            page: number;
             /** Format: int32 */
-            pageSize: number | string;
+            pageSize: number;
             /** Format: int32 */
-            totalPages?: number | string;
+            totalPages?: number;
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
         PagedResultOfRevenueExpenseDocumentRowDto: {
             items: components["schemas"]["RevenueExpenseDocumentRowDto"][];
             /** Format: int32 */
-            totalCount: number | string;
+            totalCount: number;
             /** Format: int32 */
-            page: number | string;
+            page: number;
             /** Format: int32 */
-            pageSize: number | string;
+            pageSize: number;
             /** Format: int32 */
-            totalPages?: number | string;
+            totalPages?: number;
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
         PagedResultOfRevenueExpenseSourceRowDto: {
             items: components["schemas"]["RevenueExpenseSourceRowDto"][];
             /** Format: int32 */
-            totalCount: number | string;
+            totalCount: number;
             /** Format: int32 */
-            page: number | string;
+            page: number;
             /** Format: int32 */
-            pageSize: number | string;
+            pageSize: number;
             /** Format: int32 */
-            totalPages?: number | string;
+            totalPages?: number;
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
         PagedResultOfTitleResponse: {
             items: components["schemas"]["TitleResponse"][];
             /** Format: int32 */
-            totalCount: number | string;
+            totalCount: number;
             /** Format: int32 */
-            page: number | string;
+            page: number;
             /** Format: int32 */
-            pageSize: number | string;
+            pageSize: number;
             /** Format: int32 */
-            totalPages?: number | string;
+            totalPages?: number;
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
@@ -6719,9 +7155,26 @@ export interface components {
             type?: null | string;
             title?: null | string;
             /** Format: int32 */
-            status?: null | number | string;
+            status?: null | number;
             detail?: null | string;
             instance?: null | string;
+        };
+        RbacMatrixConfigDto: {
+            items: components["schemas"]["RbacMatrixItemDto"][];
+            /** Format: date-time */
+            lastUpdatedAt: null | string;
+            lastUpdatedByName: null | string;
+            changeReason: null | string;
+        };
+        RbacMatrixItemDto: {
+            permissionCode: string;
+            permissionName: string;
+            moduleCode: string;
+            moduleTitle: string;
+            cashierAllowed: boolean;
+            warehouseAllowed: boolean;
+            adminAllowed: boolean;
+            adminOnly: boolean;
         };
         RegisterRequest: {
             email: string;
@@ -6739,7 +7192,26 @@ export interface components {
             volumeLabel: null | string;
             status: string;
             /** Format: int64 */
-            depositAmount: number | string;
+            depositAmount: number;
+        };
+        RentalPolicyConfigDto: {
+            /** Format: double */
+            depositRatePct: number;
+            /** Format: int16 */
+            maxExtensions: number;
+            /** Format: int16 */
+            extensionDaysPerTime: number;
+            feeCollectionTiming: string;
+            /** Format: int16 */
+            gracePeriodHours: number;
+            /** Format: double */
+            latePenaltyRatePct: number;
+            damagePenalties: components["schemas"]["DamagePenaltyConfigDto"][];
+            policyVersion: string;
+            /** Format: date-time */
+            lastUpdatedAt: null | string;
+            lastUpdatedByName: null | string;
+            changeReason: null | string;
         };
         ResendVerificationRequest: {
             email: string;
@@ -6750,15 +7222,15 @@ export interface components {
         };
         RevenueBreakdownDto: {
             /** Format: int64 */
-            counterSales: number | string;
+            counterSales: number;
             /** Format: int64 */
-            lostBookRetained: number | string;
+            lostBookRetained: number;
             /** Format: int64 */
-            settledRentFees: number | string;
+            settledRentFees: number;
             /** Format: int64 */
-            settledExtensionFees: number | string;
+            settledExtensionFees: number;
             /** Format: int64 */
-            settledPenalties: number | string;
+            settledPenalties: number;
         };
         RevenueExpenseDocumentRowDto: {
             /** Format: uuid */
@@ -6770,7 +7242,7 @@ export interface components {
             sourceLabel: string;
             counterpartyName: string;
             /** Format: int64 */
-            amount: number | string;
+            amount: number;
             paymentMethodLabel: string;
             statusLabel: string;
         };
@@ -6781,11 +7253,11 @@ export interface components {
             toDate: string;
             storeScopeLabel: string;
             /** Format: int64 */
-            totalRevenue: number | string;
+            totalRevenue: number;
             /** Format: int64 */
-            totalExpense: number | string;
+            totalExpense: number;
             /** Format: int64 */
-            netOperatingDifference: number | string;
+            netOperatingDifference: number;
             revenueBreakdown: components["schemas"]["RevenueBreakdownDto"];
             expenseBreakdown: components["schemas"]["ExpenseBreakdownDto"];
             trendBuckets: components["schemas"]["RevenueExpenseTrendBucketDto"][];
@@ -6796,12 +7268,12 @@ export interface components {
             sourceLabel: string;
             codePattern: string;
             /** Format: int32 */
-            documentCount: number | string;
+            documentCount: number;
             quantityLabel: string;
             /** Format: int64 */
-            revenueAmount: null | number | string;
+            revenueAmount: null | number;
             /** Format: int64 */
-            expenseAmount: null | number | string;
+            expenseAmount: null | number;
             paymentChannelLabel: string;
             statusLabel: string;
         };
@@ -6812,9 +7284,9 @@ export interface components {
             /** Format: date */
             toDate: string;
             /** Format: int64 */
-            revenueAmount: number | string;
+            revenueAmount: number;
             /** Format: int64 */
-            expenseAmount: number | string;
+            expenseAmount: number;
         };
         /** @enum {unknown} */
         RoleName: "ADMIN" | "CASHIER" | "INVENTORY_MANAGER";
@@ -6827,22 +7299,46 @@ export interface components {
             titleName: string;
             volumeLabel: null | string;
             /** Format: int64 */
-            listPrice: number | string;
+            listPrice: number;
             /** Format: int64 */
-            finalPrice: number | string;
+            finalPrice: number;
             status: string;
         };
         SendTestEmailRequest: {
             recipientEmail: string;
+        };
+        SettingsHistoryItemDto: {
+            /** Format: uuid */
+            id: string;
+            group: string;
+            /** Format: uuid */
+            actorId: null | string;
+            actorName: null | string;
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: date-time */
+            effectiveAt: string;
+            reason: string;
+            beforeJson: null | string;
+            afterJson: string;
+        };
+        SmtpIntegrationDto: {
+            host: string;
+            /** Format: int32 */
+            port: number;
+            security: string;
+            senderEmail: string;
+            password: string;
+            status: string;
         };
         /** @enum {unknown} */
         StockReceiptSourceType: "SUPPLIER" | "CUSTOMER_BUYBACK";
         TaxDeclarationReportResponse: {
             periodType: string;
             /** Format: int32 */
-            year: number | string;
+            year: number;
             /** Format: int32 */
-            periodValue: number | string;
+            periodValue: number;
             /** Format: date */
             fromDate: string;
             /** Format: date */
@@ -6852,11 +7348,11 @@ export interface components {
             /** Format: date-time */
             generatedAtUtc: string;
             /** Format: int64 */
-            totalTaxableRevenue: number | string;
+            totalTaxableRevenue: number;
             /** Format: int64 */
-            totalEligibleExpense: number | string;
+            totalEligibleExpense: number;
             /** Format: int64 */
-            netDifference: number | string;
+            netDifference: number;
             hasFullSourceReconciliation: boolean;
             revenueItems: components["schemas"]["TaxRevenueItemDto"][];
             expenseItems: components["schemas"]["TaxExpenseItemDto"][];
@@ -6866,7 +7362,7 @@ export interface components {
             itemKey: string;
             title: string;
             /** Format: int64 */
-            amount: number | string;
+            amount: number;
             treatmentNote: string;
         };
         TaxExpenseItemDto: {
@@ -6875,9 +7371,9 @@ export interface components {
             requiredDocuments: string;
             sourceTrace: string;
             /** Format: int32 */
-            documentCount: number | string;
+            documentCount: number;
             /** Format: int64 */
-            amount: number | string;
+            amount: number;
             isVerified: boolean;
         };
         TaxRevenueItemDto: {
@@ -6886,9 +7382,9 @@ export interface components {
             recognitionRule: string;
             sourceTrace: string;
             /** Format: int32 */
-            documentCount: number | string;
+            documentCount: number;
             /** Format: int64 */
-            amount: number | string;
+            amount: number;
         };
         TitleDetailResponse: {
             /** Format: uuid */
@@ -6897,7 +7393,7 @@ export interface components {
             volumeLabel: null | string;
             author: null | string;
             /** Format: int16 */
-            originalPublishYear: null | number | string;
+            originalPublishYear: null | number;
             description: null | string;
             /** Format: uuid */
             seriesId: null | string;
@@ -6917,12 +7413,12 @@ export interface components {
             isbn: null | string;
             publisher: null | string;
             /** Format: int16 */
-            publishYear: null | number | string;
+            publishYear: null | number;
             editionStatement: null | string;
             printingStatement: null | string;
             format: null | string;
             /** Format: int64 */
-            coverPrice: number | string;
+            coverPrice: number;
             imageUrl: null | string;
             isActive: boolean;
         };
@@ -6933,7 +7429,7 @@ export interface components {
             volumeLabel: null | string;
             author: null | string;
             /** Format: int16 */
-            originalPublishYear: null | number | string;
+            originalPublishYear: null | number;
             description: null | string;
             /** Format: uuid */
             seriesId: null | string;
@@ -6945,7 +7441,7 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
             /** Format: int32 */
-            editionsCount: number | string;
+            editionsCount: number;
             imageUrl: null | string;
         };
         TopRentedTitleDto: {
@@ -6955,7 +7451,7 @@ export interface components {
             volumeLabel: null | string;
             displayName: string;
             /** Format: int32 */
-            rentalCount: number | string;
+            rentalCount: number;
         };
         UpdateApprovalStatusRequestDto: {
             status: components["schemas"]["ApprovalStatus"];
@@ -6967,9 +7463,9 @@ export interface components {
             reason: string;
             conditionNote?: null | string;
             /** Format: int64 */
-            sellingPrice?: null | number | string;
+            sellingPrice?: null | number;
             /** Format: int64 */
-            rentalRate?: null | number | string;
+            rentalRate?: null | number;
             shelfCode?: null | string;
             imageUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
         };
@@ -7017,22 +7513,22 @@ export interface components {
             format?: null | string;
             publisher?: null | string;
             /** Format: int16 */
-            publishYear?: null | number | string;
+            publishYear?: null | number;
             /**
              * Format: int64
              * @default 0
              */
-            coverPrice: number | string;
+            coverPrice: number;
             /**
              * Format: int32
              * @default 0
              */
-            minStockSale: number | string;
+            minStockSale: number;
             /**
              * Format: int32
              * @default 0
              */
-            minStockRental: number | string;
+            minStockRental: number;
             metadataSource?: null | components["schemas"]["MetadataSource"];
             /** Format: uuid */
             metadataConfirmedBy?: null | string;
@@ -7042,9 +7538,37 @@ export interface components {
         UpdateEditionStatusRequest: {
             isActive: boolean;
         };
+        UpdateIntegrationsRequest: {
+            vietQr?: null | components["schemas"]["VietQrIntegrationDto"];
+            zaloOa?: null | components["schemas"]["ZaloOaIntegrationDto"];
+            bookMetadata?: null | components["schemas"]["BookMetadataIntegrationDto"];
+            smtp?: null | components["schemas"]["SmtpIntegrationDto"];
+            /** @default  */
+            changeReason: string;
+        };
         UpdateInventoryAdjustmentStatusDto: {
             status: null | components["schemas"]["InventoryAdjustmentStatus"];
             reason?: null | string;
+        };
+        UpdateMembershipPolicyRequest: {
+            tiers: components["schemas"]["MembershipTierItemDto"][];
+            changeReason: string;
+        };
+        UpdateRbacMatrixRequest: {
+            items: components["schemas"]["RbacMatrixItemDto"][];
+            changeReason: string;
+        };
+        UpdateRentalPolicyRequest: {
+            /** Format: int16 */
+            maxExtensions: number;
+            /** Format: int16 */
+            extensionDaysPerTime: number;
+            /** Format: int16 */
+            gracePeriodHours: number;
+            /** Format: double */
+            latePenaltyRatePct: number;
+            damagePenalties: null | components["schemas"]["DamagePenaltyConfigDto"][];
+            changeReason: string;
         };
         UpdateTitleRequest: {
             name: string;
@@ -7055,7 +7579,7 @@ export interface components {
             categoryId?: null | string;
             author?: null | string;
             /** Format: int16 */
-            originalPublishYear?: null | number | string;
+            originalPublishYear?: null | number;
             description?: null | string;
             isActive?: null | boolean;
             imageUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
@@ -7079,11 +7603,34 @@ export interface components {
             deliveryType: string;
             overwrite: boolean;
             /** Format: int64 */
-            timestamp: number | string;
+            timestamp: number;
             signature: string;
         };
         VerifyRequest: {
             token: string;
+        };
+        VietQrIntegrationDto: {
+            bankName: string;
+            accountNo: string;
+            accountHolder: string;
+            apiKey: string;
+            checksumSecret: string;
+            /** Format: int16 */
+            expireMinutes: number;
+            webhookUrl: string;
+            status: string;
+        };
+        ZaloOaIntegrationDto: {
+            appId: string;
+            oaId: string;
+            secretKey: string;
+            accessToken: string;
+            templatePaymentSuccess: string;
+            templateDueReminder: string;
+            templateOverdue: string;
+            templateDepositSettled: string;
+            reminderSchedule: string;
+            status: string;
         };
     };
     responses: never;

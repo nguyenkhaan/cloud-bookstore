@@ -141,5 +141,5 @@ Khung giá gợi ý kế thừa từ tài liệu cũ:
 | BR-INT-001 | Accepted | VietQR/webhook, Zalo và Google Books/Open Library là tích hợp thật trong MVP. |
 | BR-INT-002 | Accepted | Khi tích hợp lỗi, dùng fallback tiền mặt, nhập sách thủ công hoặc gửi lại thông báo. |
 | BR-INT-003 | Proposed | Lỗi gửi thông báo không rollback giao dịch nghiệp vụ đã hoàn tất. |
-| BR-CONFIG-001 | Proposed | Thay đổi cấu hình lưu giá trị cũ/mới, người thực hiện, thời điểm và ngày hiệu lực. |
+| BR-CONFIG-001 | Accepted | Thay đổi cấu hình lưu giá trị cũ/mới, người thực hiện, lý do, thời điểm và effectiveAt ngay khi lưu trong cùng lần commit; không ghi secret plaintext (ADR-007, quyết định 2A ngày 2026-11-20). |
 | BR-CONFIG-002 | Proposed | Cấu hình mới không viết lại giao dịch lịch sử. |

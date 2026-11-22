@@ -1,3 +1,4 @@
+using backend.src.Configurations;
 using backend.src.Dto.ApprovalDto;
 using backend.src.Models.Enums;
 using backend.src.Services.ApprovalServices;
@@ -13,7 +14,7 @@ public class ApprovalsOverviewController(ApprovalsOverviewService service) : Con
     private const string StaffRoles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)},{nameof(RoleName.CASHIER)}";
 
     [HttpGet("stats")]
-    [Authorize(Roles = StaffRoles)]
+    [Permission(StaffRoles)]
     [ProducesResponseType<ApprovalsOverviewStatsResponse>(StatusCodes.Status200OK)]
     public async Task<ActionResult<ApprovalsOverviewStatsResponse>> GetStats(CancellationToken cancellationToken)
     {

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Button, Card } from '@/components/common'
-import { useAuth } from '@/features/auth/auth.hook'
+import { usePermissions } from '@/hooks/usePermissions'
 import { catalogPaths } from '../catalog.route'
 import { useCreateEditionMutation, useEditionsQuery, useSeriesQuery, useTitleQuery, useUpdateTitleMutation } from '../catalog.hook'
 import { formatVnd } from '../catalog.presentation'
@@ -14,8 +14,7 @@ import { TitleEditorDialog } from '../components/TitleEditorDialog'
 import { ErrorState, LoadingRows } from './SeriesListPage'
 
 export default function TitleDetailPage() {
-  const { session } = useAuth()
-  const canEdit = ['ADMIN', 'INVENTORY_MANAGER'].includes(session?.user?.roleCode ?? '')
+  const { can } = usePermissions()
   const { titleId = '' } = useParams()
   const [isTitleEditorOpen, setIsTitleEditorOpen] = useState(false)
   const [isEditionEditorOpen, setIsEditionEditorOpen] = useState(false)
@@ -36,7 +35,7 @@ export default function TitleDetailPage() {
 
   return (
     <CatalogWorkspace
-      action={canEdit && <div className="flex flex-wrap gap-2"><Button onClick={() => setIsTitleEditorOpen(true)} variant="secondary">Chỉnh sửa đầu sách</Button><Button onClick={() => setIsEditionEditorOpen(true)}>+ Thêm ấn bản</Button></div>}
+      action={<div className="flex flex-wrap gap-2">{can('BookTitles.UpdateTitle') && <Button onClick={() => setIsTitleEditorOpen(true)} variant="secondary">Chỉnh sửa đầu sách</Button>}{can('Editions.CreateEdition') && <Button onClick={() => setIsEditionEditorOpen(true)}>+ Thêm ấn bản</Button>}</div>}
       title={title.name}
     >
       <Card padding="none">

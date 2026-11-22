@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Button, Card, ConfirmationDialog } from '@/components/common'
-import { useAuth } from '@/features/auth/auth.hook'
+import { usePermissions } from '@/hooks/usePermissions'
 import { catalogPaths } from '../catalog.route'
 import { useAvailableReceiptLinesQuery, useCopiesQuery, useCreateCopyMutation, useDeleteEditionMutation, useEditionQuery, useTitleQuery, useUpdateEditionMutation, useUpdateEditionStatusMutation } from '../catalog.hook'
 import { availabilityLabel, formatVnd } from '../catalog.presentation'
@@ -17,14 +17,13 @@ import { ErrorState, LoadingRows } from './SeriesListPage'
 export default function EditionDetailPage() {
   const { editionId = '' } = useParams()
   const navigate = useNavigate()
-  const { session } = useAuth()
-  const canEdit = ['ADMIN', 'INVENTORY_MANAGER'].includes(session?.user?.roleCode ?? '')
+  const { can } = usePermissions()
   const [dialog, setDialog] = useState<'edit' | 'create-copy' | 'delete' | null>(null)
   const [lifecycleCopyId, setLifecycleCopyId] = useState<string | null>(null)
   const [actionError, setActionError] = useState('')
   const editionQuery = useEditionQuery(editionId)
   const copiesQuery = useCopiesQuery(editionId)
-  const receiptLinesQuery = useAvailableReceiptLinesQuery(canEdit && dialog === 'create-copy' ? editionId : '')
+  const receiptLinesQuery = useAvailableReceiptLinesQuery(can('BookCopies.CreateBookCopy') && dialog === 'create-copy' ? editionId : '')
   const createCopy = useCreateCopyMutation()
   const updateEdition = useUpdateEditionMutation()
   const updateStatus = useUpdateEditionStatusMutation()
@@ -49,7 +48,7 @@ export default function EditionDetailPage() {
   }
 
   return <CatalogWorkspace
-    action={canEdit && <div className="flex flex-wrap gap-2"><Button onClick={() => setDialog('edit')} variant="secondary">Chỉnh sửa</Button><Button onClick={() => { setActionError(''); setDialog('delete') }} variant="outline">Xóa</Button><Button disabled={!edition.isActive} onClick={() => setDialog('create-copy')}>Thêm bản vật lý</Button></div>}
+    action={<div className="flex flex-wrap gap-2"><Button onClick={() => setDialog('edit')} variant="secondary">Chỉnh sửa</Button><Button onClick={() => { setActionError(''); setDialog('delete') }} variant="outline">Xóa</Button><Button disabled={!edition.isActive} onClick={() => setDialog('create-copy')}>Thêm bản vật lý</Button></div>}
     title={titleQuery.data?.name || 'Chi tiết ấn bản'}>
     {actionError && <p className="text-sm text-rose-700" role="alert">{actionError}</p>}
     <Card padding="none"><div className="flex flex-col gap-5 p-5 sm:flex-row">
@@ -57,7 +56,7 @@ export default function EditionDetailPage() {
       <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-3"><h2 className="text-lg font-bold text-slate-900">{displayName}</h2><ActiveBadge active={edition.isActive} /></div>
         <p className="mt-1 text-sm text-slate-500">{edition.publisher || 'Chưa có nhà xuất bản'}{edition.publishYear ? ` · ${edition.publishYear}` : ''}</p>
         <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2"><Fact label="ISBN" value={edition.isbn || 'Không ISBN'} /><Fact label="Lần in" value={edition.printingStatement || '—'} /><Fact label="Định dạng" value={edition.format || '—'} /><Fact label="Giá bìa" value={formatVnd(edition.coverPrice)} /></dl>
-        {canEdit && <Button className="mt-4" disabled={updateStatus.isPending} onClick={() => void handleStatus()} variant="ghost">{edition.isActive ? 'Ngừng sử dụng ấn bản' : 'Kích hoạt lại'}</Button>}
+        {can("Editions.UpdateEditionStatus") && <Button className="mt-4" disabled={updateStatus.isPending} onClick={() => void handleStatus()} variant="ghost">{edition.isActive ? 'Ngừng sử dụng ấn bản' : 'Kích hoạt lại'}</Button>}
       </div>
     </div></Card>
     <section aria-labelledby="copies-heading"><div className="mb-3 flex items-center justify-between gap-3"><h2 className="text-base font-bold text-slate-900" id="copies-heading">Bản sách vật lý</h2><span className="text-xs text-slate-500">{copies.filter((copy) => copy.status === 'AVAILABLE').length} sẵn sàng / {copies.length} bản</span></div>

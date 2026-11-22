@@ -1,3 +1,4 @@
+using backend.src.Configurations;
 using backend.src.Dto.CategoryDto;
 using backend.src.Dto.Common;
 using backend.src.Models.Enums;
@@ -12,7 +13,7 @@ namespace backend.src.Controllers;
 public class CategoriesController(CategoryService categoryService) : ControllerBase
 {
     [HttpGet]
-    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)},{nameof(RoleName.CASHIER)}")]
+    [Permission($"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)},{nameof(RoleName.CASHIER)}")]
     [ProducesResponseType<PagedResult<CategoryResponse>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<CategoryResponse>>> GetCategories(
         [FromQuery] CategoryQuery query,
@@ -23,7 +24,7 @@ public class CategoriesController(CategoryService categoryService) : ControllerB
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)},{nameof(RoleName.CASHIER)}")]
+    [Permission($"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)},{nameof(RoleName.CASHIER)}")]
     [ProducesResponseType<CategoryDetailResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CategoryDetailResponse>> GetCategoryById(
@@ -35,7 +36,7 @@ public class CategoriesController(CategoryService categoryService) : ControllerB
     }
 
     [HttpPost]
-    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [Permission($"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
     [ProducesResponseType<CategoryResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -49,7 +50,7 @@ public class CategoriesController(CategoryService categoryService) : ControllerB
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [Permission($"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
     [ProducesResponseType<CategoryResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -64,7 +65,7 @@ public class CategoriesController(CategoryService categoryService) : ControllerB
     }
 
     [HttpPatch("{id:guid}/status")]
-    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [Permission($"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
     [ProducesResponseType<CategoryResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -78,7 +79,7 @@ public class CategoriesController(CategoryService categoryService) : ControllerB
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [Permission($"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
