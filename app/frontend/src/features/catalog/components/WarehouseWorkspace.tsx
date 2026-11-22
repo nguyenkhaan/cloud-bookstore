@@ -9,10 +9,11 @@ import { catalogPaths } from '../catalog.route'
 type WarehouseWorkspaceProps = {
   action?: ReactNode
   children: ReactNode
+  pageHeaderContent?: ReactNode
   title: string
 }
 
-export function WarehouseWorkspace({ action, children, title }: WarehouseWorkspaceProps) {
+export function WarehouseWorkspace({ action, children, pageHeaderContent, title }: WarehouseWorkspaceProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const { session, signOut } = useAuth()
@@ -42,6 +43,7 @@ export function WarehouseWorkspace({ action, children, title }: WarehouseWorkspa
       currentPath="warehouse"
       onNavigate={navigateFromSidebar}
       onSignOut={signOut}
+      pageHeaderContent={pageHeaderContent}
       pageTitle={title}
       user={currentUser}
     >

@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, Plus, Printer, Search, Trash2 } from 'lucide-react'
+import { Plus, Printer, Search, Trash2 } from 'lucide-react'
 import { Button, Card, SelectBox, TextField } from '@/components/common'
 import {
   BarcodeLabelsPrintModal,
@@ -73,6 +73,38 @@ function formatDateVi(iso?: string | null): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
   return d.toLocaleDateString('vi-VN')
+}
+
+function StockReceiptStepTabs({ step, onSelect }: { step: 1 | 2; onSelect: (step: 1 | 2) => void }) {
+  const tabs = [
+    { value: 1 as const, label: 'Nhà cung cấp & Danh mục nhập' },
+    { value: 2 as const, label: 'Giá bán & Sinh Barcode' },
+  ]
+
+  return (
+    <nav aria-label="Các bước lập phiếu nhập kho" className="overflow-x-auto border-b border-slate-200">
+      <div className="flex min-w-max gap-5">
+        {tabs.map((tab) => {
+          const isActive = step === tab.value
+          return (
+            <button
+              aria-current={isActive ? 'page' : undefined}
+              className={`-mb-px min-h-11 border-b-2 px-1 text-sm font-semibold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 ${
+                isActive
+                  ? 'border-indigo-600 text-indigo-700'
+                  : 'border-transparent text-slate-600 hover:border-slate-300 hover:text-slate-900'
+              }`}
+              key={tab.value}
+              onClick={() => onSelect(tab.value)}
+              type="button"
+            >
+              {tab.label}
+            </button>
+          )
+        })}
+      </div>
+    </nav>
+  )
 }
 
 export default function StockReceiptsPage() {
@@ -605,35 +637,9 @@ export default function StockReceiptsPage() {
           </Button>
         </div>
       }
+      pageHeaderContent={<StockReceiptStepTabs onSelect={setStep} step={step} />}
       title="Lập & Quản lý Phiếu nhập kho từ NCC"
     >
-
-      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-indigo-100 bg-indigo-50/50 p-2">
-        <button
-          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
-            step === 1
-              ? 'bg-white text-indigo-700 shadow-2xs ring-1 ring-indigo-200'
-              : 'text-slate-600 hover:text-indigo-700'
-          }`}
-          onClick={() => setStep(1)}
-          type="button"
-        >
-          <Check className="h-3.5 w-3.5 text-indigo-600" />
-          1. Nhà cung cấp & Danh mục nhập
-        </button>
-        <button
-          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
-            step === 2
-              ? 'bg-white text-indigo-700 shadow-2xs ring-1 ring-indigo-200'
-              : 'text-slate-600 hover:text-indigo-700'
-          }`}
-          onClick={() => setStep(2)}
-          type="button"
-        >
-          2. Giá bán & Sinh Barcode
-        </button>
-      </div>
-
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_310px] items-start">
         <div className="space-y-6">
           <Card bodyClassName="space-y-5" padding="lg">

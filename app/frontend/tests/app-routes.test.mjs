@@ -19,7 +19,7 @@ test('application routes declare each authentication path once and guard catalog
 })
 
 test('phase 11 screens are guarded and feature roots redirect to their first screen', () => {
-  for (const path of ['/pos/shift', '/hr/shifts', '/hr/attendance']) {
+  for (const path of ['/pos/shift', '/hr/shifts', '/hr/attendance', '/hr/attendance/personal']) {
     assert.equal((routes.match(new RegExp(`path="${path}"`, 'g')) ?? []).length, 1)
     assert.match(routes, new RegExp(`path="${path}"[\\s\\S]*?<RequireSession>`))
   }
@@ -27,6 +27,7 @@ test('phase 11 screens are guarded and feature roots redirect to their first scr
   assert.match(posRoutes, /shift: ['"]\/pos\/shift['"]|shift:/)
   assert.match(hrRoutes, /shifts: ['"]\/hr\/shifts['"]|shifts:/)
   assert.match(hrRoutes, /attendance: ['"]\/hr\/attendance['"]|attendance:/)
+  assert.match(hrRoutes, /personalAttendance: ['"]\/hr\/attendance\/personal['"]|personalAttendance:/)
   assert.match(posPage, /PosWorkspacePage/)
   assert.doesNotMatch(posPage, /posPaths\.shift/)
   assert.match(hrPage, /Navigate|hrPaths\.attendance/)
@@ -41,6 +42,7 @@ test('HR routes are unified under /hr/* with session guards and zero /admin/hr r
     '/hr/employees/:id',
     '/hr/shifts',
     '/hr/attendance',
+    '/hr/attendance/personal',
     '/hr/requests',
     '/hr/payroll',
     '/hr/payroll/adjustments/new',

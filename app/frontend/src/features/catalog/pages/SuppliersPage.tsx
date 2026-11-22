@@ -215,10 +215,6 @@ export default function SuppliersPage() {
       }
       title="Đối tác & Nhà cung cấp"
     >
-      <p className="text-xs text-slate-500">
-        Quản lý hồ sơ pháp lý, đầu mối liên hệ và lịch sử phiếu nhập hàng từ đối tác.
-      </p>
-
       <section className="grid gap-5 md:grid-cols-3">
         <Card padding="lg">
           <div className="flex items-center justify-between text-xs text-slate-500">

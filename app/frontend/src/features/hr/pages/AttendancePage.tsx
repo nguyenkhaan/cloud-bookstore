@@ -11,7 +11,11 @@ import { AttendanceDateFilter } from '../components/AttendanceDateFilter'
 import { hrPaths } from '../hr.route'
 import { getPreviewRoleFromSearch } from '../hr-role.util'
 
-export default function AttendancePage() {
+type AttendancePageProps = {
+  personalOnly?: boolean
+}
+
+export default function AttendancePage({ personalOnly = false }: AttendancePageProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const auth = useContext(AuthContext)
@@ -19,6 +23,7 @@ export default function AttendancePage() {
   const previewRole = getPreviewRoleFromSearch(location.search)
   const isAdminView =
     currentUser.roleCode === 'ADMIN' &&
+    !personalOnly &&
     previewRole !== 'CASHIER' &&
     previewRole !== 'INVENTORY_MANAGER'
 
@@ -55,7 +60,6 @@ export default function AttendancePage() {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="text-sm font-semibold text-slate-800">Theo dõi các ca làm của bạn</p>
-              <p className="mt-1 max-w-2xl text-xs leading-5 text-slate-500">Mặc định hiển thị các ca cần điểm danh trong ngày. Bạn có thể chọn ngày trước để xem lại lịch sử.</p>
             </div>
             <AttendanceDateFilter date={date} onChange={setDate} />
           </div>

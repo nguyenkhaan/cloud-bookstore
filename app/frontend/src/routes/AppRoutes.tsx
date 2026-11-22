@@ -166,6 +166,7 @@ export default function AppRoutes() {
       <Route path="/hr/employees/:id" element={<RequireSession><EmployeeDetailPage /></RequireSession>} />
       <Route path="/hr/shifts" element={<RequireSession><ShiftRecordsPage /></RequireSession>} />
       <Route path="/hr/attendance" element={<RequireSession><AttendancePage /></RequireSession>} />
+      <Route path="/hr/attendance/personal" element={<RequireSession><AttendancePage personalOnly /></RequireSession>} />
       <Route path="/hr/requests" element={<RequireSession><HrRequestsPage /></RequireSession>} />
       <Route path="/hr/payroll" element={<RequireSession><PayrollPage /></RequireSession>} />
       <Route path="/hr/payroll/adjustments/new" element={<RequireSession><PayrollAdjustmentPage /></RequireSession>} />

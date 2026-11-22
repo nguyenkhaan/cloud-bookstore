@@ -156,4 +156,5 @@ test('Phase 2: role resolution ignores invalid ?previewRole= values and hrPaths 
   assert.equal(hrRoutes.hrPaths.requests, '/hr/requests')
   assert.equal(hrRoutes.hrPaths.shifts, '/hr/shifts')
   assert.equal(hrRoutes.hrPaths.attendance, '/hr/attendance')
+  assert.equal(hrRoutes.hrPaths.personalAttendance, '/hr/attendance/personal')
 })

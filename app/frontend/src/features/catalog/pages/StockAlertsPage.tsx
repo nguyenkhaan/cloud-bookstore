@@ -175,10 +175,6 @@ export default function StockAlertsPage() {
       }
       title="Giám sát Cảnh báo tồn kho chạm min"
     >
-      <p className="text-xs text-slate-500">
-        Ưu tiên bổ sung các ấn bản hết hàng và thiếu kho thuê theo quy tắc tồn kênh kép (Bán lẻ & Cho thuê)
-      </p>
-
       <section className="grid grid-cols-2 gap-5 lg:grid-cols-4">
         <StatCard
           description="Theo cấu hình tồn an toàn kênh Bán và Thuê"

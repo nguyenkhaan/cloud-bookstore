@@ -47,7 +47,8 @@ export interface SidebarProps {
 const HR_SUB_NAV_ITEMS = [
   { id: 'hr-employees', label: 'Danh sách nhân viên', href: hrPaths.employees },
   { id: 'hr-shifts', label: 'Phân công ca', href: hrPaths.shifts },
-  { id: 'hr-attendance', label: 'Chấm công', href: hrPaths.attendance },
+  { id: 'hr-attendance', label: 'Chấm công & Lương ca', href: hrPaths.attendance },
+  { id: 'hr-personal-attendance', label: 'Chấm công cá nhân', href: hrPaths.personalAttendance },
   { id: 'hr-requests', label: 'Đơn xét duyệt', href: hrPaths.requests },
   { id: 'hr-payroll', label: 'Bảng lương', href: hrPaths.payroll },
   { id: 'hr-payslip', label: 'Phiếu lương', href: hrPaths.payslip },
@@ -205,7 +206,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                 {isHrGroup && !isCollapsed && isHrExpanded && (
                   <div className="ml-4 space-y-0.5 border-l border-slate-200 pl-3" data-testid="sidebar-hr-submenu">
-                    {HR_SUB_NAV_ITEMS.map((sub) => {
+                    {HR_SUB_NAV_ITEMS.filter((sub) => sub.id !== 'hr-attendance' || !isNonAdmin).map((sub) => {
                       const isSubActive =
                         activeHref === sub.href ||
                         activeHref.startsWith(`${sub.href}/`);
