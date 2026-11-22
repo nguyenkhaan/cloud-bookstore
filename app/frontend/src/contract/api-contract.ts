@@ -4,48 +4,6 @@
  */
 
 export interface paths {
-    "/api/audit": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: {
-                    ActorId?: string;
-                    Action?: string;
-                    EntityType?: string;
-                    EntityId?: string;
-                    From?: string;
-                    To?: string;
-                    Limit?: number | string;
-                    Offset?: number | string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/approvals/overview/stats": {
         parameters: {
             query?: never;
@@ -68,13 +26,22 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
+                        "text/plain": components["schemas"]["ApprovalsOverviewStatsResponse"];
                         "application/json": components["schemas"]["ApprovalsOverviewStatsResponse"];
+                        "text/json": components["schemas"]["ApprovalsOverviewStatsResponse"];
                     };
                 };
             };
         };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    "/api/approvals/buyback": {
+    "/api/audit": {
         parameters: {
             query?: never;
             header?: never;
@@ -84,10 +51,17 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
+                    ActorId?: string;
+                    Action?: string;
+                    EntityType?: string;
+                    EntityId?: string;
+                    From?: string;
+                    To?: string;
+                    Search?: string;
                     Page?: number | string;
                     PageSize?: number | string;
-                    Status?: components["schemas"]["ApprovalStatus"];
-                    Search?: string;
+                    Limit?: number | string;
+                    Offset?: number | string;
                 };
                 header?: never;
                 path?: never;
@@ -101,112 +75,22 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["PagedResultBuybackApprovalItemResponse"];
+                        "text/plain": components["schemas"]["PagedResultOfAuditLogResponse"];
+                        "application/json": components["schemas"]["PagedResultOfAuditLogResponse"];
+                        "text/json": components["schemas"]["PagedResultOfAuditLogResponse"];
                     };
                 };
             };
         };
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreateBuybackApprovalRequestDto"];
-                };
-            };
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["BuybackApprovalDetailResponse"];
-                    };
-                };
-            };
-        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    "/api/approvals/buyback/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["BuybackApprovalDetailResponse"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-    };
-    "/api/approvals/buyback/{id}/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["UpdateApprovalStatusRequestDto"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["BuybackApprovalDetailResponse"];
-                    };
-                };
-            };
-        };
-    };
-    "/api/approvals/damage-penalty": {
+    "/api/audit/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -215,65 +99,6 @@ export interface paths {
         };
         get: {
             parameters: {
-                query?: {
-                    Page?: number | string;
-                    PageSize?: number | string;
-                    Status?: components["schemas"]["ApprovalStatus"];
-                    Search?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["PagedResultDamagePenaltyApprovalItemResponse"];
-                    };
-                };
-            };
-        };
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreateDamagePenaltyApprovalRequestDto"];
-                };
-            };
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["DamagePenaltyApprovalDetailResponse"];
-                    };
-                };
-            };
-        };
-    };
-    "/api/approvals/damage-penalty/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        get: {
-            parameters: {
                 query?: never;
                 header?: never;
                 path: {
@@ -289,7 +114,20 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["DamagePenaltyApprovalDetailResponse"];
+                        "text/plain": components["schemas"]["AuditLogDetailResponse"];
+                        "application/json": components["schemas"]["AuditLogDetailResponse"];
+                        "text/json": components["schemas"]["AuditLogDetailResponse"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
                     };
                 };
                 /** @description Not Found */
@@ -297,239 +135,23 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
                 };
             };
         };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    "/api/approvals/damage-penalty/{id}/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["UpdateApprovalStatusRequestDto"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["DamagePenaltyApprovalDetailResponse"];
-                    };
-                };
-            };
-        };
-    };
-    "/api/approvals/disposal-reversal": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: {
-                    Page?: number | string;
-                    PageSize?: number | string;
-                    Status?: components["schemas"]["ApprovalStatus"];
-                    Search?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["PagedResultDisposalReversalApprovalItemResponse"];
-                    };
-                };
-            };
-        };
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreateDisposalReversalApprovalRequestDto"];
-                };
-            };
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["DisposalReversalApprovalDetailResponse"];
-                    };
-                };
-            };
-        };
-    };
-    "/api/approvals/disposal-reversal/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["DisposalReversalApprovalDetailResponse"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-    };
-    "/api/approvals/disposal-reversal/{id}/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["UpdateApprovalStatusRequestDto"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["DisposalReversalApprovalDetailResponse"];
-                    };
-                };
-            };
-        };
-    };
-    "/api/inventory-adjustment-requests": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: {
-                    Page?: number | string;
-                    PageSize?: number | string;
-                    Status?: string;
-                    RequestedStatus?: string;
-                    VarianceType?: string;
-                    Search?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["PagedResultInventoryAdjustmentRequestResponse"];
-                    };
-                };
-            };
-        };
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreateInventoryAdjustmentRequestDto"];
-                };
-            };
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["InventoryAdjustmentRequestDetailResponse"];
-                    };
-                };
-            };
-        };
-    };
-    "/api/inventory-adjustment-requests/stats": {
+    "/api/audit/metadata": {
         parameters: {
             query?: never;
             header?: never;
@@ -551,118 +173,20 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["InventoryAdjustmentStatsResponse"];
+                        "text/plain": components["schemas"]["AuditLogMetadataResponse"];
+                        "application/json": components["schemas"]["AuditLogMetadataResponse"];
+                        "text/json": components["schemas"]["AuditLogMetadataResponse"];
                     };
                 };
             };
         };
-    };
-    "/api/inventory-adjustment-requests/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["InventoryAdjustmentRequestDetailResponse"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-    };
-    "/api/inventory-adjustment-requests/{id}/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["UpdateInventoryAdjustmentStatusDto"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["InventoryAdjustmentRequestDetailResponse"];
-                    };
-                };
-            };
-        };
-    };
-    "/api/inventory-adjustment-requests/{id}/cancel": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["InventoryAdjustmentRequestDetailResponse"];
-                    };
-                };
-            };
-        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
     "/api/auth/login": {
         parameters: {
@@ -1478,6 +1002,84 @@ export interface paths {
                 };
                 /** @description Forbidden */
                 403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/book-copies/{id}/shelf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateBookCopyShelfRequest"];
+                    "text/json": components["schemas"]["UpdateBookCopyShelfRequest"];
+                    "application/*+json": components["schemas"]["UpdateBookCopyShelfRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BookCopyDetailResponse"];
+                        "application/json": components["schemas"]["BookCopyDetailResponse"];
+                        "text/json": components["schemas"]["BookCopyDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -2595,6 +2197,203 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/approvals/buyback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Page?: number | string;
+                    PageSize?: number | string;
+                    Status?: components["schemas"]["ApprovalStatus"];
+                    Search?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfBuybackApprovalItemResponse"];
+                        "application/json": components["schemas"]["PagedResultOfBuybackApprovalItemResponse"];
+                        "text/json": components["schemas"]["PagedResultOfBuybackApprovalItemResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateBuybackApprovalRequestDto"];
+                    "text/json": components["schemas"]["CreateBuybackApprovalRequestDto"];
+                    "application/*+json": components["schemas"]["CreateBuybackApprovalRequestDto"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BuybackApprovalDetailResponse"];
+                        "application/json": components["schemas"]["BuybackApprovalDetailResponse"];
+                        "text/json": components["schemas"]["BuybackApprovalDetailResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/approvals/buyback/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BuybackApprovalDetailResponse"];
+                        "application/json": components["schemas"]["BuybackApprovalDetailResponse"];
+                        "text/json": components["schemas"]["BuybackApprovalDetailResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/approvals/buyback/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateApprovalStatusRequestDto"];
+                    "text/json": components["schemas"]["UpdateApprovalStatusRequestDto"];
+                    "application/*+json": components["schemas"]["UpdateApprovalStatusRequestDto"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BuybackApprovalDetailResponse"];
+                        "application/json": components["schemas"]["BuybackApprovalDetailResponse"];
+                        "text/json": components["schemas"]["BuybackApprovalDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/categories": {
         parameters: {
             query?: never;
@@ -3558,6 +3357,400 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/approvals/damage-penalty": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Page?: number | string;
+                    PageSize?: number | string;
+                    Status?: components["schemas"]["ApprovalStatus"];
+                    Search?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfDamagePenaltyApprovalItemResponse"];
+                        "application/json": components["schemas"]["PagedResultOfDamagePenaltyApprovalItemResponse"];
+                        "text/json": components["schemas"]["PagedResultOfDamagePenaltyApprovalItemResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateDamagePenaltyApprovalRequestDto"];
+                    "text/json": components["schemas"]["CreateDamagePenaltyApprovalRequestDto"];
+                    "application/*+json": components["schemas"]["CreateDamagePenaltyApprovalRequestDto"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DamagePenaltyApprovalDetailResponse"];
+                        "application/json": components["schemas"]["DamagePenaltyApprovalDetailResponse"];
+                        "text/json": components["schemas"]["DamagePenaltyApprovalDetailResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/approvals/damage-penalty/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DamagePenaltyApprovalDetailResponse"];
+                        "application/json": components["schemas"]["DamagePenaltyApprovalDetailResponse"];
+                        "text/json": components["schemas"]["DamagePenaltyApprovalDetailResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/approvals/damage-penalty/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateApprovalStatusRequestDto"];
+                    "text/json": components["schemas"]["UpdateApprovalStatusRequestDto"];
+                    "application/*+json": components["schemas"]["UpdateApprovalStatusRequestDto"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DamagePenaltyApprovalDetailResponse"];
+                        "application/json": components["schemas"]["DamagePenaltyApprovalDetailResponse"];
+                        "text/json": components["schemas"]["DamagePenaltyApprovalDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/approvals/disposal-reversal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Page?: number | string;
+                    PageSize?: number | string;
+                    Status?: components["schemas"]["ApprovalStatus"];
+                    Search?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfDisposalReversalApprovalItemResponse"];
+                        "application/json": components["schemas"]["PagedResultOfDisposalReversalApprovalItemResponse"];
+                        "text/json": components["schemas"]["PagedResultOfDisposalReversalApprovalItemResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateDisposalReversalApprovalRequestDto"];
+                    "text/json": components["schemas"]["CreateDisposalReversalApprovalRequestDto"];
+                    "application/*+json": components["schemas"]["CreateDisposalReversalApprovalRequestDto"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DisposalReversalApprovalDetailResponse"];
+                        "application/json": components["schemas"]["DisposalReversalApprovalDetailResponse"];
+                        "text/json": components["schemas"]["DisposalReversalApprovalDetailResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/approvals/disposal-reversal/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DisposalReversalApprovalDetailResponse"];
+                        "application/json": components["schemas"]["DisposalReversalApprovalDetailResponse"];
+                        "text/json": components["schemas"]["DisposalReversalApprovalDetailResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/approvals/disposal-reversal/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateApprovalStatusRequestDto"];
+                    "text/json": components["schemas"]["UpdateApprovalStatusRequestDto"];
+                    "application/*+json": components["schemas"]["UpdateApprovalStatusRequestDto"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DisposalReversalApprovalDetailResponse"];
+                        "application/json": components["schemas"]["DisposalReversalApprovalDetailResponse"];
+                        "text/json": components["schemas"]["DisposalReversalApprovalDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/editions": {
         parameters: {
             query?: never;
@@ -4244,6 +4437,486 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/inventory-adjustment-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Page?: number | string;
+                    PageSize?: number | string;
+                    Status?: components["schemas"]["InventoryAdjustmentStatus"];
+                    RequestedStatus?: components["schemas"]["BookCopyStatus"];
+                    VarianceType?: components["schemas"]["InventoryVarianceType"];
+                    CopyId?: string;
+                    RequestedBy?: string;
+                    Search?: string;
+                    From?: string;
+                    To?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfInventoryAdjustmentRequestResponse"];
+                        "application/json": components["schemas"]["PagedResultOfInventoryAdjustmentRequestResponse"];
+                        "text/json": components["schemas"]["PagedResultOfInventoryAdjustmentRequestResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateInventoryAdjustmentRequestDto"];
+                    "text/json": components["schemas"]["CreateInventoryAdjustmentRequestDto"];
+                    "application/*+json": components["schemas"]["CreateInventoryAdjustmentRequestDto"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["InventoryAdjustmentRequestDetailResponse"];
+                        "application/json": components["schemas"]["InventoryAdjustmentRequestDetailResponse"];
+                        "text/json": components["schemas"]["InventoryAdjustmentRequestDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inventory-adjustment-requests/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["InventoryAdjustmentStatsResponse"];
+                        "application/json": components["schemas"]["InventoryAdjustmentStatsResponse"];
+                        "text/json": components["schemas"]["InventoryAdjustmentStatsResponse"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inventory-adjustment-requests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["InventoryAdjustmentRequestDetailResponse"];
+                        "application/json": components["schemas"]["InventoryAdjustmentRequestDetailResponse"];
+                        "text/json": components["schemas"]["InventoryAdjustmentRequestDetailResponse"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inventory-adjustment-requests/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateInventoryAdjustmentStatusDto"];
+                    "text/json": components["schemas"]["UpdateInventoryAdjustmentStatusDto"];
+                    "application/*+json": components["schemas"]["UpdateInventoryAdjustmentStatusDto"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["InventoryAdjustmentRequestDetailResponse"];
+                        "application/json": components["schemas"]["InventoryAdjustmentRequestDetailResponse"];
+                        "text/json": components["schemas"]["InventoryAdjustmentRequestDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/inventory-adjustment-requests/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": null | components["schemas"]["CancelInventoryAdjustmentRequestDto"];
+                    "text/json": null | components["schemas"]["CancelInventoryAdjustmentRequestDto"];
+                    "application/*+json": null | components["schemas"]["CancelInventoryAdjustmentRequestDto"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["InventoryAdjustmentRequestDetailResponse"];
+                        "application/json": components["schemas"]["InventoryAdjustmentRequestDetailResponse"];
+                        "text/json": components["schemas"]["InventoryAdjustmentRequestDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/policy": {
         parameters: {
             query?: never;
@@ -4269,6 +4942,232 @@ export interface paths {
                         "text/plain": components["schemas"]["MembershipTierPolicyResponse"][];
                         "application/json": components["schemas"]["MembershipTierPolicyResponse"][];
                         "text/json": components["schemas"]["MembershipTierPolicyResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    date?: string;
+                    trendRange?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["OverviewReportResponse"];
+                        "application/json": components["schemas"]["OverviewReportResponse"];
+                        "text/json": components["schemas"]["OverviewReportResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/revenue-expense": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    From?: string;
+                    To?: string;
+                    Source?: string;
+                    Method?: components["schemas"]["PaymentMethod"];
+                    Search?: string;
+                    Page?: number | string;
+                    PageSize?: number | string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RevenueExpenseReportResponse"];
+                        "application/json": components["schemas"]["RevenueExpenseReportResponse"];
+                        "text/json": components["schemas"]["RevenueExpenseReportResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/revenue-expense/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    From?: string;
+                    To?: string;
+                    Source?: string;
+                    Method?: components["schemas"]["PaymentMethod"];
+                    Search?: string;
+                    Page?: number | string;
+                    PageSize?: number | string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfRevenueExpenseDocumentRowDto"];
+                        "application/json": components["schemas"]["PagedResultOfRevenueExpenseDocumentRowDto"];
+                        "text/json": components["schemas"]["PagedResultOfRevenueExpenseDocumentRowDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/deposit-reconciliation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    From?: string;
+                    To?: string;
+                    Status?: string;
+                    Search?: string;
+                    Page?: number | string;
+                    PageSize?: number | string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DepositReconciliationReportResponse"];
+                        "application/json": components["schemas"]["DepositReconciliationReportResponse"];
+                        "text/json": components["schemas"]["DepositReconciliationReportResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/tax-declaration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    PeriodType?: string;
+                    Year?: number | string;
+                    PeriodValue?: number | string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["TaxDeclarationReportResponse"];
+                        "application/json": components["schemas"]["TaxDeclarationReportResponse"];
+                        "text/json": components["schemas"]["TaxDeclarationReportResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
                     };
                 };
             };
@@ -4350,6 +5249,71 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ApprovalAuditItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            actorId: null | string;
+            actorName: null | string;
+            action: string;
+            beforeData: null | string;
+            afterData: null | string;
+            reason: null | string;
+        };
+        ApprovalsOverviewStatsResponse: {
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            pendingCount: number | string;
+            /** Format: int32 */
+            approvedCount: number | string;
+            /** Format: int32 */
+            rejectedCount: number | string;
+            /** Format: int32 */
+            buybackPending: number | string;
+            /** Format: int32 */
+            damagePenaltyPending: number | string;
+            /** Format: int32 */
+            inventoryAdjustmentPending: number | string;
+            /** Format: int32 */
+            disposalReversalPending: number | string;
+        };
+        /** @enum {unknown} */
+        ApprovalStatus: "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "COMPLETED" | "REJECTED" | "CANCELLED";
+        AuditLogDetailResponse: {
+            log: components["schemas"]["AuditLogResponse"];
+            relatedEvents: components["schemas"]["AuditLogResponse"][];
+        };
+        AuditLogMetadataResponse: {
+            entityTypes: string[];
+            actions: string[];
+            isInventoryScoped: boolean;
+        };
+        AuditLogResponse: {
+            /** Format: uuid */
+            id: string;
+            logCode: string;
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            actorId: null | string;
+            actorName: null | string;
+            actorRole: null | string;
+            actorEmail: null | string;
+            ipAddress: null | string;
+            userAgent: null | string;
+            correlationId: null | string;
+            action: string;
+            entityType: string;
+            /** Format: uuid */
+            entityId: string;
+            entityLabel: null | string;
+            beforeData: null | string;
+            afterData: null | string;
+            reason: null | string;
+        };
         AuthenticationResponse: {
             accessToken: string;
             refreshToken: string;
@@ -4438,6 +5402,24 @@ export interface components {
             beforeData: null | string;
             afterData: null | string;
             reason: null | string;
+            metadata?: null | components["schemas"]["BookCopyHistoryMetadata"];
+        };
+        BookCopyHistoryMetadata: {
+            /** Format: int64 */
+            costPrice?: null | number | string;
+            supplierName?: null | string;
+            customerName?: null | string;
+            /** Format: int64 */
+            depositAmount?: null | number | string;
+            copyCondition?: null | components["schemas"]["CopyCondition"];
+            /** Format: int64 */
+            refundAmount?: null | number | string;
+            /** Format: int64 */
+            additionalAmountDue?: null | number | string;
+            shelfCode?: null | string;
+            /** Format: int64 */
+            sellingPrice?: null | number | string;
+            returnStatus?: null | string;
         };
         BookCopyLabelRequest: {
             reason?: null | string;
@@ -4550,6 +5532,74 @@ export interface components {
             role: string;
             avatarUrl?: null | string;
         };
+        BuybackApprovalDetailResponse: {
+            /** Format: uuid */
+            id: string;
+            receiptCode: string;
+            customerName: null | string;
+            customerPhone: null | string;
+            status: components["schemas"]["ApprovalStatus"];
+            /** Format: int64 */
+            totalAmount: number | string;
+            /** Format: int32 */
+            itemCount: number | string;
+            titleSummary: string;
+            reason: null | string;
+            /** Format: uuid */
+            requestedBy: string;
+            requestedByName: string;
+            /** Format: date-time */
+            requestedAt: string;
+            /** Format: uuid */
+            approvedBy: null | string;
+            approvedByName: null | string;
+            /** Format: date-time */
+            approvedAt: null | string;
+            rejectReason: null | string;
+            lines: components["schemas"]["BuybackApprovalLineDto"][];
+            imageUrls: string[];
+            auditHistory: components["schemas"]["ApprovalAuditItem"][];
+        };
+        BuybackApprovalItemResponse: {
+            /** Format: uuid */
+            id: string;
+            receiptCode: string;
+            customerName: null | string;
+            customerPhone: null | string;
+            status: components["schemas"]["ApprovalStatus"];
+            /** Format: int64 */
+            totalAmount: number | string;
+            /** Format: int32 */
+            itemCount: number | string;
+            titleSummary: string;
+            reason: null | string;
+            /** Format: uuid */
+            requestedBy: string;
+            requestedByName: string;
+            /** Format: date-time */
+            requestedAt: string;
+            /** Format: uuid */
+            approvedBy: null | string;
+            approvedByName: null | string;
+            /** Format: date-time */
+            approvedAt: null | string;
+            rejectReason: null | string;
+        };
+        BuybackApprovalLineDto: {
+            /** Format: uuid */
+            id: string;
+            titleName: string;
+            editionName: null | string;
+            isbn: null | string;
+            conditionGrade: null | components["schemas"]["ConditionGrade"];
+            /** Format: int64 */
+            coverPrice: number | string;
+            /** Format: int64 */
+            proposedPrice: number | string;
+            /** Format: int32 */
+            quantity: number | string;
+            imageUrl: null | string;
+        };
         BuybackLineSummary: {
             titleName: string;
             volumeLabel: null | string;
@@ -4558,6 +5608,9 @@ export interface components {
             quantity: number | string;
             /** Format: int64 */
             unitCost: number | string;
+        };
+        CancelInventoryAdjustmentRequestDto: {
+            reason?: null | string;
         };
         CategoryDetailResponse: {
             /** Format: uuid */
@@ -4596,6 +5649,8 @@ export interface components {
         };
         /** @enum {unknown} */
         ConditionGrade: "A" | "B" | "C" | "D";
+        /** @enum {unknown} */
+        CopyCondition: "NORMAL" | "DAMAGED" | "LOST" | null;
         CreateBookCopyRequest: {
             /** Format: uuid */
             editionId: string;
@@ -4619,6 +5674,29 @@ export interface components {
             isActive: boolean;
             imageUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
         };
+        CreateBuybackApprovalRequestDto: {
+            /** Format: uuid */
+            customerId: null | string;
+            /** Format: int64 */
+            totalAmount: number | string;
+            reason: string;
+            lines: components["schemas"]["CreateBuybackLineDto"][];
+            imageUrls?: null | string[];
+        };
+        CreateBuybackLineDto: {
+            /** Format: uuid */
+            editionId: string;
+            conditionGrade: components["schemas"]["ConditionGrade"];
+            /** Format: int64 */
+            proposedPrice: number | string;
+            /** Format: int64 */
+            sellingPriceSuggestion?: null | number | string;
+            /**
+             * Format: int32
+             * @default 1
+             */
+            quantity: number | string;
+        };
         CreateCategoryRequest: {
             name: string;
             /** Format: uuid */
@@ -4632,6 +5710,27 @@ export interface components {
             email?: null | string;
             nationalId?: null | string;
             address?: null | string;
+        };
+        CreateDamagePenaltyApprovalRequestDto: {
+            /** Format: uuid */
+            rentalLineId: string;
+            damageDescription: string;
+            /** Format: double */
+            penaltyPercentage: number | string;
+            /** Format: int64 */
+            penaltyAmount: number | string;
+            reason: string;
+            imageUrls?: null | string[];
+        };
+        CreateDisposalReversalApprovalRequestDto: {
+            requestType: string;
+            /** Format: uuid */
+            referenceId: null | string;
+            referenceCode: string;
+            /** Format: int64 */
+            amount: number | string;
+            reason: string;
+            details?: null | string;
         };
         CreateEditionRequest: {
             /** Format: uuid */
@@ -4664,6 +5763,19 @@ export interface components {
             /** @default true */
             isActive: boolean;
             imageUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
+        };
+        CreateInventoryAdjustmentRequestDto: {
+            /** Format: uuid */
+            copyId?: null | string;
+            copyBarcode?: null | string;
+            /** Format: uuid */
+            inventoryCheckId?: null | string;
+            requestedStatus?: null | components["schemas"]["BookCopyStatus"];
+            reason?: null | string;
+            varianceType?: null | components["schemas"]["InventoryVarianceType"];
+            isFound?: null | boolean;
+            checkCode?: null | string;
+            checkNote?: null | string;
         };
         CreateTitleRequest: {
             name: string;
@@ -4856,6 +5968,175 @@ export interface components {
             /** Format: int64 */
             outstandingAmount: number | string;
         };
+        DamagePenaltyApprovalDetailResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            slipId: string;
+            slipCode: string;
+            /** Format: uuid */
+            copyId: string;
+            copyBarcode: string;
+            titleName: string;
+            customerName: null | string;
+            customerPhone: null | string;
+            customerTier: null | string;
+            /** Format: int64 */
+            depositAmount: number | string;
+            damageDescription: string;
+            /** Format: double */
+            penaltyPercentage: number | string;
+            /** Format: int64 */
+            penaltyAmount: number | string;
+            /** Format: int64 */
+            refundAmount: number | string;
+            status: components["schemas"]["ApprovalStatus"];
+            /** Format: uuid */
+            requestedBy: string;
+            requestedByName: string;
+            /** Format: date-time */
+            requestedAt: string;
+            /** Format: uuid */
+            approvedBy: null | string;
+            approvedByName: null | string;
+            /** Format: date-time */
+            approvedAt: null | string;
+            rejectReason: null | string;
+            imageUrls: string[];
+            auditHistory: components["schemas"]["ApprovalAuditItem"][];
+        };
+        DamagePenaltyApprovalItemResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            slipId: string;
+            slipCode: string;
+            /** Format: uuid */
+            copyId: string;
+            copyBarcode: string;
+            titleName: string;
+            customerName: null | string;
+            customerPhone: null | string;
+            customerTier: null | string;
+            /** Format: int64 */
+            depositAmount: number | string;
+            damageDescription: string;
+            /** Format: double */
+            penaltyPercentage: number | string;
+            /** Format: int64 */
+            penaltyAmount: number | string;
+            /** Format: int64 */
+            refundAmount: number | string;
+            status: components["schemas"]["ApprovalStatus"];
+            /** Format: uuid */
+            requestedBy: string;
+            requestedByName: string;
+            /** Format: date-time */
+            requestedAt: string;
+            /** Format: uuid */
+            approvedBy: null | string;
+            approvedByName: null | string;
+            /** Format: date-time */
+            approvedAt: null | string;
+            rejectReason: null | string;
+        };
+        DepositReconciliationReportResponse: {
+            /** Format: date */
+            fromDate: string;
+            /** Format: date */
+            toDate: string;
+            /** Format: int64 */
+            openingDepositBalance: number | string;
+            /** Format: int64 */
+            collectedInPeriod: number | string;
+            /** Format: int64 */
+            refundedInPeriod: number | string;
+            /** Format: int64 */
+            deductedFeeInPeriod: number | string;
+            /** Format: int64 */
+            lostRetainedInPeriod: number | string;
+            /** Format: int64 */
+            deductedAndLostTotalInPeriod: number | string;
+            /** Format: int64 */
+            closingDepositBalance: number | string;
+            /** Format: int32 */
+            totalActiveObligationSlips: number | string;
+            /** Format: int64 */
+            cashObligationAmount: number | string;
+            /** Format: int64 */
+            bankObligationAmount: number | string;
+            /** Format: int64 */
+            suggestedCashActualBalance: number | string;
+            alertBannerMessage: null | string;
+            slips: components["schemas"]["PagedResultOfDepositReconciliationSlipRowDto"];
+        };
+        DepositReconciliationSlipRowDto: {
+            /** Format: uuid */
+            slipId: string;
+            slipNo: string;
+            /** Format: uuid */
+            customerId: string;
+            customerName: string;
+            customerPhone: string;
+            /** Format: int64 */
+            depositCollected: number | string;
+            /** Format: int64 */
+            settledDeduction: number | string;
+            /** Format: int64 */
+            refundedAmount: number | string;
+            /** Format: int64 */
+            currentlyHeld: number | string;
+            statusCode: string;
+            statusLabel: string;
+            /** Format: date-time */
+            dueAt: null | string;
+        };
+        DisposalReversalApprovalDetailResponse: {
+            /** Format: uuid */
+            id: string;
+            requestType: string;
+            referenceCode: string;
+            titleName: string;
+            /** Format: int64 */
+            amount: number | string;
+            reason: string;
+            status: components["schemas"]["ApprovalStatus"];
+            /** Format: uuid */
+            requestedBy: string;
+            requestedByName: string;
+            /** Format: date-time */
+            requestedAt: string;
+            /** Format: uuid */
+            approvedBy: null | string;
+            approvedByName: null | string;
+            /** Format: date-time */
+            approvedAt: null | string;
+            rejectReason: null | string;
+            details: null | string;
+            auditHistory: components["schemas"]["ApprovalAuditItem"][];
+        };
+        DisposalReversalApprovalItemResponse: {
+            /** Format: uuid */
+            id: string;
+            requestType: string;
+            referenceCode: string;
+            titleName: string;
+            /** Format: int64 */
+            amount: number | string;
+            reason: string;
+            status: components["schemas"]["ApprovalStatus"];
+            /** Format: uuid */
+            requestedBy: string;
+            requestedByName: string;
+            /** Format: date-time */
+            requestedAt: string;
+            /** Format: uuid */
+            approvedBy: null | string;
+            approvedByName: null | string;
+            /** Format: date-time */
+            approvedAt: null | string;
+            rejectReason: null | string;
+        };
         EditionCopySummary: {
             /** Format: uuid */
             id: string;
@@ -4933,12 +6214,150 @@ export interface components {
         EmailTestResponse: {
             status: string;
         };
+        ExpenseBreakdownDto: {
+            /** Format: int64 */
+            customerBuyback: number | string;
+            /** Format: int64 */
+            supplierImport: number | string;
+            /** Format: int64 */
+            approvedPayroll: number | string;
+            payrollPeriodCode: string;
+        };
         ForgotPasswordRequest: {
             email: string;
         };
+        InventoryAdjustmentAuditItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            actorId: null | string;
+            actorName: null | string;
+            action: string;
+            beforeData: null | string;
+            afterData: null | string;
+            reason: null | string;
+        };
+        InventoryAdjustmentRequestDetailResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            inventoryCheckId: string;
+            checkCode: string;
+            checkNote: null | string;
+            /** Format: date-time */
+            checkedAt: string;
+            /** Format: uuid */
+            checkedBy: string;
+            checkedByName: string;
+            /** Format: uuid */
+            copyId: string;
+            copyBarcode: string;
+            /** Format: uuid */
+            editionId: string;
+            isbn: null | string;
+            titleName: string;
+            currentCopyStatus: components["schemas"]["BookCopyStatus"];
+            expectedStatus: components["schemas"]["BookCopyStatus"];
+            observedStatus: null | components["schemas"]["BookCopyStatus"];
+            requestedStatus: components["schemas"]["BookCopyStatus"];
+            varianceType: null | components["schemas"]["InventoryVarianceType"];
+            isFound: boolean;
+            reason: string;
+            status: components["schemas"]["InventoryAdjustmentStatus"];
+            /** Format: uuid */
+            requestedBy: string;
+            requestedByName: string;
+            /** Format: date-time */
+            requestedAt: string;
+            /** Format: uuid */
+            approvedBy: null | string;
+            approvedByName: null | string;
+            /** Format: date-time */
+            approvedAt: null | string;
+            rejectionReason: null | string;
+            /** Format: date-time */
+            appliedAt: null | string;
+            canDeleteByRetention: boolean;
+            /** Format: date-time */
+            retainUntil: string;
+            history: components["schemas"]["InventoryAdjustmentAuditItem"][];
+        };
+        InventoryAdjustmentRequestResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            inventoryCheckId: string;
+            checkCode: string;
+            /** Format: uuid */
+            copyId: string;
+            copyBarcode: string;
+            titleName: string;
+            currentCopyStatus: components["schemas"]["BookCopyStatus"];
+            expectedStatus: components["schemas"]["BookCopyStatus"];
+            observedStatus: null | components["schemas"]["BookCopyStatus"];
+            requestedStatus: components["schemas"]["BookCopyStatus"];
+            varianceType: null | components["schemas"]["InventoryVarianceType"];
+            isFound: boolean;
+            reason: string;
+            status: components["schemas"]["InventoryAdjustmentStatus"];
+            /** Format: uuid */
+            requestedBy: string;
+            requestedByName: string;
+            /** Format: date-time */
+            requestedAt: string;
+            /** Format: uuid */
+            approvedBy: null | string;
+            approvedByName: null | string;
+            /** Format: date-time */
+            approvedAt: null | string;
+            rejectionReason: null | string;
+            /** Format: date-time */
+            appliedAt: null | string;
+        };
+        InventoryAdjustmentStatsResponse: {
+            /** Format: int32 */
+            pendingCount: number | string;
+            /** Format: int32 */
+            approvedCount: number | string;
+            /** Format: int32 */
+            appliedCount: number | string;
+            /** Format: int32 */
+            rejectedCount: number | string;
+            /** Format: int32 */
+            cancelledCount: number | string;
+            /** Format: int32 */
+            totalCount: number | string;
+        };
+        /** @enum {unknown} */
+        InventoryAdjustmentStatus: "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "APPLIED" | "CANCELLED";
+        /** @enum {unknown} */
+        InventoryVarianceType: "MISSING" | "UNEXPECTED_STATUS" | "DAMAGED" | "NONE" | null;
         LoginRequest: {
             email: string;
             password: string;
+        };
+        LowStockAlertRowDto: {
+            /** Format: uuid */
+            editionId: string;
+            /** Format: uuid */
+            titleId: string;
+            displayTitle: string;
+            /** Format: int32 */
+            saleAvailable: number | string;
+            /** Format: int32 */
+            minStockSale: number | string;
+            /** Format: int32 */
+            rentalAvailable: number | string;
+            /** Format: int32 */
+            minStockRental: number | string;
+            /** Format: int32 */
+            totalAvailable: number | string;
+            /** Format: int32 */
+            totalMinRequired: number | string;
+            /** Format: int32 */
+            suggestedReplenishQty: number | string;
         };
         /** @enum {unknown} */
         MembershipTierName: "REGULAR" | "SILVER" | "GOLD";
@@ -4959,6 +6378,120 @@ export interface components {
         };
         /** @enum {unknown} */
         MetadataSource: "MANUAL" | "GOOGLE_BOOKS" | "OPEN_LIBRARY" | null;
+        OverdueCustomerRowDto: {
+            /** Format: uuid */
+            slipId: string;
+            slipNo: string;
+            /** Format: uuid */
+            customerId: string;
+            customerName: string;
+            customerPhone: string;
+            /** Format: date-time */
+            earliestDueAt: string;
+            /** Format: int32 */
+            daysOverdue: number | string;
+            /** Format: int32 */
+            activeCopyCount: number | string;
+        };
+        OverviewAttentionDto: {
+            /** Format: int32 */
+            overdueSlipCount: number | string;
+            /** Format: int32 */
+            overdueOver7DaysCustomerCount: number | string;
+            /** Format: int32 */
+            lowStockEditionCount: number | string;
+            /** Format: int32 */
+            outOfStockEditionCount: number | string;
+            /** Format: int32 */
+            pendingReceiptCopyCount: number | string;
+            /** Format: int32 */
+            vietQrPendingOrFailedCount: number | string;
+            /** Format: double */
+            vietQrTargetPct: number | string;
+        };
+        OverviewReportResponse: {
+            /** Format: date */
+            dateVn: string;
+            /** Format: date-time */
+            generatedAtUtc: string;
+            trendRange: string;
+            isCashierScoped: boolean;
+            storeScopeLabel: string;
+            /** Format: int64 */
+            totalSettledRevenueToday: number | string;
+            /** Format: int64 */
+            salesRevenueToday: number | string;
+            /** Format: int64 */
+            rentalRevenueToday: number | string;
+            /** Format: int64 */
+            cashDrawerBalance: number | string;
+            /** Format: int32 */
+            activeCashSessionCount: number | string;
+            /** Format: int64 */
+            heldDepositsBalance: number | string;
+            /** Format: int32 */
+            circulatingRentalSlipCount: number | string;
+            /** Format: int32 */
+            overdueRentalSlipCount: number | string;
+            /** Format: double */
+            vietQrSuccessRatePct: number | string;
+            /** Format: int32 */
+            vietQrSucceededCount: number | string;
+            /** Format: int32 */
+            vietQrTotalCount: number | string;
+            /** Format: int64 */
+            trendTotalAmount: number | string;
+            trendPoints: components["schemas"]["OverviewTrendPointDto"][];
+            revenueStructure: components["schemas"]["OverviewRevenueStructureDto"];
+            topRentedTitles: components["schemas"]["TopRentedTitleDto"][];
+            attention: components["schemas"]["OverviewAttentionDto"];
+            lowStockAlerts: components["schemas"]["LowStockAlertRowDto"][];
+            overdueCustomers: components["schemas"]["OverdueCustomerRowDto"][];
+        };
+        OverviewRevenueStructureDto: {
+            /** Format: int64 */
+            salesAmount: number | string;
+            /** Format: int64 */
+            rentalFeeAmount: number | string;
+            /** Format: int64 */
+            penaltyAmount: number | string;
+            /** Format: int64 */
+            lostBookAmount: number | string;
+            /** Format: int64 */
+            totalAmount: number | string;
+            /** Format: double */
+            salesPct: number | string;
+            /** Format: double */
+            rentalFeePct: number | string;
+            /** Format: double */
+            penaltyPct: number | string;
+            /** Format: double */
+            lostBookPct: number | string;
+        };
+        OverviewTrendPointDto: {
+            /** Format: date */
+            date: string;
+            label: string;
+            /** Format: int64 */
+            salesAmount: number | string;
+            /** Format: int64 */
+            rentalAndPenaltyAmount: number | string;
+            /** Format: int64 */
+            totalAmount: number | string;
+        };
+        PagedResultOfAuditLogResponse: {
+            items: components["schemas"]["AuditLogResponse"][];
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
         PagedResultOfBookCopyResponse: {
             items: components["schemas"]["BookCopyResponse"][];
             /** Format: int32 */
@@ -4974,6 +6507,19 @@ export interface components {
         };
         PagedResultOfBookSeriesResponse: {
             items: components["schemas"]["BookSeriesResponse"][];
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
+        PagedResultOfBuybackApprovalItemResponse: {
+            items: components["schemas"]["BuybackApprovalItemResponse"][];
             /** Format: int32 */
             totalCount: number | string;
             /** Format: int32 */
@@ -5063,8 +6609,86 @@ export interface components {
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
+        PagedResultOfDamagePenaltyApprovalItemResponse: {
+            items: components["schemas"]["DamagePenaltyApprovalItemResponse"][];
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
+        PagedResultOfDepositReconciliationSlipRowDto: {
+            items: components["schemas"]["DepositReconciliationSlipRowDto"][];
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
+        PagedResultOfDisposalReversalApprovalItemResponse: {
+            items: components["schemas"]["DisposalReversalApprovalItemResponse"][];
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
         PagedResultOfEditionResponse: {
             items: components["schemas"]["EditionResponse"][];
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
+        PagedResultOfInventoryAdjustmentRequestResponse: {
+            items: components["schemas"]["InventoryAdjustmentRequestResponse"][];
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
+        PagedResultOfRevenueExpenseDocumentRowDto: {
+            items: components["schemas"]["RevenueExpenseDocumentRowDto"][];
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
+        PagedResultOfRevenueExpenseSourceRowDto: {
+            items: components["schemas"]["RevenueExpenseSourceRowDto"][];
             /** Format: int32 */
             totalCount: number | string;
             /** Format: int32 */
@@ -5089,6 +6713,8 @@ export interface components {
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
+        /** @enum {unknown} */
+        PaymentMethod: "CASH" | "BANK_TRANSFER" | null;
         ProblemDetails: {
             type?: null | string;
             title?: null | string;
@@ -5122,6 +6748,74 @@ export interface components {
             token: string;
             newPassword: string;
         };
+        RevenueBreakdownDto: {
+            /** Format: int64 */
+            counterSales: number | string;
+            /** Format: int64 */
+            lostBookRetained: number | string;
+            /** Format: int64 */
+            settledRentFees: number | string;
+            /** Format: int64 */
+            settledExtensionFees: number | string;
+            /** Format: int64 */
+            settledPenalties: number | string;
+        };
+        RevenueExpenseDocumentRowDto: {
+            /** Format: uuid */
+            documentId: string;
+            documentCode: string;
+            /** Format: date-time */
+            occurredAt: string;
+            sourceKey: string;
+            sourceLabel: string;
+            counterpartyName: string;
+            /** Format: int64 */
+            amount: number | string;
+            paymentMethodLabel: string;
+            statusLabel: string;
+        };
+        RevenueExpenseReportResponse: {
+            /** Format: date */
+            fromDate: string;
+            /** Format: date */
+            toDate: string;
+            storeScopeLabel: string;
+            /** Format: int64 */
+            totalRevenue: number | string;
+            /** Format: int64 */
+            totalExpense: number | string;
+            /** Format: int64 */
+            netOperatingDifference: number | string;
+            revenueBreakdown: components["schemas"]["RevenueBreakdownDto"];
+            expenseBreakdown: components["schemas"]["ExpenseBreakdownDto"];
+            trendBuckets: components["schemas"]["RevenueExpenseTrendBucketDto"][];
+            sources: components["schemas"]["PagedResultOfRevenueExpenseSourceRowDto"];
+        };
+        RevenueExpenseSourceRowDto: {
+            sourceKey: string;
+            sourceLabel: string;
+            codePattern: string;
+            /** Format: int32 */
+            documentCount: number | string;
+            quantityLabel: string;
+            /** Format: int64 */
+            revenueAmount: null | number | string;
+            /** Format: int64 */
+            expenseAmount: null | number | string;
+            paymentChannelLabel: string;
+            statusLabel: string;
+        };
+        RevenueExpenseTrendBucketDto: {
+            label: string;
+            /** Format: date */
+            fromDate: string;
+            /** Format: date */
+            toDate: string;
+            /** Format: int64 */
+            revenueAmount: number | string;
+            /** Format: int64 */
+            expenseAmount: number | string;
+        };
         /** @enum {unknown} */
         RoleName: "ADMIN" | "CASHIER" | "INVENTORY_MANAGER";
         SaleLineSummary: {
@@ -5143,6 +6837,59 @@ export interface components {
         };
         /** @enum {unknown} */
         StockReceiptSourceType: "SUPPLIER" | "CUSTOMER_BUYBACK";
+        TaxDeclarationReportResponse: {
+            periodType: string;
+            /** Format: int32 */
+            year: number | string;
+            /** Format: int32 */
+            periodValue: number | string;
+            /** Format: date */
+            fromDate: string;
+            /** Format: date */
+            toDate: string;
+            periodLabel: string;
+            storeScopeLabel: string;
+            /** Format: date-time */
+            generatedAtUtc: string;
+            /** Format: int64 */
+            totalTaxableRevenue: number | string;
+            /** Format: int64 */
+            totalEligibleExpense: number | string;
+            /** Format: int64 */
+            netDifference: number | string;
+            hasFullSourceReconciliation: boolean;
+            revenueItems: components["schemas"]["TaxRevenueItemDto"][];
+            expenseItems: components["schemas"]["TaxExpenseItemDto"][];
+            excludedItems: components["schemas"]["TaxExcludedItemDto"][];
+        };
+        TaxExcludedItemDto: {
+            itemKey: string;
+            title: string;
+            /** Format: int64 */
+            amount: number | string;
+            treatmentNote: string;
+        };
+        TaxExpenseItemDto: {
+            itemKey: string;
+            title: string;
+            requiredDocuments: string;
+            sourceTrace: string;
+            /** Format: int32 */
+            documentCount: number | string;
+            /** Format: int64 */
+            amount: number | string;
+            isVerified: boolean;
+        };
+        TaxRevenueItemDto: {
+            itemKey: string;
+            title: string;
+            recognitionRule: string;
+            sourceTrace: string;
+            /** Format: int32 */
+            documentCount: number | string;
+            /** Format: int64 */
+            amount: number | string;
+        };
         TitleDetailResponse: {
             /** Format: uuid */
             id: string;
@@ -5201,6 +6948,19 @@ export interface components {
             editionsCount: number | string;
             imageUrl: null | string;
         };
+        TopRentedTitleDto: {
+            /** Format: uuid */
+            titleId: string;
+            titleName: string;
+            volumeLabel: null | string;
+            displayName: string;
+            /** Format: int32 */
+            rentalCount: number | string;
+        };
+        UpdateApprovalStatusRequestDto: {
+            status: components["schemas"]["ApprovalStatus"];
+            reason: null | string;
+        };
         UpdateBookCopyRequest: {
             conditionGrade: null | components["schemas"]["ConditionGrade"];
             availability: null | components["schemas"]["BookChannelAvailability"];
@@ -5212,6 +6972,10 @@ export interface components {
             rentalRate?: null | number | string;
             shelfCode?: null | string;
             imageUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
+        };
+        UpdateBookCopyShelfRequest: {
+            shelfCode: null | string;
+            reason: string;
         };
         UpdateBookCopyStatusRequest: {
             status: null | components["schemas"]["BookCopyStatus"];
@@ -5278,6 +7042,10 @@ export interface components {
         UpdateEditionStatusRequest: {
             isActive: boolean;
         };
+        UpdateInventoryAdjustmentStatusDto: {
+            status: null | components["schemas"]["InventoryAdjustmentStatus"];
+            reason?: null | string;
+        };
         UpdateTitleRequest: {
             name: string;
             /** Format: uuid */
@@ -5316,320 +7084,6 @@ export interface components {
         };
         VerifyRequest: {
             token: string;
-        };
-        /** @enum {unknown} */
-        ApprovalStatus: "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "COMPLETED" | "REJECTED" | "CANCELLED";
-        ApprovalAuditItem: {
-            id: string;
-            occurredAt: string;
-            actorId: null | string;
-            actorName: null | string;
-            action: string;
-            beforeData: null | string;
-            afterData: null | string;
-            reason: null | string;
-        };
-        ApprovalsOverviewStatsResponse: {
-            totalCount: number;
-            pendingCount: number;
-            approvedCount: number;
-            rejectedCount: number;
-            buybackPending: number;
-            damagePenaltyPending: number;
-            inventoryAdjustmentPending: number;
-            disposalReversalPending: number;
-        };
-        BuybackApprovalLineDto: {
-            id: string;
-            titleName: string;
-            editionName: null | string;
-            isbn: null | string;
-            conditionGrade: null | string;
-            coverPrice: number;
-            proposedPrice: number;
-            quantity: number;
-            imageUrl: null | string;
-        };
-        BuybackApprovalItemResponse: {
-            id: string;
-            receiptCode: string;
-            customerName: null | string;
-            customerPhone: null | string;
-            status: components["schemas"]["ApprovalStatus"];
-            totalAmount: number;
-            itemCount: number;
-            titleSummary: string;
-            reason: null | string;
-            requestedBy: string;
-            requestedByName: string;
-            requestedAt: string;
-            approvedBy: null | string;
-            approvedByName: null | string;
-            approvedAt: null | string;
-            rejectReason: null | string;
-        };
-        BuybackApprovalDetailResponse: {
-            id: string;
-            receiptCode: string;
-            customerName: null | string;
-            customerPhone: null | string;
-            status: components["schemas"]["ApprovalStatus"];
-            totalAmount: number;
-            itemCount: number;
-            titleSummary: string;
-            reason: null | string;
-            requestedBy: string;
-            requestedByName: string;
-            requestedAt: string;
-            approvedBy: null | string;
-            approvedByName: null | string;
-            approvedAt: null | string;
-            rejectReason: null | string;
-            lines: components["schemas"]["BuybackApprovalLineDto"][];
-            imageUrls: string[];
-            auditHistory: components["schemas"]["ApprovalAuditItem"][];
-        };
-        CreateBuybackLineDto: {
-            editionId: string;
-            conditionGrade: string;
-            proposedPrice: number;
-            sellingPriceSuggestion?: null | number;
-            quantity?: number;
-        };
-        CreateBuybackApprovalRequestDto: {
-            customerId?: null | string;
-            totalAmount: number;
-            reason: string;
-            lines: components["schemas"]["CreateBuybackLineDto"][];
-            imageUrls?: null | string[];
-        };
-        PagedResultBuybackApprovalItemResponse: {
-            items: components["schemas"]["BuybackApprovalItemResponse"][];
-            totalCount: number;
-            page: number;
-            pageSize: number;
-            totalPages: number;
-            hasPreviousPage: boolean;
-            hasNextPage: boolean;
-        };
-        DamagePenaltyApprovalItemResponse: {
-            id: string;
-            slipId: string;
-            slipCode: string;
-            copyId: string;
-            copyBarcode: string;
-            titleName: string;
-            customerName: null | string;
-            customerPhone: null | string;
-            customerTier: null | string;
-            depositAmount: number;
-            damageDescription: string;
-            penaltyPercentage: number;
-            penaltyAmount: number;
-            refundAmount: number;
-            status: components["schemas"]["ApprovalStatus"];
-            requestedBy: string;
-            requestedByName: string;
-            requestedAt: string;
-            approvedBy: null | string;
-            approvedByName: null | string;
-            approvedAt: null | string;
-            rejectReason: null | string;
-        };
-        DamagePenaltyApprovalDetailResponse: {
-            id: string;
-            slipId: string;
-            slipCode: string;
-            copyId: string;
-            copyBarcode: string;
-            titleName: string;
-            customerName: null | string;
-            customerPhone: null | string;
-            customerTier: null | string;
-            depositAmount: number;
-            damageDescription: string;
-            penaltyPercentage: number;
-            penaltyAmount: number;
-            refundAmount: number;
-            status: components["schemas"]["ApprovalStatus"];
-            requestedBy: string;
-            requestedByName: string;
-            requestedAt: string;
-            approvedBy: null | string;
-            approvedByName: null | string;
-            approvedAt: null | string;
-            rejectReason: null | string;
-            imageUrls: string[];
-            auditHistory: components["schemas"]["ApprovalAuditItem"][];
-        };
-        CreateDamagePenaltyApprovalRequestDto: {
-            rentalLineId: string;
-            damageDescription: string;
-            penaltyPercentage: number;
-            penaltyAmount: number;
-            reason: string;
-            imageUrls?: null | string[];
-        };
-        PagedResultDamagePenaltyApprovalItemResponse: {
-            items: components["schemas"]["DamagePenaltyApprovalItemResponse"][];
-            totalCount: number;
-            page: number;
-            pageSize: number;
-            totalPages: number;
-            hasPreviousPage: boolean;
-            hasNextPage: boolean;
-        };
-        DisposalReversalApprovalItemResponse: {
-            id: string;
-            requestType: string;
-            referenceCode: string;
-            titleName: string;
-            amount: number;
-            reason: string;
-            status: components["schemas"]["ApprovalStatus"];
-            requestedBy: string;
-            requestedByName: string;
-            requestedAt: string;
-            approvedBy: null | string;
-            approvedByName: null | string;
-            approvedAt: null | string;
-            rejectReason: null | string;
-        };
-        DisposalReversalApprovalDetailResponse: {
-            id: string;
-            requestType: string;
-            referenceCode: string;
-            titleName: string;
-            amount: number;
-            reason: string;
-            status: components["schemas"]["ApprovalStatus"];
-            requestedBy: string;
-            requestedByName: string;
-            requestedAt: string;
-            approvedBy: null | string;
-            approvedByName: null | string;
-            approvedAt: null | string;
-            rejectReason: null | string;
-            details: null | string;
-            auditHistory: components["schemas"]["ApprovalAuditItem"][];
-        };
-        CreateDisposalReversalApprovalRequestDto: {
-            requestType: string;
-            referenceId?: null | string;
-            referenceCode: string;
-            amount: number;
-            reason: string;
-            details?: null | string;
-        };
-        PagedResultDisposalReversalApprovalItemResponse: {
-            items: components["schemas"]["DisposalReversalApprovalItemResponse"][];
-            totalCount: number;
-            page: number;
-            pageSize: number;
-            totalPages: number;
-            hasPreviousPage: boolean;
-            hasNextPage: boolean;
-        };
-        UpdateApprovalStatusRequestDto: {
-            status: components["schemas"]["ApprovalStatus"];
-            reason?: null | string;
-        };
-        InventoryAdjustmentRequestResponse: {
-            id: string;
-            inventoryCheckId: string;
-            checkCode: string;
-            copyId: string;
-            copyBarcode: string;
-            titleName: string;
-            currentCopyStatus: string;
-            expectedStatus: string;
-            observedStatus: null | string;
-            requestedStatus: string;
-            varianceType: null | string;
-            isFound: boolean;
-            reason: string;
-            status: string;
-            requestedBy: string;
-            requestedByName: string;
-            requestedAt: string;
-            approvedBy: null | string;
-            approvedByName: null | string;
-            approvedAt: null | string;
-            rejectionReason: null | string;
-            appliedAt: null | string;
-        };
-        InventoryAdjustmentRequestDetailResponse: {
-            id: string;
-            inventoryCheckId: string;
-            checkCode: string;
-            checkNote: null | string;
-            checkedAt: string;
-            checkedBy: string;
-            checkedByName: string;
-            copyId: string;
-            copyBarcode: string;
-            editionId: string;
-            isbn: null | string;
-            titleName: string;
-            currentCopyStatus: string;
-            expectedStatus: string;
-            observedStatus: null | string;
-            requestedStatus: string;
-            varianceType: null | string;
-            isFound: boolean;
-            reason: string;
-            status: string;
-            requestedBy: string;
-            requestedByName: string;
-            requestedAt: string;
-            approvedBy: null | string;
-            approvedByName: null | string;
-            approvedAt: null | string;
-            rejectionReason: null | string;
-            appliedAt: null | string;
-            canDeleteByRetention: boolean;
-            retainUntil: string;
-            history: {
-                id: string;
-                occurredAt: string;
-                actorId: null | string;
-                actorName: null | string;
-                action: string;
-                beforeData: null | string;
-                afterData: null | string;
-                reason: null | string;
-            }[];
-        };
-        InventoryAdjustmentStatsResponse: {
-            pendingCount: number;
-            approvedCount: number;
-            appliedCount: number;
-            rejectedCount: number;
-            cancelledCount: number;
-            totalCount: number;
-        };
-        CreateInventoryAdjustmentRequestDto: {
-            copyId?: null | string;
-            inventoryCheckId?: null | string;
-            requestedStatus: string;
-            reason: string;
-            varianceType?: null | string;
-            isFound?: null | boolean;
-            checkCode?: null | string;
-            checkNote?: null | string;
-        };
-        UpdateInventoryAdjustmentStatusDto: {
-            status: string;
-            reason?: null | string;
-        };
-        PagedResultInventoryAdjustmentRequestResponse: {
-            items: components["schemas"]["InventoryAdjustmentRequestResponse"][];
-            totalCount: number;
-            page: number;
-            pageSize: number;
-            totalPages: number;
-            hasPreviousPage: boolean;
-            hasNextPage: boolean;
         };
     };
     responses: never;
