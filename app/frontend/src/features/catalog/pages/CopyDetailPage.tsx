@@ -7,6 +7,7 @@ import { useCopyQuery, useDeleteCopyMutation, useEditionQuery, useTitleQuery, us
 import { availabilityLabel, formatVnd } from '../catalog.presentation'
 import type { UpdateCopyRequest } from '../catalog.type'
 import { CopyStatusBadge } from '../components/CatalogStatusBadge'
+import { BookCopyLifecycleDrawer } from '../components/BookCopyLifecycleDrawer'
 import { CatalogWorkspace } from '../components/CatalogWorkspace'
 import { CopyEditorDialog } from '../components/CopyEditorDialog'
 import { CoverTile } from '../components/CoverTile'
@@ -18,6 +19,7 @@ export default function CopyDetailPage() {
   const { session } = useAuth()
   const canEdit = ['ADMIN', 'INVENTORY_MANAGER'].includes(session?.user?.roleCode ?? '')
   const [dialog, setDialog] = useState<'edit' | 'delete' | null>(null)
+  const [isLifecycleOpen, setIsLifecycleOpen] = useState(false)
   const [actionError, setActionError] = useState('')
   const copyQuery = useCopyQuery(copyId)
   const copy = copyQuery.data
@@ -43,7 +45,7 @@ export default function CopyDetailPage() {
   const canDiscontinue = !['RENTED', 'SOLD', 'DISPOSED', 'DISCONTINUED'].includes(copy.status)
 
   return <CatalogWorkspace
-    action={canEdit && <div className="flex flex-wrap gap-2"><Button onClick={() => setDialog('edit')} variant="secondary">Chỉnh sửa</Button><Button onClick={() => { setActionError(''); setDialog('delete') }} variant="outline">Xóa</Button>{canDiscontinue && <Button disabled={updateStatus.isPending} onClick={() => void handleDiscontinue()} variant="ghost">Ngừng sử dụng</Button>}</div>}
+    action={<div className="flex flex-wrap gap-2"><Button onClick={() => setIsLifecycleOpen(true)} variant="outline">Lịch sử vòng đời 360°</Button>{canEdit && <><Button onClick={() => setDialog('edit')} variant="secondary">Chỉnh sửa</Button><Button onClick={() => { setActionError(''); setDialog('delete') }} variant="outline">Xóa</Button>{canDiscontinue && <Button disabled={updateStatus.isPending} onClick={() => void handleDiscontinue()} variant="ghost">Ngừng sử dụng</Button>}</>}</div>}
     title={copy.copyBarcode}>
     {actionError && <p className="text-sm text-rose-700" role="alert">{actionError}</p>}
     <Card padding="none"><div className="flex flex-col gap-5 p-5 sm:flex-row">
@@ -58,6 +60,7 @@ export default function CopyDetailPage() {
     </div></Card>
     {dialog === 'edit' && <CopyEditorDialog copy={copy} editionId={copy.editionId} editionImageUrl={copy.editionImageUrl || editionQuery.data?.coverImageUrl} onClose={() => setDialog(null)} onSave={async (request) => { await updateCopy.mutateAsync({ copyId, request: request as UpdateCopyRequest }) }} />}
     {dialog === 'delete' && <ConfirmationDialog actions={<><Button onClick={() => setDialog(null)} variant="ghost">Hủy</Button><Button loading={deleteCopy.isPending} onClick={() => void handleDelete()} variant="danger">Xóa bản sách</Button></>} error={actionError} message="Chỉ xóa hẳn bản chưa có lịch sử bán, thuê hoặc kiểm kê. Nếu đã có lịch sử, hãy ngừng sử dụng; bản đã bán tự không còn khả dụng." onClose={() => setDialog(null)} title={`Xóa ${copy.copyBarcode}`} />}
+    <BookCopyLifecycleDrawer copyId={isLifecycleOpen ? copy.id : null} initialCopy={copy} onClose={() => setIsLifecycleOpen(false)} />
   </CatalogWorkspace>
 }
 

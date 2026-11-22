@@ -7,6 +7,7 @@ import { useAvailableReceiptLinesQuery, useCopiesQuery, useCreateCopyMutation, u
 import { availabilityLabel, formatVnd } from '../catalog.presentation'
 import type { CreateCopyRequest, UpdateEditionRequest } from '../catalog.type'
 import { ActiveBadge, CopyStatusBadge } from '../components/CatalogStatusBadge'
+import { BookCopyLifecycleDrawer } from '../components/BookCopyLifecycleDrawer'
 import { CatalogWorkspace } from '../components/CatalogWorkspace'
 import { CopyEditorDialog } from '../components/CopyEditorDialog'
 import { CoverTile } from '../components/CoverTile'
@@ -19,6 +20,7 @@ export default function EditionDetailPage() {
   const { session } = useAuth()
   const canEdit = ['ADMIN', 'INVENTORY_MANAGER'].includes(session?.user?.roleCode ?? '')
   const [dialog, setDialog] = useState<'edit' | 'create-copy' | 'delete' | null>(null)
+  const [lifecycleCopyId, setLifecycleCopyId] = useState<string | null>(null)
   const [actionError, setActionError] = useState('')
   const editionQuery = useEditionQuery(editionId)
   const copiesQuery = useCopiesQuery(editionId)
@@ -59,11 +61,12 @@ export default function EditionDetailPage() {
       </div>
     </div></Card>
     <section aria-labelledby="copies-heading"><div className="mb-3 flex items-center justify-between gap-3"><h2 className="text-base font-bold text-slate-900" id="copies-heading">Bản sách vật lý</h2><span className="text-xs text-slate-500">{copies.filter((copy) => copy.status === 'AVAILABLE').length} sẵn sàng / {copies.length} bản</span></div>
-      {copiesQuery.isLoading ? <LoadingRows /> : copiesQuery.error ? <ErrorState message="Không thể tải các bản vật lý." /> : <Card className="overflow-hidden" padding="none"><div className="overflow-x-auto"><table className="min-w-160 w-full text-left text-sm"><thead className="bg-slate-50 text-xs text-slate-500"><tr><th className="px-4 py-3">CopyBarcode</th><th className="px-4 py-3">Trạng thái</th><th className="px-4 py-3">Kênh</th><th className="px-4 py-3">Giá bán / thuê</th><th className="px-4 py-3">Kệ</th></tr></thead><tbody className="divide-y divide-slate-100">{copies.map((copy) => <tr key={copy.id}><td className="px-4 py-3"><Link className="font-semibold text-indigo-700 hover:underline" to={catalogPaths.copyDetail(copy.id)}>{copy.copyBarcode}</Link></td><td className="px-4 py-3"><CopyStatusBadge status={copy.status} /></td><td className="px-4 py-3">{availabilityLabel(copy.availability)}</td><td className="px-4 py-3">{formatVnd(copy.sellingPrice)} / {formatVnd(copy.rentalRate)}</td><td className="px-4 py-3">{copy.shelfCode || '—'}</td></tr>)}</tbody></table></div>{!copies.length && <p className="p-6 text-sm text-slate-500">Chưa có bản vật lý.</p>}</Card>}
+      {copiesQuery.isLoading ? <LoadingRows /> : copiesQuery.error ? <ErrorState message="Không thể tải các bản vật lý." /> : <Card className="overflow-hidden" padding="none"><div className="overflow-x-auto"><table className="min-w-160 w-full text-left text-sm"><thead className="bg-slate-50 text-xs text-slate-500"><tr><th className="px-4 py-3">CopyBarcode</th><th className="px-4 py-3">Trạng thái</th><th className="px-4 py-3">Kênh</th><th className="px-4 py-3">Giá bán / thuê</th><th className="px-4 py-3">Kệ</th><th className="px-4 py-3 text-right">Thao tác</th></tr></thead><tbody className="divide-y divide-slate-100">{copies.map((copy) => <tr key={copy.id}><td className="px-4 py-3"><Link className="font-semibold text-indigo-700 hover:underline" to={catalogPaths.copyDetail(copy.id)}>{copy.copyBarcode}</Link></td><td className="px-4 py-3"><CopyStatusBadge status={copy.status} /></td><td className="px-4 py-3">{availabilityLabel(copy.availability)}</td><td className="px-4 py-3">{formatVnd(copy.sellingPrice)} / {formatVnd(copy.rentalRate)}</td><td className="px-4 py-3">{copy.shelfCode || '—'}</td><td className="px-4 py-3 text-right"><button type="button" onClick={() => setLifecycleCopyId(copy.id)} className="text-xs font-semibold text-indigo-700 hover:text-indigo-900 hover:underline cursor-pointer">Lịch sử 360°</button></td></tr>)}</tbody></table></div>{!copies.length && <p className="p-6 text-sm text-slate-500">Chưa có bản vật lý.</p>}</Card>}
     </section>
     {dialog === 'edit' && <EditionEditorDialog edition={edition} onClose={() => setDialog(null)} onSave={async (request) => { await updateEdition.mutateAsync({ editionId, request: { ...request, minStockSale: edition.minStockSale, minStockRental: edition.minStockRental } as UpdateEditionRequest }) }} titleId={edition.titleId} />}
     {dialog === 'create-copy' && (receiptLinesQuery.isLoading ? <LoadingRows /> : receiptLinesQuery.error ? <ErrorState message="Không thể tải dòng phiếu nhập khả dụng." /> : <CopyEditorDialog editionId={editionId} editionImageUrl={edition.coverImageUrl} onClose={() => setDialog(null)} onSave={async (request) => { await createCopy.mutateAsync(request as CreateCopyRequest) }} receiptLines={receiptLinesQuery.data ?? []} />)}
     {dialog === 'delete' && <ConfirmationDialog actions={<><Button onClick={() => setDialog(null)} variant="ghost">Hủy</Button><Button loading={deleteEdition.isPending} onClick={() => void handleDelete()} variant="danger">Xóa ấn bản</Button></>} error={actionError} message="Chỉ xóa được ấn bản chưa có bản sách hoặc dòng phiếu nhập. Nếu đã có lịch sử, hãy ngừng sử dụng." onClose={() => setDialog(null)} title="Xóa ấn bản" />}
+    <BookCopyLifecycleDrawer copyId={lifecycleCopyId} initialCopy={copies.find((c) => c.id === lifecycleCopyId) ?? null} onClose={() => setLifecycleCopyId(null)} />
   </CatalogWorkspace>
 }
 
