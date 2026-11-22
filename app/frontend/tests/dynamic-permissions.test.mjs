@@ -17,7 +17,7 @@ after(async () => { await server?.close() })
 
 function render(client, child, role = 'CASHIER') {
   return renderToStaticMarkup(React.createElement(QueryClientProvider, { client },
-    React.createElement(AuthContext.Provider, { value: { session: { authenticated: true, user: { email: 'staff@example.test', roleCode: role } } } }, child)))
+    React.createElement(AuthContext.Provider, { value: { session: { authenticated: true, user: { id: `user-${role.toLowerCase()}`, email: 'staff@example.test', roleCode: role } } } }, child)))
 }
 
 test('UI grants follow server permissions independently of role defaults and disappear on revoke', () => {
@@ -26,7 +26,7 @@ test('UI grants follow server permissions independently of role defaults and dis
     const { can } = usePermissions()
     return React.createElement('button', { disabled: !can('BookTitles.CreateTitle') }, 'Tạo đầu sách')
   }
-  const key = ['role-permissions', 'staff@example.test', 'CASHIER']
+  const key = ['role-permissions', 'user-cashier', 'staff@example.test', 'CASHIER']
   assert.match(render(client, React.createElement(CreateButton)), /disabled=""/)
   client.setQueryData(key, ['BookTitles.CreateTitle'])
   assert.doesNotMatch(render(client, React.createElement(CreateButton)), /disabled/)

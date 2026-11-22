@@ -238,27 +238,27 @@ git commit -m "feat(rbac): add screen access policy catalog"
 - Protected Admin-only screen remains `N` for other roles even if a matching code is inserted into client cache.
 - Immutable read-only constraints remain `R` even if a write permission is inserted into client cache.
 
-- [ ] **Step 1: Write failing hook tests**
+- [x] **Step 1: Write failing hook tests**
 
 Use Vite SSR, `QueryClientProvider` and `AuthContext.Provider`. Cover ready, loading, error, revoke and injected protected permission cases.
 
-- [ ] **Step 2: Run focused tests and confirm failure**
+- [x] **Step 2: Run focused tests and confirm failure**
 
 Run: `cd app/frontend && bun run test -- tests/screen-access-hook.test.mjs tests/dynamic-permissions.test.mjs`
 
 Expected: FAIL because `useScreenAccess`/`canAny` do not exist.
 
-- [ ] **Step 3: Implement permission-aware access**
+- [x] **Step 3: Implement permission-aware access**
 
 Reuse the existing `role-permissions` query key. Do not add a second permission query or copy permissions into AuthContext/session storage.
 
-- [ ] **Step 4: Run focused tests**
+- [x] **Step 4: Run focused tests**
 
 Run: `cd app/frontend && bun run test -- tests/screen-access-hook.test.mjs tests/dynamic-permissions.test.mjs`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/frontend/src/hooks/useScreenAccess.ts app/frontend/src/hooks/usePermissions.ts app/frontend/tests/screen-access-hook.test.mjs app/frontend/tests/dynamic-permissions.test.mjs

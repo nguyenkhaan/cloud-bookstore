@@ -45,12 +45,14 @@ const customerDetailCeiling = {
 const policy = (
   path: string,
   screenAccess: RoleAccessMap,
-  options: Omit<ScreenPolicy, 'path' | 'access' | 'permissionMode'> = {},
+  options: Omit<ScreenPolicy, 'path' | 'access' | 'permissionMode'> & {
+    permissionMode?: ScreenPolicy['permissionMode']
+  } = {},
 ): ScreenPolicy => ({
   path,
   access: screenAccess,
-  permissionMode: 'static',
   ...options,
+  permissionMode: options.permissionMode ?? 'static',
 })
 
 export const SCREEN_POLICIES = {
@@ -166,6 +168,9 @@ export const SCREEN_POLICIES = {
   }),
   catalogTitles: policy('/catalog/titles', access('R', 'U', 'U'), {
     navId: 'inventory.titles',
+    permissionMode: 'api',
+    readPermissions: ['BookTitles.Read'],
+    updatePermissions: ['BookTitles.CreateTitle', 'BookTitles.UpdateTitle', 'BookTitles.DeleteTitle'],
     maximumAccessByRole: employeeCatalogCeiling,
   }),
   catalogTitleDetail: policy('/catalog/titles/:titleId', access('R', 'U', 'U'), {
@@ -218,6 +223,40 @@ export function getEffectiveAccess(screenId: ScreenId | string, role: AppRole | 
   if (childAccess.includes('U')) return 'U'
   if (childAccess.includes('R')) return 'R'
   return 'N'
+}
+
+function capAccess(level: AccessLevel, maximum: AccessLevel | undefined): AccessLevel {
+  if (!maximum || maximum === 'U') return level
+  if (maximum === 'R' && level === 'U') return 'R'
+  if (maximum === 'N') return 'N'
+  return level
+}
+
+function hasPermission(permissionCodes: ReadonlySet<string>, permissions?: readonly string[]): boolean {
+  return (permissions ?? []).some((code) => permissionCodes.has(code))
+}
+
+export function resolveEffectiveScreenAccess(
+  screenId: ScreenId | string,
+  role: AppRole | null,
+  permissionCodes: ReadonlySet<string>,
+  permissionStatus: 'loading' | 'ready' | 'error',
+): AccessLevel {
+  if (!isRole(role)) return 'N'
+  const screenPolicy = SCREEN_POLICIES[screenId as ScreenId]
+  if (!screenPolicy) return 'N'
+
+  const baseline = getEffectiveAccess(screenId, role)
+  const maximum = screenPolicy.maximumAccessByRole?.[role]
+  if (screenPolicy.permissionMode === 'static') return capAccess(baseline, maximum)
+
+  if (permissionStatus !== 'ready') {
+    return capAccess(baseline === 'U' ? 'R' : baseline, maximum)
+  }
+
+  const canRead = hasPermission(permissionCodes, screenPolicy.readPermissions)
+  const canUpdate = canRead && hasPermission(permissionCodes, screenPolicy.updatePermissions)
+  return capAccess(canUpdate ? 'U' : canRead ? 'R' : 'N', maximum)
 }
 
 export function getFirstAllowedWorkspacePath(role: AppRole): string {
