@@ -118,19 +118,6 @@ export default function AuditPage() {
       }
     >
       <div className="space-y-5">
-        <p className="text-xs text-slate-500">
-          Truy vết bất biến · Chỉ đọc · Thời gian chính xác tới mili-giây (UTC+7)
-        </p>
-
-        {/* Immutability / RBAC scope notice */}
-        <div className="flex items-start gap-2.5 rounded-xl border border-indigo-100 bg-indigo-50/70 px-4 py-3 text-xs text-indigo-700">
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
-          <span>
-            {isInventoryManager
-              ? 'Mọi bản ghi được bảo toàn. Quản lý kho chỉ tra cứu các nhật ký thuộc nghiệp vụ kho, đầu sách, ấn bản, bản sách và kiểm kê; không có quyền chỉnh sửa hoặc xóa.'
-              : 'Mọi bản ghi được bảo toàn. Admin và Quản lý chỉ được tra cứu, không có quyền chỉnh sửa hoặc xóa Nhật ký kiểm toán.'}
-          </span>
-        </div>
 
         {/* Search & Filters + Audit Log Table */}
         <Card title="Tra cứu nhật ký">

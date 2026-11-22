@@ -27,7 +27,6 @@ export function WorkspacePlaceholderPage({ currentPath, title }: WorkspacePlaceh
     >
       <div className="flex min-h-75 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
         <h2 className="text-sm font-bold text-slate-800">Phân hệ đang được chuẩn bị</h2>
-        <p className="mt-1 max-w-sm text-xs text-slate-500">Layout chung đã được gắn kết sẵn sàng cho các trang tiếp theo theo đúng kiến trúc nghiệp vụ.</p>
       </div>
     </MainLayout>
   )

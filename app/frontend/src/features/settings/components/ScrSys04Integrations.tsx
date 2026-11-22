@@ -200,7 +200,6 @@ export const ScrSys04Integrations: React.FC<ScrSys04IntegrationsProps> = ({ isAd
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <h2 className="text-base font-semibold text-slate-900">VietQR Gateway</h2>
-              <p className="text-xs text-slate-500">Thu đúng số tiền, nội dung giao dịch; tự đối soát trong sản phẩm thật.</p>
             </div>
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
@@ -324,9 +323,6 @@ export const ScrSys04Integrations: React.FC<ScrSys04IntegrationsProps> = ({ isAd
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-            <p className="text-[11px] text-slate-400">
-              Kiểm thử minh họa: chữ ký hợp lệ, mẫu callback đúng định dạng. Không nhận giao dịch ngân hàng thật.
-            </p>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -354,7 +350,6 @@ export const ScrSys04Integrations: React.FC<ScrSys04IntegrationsProps> = ({ isAd
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <h2 className="text-base font-semibold text-slate-900">Zalo OA · ZNS</h2>
-              <p className="text-xs text-slate-500">Mẫu thông báo thanh toán, nhắc hạn và quyết toán, không gửi tin thật.</p>
             </div>
             <div>
               <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-100">
@@ -516,8 +511,6 @@ export const ScrSys04Integrations: React.FC<ScrSys04IntegrationsProps> = ({ isAd
                 {bookMetadata.status}
               </span>
             </div>
-            <p className="text-xs text-slate-500">Tra cứu metadata theo ISBN; cho phép nhập thủ công.</p>
-
             <div className="border border-slate-200 rounded-xl p-3 bg-white">
               <label htmlFor="meta-priority" className="text-[11px] font-semibold text-slate-500 block mb-1">Dịch vụ ưu tiên</label>
               <input
@@ -564,10 +557,6 @@ export const ScrSys04Integrations: React.FC<ScrSys04IntegrationsProps> = ({ isAd
               />
             </div>
 
-            <p className="text-[11px] text-slate-400">
-              Không tìm thấy ISBN: nhân viên nhập tay tên sách, tác giả, NXB và giá bìa.
-            </p>
-
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
@@ -597,8 +586,6 @@ export const ScrSys04Integrations: React.FC<ScrSys04IntegrationsProps> = ({ isAd
                 {smtp.status}
               </span>
             </div>
-            <p className="text-xs text-slate-500">Email gửi OTP kích hoạt tài khoản nhân viên.</p>
-
             <div className="grid grid-cols-2 gap-3">
               <div className="border border-slate-200 rounded-xl p-3 bg-white">
                 <label htmlFor="smtp-host" className="text-[11px] font-semibold text-slate-500 block mb-1">Host</label>
@@ -660,11 +647,6 @@ export const ScrSys04Integrations: React.FC<ScrSys04IntegrationsProps> = ({ isAd
                 {showSmtpPassword ? <Eye size={15} /> : <EyeOff size={15} />}
               </button>
             </div>
-
-            <p className="text-[11px] text-slate-400">
-              Đang kiểm tra… là trạng thái mẫu. Không gửi OTP hoặc email từ bản thiết kế này.
-            </p>
-
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
@@ -715,10 +697,6 @@ export const ScrSys04Integrations: React.FC<ScrSys04IntegrationsProps> = ({ isAd
             {updateMutation.isPending ? 'Đang lưu...' : 'Lưu toàn bộ cấu hình'}
           </button>
         </div>
-
-        <p className="text-xs text-slate-500 leading-relaxed">
-          Giá trị bí mật luôn được che. Chỉ nhập khóa mới khi cần thay; để trống giữ cấu hình hiện tại.
-        </p>
       </div>
     </div>
   )

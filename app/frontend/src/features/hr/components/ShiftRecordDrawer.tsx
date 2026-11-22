@@ -47,7 +47,7 @@ export function ShiftRecordDrawer({ open, readOnly, record, onClose, onSave }: S
     <div aria-modal="true" className="fixed inset-0 z-50 bg-slate-900/35" role="dialog">
       <div className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col border-l border-slate-200 bg-white shadow-xl">
         <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-6">
-          <div><h2 className="mt-1 text-lg font-bold text-slate-900">{readOnly ? 'Chi tiết bản ghi ca' : 'Thêm bản ghi ca'}</h2><p className="mt-1 text-xs leading-5 text-slate-500">Chỉ ghi nhận một nhân viên cho một lần làm cụ thể.</p></div>
+          <h2 className="mt-1 text-lg font-bold text-slate-900">{readOnly ? 'Chi tiết bản ghi ca' : 'Thêm bản ghi ca'}</h2>
           <button aria-label="Đóng drawer bản ghi ca" className="flex h-11 w-11 items-center justify-center rounded-lg text-xl text-slate-500 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600" onClick={onClose} ref={closeButtonRef} type="button">×</button>
         </div>
         <div className="flex-1 space-y-4 overflow-y-auto p-6">
@@ -61,7 +61,6 @@ export function ShiftRecordDrawer({ open, readOnly, record, onClose, onSave }: S
             <label className="block text-xs font-semibold text-slate-600" htmlFor="record-note">Ghi chú</label>
             <textarea disabled={readOnly} className="mt-2 min-h-28 w-full resize-y rounded-xl border border-slate-200 px-3.5 py-3 text-sm text-slate-800 outline-none transition focus:border-indigo-600 focus:ring-3 focus:ring-indigo-600/15" id="record-note" onChange={(event) => setNote(event.target.value)} placeholder="Ghi chú bàn giao hoặc yêu cầu đặc biệt" value={note} />
           </div>
-          <p className="rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-500">Bản ghi chỉ lưu thông tin của một lần làm cụ thể.</p>
         </div>
         <div className="flex flex-col-reverse gap-2 border-t border-slate-100 p-6 sm:flex-row sm:justify-end">
           <Button onClick={onClose} variant="secondary">Hủy</Button>

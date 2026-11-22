@@ -54,7 +54,7 @@ export default function PosWorkspacePage() {
             </div>
             <p className="mt-2 text-sm text-slate-600">Ưu tiên quét <strong className="text-slate-900">CopyBarcode</strong> của từng bản sách vật lý.</p>
           </div>
-          <div className="text-left text-xs text-slate-500 sm:text-right"><div className="font-semibold text-slate-800">Alola, {currentUser.name}</div><div>Bạn là: {currentUser.role}</div></div>
+          <div className="text-left text-xs text-slate-500 sm:text-right"><div className="font-semibold text-slate-800">Alola, {currentUser.name}</div></div>
         </div>
 
         <PosWorkspaceTabs activeTab={activeTab} onChange={changeTab} />

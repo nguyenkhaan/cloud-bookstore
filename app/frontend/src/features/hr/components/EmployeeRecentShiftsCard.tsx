@@ -20,7 +20,6 @@ export function EmployeeRecentShiftsCard({
 
   return (
     <Card
-      subtitle="Phân công và trạng thái chấm công theo từng ca"
       title="Ca trực gần đây"
     >
       <div className="overflow-x-auto">

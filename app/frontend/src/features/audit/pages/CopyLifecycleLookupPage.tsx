@@ -96,7 +96,6 @@ export default function CopyLifecycleLookupPage() {
       <div className="space-y-6">
         <Card
           title="Tìm nhanh theo mã vạch bản sách (CopyBarcode)"
-          subtitle="Nhập hoặc quét mã vạch bản sách để mở ngăn kéo vòng đời 360°, in lại tem dán gáy và chuyển vị trí kệ."
         >
           <form onSubmit={handleLookup} className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="relative flex-1">
@@ -138,7 +137,6 @@ export default function CopyLifecycleLookupPage() {
 
         <Card
           title="Bản sách trong kho"
-          subtitle="Chọn trực tiếp một bản sách bên dưới để xem lịch sử vòng đời."
         >
           {recentCopiesQuery.isLoading ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

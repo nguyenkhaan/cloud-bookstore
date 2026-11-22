@@ -31,7 +31,7 @@ export function PosRentalPanel() {
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
       <div className="space-y-4">
-        <Card title="Bản sách khách chọn" subtitle="Quét CopyBarcode từng bản sách khả dụng cho thuê" bodyClassName="space-y-4">
+        <Card title="Bản sách khách chọn" bodyClassName="space-y-4">
           <PosScannerField label="Quét CopyBarcode bản sách" placeholder="Quét mã bản sách hoặc nhập mã…" onScan={addCopy} />
           <div className="overflow-x-auto rounded-xl border border-slate-200"><table className="min-w-full text-left text-xs"><thead className="bg-indigo-50/70 text-[10px] uppercase tracking-wide text-slate-500"><tr><th className="px-3 py-3">Bản sách / Barcode</th><th className="px-3 py-3">Grade</th><th className="px-3 py-3 text-right">Cọc theo giá bán</th><th className="px-3 py-3 text-right">Thuê / ngày</th><th className="px-3 py-3 text-right">Phí thuê dự kiến</th></tr></thead><tbody className="divide-y divide-slate-100">{lines.map((line) => <tr key={line.copyBarcode}><td className="px-3 py-3"><div className="font-semibold text-slate-800">{line.title} · {line.volume}</div><div className="font-mono text-[10px] text-slate-400">{line.copyBarcode}</div></td><td className="px-3 py-3"><Badge variant={line.grade === 'A' ? 'success' : 'warning'} size="xs">{line.grade}</Badge></td><td className="px-3 py-3 text-right font-semibold text-slate-800">{formatVnd(line.deposit)}</td><td className="px-3 py-3 text-right text-slate-600">{formatVnd(line.rentalRatePerDay)}</td><td className="px-3 py-3 text-right text-slate-600">{formatVnd(line.rentalFeePreview)}</td></tr>)}</tbody></table></div>
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3 text-xs"><span className="text-slate-500">{lines.length} bản sách · Tổng giá bán thực tế</span><strong className="text-lg text-slate-900">{formatVnd(totalDeposit)}</strong></div>
@@ -42,7 +42,7 @@ export function PosRentalPanel() {
         </Card>
       </div>
       <div className="space-y-4">
-        <Card title="Thông tin khách thuê" subtitle="Cập nhật đầy đủ thông tin khách thuê" bodyClassName="space-y-3">
+        <Card title="Thông tin khách thuê" bodyClassName="space-y-3">
           <TextField label="Số điện thoại" value={rentalFixture.customer.phone} readOnly variant="outlined" />
           <div className="flex items-center justify-between gap-3"><div><div className="text-sm font-semibold text-slate-900">{rentalFixture.customer.name}</div><div className="text-xs text-slate-500">CCCD {rentalFixture.customer.identityNumber}</div></div><Badge variant="brand">Hạng {rentalFixture.customer.tier}</Badge></div>
           <TextField label="Địa chỉ thường trú" value={rentalFixture.customer.address} readOnly variant="outlined" />

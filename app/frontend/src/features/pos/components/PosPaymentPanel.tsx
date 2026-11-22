@@ -17,7 +17,7 @@ interface PosPaymentPanelProps {
   onComplete: () => void
 }
 
-export function PosPaymentPanel({ total, method, status, cashReceived = 0, title = 'Thanh toán', subtitle = 'Chọn phương thức thanh toán cho giao dịch', actionLabel = 'Xác nhận thanh toán', disabled = false, disabledReason, onMethodChange, onComplete }: PosPaymentPanelProps) {
+export function PosPaymentPanel({ total, method, status, cashReceived = 0, title = 'Thanh toán', subtitle, actionLabel = 'Xác nhận thanh toán', disabled = false, disabledReason, onMethodChange, onComplete }: PosPaymentPanelProps) {
   const change = Math.max(0, cashReceived - total)
   const isSuccess = status === 'success'
 

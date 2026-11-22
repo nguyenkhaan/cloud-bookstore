@@ -689,9 +689,6 @@ export default function StockReceiptsPage() {
           <Card bodyClassName="space-y-5" padding="lg">
             <div>
               <h2 className="text-sm font-bold text-slate-900">Bước 1 - Danh mục nhập đã xác nhận</h2>
-              <p className="mt-0.5 text-xs text-slate-500">
-                Mặc định Grade A, mỗi bản vật lý nhận một Barcode riêng từ hệ thống.
-              </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] items-end">
@@ -1104,7 +1101,6 @@ export default function StockReceiptsPage() {
 
           <div className="text-[11px] text-slate-500 space-y-0.5 border-t border-slate-100 pt-3">
             <p>Mã phiếu: <strong>{activeReceiptCode}</strong></p>
-            <p>Mọi thao tác xác nhận nhập kho & sinh CopyBarcode đều được lưu nhật ký kiểm toán.</p>
           </div>
         </Card>
       </div>

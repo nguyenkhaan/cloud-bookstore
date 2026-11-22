@@ -94,7 +94,6 @@ export default function EmployeeListPage() {
       currentPath="hr"
       onNavigate={navigateFromSidebar}
       onSignOut={signOut}
-      pageSubtitle="Quản lý tài khoản, vai trò và trạng thái làm việc của nhân viên"
       pageTitle="Danh sách nhân viên"
       user={currentUser}
     >

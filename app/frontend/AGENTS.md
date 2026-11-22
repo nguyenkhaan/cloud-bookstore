@@ -71,6 +71,7 @@ Preserve the existing bookstore identity, information hierarchy, and working beh
 - `MainLayout` page headers contain the page title, optional actions, and optional `pageHeaderContent`; they do not accept a screen-code prop.
 - When one feature has sibling pages, put its navigation in `pageHeaderContent` directly below the title. Use one flat, horizontally scrollable tab bar with a bottom border and an indigo active underline; do not use code badges, icon chips, filled-pill tabs, or a second tab bar inside page content.
 - Keep tab labels short, task-oriented, and free of role/status narration that users already understand from access and page context.
+- Use subtitles and small muted copy only for data, a decision-changing constraint, or an input requirement that is not already visible. Do not add examples, implementation narration, or generic instructions that repeat the title, form labels, or actions next to them.
 
 ### Accessibility and interaction
 

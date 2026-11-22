@@ -155,7 +155,6 @@ export default function PayrollPage() {
         currentPath="hr"
         onNavigate={navigateFromSidebar}
         onSignOut={signOut}
-        pageSubtitle={`Góc nhìn ${effectiveRoleLabel} · Quyền truy cập nhân sự theo vai trò`}
         pageTitle="Bảng thanh toán lương"
         user={{
           ...currentUser,

@@ -163,7 +163,6 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
           <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col gap-5 shadow-xs">
             <div>
               <h2 className="text-base font-semibold text-slate-900">Chính sách cho thuê</h2>
-              <p className="text-xs text-slate-500">Giá trị mặc định áp dụng cho các phiếu thuê được tạo mới.</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -171,7 +170,6 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
               <div className="border border-slate-200 rounded-xl p-3.5 bg-slate-50/60">
                 <span className="text-[11px] font-semibold text-slate-500 block mb-1">Tỷ lệ tiền cọc · Cố định</span>
                 <span className="text-sm font-bold text-slate-900 block">100% giá bán thực tế</span>
-                <span className="text-[11px] text-slate-400 block mt-1">Không giảm tiền cọc theo hạng thành viên.</span>
               </div>
 
               {/* Số lần gia hạn tối đa */}
@@ -218,7 +216,6 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
               <div className="border border-slate-200 rounded-xl p-3.5 bg-slate-50/60">
                 <span className="text-[11px] font-semibold text-slate-500 block mb-1">Thời điểm thu phí thuê</span>
                 <span className="text-sm font-bold text-slate-900 block">Khi trả & Quyết toán</span>
-                <span className="text-[11px] text-slate-400 block mt-1">Khấu trừ vào cọc hoặc tính thêm khi trả sách.</span>
               </div>
             </div>
 
@@ -298,7 +295,6 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
           <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col gap-5 shadow-xs">
             <div>
               <h2 className="text-base font-semibold text-slate-900">Khung phạt bồi thường theo tình trạng</h2>
-              <p className="text-xs text-slate-500">Mức bồi thường tương ứng với hư hỏng vật lý thẩm định tại quầy.</p>
             </div>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
@@ -369,7 +365,6 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
             <div className="text-xs text-slate-600 space-y-1">
               <p>Cập nhật gần nhất: {policy?.lastUpdatedAt ? new Date(policy.lastUpdatedAt).toLocaleDateString('vi-VN') : '01/10/2026'}</p>
               <p>{policy?.lastUpdatedByName ?? 'Nguyễn Minh Anh · Admin'}</p>
-              <p className="text-slate-400">Chỉ tác động phiếu mới sau thời điểm lưu.</p>
             </div>
 
             <div className="bg-amber-50 text-amber-800 text-xs p-3 rounded-xl border border-amber-100">

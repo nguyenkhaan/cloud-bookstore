@@ -104,7 +104,6 @@ export function BookSeriesPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-xl font-bold text-slate-900">BookSeries · Test Cloudinary direct upload</h1>
-          <p className="text-xs text-slate-500">Chọn ảnh → Upload lên Cloudinary → Tạo BookSeries kèm imageUpload.</p>
         </div>
         <Link className="text-xs font-semibold text-indigo-700 hover:underline" to="/dashboard">
           Về Dashboard

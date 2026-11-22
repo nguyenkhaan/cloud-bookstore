@@ -124,10 +124,6 @@ export default function DepositReconciliationPage() {
       }
     >
       <div className="space-y-6">
-        <p className="text-xs text-slate-500">
-          Từ {formatVnDateShort(data?.fromDate ?? fromDate)} đến{' '}
-          {formatVnDateShort(data?.toDate ?? toDate)} · Theo số dư nghĩa vụ với khách hàng, không phải doanh thu
-        </p>
 
         {/* Filter Bar */}
         <Card padding="sm">

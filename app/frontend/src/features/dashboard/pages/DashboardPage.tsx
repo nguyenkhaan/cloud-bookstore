@@ -74,11 +74,6 @@ export function DashboardPage({ onSignOut }: DashboardPageProps) {
     >
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-          <p>
-            Chào <span className="font-semibold text-slate-800">{currentUser.name}</span>, đây là nhịp vận hành{' '}
-            {data?.storeScopeLabel || 'Nhà sách Mây'} ({formatVnDateShort(selectedDate)})
-            {data?.generatedAtUtc ? ` · Cập nhật ${formatVnDateTimeShort(data.generatedAtUtc)}` : ''}
-          </p>
           {data?.isCashierScoped && (
             <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
               Phạm vi ca thu ngân hiện tại
@@ -201,13 +196,6 @@ export function DashboardPage({ onSignOut }: DashboardPageProps) {
           <OverdueRentalsTable rows={data?.overdueCustomers ?? []} />
         </div>
 
-        {/* Role & accounting notice */}
-        <div className="flex items-start gap-2.5 rounded-xl border border-indigo-100 bg-indigo-50/70 px-4 py-3 text-xs text-indigo-700">
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
-          <span>
-            Góc nhìn Thu ngân chỉ xem ca hiện tại; Quản lý kho / Admin xem toàn cửa hàng. Cọc 100% là khoản nợ phải trả, phí thuê chỉ ghi nhận khi trả và quyết toán.
-          </span>
-        </div>
       </div>
     </MainLayout>
   )

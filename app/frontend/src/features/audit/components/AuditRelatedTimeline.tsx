@@ -71,9 +71,6 @@ export const AuditRelatedTimeline: React.FC<AuditRelatedTimelineProps> = ({
             </span>
           </div>
 
-          <p className="text-[11px] leading-relaxed text-slate-500">
-            Không có thao tác sửa / xóa. Tra cứu theo tài khoản hoặc mã đối tượng để xem chuỗi hành động đầy đủ.
-          </p>
         </div>
       )}
     </Card>

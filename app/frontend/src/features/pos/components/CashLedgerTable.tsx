@@ -13,7 +13,6 @@ export function CashLedgerTable({ entries, onToggleEmpty }: CashLedgerTableProps
     <Card
       action={<Button aria-label="Chuyển trạng thái sổ quỹ rỗng" onClick={onToggleEmpty} size="xs" variant="ghost">{entries.length ? 'Sổ quỹ rỗng' : 'Hiện giao dịch mẫu'}</Button>}
       padding="lg"
-      subtitle="Các khoản thu và chi phát sinh trong ca"
       title="Sổ quỹ ca làm việc"
     >
       {entries.length === 0 ? (

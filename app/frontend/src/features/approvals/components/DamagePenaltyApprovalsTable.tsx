@@ -106,9 +106,6 @@ export const DamagePenaltyApprovalsTable: React.FC<DamagePenaltyApprovalsTablePr
                 <tr>
                   <td className="px-4 py-12 text-center text-slate-500" colSpan={9}>
                     <p className="font-semibold text-slate-700">Không có yêu cầu bồi thường hư hỏng nào</p>
-                    <p className="text-[11px] text-slate-400 mt-1">
-                      Các trường hợp sách thuê bị ngấm nước rách ngoài khung sẽ hiển thị tại đây khi quầy trả sách gửi duyệt.
-                    </p>
                   </td>
                 </tr>
               ) : (

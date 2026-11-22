@@ -232,9 +232,6 @@ export default function ApprovalsPage() {
                       <tr>
                         <td className="px-4 py-12 text-center text-slate-500" colSpan={9}>
                           <p className="font-semibold text-slate-700">Không có yêu cầu điều chỉnh nào</p>
-                          <p className="text-[11px] text-slate-400 mt-1">
-                            Nhấn nút &ldquo;+ Lập đề nghị điều chỉnh kho&rdquo; để tạo yêu cầu mới.
-                          </p>
                         </td>
                       </tr>
                     ) : (

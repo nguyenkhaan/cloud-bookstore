@@ -299,18 +299,6 @@ export function SeriesVolumeMatrixPanel({ series }: { series: BookSeries[] }) {
         </div>
       </div>
 
-      <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-4 text-xs text-indigo-950 flex items-start gap-3">
-        <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-indigo-600 text-[10px] font-bold text-indigo-700">
-          i
-        </span>
-        <div className="space-y-1">
-          <p className="font-bold text-indigo-950">Giữ đủ bộ, không cho thuê lẻ các cuốn dành cho combo</p>
-          <p className="text-slate-600 leading-relaxed">
-            Các cuốn đã giữ làm combo bị chặn cho thuê lẻ tại quầy. Chỉ mở đóng gói Full Set khi đủ {matrixData.totalVolumes}/{matrixData.totalVolumes} tập khả dụng.
-          </p>
-        </div>
-      </div>
-
       {isMissingModalOpen && (
         <CatalogDialog
           onClose={() => setIsMissingModalOpen(false)}

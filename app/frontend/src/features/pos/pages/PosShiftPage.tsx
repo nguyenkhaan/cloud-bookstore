@@ -89,7 +89,7 @@ export default function PosShiftPage() {
         />
         <CashSummaryCards countedCash={countedCash} openingCash={openingCash} theoreticalCash={theoreticalCash} variance={variance} />
         {state === 'not-opened' && (
-          <Card title="Chuẩn bị mở ca" subtitle="Kiểm đếm tiền đầu ca trước khi bắt đầu giao dịch">
+          <Card title="Chuẩn bị mở ca">
             <div className="flex flex-col gap-3 rounded-xl bg-indigo-50 p-4 text-xs text-indigo-800 sm:flex-row sm:items-center sm:justify-between">
               <p>Ca chưa mở. Chỉ sau khi xác nhận tiền đầu ca, sổ quỹ mới nhận giao dịch.</p>
               <Button onClick={() => setState('open')} size="sm">Mở ca</Button>

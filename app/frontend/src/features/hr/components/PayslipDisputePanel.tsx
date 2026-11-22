@@ -73,7 +73,6 @@ export function PayslipDisputePanel({
     <>
       <Card
         padding="lg"
-        subtitle="Chọn khoản mục và bổ sung chứng từ để Admin kiểm tra."
         title="Đối chiếu & Giải trình phiếu lương"
       >
         <form className="space-y-3.5" noValidate onSubmit={handleSubmit}>

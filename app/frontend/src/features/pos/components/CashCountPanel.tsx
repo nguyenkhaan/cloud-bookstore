@@ -16,7 +16,6 @@ export function CashCountPanel({ denominations, readOnly = false, onChange }: Ca
     <Card
       action={<span className="text-xs text-slate-400">Đơn vị VND</span>}
       padding="lg"
-      subtitle="Nhập số tờ thực tế có trong két"
       title="Kiểm đếm tiền mặt"
     >
       <div className="overflow-x-auto">

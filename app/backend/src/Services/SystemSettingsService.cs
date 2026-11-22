@@ -124,9 +124,9 @@ public sealed class SystemSettingsService(AppDbContext dbContext, TimeProvider t
             };
             string desc = tier.Name switch
             {
-                MembershipTierName.REGULAR => "Khởi đầu cho mọi khách hàng mới",
-                MembershipTierName.SILVER => "Đặc quyền cho người đọc thân thiết",
-                MembershipTierName.GOLD => "Dành cho những hành trình đọc dài",
+                MembershipTierName.REGULAR => "",
+                MembershipTierName.SILVER => "",
+                MembershipTierName.GOLD => "",
                 _ => string.Empty
             };
 

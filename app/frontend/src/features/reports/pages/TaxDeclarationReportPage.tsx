@@ -81,10 +81,6 @@ export default function TaxDeclarationReportPage() {
       }
     >
       <div className="space-y-6">
-        <p className="text-xs text-slate-500">
-          Bảng tổng hợp nguồn dữ liệu kê khai · Kỳ {data?.periodLabel || `Tháng ${String(periodValue).padStart(2, '0')}/${year}`}
-          {data?.generatedAtUtc ? ` · Sinh ${formatVnDateTimeShort(data.generatedAtUtc)}` : ''}
-        </p>
 
         {/* Print-only Header */}
         <div className="hidden border-b border-slate-300 pb-4 print:block">
@@ -171,10 +167,6 @@ export default function TaxDeclarationReportPage() {
               </Button>
             </div>
           </div>
-
-          <p className="mt-3 text-[11px] text-slate-500">
-            Có thể đổi sang kỳ Quý. Nguồn truy nguyên theo chứng từ đã hoàn tất và quyết toán trong kỳ.
-          </p>
         </Card>
 
         {taxQuery.isError && (
@@ -210,7 +202,6 @@ export default function TaxDeclarationReportPage() {
         {/* Section A: Doanh thu chịu thuế */}
         <Card
           title="A. Doanh thu chịu thuế"
-          subtitle="Mỗi khoản được nhận diện một lần; không cộng trùng các khoản khấu trừ tiền cọc."
         >
           <div className="overflow-x-auto">
             <table className="min-w-[680px] w-full text-left text-xs">
@@ -316,22 +307,8 @@ export default function TaxDeclarationReportPage() {
               </tbody>
             </table>
           </div>
-
-          <div className="mt-4 flex items-start gap-2 rounded-xl border border-indigo-100 bg-indigo-50/70 px-3.5 py-2.5 text-xs text-indigo-700">
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
-            <span>
-              Tiền cọc là khoản bảo đảm hoàn lại, không phải phí dịch vụ. Chỉ phần đã quyết toán thành phí/phạt hoặc chuyển bán do mất sách được đưa vào mục A.
-            </span>
-          </div>
         </Card>
 
-        {/* Disclaimer Yellow Banner */}
-        <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-xs text-amber-800">
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
-          <span>
-            Báo cáo tổng hợp dữ liệu đầu vào kê khai, không tự áp dụng thuế suất hay suy diễn số thuế phải nộp. Người phụ trách đối chiếu chính sách thuế thực tế trước khi nộp.
-          </span>
-        </div>
       </div>
     </MainLayout>
   )

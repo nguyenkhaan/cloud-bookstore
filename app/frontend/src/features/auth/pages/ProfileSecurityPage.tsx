@@ -242,7 +242,6 @@ export function ProfileSecurityPage() {
         {/* Section 1: Personal Info */}
         <Card
           padding="lg"
-          subtitle="Thông tin định danh và phân quyền tài khoản trên hệ thống Mây Portal."
           title="Thông tin cá nhân"
         >
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr]">
@@ -303,7 +302,6 @@ export function ProfileSecurityPage() {
                 />
 
                 <TextField
-                  hint="Tên đăng nhập nội bộ do Admin cấp."
                   label="Tên đăng nhập"
                   name="username"
                   readOnly
@@ -329,7 +327,6 @@ export function ProfileSecurityPage() {
                 />
 
                 <TextField
-                  hint="Email chỉ có thể thay đổi bởi Quản trị viên."
                   label="Email định danh"
                   name="email"
                   readOnly
@@ -391,7 +388,6 @@ export function ProfileSecurityPage() {
         {/* Section 2: Security & Password */}
         <Card
           padding="lg"
-          subtitle="Quản lý mật khẩu truy cập cho tài khoản nhân viên."
           title="Bảo mật & Mật khẩu"
         >
           <div className="flex flex-col gap-3 rounded-xl border border-slate-200/70 bg-slate-50/50 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -424,7 +420,6 @@ export function ProfileSecurityPage() {
         {/* Section 3: Devices & Sessions */}
         <Card
           padding="lg"
-          subtitle="Danh sách các thiết bị và trình duyệt đang hoặc từng đăng nhập vào tài khoản của bạn."
           title="Thiết bị & Phiên đăng nhập"
         >
           <div className="overflow-x-auto rounded-xl border border-slate-200/80">
@@ -527,7 +522,6 @@ export function ProfileSecurityPage() {
         {/* Section 4: Notification Preferences */}
         <Card
           padding="lg"
-          subtitle="Kiểm soát các loại thông báo bạn muốn nhận trên giao diện làm việc và hòm thư."
           title="Tùy chọn thông báo"
         >
           <div className="divide-y divide-slate-100">

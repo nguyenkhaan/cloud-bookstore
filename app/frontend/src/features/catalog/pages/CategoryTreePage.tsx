@@ -449,10 +449,6 @@ export default function CategoryTreePage() {
       }
       title="Thể loại sách & Cây danh mục"
     >
-      <p className="text-xs text-slate-500">
-        Tổ chức danh mục theo cách độc giả tìm thấy sách.
-      </p>
-
       <div className="grid gap-3.5 sm:grid-cols-[minmax(0,1fr)_220px] sm:items-center">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-slate-400" />

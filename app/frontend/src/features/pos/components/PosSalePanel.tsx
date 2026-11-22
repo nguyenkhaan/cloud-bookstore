@@ -72,7 +72,7 @@ export function PosSalePanel({ quickPickerPreview, onOpenQuickPicker }: PosSaleP
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3 text-xs"><span className="text-slate-500">{lines.length} bản sách · Tổng tiền hàng</span><strong className="text-lg text-slate-900">{formatVnd(subtotal)}</strong></div>
           {quickPickerPreview && <div className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs text-indigo-800">Đã chọn nhanh {quickPickerPreview.selectedVolumes.length} tập · Giá dự kiến {formatVnd(quickPickerPreview.selectedVolumes.length * quickPickerPreview.agreedPricePerVolume)}.</div>}
         </Card>
-          <Card title="Xem trước hóa đơn" subtitle="Kiểm tra thông tin trước khi in"><div className="space-y-2 rounded-xl bg-slate-50 p-3 text-xs text-slate-600"><div className="font-bold text-slate-800">NHÀ SÁCH MÂY</div><div>{lines.length} bản sách · {formatVnd(total)}</div><div>Giảm thành viên · -{formatVnd(discount)}</div><div className="border-t border-slate-200 pt-2 font-semibold text-slate-900">Tạm tính · {formatVnd(total)}</div></div></Card>
+          <Card title="Xem trước hóa đơn" subtitle=""><div className="space-y-2 rounded-xl bg-slate-50 p-3 text-xs text-slate-600"><div className="font-bold text-slate-800">NHÀ SÁCH MÂY</div><div>{lines.length} bản sách · {formatVnd(total)}</div><div>Giảm thành viên · -{formatVnd(discount)}</div><div className="border-t border-slate-200 pt-2 font-semibold text-slate-900">Tạm tính · {formatVnd(total)}</div></div></Card>
       </div>
 
       <div className="space-y-4">

@@ -123,7 +123,6 @@ export function CreateHrRequestCard({
   return (
     <Card
       padding="lg"
-      subtitle="Kiểm tra lịch trước khi gửi. Các trường có * là bắt buộc."
       title={FORM_TITLES[type]}
     >
       <form className="space-y-3.5" noValidate onSubmit={handleSubmit}>

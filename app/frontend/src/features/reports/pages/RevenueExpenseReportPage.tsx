@@ -109,12 +109,6 @@ export default function RevenueExpenseReportPage() {
       }
     >
       <div className="space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs text-slate-500">
-            Kỳ {formatVnDateShort(data?.fromDate ?? fromDate)}–{formatVnDateShort(data?.toDate ?? toDate)} · Chứng từ hoàn tất ·{' '}
-            {data?.storeScopeLabel || 'Nhà sách Mây'}
-          </p>
-        </div>
 
         {/* Filter Card */}
         <Card padding="sm">
@@ -336,7 +330,6 @@ export default function RevenueExpenseReportPage() {
         {/* Source Summary Table */}
         <Card
           title="Giao dịch theo nguồn"
-          subtitle="Dòng tổng hợp trong kỳ; nhấp vào nguồn để truy nguyên danh sách chứng từ."
         >
           {reportQuery.isLoading ? (
             <div className="space-y-2.5">
@@ -405,7 +398,7 @@ export default function RevenueExpenseReportPage() {
           )}
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3 text-xs text-slate-500">
-            <span>{totalSources} nguồn tổng hợp · Nhấp từng dòng để xem danh sách chứng từ chi tiết</span>
+            <span>{totalSources} nguồn tổng hợp</span>
             <div className="flex items-center gap-1.5">
               <Button
                 type="button"
@@ -431,14 +424,6 @@ export default function RevenueExpenseReportPage() {
             </div>
           </div>
         </Card>
-
-        {/* Footer Accounting Disclaimer */}
-        <div className="flex items-start gap-2.5 rounded-xl border border-indigo-100 bg-indigo-50/70 px-4 py-3 text-xs text-indigo-700">
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
-          <span>
-            Tiền cọc khách nộp và tiền hoàn cọc là luồng tiền giữ hộ, không cộng doanh thu hoặc chi phí. Báo cáo này không thay thế báo cáo đối soát tiền cọc.
-          </span>
-        </div>
       </div>
 
       <SourceDocumentsDrawer

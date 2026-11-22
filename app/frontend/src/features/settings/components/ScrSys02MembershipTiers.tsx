@@ -99,8 +99,7 @@ export const ScrSys02MembershipTiers: React.FC<ScrSys02MembershipTiersProps> = (
         {/* Normal Tier Card */}
         <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col gap-4 shadow-xs">
           <div>
-            <h3 className="text-base font-bold text-slate-900">Normal · Hạng Thường</h3>
-            <p className="text-xs text-slate-500 mt-0.5">{regularTier.description}</p>
+            <h3 className="text-base font-bold text-slate-900">Hạng Thường</h3>
           </div>
           <div>
             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">
@@ -125,8 +124,7 @@ export const ScrSys02MembershipTiers: React.FC<ScrSys02MembershipTiersProps> = (
         {/* Silver Tier Card */}
         <div className="bg-white border border-indigo-200 rounded-2xl p-6 flex flex-col gap-4 shadow-xs ring-1 ring-indigo-50">
           <div>
-            <h3 className="text-base font-bold text-slate-900">Silver · Hạng Bạc</h3>
-            <p className="text-xs text-slate-500 mt-0.5">{silverTier.description}</p>
+            <h3 className="text-base font-bold text-slate-900">Hạng Bạc</h3>
           </div>
           <div>
             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
@@ -151,8 +149,7 @@ export const ScrSys02MembershipTiers: React.FC<ScrSys02MembershipTiersProps> = (
         {/* Gold Tier Card */}
         <div className="bg-white border border-amber-200 rounded-2xl p-6 flex flex-col gap-4 shadow-xs ring-1 ring-amber-50">
           <div>
-            <h3 className="text-base font-bold text-slate-900">Gold · Hạng Vàng</h3>
-            <p className="text-xs text-slate-500 mt-0.5">{goldTier.description}</p>
+            <h3 className="text-base font-bold text-slate-900">Gold</h3>
           </div>
           <div>
             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-100">
@@ -179,7 +176,6 @@ export const ScrSys02MembershipTiers: React.FC<ScrSys02MembershipTiersProps> = (
       <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col gap-5 shadow-xs">
         <div>
           <h2 className="text-base font-semibold text-slate-900">Bảng cấu hình hạng</h2>
-          <p className="text-xs text-slate-500">Các giá trị là trường chỉnh sửa của Admin. Ngưỡng liên tục, không chồng lấn.</p>
         </div>
 
         <div className="overflow-x-auto rounded-xl border border-slate-200">
@@ -306,20 +302,11 @@ export const ScrSys02MembershipTiers: React.FC<ScrSys02MembershipTiersProps> = (
             <p className="font-bold mb-0.5">ⓘ Lưu ý loại trừ:</p>
             <p>Loại trừ: tiền cọc nhận / hoàn, tiền phạt, tiền thu mua trả khách và phí thuê / gia hạn chưa quyết toán.</p>
           </div>
-          <p className="text-xs text-slate-500 italic">
-            Ví dụ Nguyễn Thu Hà: mua 1.800.000đ + thuê / gia hạn 780.000đ = 2.580.000đ · Hạng Bạc.
-          </p>
         </div>
 
         {/* Card: Tác động khi lưu */}
         <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col gap-4 shadow-xs">
           <h2 className="text-base font-semibold text-slate-900">Tác động khi lưu</h2>
-          <div className="bg-indigo-50 text-indigo-700 text-xs p-3.5 rounded-xl border border-indigo-100">
-            <p className="font-bold mb-0.5">ⓘ Phạm vi tác động:</p>
-            <p>
-              Khi thay đổi ngưỡng chi tiêu hoặc quyền lợi chiết khấu, hệ thống sẽ tự động cập nhật hạng cho khách hàng ở giao dịch thanh toán hoặc trả sách kế tiếp.
-            </p>
-          </div>
           <div className="text-xs text-slate-500">
             Cập nhật gần nhất: {policy?.lastUpdatedAt ? new Date(policy.lastUpdatedAt).toLocaleDateString('vi-VN') : '18/10/2026'} · {policy?.lastUpdatedByName ?? 'Admin'}
           </div>
