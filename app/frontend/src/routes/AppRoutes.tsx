@@ -27,10 +27,14 @@ import PosPage from '@/features/pos/pages/PosPage'
 import PosShiftPage from '@/features/pos/pages/PosShiftPage'
 import PosCustomerDisplayPage from '@/features/pos/pages/PosCustomerDisplayPage'
 import HumanResourcesPage from '@/features/hr/pages/HumanResourcesPage'
+import EmployeeListPage from '@/features/hr/pages/EmployeeListPage'
+import EmployeeDetailPage from '@/features/hr/pages/EmployeeDetailPage'
+import HrRequestsPage from '@/features/hr/pages/HrRequestsPage'
+import PayrollAdjustmentPage from '@/features/hr/pages/PayrollAdjustmentPage'
+import PayrollPage from '@/features/hr/pages/PayrollPage'
+import PayslipPage from '@/features/hr/pages/PayslipPage'
 import ShiftRecordsPage from '@/features/hr/pages/ShiftRecordsPage'
 import AttendancePage from '@/features/hr/pages/AttendancePage'
-import AdminAttendancePage from '@/features/hr/pages/AdminAttendancePage'
-import { adminHrPaths } from '@/features/hr/admin-hr.route'
 import ApprovalsPage from '@/features/approvals/pages/ApprovalsPage'
 import AuditPage from '@/features/audit/pages/AuditPage'
 import CopyLifecycleLookupPage from '@/features/audit/pages/CopyLifecycleLookupPage'
@@ -158,11 +162,15 @@ export default function AppRoutes() {
       <Route path="/customers" element={<RequireSession><CustomerListPage /></RequireSession>} />
       <Route path="/customers/:id" element={<RequireSession><CustomerDetailPage /></RequireSession>} />
       <Route path="/hr" element={<RequireSession><HumanResourcesPage /></RequireSession>} />
-      <Route path="/hr/shifts" element={<RequireSession><Navigate replace to={adminHrPaths.shifts} /></RequireSession>} />
+      <Route path="/hr/employees" element={<RequireSession><EmployeeListPage /></RequireSession>} />
+      <Route path="/hr/employees/:id" element={<RequireSession><EmployeeDetailPage /></RequireSession>} />
+      <Route path="/hr/shifts" element={<RequireSession><ShiftRecordsPage /></RequireSession>} />
       <Route path="/hr/attendance" element={<RequireSession><AttendancePage /></RequireSession>} />
-      <Route path="/admin/hr" element={<RequireSession><Navigate replace to={adminHrPaths.attendance} /></RequireSession>} />
-      <Route path="/admin/hr/attendance" element={<RequireSession><AdminAttendancePage /></RequireSession>} />
-      <Route path="/admin/hr/shifts" element={<RequireSession><ShiftRecordsPage /></RequireSession>} />
+      <Route path="/hr/requests" element={<RequireSession><HrRequestsPage /></RequireSession>} />
+      <Route path="/hr/payroll" element={<RequireSession><PayrollPage /></RequireSession>} />
+      <Route path="/hr/payroll/adjustments/new" element={<RequireSession><PayrollAdjustmentPage /></RequireSession>} />
+      <Route path="/hr/payslip" element={<RequireSession><PayslipPage /></RequireSession>} />
+      <Route path="/hr/payslip/:employeeId" element={<RequireSession><PayslipPage /></RequireSession>} />
       <Route path="/approvals" element={<RequireSession><ApprovalsPage /></RequireSession>} />
       <Route
         path={auditPaths.root}

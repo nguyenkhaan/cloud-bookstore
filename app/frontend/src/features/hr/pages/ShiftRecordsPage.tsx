@@ -4,8 +4,8 @@ import { AuthContext } from '@/context/AuthProvider'
 import { Button } from '@/components/common'
 import { MainLayout } from '@/components/layout'
 import { workspacePathFor } from '@/features/workspace/workspace.route'
+import { hrPaths } from '../hr.route'
 import { ShiftDateToolbar, type ShiftStatusFilter } from '../components/ShiftDateToolbar'
-import { AdminHrTabs } from '../components/AdminHrTabs'
 import { ShiftRecordDrawer } from '../components/ShiftRecordDrawer'
 import { ShiftRecordsTable } from '../components/ShiftRecordsTable'
 import { ShiftSummaryCards } from '../components/ShiftSummaryCards'
@@ -46,15 +46,14 @@ export default function ShiftRecordsPage() {
   return (
     <MainLayout
       actionButton={isAdminView && <Button onClick={() => openDrawer()} size="sm">+ Thêm bản ghi ca</Button>}
-      breadcrumbs={[{ label: 'Không gian làm việc' }, { label: 'Nhân sự' }, { label: 'Phân công ca' }]}
-      currentPath="admin-hr"
+      breadcrumbs={[{ label: 'Không gian làm việc' }, { label: 'Nhân sự & tiền lương', to: hrPaths.root }, { label: 'Phân công ca' }]}
+      currentPath="hr"
       onNavigate={(item) => { const path = workspacePathFor(item); if (path) navigate(path) }}
       onSignOut={auth?.signOut}
       pageTitle="Phân công ca"
       user={currentUser}
     >
       <div className="space-y-4">
-        <AdminHrTabs activeTab="shifts" />
         <ShiftDateToolbar date={date} employee={employee} onDateChange={setDate} onEmployeeChange={setEmployee} onShiftOrderChange={setShiftOrder} onStatusChange={setStatus} shiftOrder={shiftOrder} status={status} />
         <ShiftSummaryCards assignedEmployees={assignedEmployees} attendanceMissing={filteredRecords.filter((record) => record.state === 'attendance-missing').length} totalRecords={filteredRecords.length} unassignedRecords={filteredRecords.filter((record) => record.state === 'unassigned').length} />
         <ShiftRecordsTable isAdminView={isAdminView} onView={openDrawer} records={filteredRecords} />

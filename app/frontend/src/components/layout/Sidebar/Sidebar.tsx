@@ -1,4 +1,5 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
+import { Link, useInRouterContext } from 'react-router-dom';
 import {
   DashboardIcon,
   InventoryIcon,
@@ -13,11 +14,14 @@ import {
   ApprovalIcon,
   AuditIcon, 
   ReportIcon, 
-  SettingsIcon
+  SettingsIcon,
+  ChevronDownIcon,
 } from '@/components/common/Icons';
 import { Logo } from '@/components/common/Logo';
 import { AuthContext } from '@/context/AuthProvider';
 import { brand } from '@/lib/brand';
+import { hrPaths } from '@/features/hr/hr.route';
+import { HR_ADMIN_ONLY_NAV_IDS } from '@/features/hr/hr-role.util';
 
 export interface NavItem {
   id: string;
@@ -28,6 +32,8 @@ export interface NavItem {
 
 export interface SidebarProps {
   currentPath?: string;
+  activeHref?: string;
+  userRoleCode?: string;
   onNavigate?: (id: string) => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
@@ -37,26 +43,23 @@ export interface SidebarProps {
   storeAddress?: string;
   userRole?: string;
 }
-//Inside the workspace.route.ts 
-// export const workspacePaths = {
-//   overview: '/dashboard',
-//   pos: '/pos',
-//   inventory: catalogPaths.seriesList,
-//   customers: '/customers',
-//   hr: '/hr',
-//   approvals: '/approvals',
-//   audit: '/audit',
-//   reports: '/reports',
-//   settings: '/settings',
-// } as const
+
+const HR_SUB_NAV_ITEMS = [
+  { id: 'hr-employees', label: 'Danh sách nhân viên', href: hrPaths.employees },
+  { id: 'hr-shifts', label: 'Phân công ca', href: hrPaths.shifts },
+  { id: 'hr-attendance', label: 'Chấm công', href: hrPaths.attendance },
+  { id: 'hr-requests', label: 'Đơn xét duyệt', href: hrPaths.requests },
+  { id: 'hr-payroll', label: 'Bảng lương', href: hrPaths.payroll },
+  { id: 'hr-payslip', label: 'Phiếu lương', href: hrPaths.payslip },
+] as const;
+
 const DEFAULT_NAV_ITEMS: NavItem[] = [
   { id: 'overview', label: 'Tổng quan', icon: DashboardIcon },
   { id: 'pos', label: 'Quầy giao dịch', icon: PosIcon },
   { id: 'inventory', label: 'Quản lý sách', icon: InventoryIcon },
   { id: 'warehouse', label: 'NCC & Kho', icon: WarehouseIcon },
   { id: 'customers', label: 'Khách hàng', icon: CustomerIcon },
-  { id: 'hr', label: 'Điểm danh', icon: StaffIcon },
-  { id: 'admin-hr', label: 'Nhân sự', icon: StaffIcon },
+  { id: 'hr', label: 'Nhân sự & tiền lương', icon: StaffIcon },
   { id: 'approvals', label: 'Phê duyệt', icon: ApprovalIcon },
   { id: 'audit', label: 'Nhật ký kiểm toán', icon: AuditIcon },
   { id: 'reports', label: 'Báo cáo & thuế', icon: ReportIcon },
@@ -82,8 +85,7 @@ export function navLabelFor(id: string): string {
     warehouse: 'NCC & Kho',
     pos: 'Quầy giao dịch',
     customers: 'Khách hàng',
-    hr: 'Điểm danh',
-    'admin-hr': 'Nhân sự',
+    hr: 'Nhân sự & tiền lương',
     approvals: 'Phê duyệt',
     audit: 'Nhật ký kiểm toán',
     reports: 'Báo cáo & thuế',
@@ -94,6 +96,8 @@ export function navLabelFor(id: string): string {
 
 export const Sidebar: React.FC<SidebarProps> = ({
   currentPath = 'overview',
+  activeHref = '',
+  userRoleCode,
   onNavigate,
   isCollapsed = false,
   onToggleCollapse,
@@ -103,8 +107,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
   userRole,
 }) => {
   const auth = useContext(AuthContext);
-  const effectiveRole = userRole ?? auth?.session?.user?.roleCode;
-  const visibleNavItems = DEFAULT_NAV_ITEMS.filter((item) => canAccessNavItem(item.id, effectiveRole));
+  const inRouterContext = useInRouterContext();
+  const effectiveRole = userRoleCode ?? userRole ?? auth?.session?.user?.roleCode;
+  const [isHrExpanded, setIsHrExpanded] = useState(
+    currentPath === 'hr' || activeHref.startsWith('/hr'),
+  );
+
+  const isNonAdmin =
+    userRoleCode === 'CASHIER' || userRoleCode === 'INVENTORY_MANAGER'
+      || effectiveRole?.toUpperCase() === 'CASHIER'
+      || effectiveRole?.toUpperCase() === 'INVENTORY_MANAGER';
+
+  const visibleNavItems = DEFAULT_NAV_ITEMS.filter(
+    (item) => canAccessNavItem(item.id, effectiveRole) && (!isNonAdmin || !HR_ADMIN_ONLY_NAV_IDS.has(item.id)),
+  );
 
   const handleSignOut = () => {
     onSignOut?.();
@@ -139,34 +155,93 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="h-2" />
         )}
 
-        <nav className="space-y-1">
+        <nav aria-label="Điều hướng chính" className="space-y-1">
           {visibleNavItems.map((item) => {
             const isActive = currentPath === item.id;
             const Icon = item.icon;
+            const isHrGroup = item.id === 'hr';
 
             return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => onNavigate?.(item.id)}
-                title={isCollapsed ? item.label : undefined}
-                className={`group flex w-full cursor-pointer items-center rounded-xl px-3 py-2.5 text-xs font-medium transition-all ${
-                  isActive
-                    ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900'
-                } ${isCollapsed ? 'justify-center px-0' : 'justify-between'}`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`flex items-center justify-center transition-colors ${
-                      isActive ? 'text-indigo-700' : 'text-slate-600 group-hover:text-slate-800'
-                    }`}
-                  >
-                    <Icon size={19} />
+              <div key={item.id} className="space-y-1">
+                <button
+                  type="button"
+                  aria-expanded={isHrGroup && !isCollapsed ? isHrExpanded : undefined}
+                  onClick={() => {
+                    if (isHrGroup && !isCollapsed) {
+                      setIsHrExpanded((prev) => !prev);
+                      if (currentPath !== 'hr') {
+                        onNavigate?.(item.id);
+                      }
+                      return;
+                    }
+                    onNavigate?.(item.id);
+                  }}
+                  title={isCollapsed ? item.label : undefined}
+                  className={`group flex w-full cursor-pointer items-center rounded-xl px-3 py-2.5 text-xs font-medium transition-all ${
+                    isActive
+                      ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900'
+                  } ${isCollapsed ? 'justify-center px-0' : 'justify-between'}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`flex items-center justify-center transition-colors ${
+                        isActive ? 'text-indigo-700' : 'text-slate-600 group-hover:text-slate-800'
+                      }`}
+                    >
+                      <Icon size={19} />
+                    </div>
+                    {!isCollapsed && <span>{item.label}</span>}
                   </div>
-                  {!isCollapsed && <span>{item.label}</span>}
-                </div>
-              </button>
+                  {isHrGroup && !isCollapsed && (
+                    <ChevronDownIcon
+                      size={14}
+                      className={`transition-transform duration-200 ${
+                        isHrExpanded ? 'rotate-180' : ''
+                      }`}
+                    />
+                  )}
+                </button>
+
+                {isHrGroup && !isCollapsed && isHrExpanded && (
+                  <div className="ml-4 space-y-0.5 border-l border-slate-200 pl-3" data-testid="sidebar-hr-submenu">
+                    {HR_SUB_NAV_ITEMS.map((sub) => {
+                      const isSubActive =
+                        activeHref === sub.href ||
+                        activeHref.startsWith(`${sub.href}/`);
+                      const itemClass = `flex min-h-[36px] w-full items-center rounded-lg px-2.5 py-1.5 text-xs transition-colors ${
+                        isSubActive
+                          ? 'bg-indigo-50/90 font-semibold text-indigo-700'
+                          : 'font-medium text-slate-600 hover:bg-slate-100/70 hover:text-slate-900'
+                      }`;
+
+                      if (inRouterContext) {
+                        return (
+                          <Link
+                            key={sub.id}
+                            aria-current={isSubActive ? 'page' : undefined}
+                            className={itemClass}
+                            to={sub.href}
+                          >
+                            {sub.label}
+                          </Link>
+                        );
+                      }
+
+                      return (
+                        <a
+                          key={sub.id}
+                          aria-current={isSubActive ? 'page' : undefined}
+                          className={itemClass}
+                          href={sub.href}
+                        >
+                          {sub.label}
+                        </a>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>

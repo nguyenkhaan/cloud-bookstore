@@ -45,7 +45,9 @@ test('employee attendance page renders only the current employee attendance card
   assert.match(card, /disabled=\{!canCheckIn\}/)
   assert.match(card, /disabled=\{!canCheckOut\}/)
   assert.match(card, /disabled=\{isHistorical\}/)
-  assert.doesNotMatch(page, /AttendanceTable|AttendanceFilters|Lương ca|Trạng thái lương ca|Tìm nhân viên/i)
+  assert.match(page, /const isAdminView =\s*currentUser\.roleCode === 'ADMIN'/)
+  assert.match(page, /isAdminView \? \(\s*<AdminAttendanceSection \/>/)
+  assert.doesNotMatch(page, /AttendanceTable|AttendanceFilters|Trạng thái lương ca|Tìm nhân viên/i)
 })
 
 test('attendance UI keeps incomplete punches explicit and local', () => {

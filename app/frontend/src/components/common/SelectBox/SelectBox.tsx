@@ -19,6 +19,7 @@ export type SelectBoxProps<T extends string> = {
   className?: string
   searchable?: boolean
   hideLabel?: boolean
+  testId?: string
 }
 
 type MenuPosition = { left: number; width: number; top?: number; bottom?: number }
@@ -52,6 +53,7 @@ export function SelectBox<T extends string>({
   className,
   searchable = true,
   hideLabel = false,
+  testId,
 }: SelectBoxProps<T>) {
   const baseId = useId()
   const labelId = `${baseId}-label`
@@ -235,6 +237,7 @@ export function SelectBox<T extends string>({
         aria-haspopup="listbox"
         aria-label={hideLabel ? label : undefined}
         aria-labelledby={hideLabel ? undefined : `${labelId} ${baseId}-value`}
+        data-testid={testId}
         className={cn(
           'flex min-h-[44px] w-full cursor-pointer items-center justify-between gap-2 text-left outline-none disabled:cursor-not-allowed',
           hideLabel
