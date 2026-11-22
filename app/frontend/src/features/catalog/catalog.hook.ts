@@ -5,11 +5,13 @@ import {
   activateStockReceiptCopies,
   cancelStockReceipt,
   completeStockReceipt,
+  confirmStockOut,
   createCategory,
   createCopy,
   createCopyLabel,
   createEdition,
   createSeries,
+  createStockOut,
   createStockReceipt,
   createSupplier,
   createTitle,
@@ -30,6 +32,7 @@ import {
   getEdition,
   getEditionStockAlerts,
   getSeries,
+  getStockOut,
   getStockReceipt,
   getSupplier,
   getSupplierStats,
@@ -40,6 +43,7 @@ import {
   listAvailableReceiptLines,
   listEditions,
   listSeries,
+  listStockOuts,
   listStockReceipts,
   listSuppliers,
   listTitles,
@@ -71,10 +75,12 @@ import type {
   CreateCopyRequest,
   CreateEditionRequest,
   CreateSeriesRequest,
+  CreateStockOutRequest,
   CreateStockReceiptRequest,
   CreateSupplierRequest,
   EditionStockAlertFilters,
   SaveTitleRequest,
+  StockOutListFilters,
   StockReceiptListFilters,
   SupplierListFilters,
   TitleListFilters,
@@ -107,6 +113,8 @@ export const catalogQueryKeys = {
   supplierDetail: (supplierId: string) => ['catalog', 'suppliers', 'detail', supplierId] as const,
   stockReceipts: (filters: StockReceiptListFilters = {}) => ['catalog', 'stock-receipts', filters] as const,
   stockReceiptDetail: (receiptId: string) => ['catalog', 'stock-receipts', 'detail', receiptId] as const,
+  stockOuts: (filters: StockOutListFilters = {}) => ['catalog', 'stock-outs', filters] as const,
+  stockOutDetail: (stockOutId: string) => ['catalog', 'stock-outs', 'detail', stockOutId] as const,
   stockAlerts: (filters: EditionStockAlertFilters = {}) => ['catalog', 'editions', 'stock-alerts', filters] as const,
   allEditions: () => ['catalog', 'editions', 'all'] as const,
   title: (titleId: string) => ['catalog', 'titles', titleId] as const,
@@ -116,6 +124,43 @@ export const catalogQueryKeys = {
 // ----------------------------------------------------------------------
 // QUERY HOOKS
 // ----------------------------------------------------------------------
+
+export function useStockOutsQuery(filters: StockOutListFilters = {}) {
+  return useQuery({
+    queryKey: catalogQueryKeys.stockOuts(filters),
+    queryFn: () => listStockOuts(filters),
+  })
+}
+
+export function useStockOutDetailQuery(stockOutId: string) {
+  return useQuery({
+    queryKey: catalogQueryKeys.stockOutDetail(stockOutId),
+    queryFn: () => getStockOut(stockOutId),
+    enabled: Boolean(stockOutId),
+  })
+}
+
+export function useCreateStockOutMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (request: CreateStockOutRequest) => createStockOut(request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog', 'stock-outs'] })
+      queryClient.invalidateQueries({ queryKey: ['approvals'] })
+    },
+  })
+}
+
+export function useConfirmStockOutMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (stockOutId: string) => confirmStockOut(stockOutId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog'] })
+      queryClient.invalidateQueries({ queryKey: ['approvals'] })
+    },
+  })
+}
 
 export function useEditionStockAlertsQuery(filters: EditionStockAlertFilters = {}) {
   return useQuery({

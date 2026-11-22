@@ -40,6 +40,9 @@ import type {
   EditionStockAlertFilters,
   EditionStockAlertItem,
   UpdateEditionThresholdsRequest,
+  CreateStockOutRequest,
+  StockOutDetail,
+  StockOutListFilters,
 } from './catalog.type'
 
 type QueryValue = string | number | boolean | null | undefined
@@ -54,6 +57,7 @@ const endpoints = {
   copies: '/book-copies',
   editions: '/editions',
   series: '/book-series',
+  stockOut: '/stock-out',
   stockReceipts: '/stock-receipts',
   suppliers: '/suppliers',
   titles: '/book-titles',
@@ -431,6 +435,38 @@ export async function activateStockReceiptCopies(receiptId: string, request: Act
 export async function cancelStockReceipt(receiptId: string): Promise<StockReceiptDetail> {
   return requestData(() =>
     privateClient.post<StockReceiptDetail>(`${endpoints.stockReceipts}/${encodeURIComponent(receiptId)}/cancel`),
+  )
+}
+
+export async function listStockOuts(filters: StockOutListFilters = {}): Promise<StockOutDetail[]> {
+  const response = await requestData(() =>
+    privateClient.get<CatalogListResponse<StockOutDetail>>(endpoints.stockOut, {
+      params: params({
+        Search: filters.search,
+        Status: filters.status,
+        Page: filters.page ?? 1,
+        PageSize: filters.pageSize ?? 20,
+      }),
+    }),
+  )
+  return listFrom(response)
+}
+
+export async function getStockOut(stockOutId: string): Promise<StockOutDetail> {
+  return requestData(() =>
+    privateClient.get<StockOutDetail>(`${endpoints.stockOut}/${encodeURIComponent(stockOutId)}`),
+  )
+}
+
+export async function createStockOut(request: CreateStockOutRequest): Promise<StockOutDetail> {
+  return requestData(() =>
+    privateClient.post<StockOutDetail>(endpoints.stockOut, request),
+  )
+}
+
+export async function confirmStockOut(stockOutId: string): Promise<StockOutDetail> {
+  return requestData(() =>
+    privateClient.post<StockOutDetail>(`${endpoints.stockOut}/${encodeURIComponent(stockOutId)}/confirm`),
   )
 }
 

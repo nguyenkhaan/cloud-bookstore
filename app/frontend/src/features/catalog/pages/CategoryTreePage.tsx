@@ -41,18 +41,6 @@ const DEFAULT_DESCRIPTIONS: Record<string, string> = {
   'Báo & tạp chí cũ': 'Ấn phẩm định kỳ, tạp chí sưu tầm và chuyên san.',
 }
 
-const FALLBACK_CATEGORIES: BookCategory[] = [
-  { id: 'cat-root-1', parentId: null, parentName: null, name: 'Truyện tranh', isActive: true },
-  { id: 'cat-sub-1', parentId: 'cat-root-1', parentName: 'Truyện tranh', name: 'Manga Nhật Bản', isActive: true },
-  { id: 'cat-leaf-1', parentId: 'cat-sub-1', parentName: 'Manga Nhật Bản', name: 'Shounen', isActive: true },
-  { id: 'cat-leaf-2', parentId: 'cat-sub-1', parentName: 'Manga Nhật Bản', name: 'Trinh thám & Bí ẩn', isActive: true },
-  { id: 'cat-leaf-3', parentId: 'cat-sub-1', parentName: 'Manga Nhật Bản', name: 'Phiêu lưu & Kỳ ảo', isActive: true },
-  { id: 'cat-sub-2', parentId: 'cat-root-1', parentName: 'Truyện tranh', name: 'Truyện tranh Việt Nam', isActive: true },
-  { id: 'cat-root-2', parentId: null, parentName: null, name: 'Văn học', isActive: true },
-  { id: 'cat-root-3', parentId: null, parentName: null, name: 'Kỹ năng & đời sống', isActive: true },
-  { id: 'cat-root-4', parentId: null, parentName: null, name: 'Báo & tạp chí cũ', isActive: true },
-]
-
 const STATUS_FILTER_OPTIONS: SelectOption<StatusFilter>[] = [
   { value: 'ACTIVE', label: 'Đang sử dụng' },
   { value: 'ALL', label: 'Tất cả trạng thái' },
@@ -100,11 +88,10 @@ export default function CategoryTreePage() {
   const deleteCategory = useDeleteCategoryMutation()
 
   const rawCategories = useMemo(() => {
-    const apiItems = categoriesQuery.data ?? []
-    return apiItems.length > 0 ? apiItems : FALLBACK_CATEGORIES
+    return categoriesQuery.data ?? []
   }, [categoriesQuery.data])
 
-  const isUsingFallback = (categoriesQuery.data ?? []).length === 0
+  const isUsingFallback = false
 
   const titleCountsByCat = useMemo(() => {
     const counts: Record<string, number> = {}

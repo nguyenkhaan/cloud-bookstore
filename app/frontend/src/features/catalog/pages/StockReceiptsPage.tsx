@@ -4,7 +4,6 @@ import { Check, Plus, Printer, Search, Trash2 } from 'lucide-react'
 import { Button, Card, SelectBox, TextField } from '@/components/common'
 import type { SelectOption } from '@/components/common'
 import { notify } from '@/components/common/Toast'
-import { useAuth } from '@/features/auth/auth.hook'
 import { catalogPaths } from '../catalog.route'
 import {
   useActivateStockReceiptCopiesMutation,
@@ -74,8 +73,6 @@ function formatDateVi(iso?: string | null): string {
 
 export default function StockReceiptsPage() {
   const navigate = useNavigate()
-  const { session } = useAuth()
-  const creatorName = session?.user?.name ?? 'Nhân viên kho'
   const lineSeqRef = useRef(1)
 
   const suppliersQuery = useSuppliersQuery({ isActive: true })
@@ -586,8 +583,12 @@ export default function StockReceiptsPage() {
       action={
         <div className="flex items-center gap-2">
           {activeReceiptId && (
-            <Button onClick={handleResetNewDraft} type="button" variant="ghost">
-              <Plus className="mr-1 h-4 w-4" />
+            <Button
+              icon={<Plus className="h-4 w-4" />}
+              onClick={handleResetNewDraft}
+              type="button"
+              variant="ghost"
+            >
               Tạo phiếu mới
             </Button>
           )}
@@ -602,9 +603,6 @@ export default function StockReceiptsPage() {
       }
       title="Lập & Quản lý Phiếu nhập kho từ NCC"
     >
-      <p className="text-xs font-mono text-slate-500">
-        {activeReceiptCode} - Người lập: {creatorName}
-      </p>
 
       <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-indigo-100 bg-indigo-50/50 p-2">
         <button

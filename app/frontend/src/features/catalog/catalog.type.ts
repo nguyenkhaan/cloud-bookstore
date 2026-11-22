@@ -404,3 +404,69 @@ export type UpdateEditionThresholdsRequest = {
   minStockSale: number
   minStockRental: number
 }
+
+export type StockOutType =
+  | 'DISPOSAL_DAMAGED'
+  | 'DISCONTINUED_CIRCULATION'
+  | 'LOST_WRITE_OFF'
+  | 'RETURN_SUPPLIER'
+
+export type StockOutLineRequest = {
+  copyBarcode: string
+  lineReason?: string | null
+}
+
+export type CreateStockOutRequest = {
+  stockOutType: StockOutType
+  reason: string
+  evidenceFileName?: string | null
+  lines: StockOutLineRequest[]
+}
+
+export type StockOutLineItem = {
+  copyId: string
+  copyBarcode: string
+  titleName: string
+  conditionGrade: string
+  conditionNote?: string | null
+  costPrice: number
+  currentStatus: string
+  targetStatus: string
+  lineReason?: string | null
+}
+
+export type StockOutHistoryItem = {
+  id: string
+  occurredAt: string
+  actorId?: string | null
+  actorName: string
+  action: string
+  note?: string | null
+}
+
+export type StockOutDetail = {
+  id: string
+  code: string
+  stockOutType: StockOutType
+  stockOutTypeLabel: string
+  status: StockReceiptStatus
+  reason: string
+  evidenceFileName?: string | null
+  copyCount: number
+  totalCost: number
+  createdBy: string
+  createdByName: string
+  createdAt: string
+  approvedBy?: string | null
+  approvedByName?: string | null
+  approvedAt?: string | null
+  lines: StockOutLineItem[]
+  history: StockOutHistoryItem[]
+}
+
+export type StockOutListFilters = {
+  search?: string
+  status?: StockReceiptStatus
+  page?: number
+  pageSize?: number
+}
