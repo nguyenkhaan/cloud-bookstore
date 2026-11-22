@@ -218,10 +218,7 @@ export const BookCopyLifecycleDrawer: React.FC<BookCopyLifecycleDrawerProps> = (
         <div className="border-b border-slate-200 px-6 py-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                DRAWER-INV-03 / LỊCH SỬ 360°
-              </p>
-              <h2 id="drawer-inv-03-title" className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900">
+              <h2 id="drawer-inv-03-title" className="text-2xl font-extrabold tracking-tight text-slate-900">
                 {copy?.copyBarcode ?? 'Đang tải...'}
               </h2>
               {subtitleParts.length > 0 && (

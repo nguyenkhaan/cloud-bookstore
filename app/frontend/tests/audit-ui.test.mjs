@@ -74,21 +74,20 @@ test('audit presentation formats UTC+7 millisecond timestamps and summarizes JSO
   assert.equal(summary.diff, '75000 → 80000')
 })
 
-test('SCR-AUD-01 is strictly read-only and DRAWER-INV-03 is integrated across Audit and Catalog pages', () => {
+test('audit is strictly read-only and copy lifecycle is integrated across Audit and Catalog pages', () => {
   const auditPage = readSrc('features', 'audit', 'pages', 'AuditPage.tsx')
   const lookupPage = readSrc('features', 'audit', 'pages', 'CopyLifecycleLookupPage.tsx')
   const editionPage = readSrc('features', 'catalog', 'pages', 'EditionDetailPage.tsx')
   const copyPage = readSrc('features', 'catalog', 'pages', 'CopyDetailPage.tsx')
   const drawer = readSrc('features', 'catalog', 'components', 'BookCopyLifecycleDrawer.tsx')
 
-  assert.match(auditPage, /SCR-AUD-01/)
   assert.match(auditPage, /Read-only · Không sửa \/ xóa/)
   assert.match(auditPage, /AuditTable/)
   assert.match(auditPage, /AuditDetailPanel/)
   assert.match(auditPage, /AuditRelatedTimeline/)
   assert.match(auditPage, /BookCopyLifecycleDrawer/)
 
-  assert.match(lookupPage, /DRAWER-INV-03/)
+  assert.match(lookupPage, /vòng đời 360°/)
   assert.match(lookupPage, /getCopyByBarcode/)
   assert.match(lookupPage, /BookCopyLifecycleDrawer/)
 

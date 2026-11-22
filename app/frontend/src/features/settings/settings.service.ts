@@ -45,7 +45,6 @@ async function requestData<T>(request: () => Promise<AxiosResponse<T>>): Promise
   }
 }
 
-// SCR-SYS-01: Rental & Penalty
 export async function getRentalPolicy(): Promise<RentalPolicyConfig> {
   return requestData(() => privateClient.get<RentalPolicyConfig>('/settings/rental-policy'))
 }
@@ -54,7 +53,6 @@ export async function updateRentalPolicy(request: UpdateRentalPolicyRequest): Pr
   return requestData(() => privateClient.put<RentalPolicyConfig>('/settings/rental-policy', request))
 }
 
-// SCR-SYS-02: Membership Tiers & Discounts
 export async function getMembershipPolicy(): Promise<MembershipPolicyConfig> {
   return requestData(() => privateClient.get<MembershipPolicyConfig>('/settings/membership-policy'))
 }
@@ -63,7 +61,6 @@ export async function updateMembershipPolicy(request: UpdateMembershipPolicyRequ
   return requestData(() => privateClient.put<MembershipPolicyConfig>('/settings/membership-policy', request))
 }
 
-// SCR-SYS-03: RBAC Matrix
 export async function getRbacMatrix(): Promise<RbacMatrixConfig> {
   return requestData(() => privateClient.get<RbacMatrixConfig>('/settings/rbac-matrix'))
 }
@@ -72,7 +69,6 @@ export async function updateRbacMatrix(request: UpdateRbacMatrixRequest): Promis
   return requestData(() => privateClient.put<RbacMatrixConfig>('/settings/rbac-matrix', request))
 }
 
-// SCR-SYS-04: Integrations
 export async function getIntegrations(): Promise<IntegrationsConfig> {
   return requestData(() => privateClient.get<IntegrationsConfig>('/settings/integrations'))
 }

@@ -1,6 +1,19 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { after, before, describe, test } from 'node:test'
 import { createServer } from 'vite'
+
+test('approval navigation is a compact header tab bar without screen-code or role-copy clutter', () => {
+  const pageSource = readFileSync(new URL('../src/features/approvals/pages/ApprovalsPage.tsx', import.meta.url), 'utf8')
+  const tabSource = readFileSync(new URL('../src/features/approvals/components/ApprovalTabBar.tsx', import.meta.url), 'utf8')
+
+  assert.match(pageSource, /pageHeaderContent=\{<ApprovalTabBar activeTab=\{activeTab\} counts=\{approvalCounts\} onSelectTab=\{handleSelectTab\} \/>\}/)
+  assert.doesNotMatch(pageSource, /SCR-APP-01/)
+  assert.doesNotMatch(pageSource, /Không gian phê duyệt tập trung dành riêng/)
+  assert.match(tabSource, /<nav aria-label="Các nhóm yêu cầu phê duyệt"/)
+  assert.match(tabSource, /border-b-2/)
+  assert.doesNotMatch(tabSource, /bg-indigo-600 text-white/)
+})
 
 describe('Approvals feature: types, presentation, and service mapping', () => {
   let server

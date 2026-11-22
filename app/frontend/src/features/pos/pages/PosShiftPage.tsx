@@ -71,7 +71,6 @@ export default function PosShiftPage() {
       }}
       onSignOut={signOut}
       pageTitle="Ca làm việc & Két tiền mặt"
-      screenCode=""
       actionButton={<div className="flex flex-wrap gap-2"><Button onClick={() => window.print()} size="sm" variant="secondary">In biên bản bàn giao · Ctrl P</Button><Button onClick={() => undefined} size="sm" variant="secondary">Rút tiền két nộp quản lý</Button></div>}
       user={currentUser}
     >

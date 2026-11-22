@@ -19,13 +19,13 @@ function readFeatureFile(parts) {
   return existsSync(src(...parts)) ? readFileSync(src(...parts), 'utf8') : ''
 }
 
-test('SCR-HRM-02 is a daily shift-record view, not a schedule module', () => {
+test('shift records are a daily view, not a schedule module', () => {
   for (const parts of featureFiles) {
     assert.ok(existsSync(src(...parts)), `missing src/${parts.join('/')}`)
   }
 
   const source = featureFiles.map(readFeatureFile).join('\n')
-  for (const label of ['SCR-HRM-02', 'Phân công ca', 'Bản ghi ca', 'Ngày làm', 'Nhân viên', 'Thứ tự ca', 'Trạng thái']) {
+  for (const label of ['Phân công ca', 'Bản ghi ca', 'Ngày làm', 'Nhân viên', 'Thứ tự ca', 'Trạng thái']) {
     assert.match(source, new RegExp(label))
   }
 

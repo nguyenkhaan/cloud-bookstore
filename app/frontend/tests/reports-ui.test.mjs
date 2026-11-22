@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import { after, before, test } from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -7,6 +7,17 @@ import { createServer } from 'vite'
 
 const frontendRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const readSrc = (...parts) => readFileSync(path.join(frontendRoot, 'src', ...parts), 'utf8')
+
+function readSourceTree(directory) {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const entryPath = path.join(directory, entry.name)
+    return entry.isDirectory()
+      ? readSourceTree(entryPath)
+      : /\.(?:ts|tsx)$/.test(entry.name)
+        ? [readFileSync(entryPath, 'utf8')]
+        : []
+  })
+}
 
 let server
 let reportsRoutes
@@ -58,7 +69,7 @@ test('reports routes and RBAC restrict /reports* to ADMIN only while /dashboard 
   assert.match(reportsRootPage, /Navigate replace to=\{reportsPaths\.revenueExpense\}/)
 })
 
-test('SCR-REP-01 through SCR-REP-04 use pure SVG charts without third-party chart or xlsx libraries', () => {
+test('report charts use pure SVG without third-party chart or xlsx libraries', () => {
   const pkg = JSON.parse(readFileSync(path.join(frontendRoot, 'package.json'), 'utf8'))
   const allDeps = { ...(pkg.dependencies ?? {}), ...(pkg.devDependencies ?? {}) }
   for (const forbidden of ['recharts', 'chart.js', 'apexcharts', 'echarts', 'xlsx', 'exceljs']) {
@@ -71,36 +82,45 @@ test('SCR-REP-01 through SCR-REP-04 use pure SVG charts without third-party char
   const repTrend = readSrc('features', 'reports', 'components', 'RevenueExpenseTrendChart.tsx')
 
   assert.match(dashboardPage, /useDashboardOverviewQuery/)
-  assert.match(dashboardPage, /SCR-REP-01/)
   assert.match(dashTrend, /<svg[\s\S]*?<polyline/)
   assert.match(dashDonut, /<svg[\s\S]*?strokeDasharray/)
   assert.match(repTrend, /<svg[\s\S]*?<polyline/)
 })
 
-test('SCR-REP-02, SCR-REP-03, and SCR-REP-04 pages contain required sections, interactive controls, and print styling', () => {
+test('report pages use the shared header tab bar and contain their required controls and print styling', () => {
   const rep02 = readSrc('features', 'reports', 'pages', 'RevenueExpenseReportPage.tsx')
   const rep03 = readSrc('features', 'reports', 'pages', 'DepositReconciliationPage.tsx')
   const rep04 = readSrc('features', 'reports', 'pages', 'TaxDeclarationReportPage.tsx')
   const mainLayout = readSrc('components', 'layout', 'MainLayout.tsx')
   const indexCss = readSrc('index.css')
 
-  assert.match(rep02, /SCR-REP-02/)
+  assert.match(rep02, /pageHeaderContent=\{<ReportsSubNav active="revenue-expense" \/>\}/)
   assert.match(rep02, /SourceDocumentsDrawer/)
   assert.match(rep02, /exportRevenueExpenseExcel/)
 
-  assert.match(rep03, /SCR-REP-03/)
+  assert.match(rep03, /pageHeaderContent=\{<ReportsSubNav active="deposit-reconciliation" \/>\}/)
   assert.match(rep03, /id="cash-actual-input"/)
   assert.match(rep03, /id="bank-actual-input"/)
   assert.match(rep03, /max\(0, Cọc − Khoản trừ\)/)
   assert.match(rep03, /exportDepositReconciliationExcel/)
 
-  assert.match(rep04, /SCR-REP-04/)
+  assert.match(rep04, /pageHeaderContent=\{<ReportsSubNav active="tax-declaration" \/>\}/)
   assert.match(rep04, /A\. Doanh thu chịu thuế/)
   assert.match(rep04, /B\. Chi phí đầu vào hợp lệ/)
   assert.match(rep04, /C\. Khoản loại trừ minh bạch - KHÔNG đưa vào thuế/)
   assert.match(rep04, /window\.print\(\)/)
   assert.match(mainLayout, /print:hidden/)
   assert.match(indexCss, /@media print/)
+})
+
+test('the shared UI has no screen-code property or visible report-code tabs', () => {
+  const source = readSourceTree(path.join(frontendRoot, 'src')).join('\n')
+  const reportTabs = readSrc('features', 'reports', 'components', 'ReportsSubNav.tsx')
+
+  assert.doesNotMatch(source, /screenCode|(?:SCR|MOD)-[A-Z]+-\d{2}|DRAWER-[A-Z]+-\d{2}/)
+  assert.match(reportTabs, /<nav[\s\S]*?overflow-x-auto border-b/)
+  assert.doesNotMatch(reportTabs, /SCR-REP-/)
+  assert.doesNotMatch(reportTabs, /rounded-2xl/)
 })
 
 test('OOXML .xlsx exporters produce valid ZIP workbooks and sanitize formula injection', () => {

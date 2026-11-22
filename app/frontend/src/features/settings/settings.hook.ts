@@ -29,7 +29,6 @@ export const settingsKeys = {
   integrations: () => [...settingsKeys.all, 'integrations'] as const,
 }
 
-// SCR-SYS-01: Rental Policy
 export function useRentalPolicy() {
   return useQuery<RentalPolicyConfig>({
     queryKey: settingsKeys.rental(),
@@ -48,7 +47,6 @@ export function useUpdateRentalPolicy() {
   })
 }
 
-// SCR-SYS-02: Membership Policy
 export function useMembershipPolicy() {
   return useQuery<MembershipPolicyConfig>({
     queryKey: settingsKeys.tiers(),
@@ -67,7 +65,6 @@ export function useUpdateMembershipPolicy() {
   })
 }
 
-// SCR-SYS-03: RBAC Matrix
 export function useRbacMatrix() {
   return useQuery<RbacMatrixConfig>({
     queryKey: settingsKeys.rbac(),
@@ -87,7 +84,6 @@ export function useUpdateRbacMatrix() {
   })
 }
 
-// SCR-SYS-04: Integrations
 export function useIntegrations() {
   return useQuery<IntegrationsConfig>({
     queryKey: settingsKeys.integrations(),

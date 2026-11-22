@@ -40,7 +40,6 @@ export interface RentalLineFixture extends BookCopyFixture {
 }
 
 export interface SaleFixture {
-  screenCode: 'SCR-POS-02'
   customer: CustomerFixture | null
   lines: SaleLineFixture[]
   paymentMethod: PaymentMethod
@@ -50,7 +49,6 @@ export interface SaleFixture {
 }
 
 export interface RentalFixture {
-  screenCode: 'SCR-POS-03'
   customer: CustomerFixture
   lines: RentalLineFixture[]
   rentalDays: number
@@ -60,7 +58,6 @@ export interface RentalFixture {
 }
 
 export interface RenewalFixture {
-  screenCode: 'SCR-POS-04'
   reference: string
   customer: CustomerFixture
   rentalDate: string
@@ -81,7 +78,6 @@ export interface ReturnLineFixture extends BookCopyFixture {
 }
 
 export interface ReturnFixture {
-  screenCode: 'SCR-POS-05'
   reference: string
   customer: CustomerFixture
   originalDeposit: number
@@ -92,7 +88,6 @@ export interface ReturnFixture {
 }
 
 export interface QuickSeriesFixture {
-  screenCode: 'MOD-POS-01'
   seriesName: string
   publisher: string
   totalVolumes: number
@@ -105,7 +100,6 @@ export interface QuickSeriesFixture {
 }
 
 export interface DamageReviewFixture {
-  screenCode: 'MOD-POS-02'
   reference: string
   copy: BookCopyFixture
   condition: string
@@ -124,7 +118,6 @@ export interface CustomerDisplayLine {
 }
 
 export interface CustomerDisplayFixture {
-  screenCode: 'SCR-POS-07'
   requestCode: string
   customerTier: MemberTier
   lines: CustomerDisplayLine[]

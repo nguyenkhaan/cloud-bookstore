@@ -100,7 +100,6 @@ export default function AuditPage() {
         { label: 'Nhật ký kiểm toán' },
         { label: 'Nhật ký kiểm toán hệ thống' },
       ]}
-      screenCode="SCR-AUD-01 / NHẬT KÝ KIỂM TOÁN"
       pageTitle="Nhật ký kiểm toán hệ thống"
       actionButton={
         <div className="flex flex-wrap items-center gap-2.5">

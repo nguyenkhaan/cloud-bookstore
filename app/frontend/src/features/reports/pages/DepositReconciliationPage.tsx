@@ -39,7 +39,7 @@ export default function DepositReconciliationPage() {
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [page, setPage] = useState(1)
 
-  // Manual verification inputs for SCR-REP-03 ("Thực tế xác minh") — no DB table needed
+  // Inputs are local because manual verification does not need a persisted table.
   const [cashActualInput, setCashActualInput] = useState<string | null>(null)
   const [bankActualInput, setBankActualInput] = useState<string | null>(null)
 
@@ -109,8 +109,8 @@ export default function DepositReconciliationPage() {
         { label: 'Báo cáo & thuế' },
         { label: 'Báo cáo Đối soát Tiền cọc đang giữ' },
       ]}
-      screenCode="SCR-REP-03 / BÁO CÁO & THUẾ"
       pageTitle="Báo cáo Đối soát Tiền cọc đang giữ"
+      pageHeaderContent={<ReportsSubNav active="deposit-reconciliation" />}
       actionButton={
         <Button
           type="button"
@@ -128,8 +128,6 @@ export default function DepositReconciliationPage() {
           Từ {formatVnDateShort(data?.fromDate ?? fromDate)} đến{' '}
           {formatVnDateShort(data?.toDate ?? toDate)} · Theo số dư nghĩa vụ với khách hàng, không phải doanh thu
         </p>
-
-        <ReportsSubNav active="deposit-reconciliation" />
 
         {/* Filter Bar */}
         <Card padding="sm">

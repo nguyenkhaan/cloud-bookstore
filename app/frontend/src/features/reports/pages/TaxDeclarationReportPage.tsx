@@ -54,8 +54,8 @@ export default function TaxDeclarationReportPage() {
         { label: 'Báo cáo & thuế' },
         { label: 'Báo cáo Kê khai Thuế tự động' },
       ]}
-      screenCode="SCR-REP-04 / BÁO CÁO & THUẾ"
       pageTitle="Báo cáo Kê khai Thuế tự động"
+      pageHeaderContent={<ReportsSubNav active="tax-declaration" />}
       actionButton={
         <div className="print:hidden flex flex-wrap items-center gap-2">
           <Button
@@ -85,8 +85,6 @@ export default function TaxDeclarationReportPage() {
           Bảng tổng hợp nguồn dữ liệu kê khai · Kỳ {data?.periodLabel || `Tháng ${String(periodValue).padStart(2, '0')}/${year}`}
           {data?.generatedAtUtc ? ` · Sinh ${formatVnDateTimeShort(data.generatedAtUtc)}` : ''}
         </p>
-
-        <ReportsSubNav active="tax-declaration" />
 
         {/* Print-only Header */}
         <div className="hidden border-b border-slate-300 pb-4 print:block">

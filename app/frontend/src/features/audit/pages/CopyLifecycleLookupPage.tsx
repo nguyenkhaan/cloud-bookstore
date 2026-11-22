@@ -82,7 +82,6 @@ export default function CopyLifecycleLookupPage() {
         { label: 'Nhật ký kiểm toán', to: auditPaths.root },
         { label: 'Tra cứu bản sách 360°' },
       ]}
-      screenCode="DRAWER-INV-03 / TRA CỨU VÒNG ĐỜI BẢN SÁCH"
       pageTitle="Tra cứu Lịch sử Vòng đời Bản sách 360°"
       actionButton={
         <Link
@@ -139,7 +138,7 @@ export default function CopyLifecycleLookupPage() {
 
         <Card
           title="Bản sách trong kho"
-          subtitle="Chọn trực tiếp một bản sách bên dưới để mở Drawer DRAWER-INV-03."
+          subtitle="Chọn trực tiếp một bản sách bên dưới để xem lịch sử vòng đời."
         >
           {recentCopiesQuery.isLoading ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

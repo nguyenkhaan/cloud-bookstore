@@ -93,7 +93,7 @@ export const ScrSys02MembershipTiers: React.FC<ScrSys02MembershipTiersProps> = (
   const goldTier = tiers.find((t) => t.name === 'GOLD') !
 
   return (
-    <div className="flex flex-col gap-6" data-name="SCR-SYS-02 · Cấu hình Hạng thành viên & Chiết khấu">
+    <div className="flex flex-col gap-6">
       {/* 3 Tier Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Normal Tier Card */}

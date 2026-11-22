@@ -62,10 +62,7 @@ export const SourceDocumentsDrawer: React.FC<SourceDocumentsDrawerProps> = ({
         {/* Header */}
         <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
           <div>
-            <div className="text-[11px] font-bold uppercase tracking-wider text-indigo-600">
-              SCR-REP-02 / CHI TIẾT CHỨNG TỪ NGUỒN
-            </div>
-            <h2 className="mt-1 text-lg font-bold text-slate-900">
+            <h2 className="text-lg font-bold text-slate-900">
               {source.sourceLabel} · <span className="font-mono text-sm">{source.codePattern}</span>
             </h2>
             <p className="mt-0.5 text-xs text-slate-500">

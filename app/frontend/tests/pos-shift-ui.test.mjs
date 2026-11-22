@@ -20,13 +20,13 @@ function readFeatureFile(parts) {
   return existsSync(src(...parts)) ? readFileSync(src(...parts), 'utf8') : ''
 }
 
-test('SCR-POS-01 contains the cash-shift states and operational summary', () => {
+test('cash shift contains the operational states and summary', () => {
   for (const parts of featureFiles) {
     assert.ok(existsSync(src(...parts)), `missing src/${parts.join('/')}`)
   }
 
   const source = featureFiles.map(readFeatureFile).join('\n')
-  for (const label of ['SCR-POS-01', 'Ca làm việc & Két tiền mặt', 'Tiền đầu ca', 'Tiền lý thuyết', 'Tiền đã kiểm đếm', 'Chênh lệch', 'Kiểm đếm tiền mặt', 'Sổ quỹ ca làm việc']) {
+  for (const label of ['Ca làm việc & Két tiền mặt', 'Tiền đầu ca', 'Tiền lý thuyết', 'Tiền đã kiểm đếm', 'Chênh lệch', 'Kiểm đếm tiền mặt', 'Sổ quỹ ca làm việc']) {
     assert.match(source, new RegExp(label))
   }
 

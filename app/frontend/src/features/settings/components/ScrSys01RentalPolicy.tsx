@@ -121,7 +121,7 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
   }
 
   return (
-    <div className="flex flex-col gap-6" data-name="SCR-SYS-01 · Cấu hình Tham số Thuê, Trả & Khung phạt">
+    <div className="flex flex-col gap-6">
       {/* Sub Tabs */}
       <div className="flex items-center gap-4 bg-indigo-50/60 p-2 rounded-xl text-xs font-medium text-slate-600 border border-indigo-100/80">
         <button

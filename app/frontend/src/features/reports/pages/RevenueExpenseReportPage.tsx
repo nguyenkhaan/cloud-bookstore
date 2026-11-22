@@ -94,8 +94,8 @@ export default function RevenueExpenseReportPage() {
         { label: 'Báo cáo & thuế' },
         { label: 'Báo cáo Doanh thu & Chi phí đa nguồn' },
       ]}
-      screenCode="SCR-REP-02 / BÁO CÁO & THUẾ"
       pageTitle="Báo cáo Doanh thu & Chi phí đa nguồn"
+      pageHeaderContent={<ReportsSubNav active="revenue-expense" />}
       actionButton={
         <Button
           type="button"
@@ -115,8 +115,6 @@ export default function RevenueExpenseReportPage() {
             {data?.storeScopeLabel || 'Nhà sách Mây'}
           </p>
         </div>
-
-        <ReportsSubNav active="revenue-expense" />
 
         {/* Filter Card */}
         <Card padding="sm">

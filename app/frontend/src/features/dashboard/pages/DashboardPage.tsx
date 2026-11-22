@@ -47,7 +47,6 @@ export function DashboardPage({ onSignOut }: DashboardPageProps) {
         const path = workspacePathFor(id)
         if (path) navigate(path)
       }}
-      screenCode="SCR-REP-01 / TỔNG QUAN"
       pageTitle="Tổng quan kinh doanh"
       breadcrumbs={[{ label: 'Không gian làm việc' }, { label: 'Tổng quan' }]}
       user={currentUser}

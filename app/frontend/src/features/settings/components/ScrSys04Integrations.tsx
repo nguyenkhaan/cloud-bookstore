@@ -132,7 +132,7 @@ export const ScrSys04Integrations: React.FC<ScrSys04IntegrationsProps> = ({ isAd
   }
 
   return (
-    <div className="flex flex-col gap-6" data-name="SCR-SYS-04 · Cấu hình Tích hợp">
+    <div className="flex flex-col gap-6">
       {/* Demo Notice Banner */}
       <div className="bg-amber-50 text-amber-800 text-xs p-3.5 rounded-xl flex items-start gap-2 border border-amber-100">
         <span className="font-bold shrink-0">ⓘ</span>
