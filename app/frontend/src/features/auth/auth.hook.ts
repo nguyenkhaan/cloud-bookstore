@@ -6,6 +6,7 @@ import {
   getSession,
   login,
   logout,
+  register,
   resendVerification,
   requestPasswordReset,
   resetPassword,
@@ -14,6 +15,7 @@ import {
 import type {
   ForgotPasswordRequest,
   LoginRequest,
+  RegisterRequest,
   ResendVerificationRequest,
   ResetPasswordRequest,
   ServerStatus,
@@ -24,6 +26,13 @@ export function useLoginMutation() {
   return useMutation({
     mutationKey: ['auth', 'login'],
     mutationFn: (request: LoginRequest) => login(request),
+  })
+}
+
+export function useRegisterMutation() {
+  return useMutation({
+    mutationKey: ['auth', 'register'],
+    mutationFn: (request: RegisterRequest) => register(request),
   })
 }
 

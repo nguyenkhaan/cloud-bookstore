@@ -1,4 +1,5 @@
 import React, { useContext } from 'react';
+import { Link } from 'react-router-dom';
 import { BellIcon, PanelToggleIcon } from '@/components/common/Icons';
 import { Avatar } from '@/components/common/Avatar';
 import { Breadcrumb, type BreadcrumbItem } from '@/components/common/Breadcrumb';
@@ -66,13 +67,18 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="h-6 w-px bg-slate-200" />
 
           {currentUser && (
-              <div className="flex items-center gap-2.5 pl-1 select-none">
+              <Link
+                  aria-label="Hồ sơ cá nhân & Bảo mật"
+                  className="flex min-h-11 items-center gap-2.5 rounded-xl px-2 py-1 select-none transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-1"
+                  data-testid="header-profile-link"
+                  to="/profile"
+              >
                 <Avatar imageUrl={currentUser.avatarUrl} name={currentUser.name} />
                 <div className="hidden text-left sm:block">
                   <div className="text-xs font-semibold text-slate-900">{currentUser.name}</div>
                   <div className="text-[11px] text-slate-600">{currentUser.role}</div>
                 </div>
-              </div>
+              </Link>
           )}
         </div>
       </header>

@@ -26,6 +26,8 @@ export type AttendanceRowDisplay = {
   employeeName: string
   workDate: string
   shiftOrder: string
+  timeRange?: string
+  counterName?: string
   checkIn?: string
   checkOut?: string
   workedHours?: number

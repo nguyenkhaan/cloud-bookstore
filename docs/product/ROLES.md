@@ -6,6 +6,8 @@ MVP có đúng ba vai trò nghiệp vụ. Tên “Quản lý” hoặc “Thu ng
 
 ## Ma trận quyền cấp cao
 
+Đây là quyền mặc định. Theo [ADR-007](../decisions/ADR-007-dynamic-role-permissions-and-immediate-config.md), Admin có thể cấp/thu hồi quyền theo thao tác API cho ba role. Các thao tác vốn chỉ Admin (duyệt ngoại lệ, đổi role, sửa cấu hình, audit toàn hệ thống) vẫn được bảo vệ; không thể tắt quyền quản trị RBAC. Backend đọc quyền mới ở mỗi request. Giao diện làm mới quyền khi focus/refetch và tối đa mỗi 15 giây trong tab đang mở.
+
 | Năng lực | Admin | Nhân viên | Quản lý kho |
 | --- | :---: | :---: | :---: |
 | Quản lý tài khoản và vai trò | Có | Không | Không |

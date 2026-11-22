@@ -29,7 +29,7 @@ test('SCR-HRM-02 is a daily shift-record view, not a schedule module', () => {
     assert.match(source, new RegExp(label))
   }
 
-  for (const state of ['assigned', 'unassigned', 'attendance-missing', 'empty', 'admin-only']) {
+  for (const state of ['assigned', 'unassigned', 'attendance-missing', 'empty']) {
     assert.match(source, new RegExp(state))
   }
 

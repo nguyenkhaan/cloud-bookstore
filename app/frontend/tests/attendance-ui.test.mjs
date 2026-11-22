@@ -8,37 +8,46 @@ const frontendRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 
 const src = (...parts) => path.join(frontendRoot, 'src', ...parts)
 const featureFiles = [
   ['features', 'hr', 'hr-shift.type.ts'],
+  ['features', 'hr', 'attendance.data.ts'],
   ['features', 'hr', 'pages', 'AttendancePage.tsx'],
-  ['features', 'hr', 'components', 'TodayAttendanceCard.tsx'],
-  ['features', 'hr', 'components', 'AttendanceSummaryCards.tsx'],
-  ['features', 'hr', 'components', 'AttendanceFilters.tsx'],
-  ['features', 'hr', 'components', 'AttendanceTable.tsx'],
-  ['features', 'hr', 'components', 'AttendanceAdjustmentDialog.tsx'],
+  ['features', 'hr', 'components', 'AttendanceCard.tsx'],
+  ['features', 'hr', 'components', 'AttendanceDateFilter.tsx'],
 ]
 
 function readFeatureFile(parts) {
   return existsSync(src(...parts)) ? readFileSync(src(...parts), 'utf8') : ''
 }
 
-test('SCR-HRM-03 tracks attendance and pay per shift', () => {
+test('employee attendance page renders only the current employee attendance cards', () => {
   for (const parts of featureFiles) {
     assert.ok(existsSync(src(...parts)), `missing src/${parts.join('/')}`)
   }
 
   const source = featureFiles.map(readFeatureFile).join('\n')
-  for (const label of ['SCR-HRM-03', 'Điểm danh hôm nay', 'Nhân viên', 'Ngày làm', 'Thứ tự ca', 'Check-in', 'Check-out', 'Giờ công', 'Trạng thái', 'Lương ca']) {
+  for (const label of ['Điểm danh hôm nay', 'Ngày cần xem', 'Check-in', 'Check-out', 'Giờ công', 'Trạng thái', 'AttendanceCard']) {
     assert.match(source, new RegExp(label))
   }
 
-  for (const state of ['present', 'late', 'absent', 'missing-attendance', 'adjustment-pending', 'paid', 'unpaid']) {
+  for (const state of ['present', 'late', 'absent', 'missing-attendance', 'adjustment-pending']) {
     assert.match(source, new RegExp(state))
   }
 
   assert.match(source, /Thiếu chấm công/)
-  assert.match(source, /Đang chờ Admin duyệt/)
-  assert.match(source, /Đã trả/)
-  assert.match(source, /Chưa trả/)
-  assert.doesNotMatch(source, /khóa công tháng|mở khóa kỳ|bảng lương theo kỳ|bảng lương tháng/i)
+  assert.match(source, /type=["']date["']/)
+  assert.match(source, /currentEmployee|employeeId/)
+  assert.match(source, /attendanceDemoPunchFor/)
+  assert.match(source, /'Ca chiều':[\s\S]*13:05/)
+  const page = readFeatureFile(['features', 'hr', 'pages', 'AttendancePage.tsx'])
+  const card = readFeatureFile(['features', 'hr', 'components', 'AttendanceCard.tsx'])
+  assert.match(page, /row\.employeeId === currentEmployeeId/)
+  assert.match(page, /row\.workDate === selectedDateLabel/)
+  assert.match(page, /isHistorical=\{isHistorical\}/)
+  assert.match(card, /disabled=\{!canCheckIn\}/)
+  assert.match(card, /disabled=\{!canCheckOut\}/)
+  assert.match(card, /disabled=\{isHistorical\}/)
+  assert.match(page, /const isAdminView =\s*currentUser\.roleCode === 'ADMIN'/)
+  assert.match(page, /isAdminView \? \(\s*<AdminAttendanceSection \/>/)
+  assert.doesNotMatch(page, /AttendanceTable|AttendanceFilters|Trạng thái lương ca|Tìm nhân viên/i)
 })
 
 test('attendance UI keeps incomplete punches explicit and local', () => {

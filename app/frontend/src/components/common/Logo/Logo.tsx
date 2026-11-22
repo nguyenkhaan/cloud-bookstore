@@ -9,15 +9,17 @@ export interface LogoProps {
   /** `full`: biểu tượng kèm tên và khẩu hiệu. `mark`: chỉ biểu tượng. */
   variant?: LogoVariant;
   size?: LogoSize;
+  /** Render light text for dark hero/banner backgrounds. */
+  inverted?: boolean;
   className?: string;
 }
 
 const sizeClasses: Record<LogoSize, { mark: string; name: string; tagline: string }> = {
   md: { mark: 'h-11', name: 'text-base', tagline: 'text-[9px]' },
-  lg: { mark: 'h-20', name: 'text-3xl', tagline: 'text-sm' },
+  lg: { mark: 'h-14', name: 'text-2xl', tagline: 'text-[11px]' },
 };
 
-export function Logo({ variant = 'full', size = 'md', className }: LogoProps) {
+export function Logo({ variant = 'full', size = 'md', inverted = false, className }: LogoProps) {
   const sizes = sizeClasses[size];
   const isMark = variant === 'mark';
 
@@ -31,10 +33,22 @@ export function Logo({ variant = 'full', size = 'md', className }: LogoProps) {
       />
       {!isMark && (
         <div className="flex flex-col text-left">
-          <span className={cn('font-bold leading-tight tracking-tight text-indigo-700', sizes.name)}>
+          <span
+            className={cn(
+              'font-bold leading-tight tracking-tight',
+              inverted ? 'text-white' : 'text-indigo-700',
+              sizes.name,
+            )}
+          >
             {brand.name}
           </span>
-          <span className={cn('mt-1 font-semibold uppercase tracking-[0.2em] text-slate-600', sizes.tagline)}>
+          <span
+            className={cn(
+              'mt-0.5 font-semibold uppercase tracking-[0.2em]',
+              inverted ? 'text-white/85' : 'text-slate-600',
+              sizes.tagline,
+            )}
+          >
             {brand.tagline}
           </span>
         </div>

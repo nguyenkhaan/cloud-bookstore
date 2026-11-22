@@ -1,6 +1,5 @@
-import { Navigate } from 'react-router-dom'
-import { posPaths } from '../pos.route'
+import PosWorkspacePage from './PosWorkspacePage'
 
 export default function PosPage() {
-  return <Navigate replace to={posPaths.shift} />
+  return <PosWorkspacePage />
 }
