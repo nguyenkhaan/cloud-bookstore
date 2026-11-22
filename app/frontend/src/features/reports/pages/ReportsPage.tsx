@@ -1,5 +1,6 @@
-import { WorkspacePlaceholderPage } from '@/features/workspace/components/WorkspacePlaceholderPage'
+import { Navigate } from 'react-router-dom'
+import { reportsPaths } from '../reports.route'
 
 export default function ReportsPage() {
-  return <WorkspacePlaceholderPage currentPath="reports" title="Báo cáo & thuế" />
+  return <Navigate replace to={reportsPaths.revenueExpense} />
 }

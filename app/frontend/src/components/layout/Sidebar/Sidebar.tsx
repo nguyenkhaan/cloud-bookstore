@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import {
   DashboardIcon,
   InventoryIcon,
@@ -15,6 +15,7 @@ import {
   SettingsIcon
 } from '@/components/common/Icons';
 import { Logo } from '@/components/common/Logo';
+import { AuthContext } from '@/context/AuthProvider';
 import { brand } from '@/lib/brand';
 
 export interface NavItem {
@@ -33,6 +34,7 @@ export interface SidebarProps {
   storeName?: string;
   branchName?: string;
   storeAddress?: string;
+  userRole?: string;
 }
 //Inside the workspace.route.ts 
 // export const workspacePaths = {
@@ -59,6 +61,17 @@ const DEFAULT_NAV_ITEMS: NavItem[] = [
   { id: 'settings', label: 'Cấu hình hệ thống', icon: SettingsIcon },
 ];
 
+export function canAccessNavItem(id: string, roleCode?: string): boolean {
+  if (!roleCode) return true;
+  const normalized = roleCode.toUpperCase();
+  if (id === 'audit') {
+    return normalized === 'ADMIN' || normalized === 'INVENTORY_MANAGER';
+  }
+  if (id === 'reports') {
+    return normalized === 'ADMIN';
+  }
+  return true;
+}
 
 export function navLabelFor(id: string): string {
   const labels: Record<string, string> = {
@@ -84,7 +97,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSignOut,
   storeName = brand.storeName,
   storeAddress = brand.address,
+  userRole,
 }) => {
+  const auth = useContext(AuthContext);
+  const effectiveRole = userRole ?? auth?.session?.user?.roleCode;
+  const visibleNavItems = DEFAULT_NAV_ITEMS.filter((item) => canAccessNavItem(item.id, effectiveRole));
+
   const handleSignOut = () => {
     onSignOut?.();
   };
@@ -119,7 +137,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
 
         <nav className="space-y-1">
-          {DEFAULT_NAV_ITEMS.map((item) => {
+          {visibleNavItems.map((item) => {
             const isActive = currentPath === item.id;
             const Icon = item.icon;
 

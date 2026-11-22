@@ -44,7 +44,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         )}
 
         <div
-            className={`fixed inset-y-0 left-0 z-40 lg:static transition-transform duration-300 lg:translate-x-0 ${
+            className={`fixed inset-y-0 left-0 z-40 lg:static transition-transform duration-300 lg:translate-x-0 print:hidden ${
                 isMobileOpen ? 'translate-x-0' : '-translate-x-full'
             }`}
         >
@@ -68,7 +68,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
               user={user}
           />
 
-          <main className="flex-1 px-6 py-6 overflow-y-auto">
+          <main className="flex-1 px-6 py-6 overflow-y-auto print:px-0 print:py-0">
             {(pageTitle || screenCode || actionButton) && (
                 <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
@@ -84,7 +84,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                     )}
                   </div>
 
-                  {actionButton && <div>{actionButton}</div>}
+                  {actionButton && <div className="print:hidden">{actionButton}</div>}
                 </div>
             )}
 
