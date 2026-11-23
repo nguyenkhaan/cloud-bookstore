@@ -25,7 +25,6 @@ import { normalizeRoleCode } from '@/features/auth/role';
 import { usePermissions } from '@/hooks/usePermissions';
 import {
   canReadAccess,
-  getEffectiveAccess,
   resolveEffectiveScreenAccess,
 } from '@/routes/screen-access.policy';
 import type { AppRole } from '@/features/auth/role';

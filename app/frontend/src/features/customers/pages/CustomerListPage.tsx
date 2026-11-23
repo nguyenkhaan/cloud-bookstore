@@ -1,4 +1,5 @@
 import { usePermissions } from '@/hooks/usePermissions'
+import { useScreenAccess } from '@/hooks/useScreenAccess'
 import { useState, useTransition } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AlertTriangle } from 'lucide-react'
@@ -27,6 +28,8 @@ import type { Customer } from '../customers.type'
 
 export default function CustomerListPage() {
   const { can } = usePermissions()
+  const screenAccess = useScreenAccess('customers')
+  const canCreateCustomer = screenAccess.canUpdate && can('Customers.CreateCustomer')
   const navigate = useNavigate()
   const { session, signOut } = useAuth()
   const [, startTransition] = useTransition()
@@ -156,15 +159,14 @@ export default function CustomerListPage() {
           >
             Xuất danh sách
           </Button>
-          <Button
+          {canCreateCustomer && <Button
             className="min-h-[44px] px-4 font-semibold"
-            disabled={!can("Customers.CreateCustomer")}
             onClick={() => setIsAddDialogOpen(true)}
             type="button"
             variant="primary"
           >
             + Thêm mới khách hàng
-          </Button>
+          </Button>}
         </div>
       }
     >
@@ -430,7 +432,7 @@ export default function CustomerListPage() {
 
       {/* Add Customer Modal Dialog */}
       <AddCustomerDialog
-        isOpen={isAddDialogOpen}
+        isOpen={isAddDialogOpen && canCreateCustomer}
         onClose={() => setIsAddDialogOpen(false)}
         onSuccess={() => {
           setPage(1)

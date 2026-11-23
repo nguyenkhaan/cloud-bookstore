@@ -1,4 +1,5 @@
 import { usePermissions } from '@/hooks/usePermissions'
+import { useScreenAccess } from '@/hooks/useScreenAccess'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
@@ -14,6 +15,8 @@ import { SeriesVolumeMatrixPanel } from '../components/SeriesVolumeMatrixPanel'
 
 export default function SeriesListPage() {
   const { can } = usePermissions()
+  const screenAccess = useScreenAccess('catalogSeries')
+  const canCreate = screenAccess.canUpdate && can('BookSeries.CreateBookSeries')
   const [search, setSearch] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [name, setName] = useState('')
@@ -24,7 +27,7 @@ export default function SeriesListPage() {
 
   const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!name.trim()) {
+    if (!canCreate || !name.trim()) {
       setFormError('Tên bộ sách là bắt buộc.')
       return
     }
@@ -57,7 +60,7 @@ export default function SeriesListPage() {
 
   return (
     <CatalogWorkspace
-      action={can("BookSeries.CreateBookSeries") && <Button onClick={() => setIsDialogOpen(true)}>+ Tạo bộ sách mới</Button>}
+      action={canCreate && <Button onClick={() => setIsDialogOpen(true)}>+ Tạo bộ sách mới</Button>}
       title="Quản lý Bộ sách & Tiến độ đủ bộ"
     >
       <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">

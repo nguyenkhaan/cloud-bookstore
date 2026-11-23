@@ -44,6 +44,7 @@ function mount(file, name, data, options = {}) {
     }
     if (id === 'react-router-dom') return { useLocation: () => location, useNavigate: () => path => navigations.push(path) }
     if (id.endsWith('auth.hook')) return { useAuth: () => ({ session: { user: { roleCode: options.roleCode ?? 'ADMIN' } } }) }
+    if (id.endsWith('usePermissions')) return { usePermissions: () => ({ can: () => true }) }
     if (id.endsWith('settings.route')) return { settingsPaths: { rental: '/settings/rental', tiers: '/settings/tiers', rbac: '/settings/rbac', integrations: '/settings/integrations' } }
     return { ...panels, Button: 'button', TextField: 'input', ConfirmationDialog: 'confirmation', notify: { success() {}, error() {} }, MainLayout: 'MainLayout', SettingsTabBar: 'SettingsTabBar' }
   } })

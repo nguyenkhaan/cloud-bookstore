@@ -1,10 +1,13 @@
 ﻿import { useState } from 'react'
 import { Button, ConfirmationDialog, TextField } from '@/components/common'
 import { notify } from '@/components/common/Toast'
+import { usePermissions } from '@/hooks/usePermissions'
 import { useRbacMatrix, useUpdateRbacMatrix } from '../settings.hook'
 import type { RbacMatrixItem } from '../settings.type'
 
 export function ScrSys03RbacMatrix({ isAdmin }: { isAdmin: boolean }) {
+  const { can } = usePermissions()
+  const canEdit = isAdmin && can('Settings.UpdateRbacMatrix')
   const query = useRbacMatrix()
   const mutation = useUpdateRbacMatrix()
   const [draft, setDraft] = useState<RbacMatrixItem[] | null>(null)
@@ -17,7 +20,7 @@ export function ScrSys03RbacMatrix({ isAdmin }: { isAdmin: boolean }) {
   ] as const
 
   const save = async () => {
-    if (!isAdmin || !draft || !reason.trim() || mutation.isPending) return
+    if (!canEdit || !draft || !reason.trim() || mutation.isPending) return
     try {
       await mutation.mutateAsync({ items: draft, changeReason: reason.trim() })
       setDraft(null)
@@ -29,7 +32,7 @@ export function ScrSys03RbacMatrix({ isAdmin }: { isAdmin: boolean }) {
     }
   }
 
-  if (!isAdmin) return <p role="alert">Chỉ Admin được quản trị phân quyền.</p>
+  if (!canEdit) return <p role="alert">Bạn không có quyền quản trị phân quyền.</p>
   if (query.isError) return <div role="alert"><p>Không thể tải phân quyền. Chưa thể chỉnh sửa.</p><Button onClick={() => void query.refetch()}>Thử lại</Button></div>
   if (query.isPending) return <p role="status">Đang tải phân quyền…</p>
 

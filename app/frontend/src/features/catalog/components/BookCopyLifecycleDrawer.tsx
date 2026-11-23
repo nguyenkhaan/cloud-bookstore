@@ -12,7 +12,8 @@ import {
   X,
 } from 'lucide-react'
 import { Button } from '@/components/common'
-import { useAuth } from '@/features/auth/auth.hook'
+import { usePermissions } from '@/hooks/usePermissions'
+import { useScreenAccess } from '@/hooks/useScreenAccess'
 import {
   useCopyHistoryQuery,
   useCopyQuery,
@@ -115,8 +116,11 @@ export const BookCopyLifecycleDrawer: React.FC<BookCopyLifecycleDrawerProps> = (
   initialCopy = null,
   onClose,
 }) => {
-  const { session } = useAuth()
-  const canMutate = ['ADMIN', 'INVENTORY_MANAGER'].includes(session?.user?.roleCode ?? '')
+  const { can } = usePermissions()
+  const screenAccess = useScreenAccess('catalogCopyDetail')
+  const canCreateLabel = screenAccess.canUpdate && can('BookCopies.CreateBookCopyLabel')
+  const canUpdateShelf = screenAccess.canUpdate && can('BookCopies.UpdateBookCopyShelf')
+  const canMutate = canCreateLabel || canUpdateShelf
 
   const copyQuery = useCopyQuery(copyId ?? '')
   const historyQuery = useCopyHistoryQuery(copyId ?? '')
@@ -172,6 +176,7 @@ export const BookCopyLifecycleDrawer: React.FC<BookCopyLifecycleDrawerProps> = (
   ].filter(Boolean)
 
   const handleReprintLabel = async () => {
+    if (!canCreateLabel) return
     try {
       const label = await createLabelMutation.mutateAsync(copyId)
       setPrintedLabel(label)
@@ -183,6 +188,7 @@ export const BookCopyLifecycleDrawer: React.FC<BookCopyLifecycleDrawerProps> = (
 
   const handleShelfSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
+    if (!canUpdateShelf) return
     setShelfError('')
     const trimmedReason = shelfReason.trim()
     if (!trimmedReason) {
@@ -440,7 +446,7 @@ export const BookCopyLifecycleDrawer: React.FC<BookCopyLifecycleDrawerProps> = (
                 </p>
               )}
               <div className="grid grid-cols-2 gap-3">
-                <Button
+                {canCreateLabel && <Button
                   type="button"
                   variant="outline"
                   className="min-h-11"
@@ -448,8 +454,8 @@ export const BookCopyLifecycleDrawer: React.FC<BookCopyLifecycleDrawerProps> = (
                   onClick={() => void handleReprintLabel()}
                 >
                   In lại tem dán gáy
-                </Button>
-                <Button
+                </Button>}
+                {canUpdateShelf && <Button
                   type="button"
                   variant="primary"
                   className="min-h-11"
@@ -461,7 +467,7 @@ export const BookCopyLifecycleDrawer: React.FC<BookCopyLifecycleDrawerProps> = (
                   }}
                 >
                   Chuyển vị trí kệ
-                </Button>
+                </Button>}
               </div>
             </div>
           ) : (

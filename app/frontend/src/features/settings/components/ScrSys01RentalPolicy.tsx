@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { notify } from '@/components/common/Toast'
+import { usePermissions } from '@/hooks/usePermissions'
 import { useRentalPolicy, useUpdateRentalPolicy } from '../settings.hook'
 import type { DamagePenaltyConfig } from '../settings.type'
 
@@ -35,6 +36,8 @@ const DEFAULT_DAMAGE_PENALTIES: DamagePenaltyConfig[] = [
 ]
 
 export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAdmin }) => {
+  const { can } = usePermissions()
+  const canEdit = isAdmin && can('Settings.UpdateRentalPolicy')
   const { data: policy, isLoading, isError, refetch } = useRentalPolicy()
   const [initialized, setInitialized] = useState(false)
   const updateMutation = useUpdateRentalPolicy()
@@ -75,7 +78,7 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
   }
 
   const handleSaveConfirm = async () => {
-    if (!isAdmin) {
+    if (!canEdit) {
       notify.error('Chỉ Admin mới có quyền thay đổi chính sách.')
       return
     }
@@ -183,7 +186,7 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
                     type="number"
                     min="0"
                     max="10"
-                    disabled={!isAdmin}
+                    disabled={!canEdit}
                     value={maxExtensions}
                     onChange={(e) => setMaxExtensions(Number(e.target.value))}
                     className="w-20 text-sm font-semibold text-slate-900 border border-slate-200 rounded-lg px-2.5 py-1 focus:outline-none focus:border-indigo-600 disabled:bg-slate-100"
@@ -203,7 +206,7 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
                     type="number"
                     min="1"
                     max="30"
-                    disabled={!isAdmin}
+                    disabled={!canEdit}
                     value={extensionDays}
                     onChange={(e) => setExtensionDays(Number(e.target.value))}
                     className="w-20 text-sm font-semibold text-slate-900 border border-slate-200 rounded-lg px-2.5 py-1 focus:outline-none focus:border-indigo-600 disabled:bg-slate-100"
@@ -246,7 +249,7 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
                     type="number"
                     min="0"
                     max="24"
-                    disabled={!isAdmin}
+                    disabled={!canEdit}
                     value={graceHours}
                     onChange={(e) => setGraceHours(Number(e.target.value))}
                     className="w-20 text-sm font-semibold text-slate-900 border border-slate-200 rounded-lg px-2.5 py-1 focus:outline-none focus:border-indigo-600 disabled:bg-slate-100"
@@ -267,7 +270,7 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
                     min="100"
                     max="300"
                     step="10"
-                    disabled={!isAdmin}
+                    disabled={!canEdit}
                     value={latePenaltyRate}
                     onChange={(e) => setLatePenaltyRate(Number(e.target.value))}
                     className="w-20 text-sm font-semibold text-slate-900 border border-slate-200 rounded-lg px-2.5 py-1 focus:outline-none focus:border-indigo-600 disabled:bg-slate-100"
@@ -312,7 +315,7 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
                     <tr key={item.conditionName} className="hover:bg-slate-50/70">
                       <td className="py-3 px-4 font-semibold text-slate-900">{item.conditionName}</td>
                       <td className="py-3 px-4 font-bold text-rose-600">
-                        {isAdmin ? (
+                        {canEdit ? (
                           <div className="flex items-center gap-1">
                             <input
                               type="number"
@@ -375,7 +378,7 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
             <div className="flex flex-col gap-2 pt-2">
               <button
                 type="button"
-                disabled={!isAdmin || updateMutation.isPending}
+                disabled={!canEdit || updateMutation.isPending}
                 onClick={() => setShowConfirmModal(true)}
                 className="w-full py-2.5 px-4 bg-indigo-600 text-white font-semibold text-xs rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
               >
@@ -384,7 +387,7 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
 
               <button
                 type="button"
-                disabled={!isAdmin}
+                disabled={!canEdit}
                 onClick={handleResetDefaults}
                 className="w-full py-2.5 px-4 bg-white border border-slate-200 text-slate-700 font-semibold text-xs rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-50"
               >

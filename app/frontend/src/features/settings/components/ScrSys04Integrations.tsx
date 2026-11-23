@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { notify } from '@/components/common/Toast'
+import { usePermissions } from '@/hooks/usePermissions'
 import { useIntegrations, useUpdateIntegrations } from '../settings.hook'
 import type {
   BookMetadataIntegration,
@@ -13,7 +14,10 @@ interface ScrSys04IntegrationsProps {
   isAdmin: boolean
 }
 
-export const ScrSys04Integrations: React.FC<ScrSys04IntegrationsProps> = ({ isAdmin }) => {
+export const ScrSys04Integrations: React.FC<ScrSys04IntegrationsProps> = ({ isAdmin: roleIsAdmin }) => {
+  const { can } = usePermissions()
+  const isAdmin = roleIsAdmin && can('Settings.UpdateIntegrations')
+  const canEdit = isAdmin
   const { data: config, isLoading, isError, refetch } = useIntegrations()
   const [initialized, setInitialized] = useState(false)
   const updateMutation = useUpdateIntegrations()
@@ -87,7 +91,7 @@ export const ScrSys04Integrations: React.FC<ScrSys04IntegrationsProps> = ({ isAd
   }
 
   const handleSave = async (section: 'vietQr' | 'zaloOa' | 'bookMetadata' | 'smtp' | 'all') => {
-    if (!isAdmin) {
+    if (!canEdit) {
       notify.error('Chỉ Admin mới có quyền lưu cấu hình tích hợp.')
       return
     }
