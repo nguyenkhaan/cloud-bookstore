@@ -1,31 +1,45 @@
 import React from 'react'
 import type { SystemTabKey } from '../settings.type'
+import { normalizeRoleCode } from '@/features/auth/role'
+import { canReadAccess, resolveEffectiveScreenAccess } from '@/routes/screen-access.policy'
+import type { AppRole } from '@/features/auth/role'
+import type { ScreenId } from '@/routes/screen-access.policy'
 
 interface SettingsTabBarProps {
   activeTab: SystemTabKey
   onSelectTab: (tab: SystemTabKey) => void
-  isAdmin: boolean
+  tabs: readonly SettingsTabDefinition[]
 }
 
-interface TabItem {
+export interface SettingsTabDefinition {
   key: SystemTabKey
   label: string
+  screenId: ScreenId
 }
 
-const TABS: TabItem[] = [
-  { key: 'rental', label: 'Tham số thuê, trả & khung phạt' },
-  { key: 'tiers', label: 'Hạng thành viên & chiết khấu' },
-  { key: 'rbac', label: 'Ma trận phân quyền' },
-  { key: 'integrations', label: 'Tích hợp' },
+export const SETTINGS_TABS: readonly SettingsTabDefinition[] = [
+  { key: 'rental', label: 'Tham số thuê, trả & khung phạt', screenId: 'settingsRental' },
+  { key: 'tiers', label: 'Hạng thành viên & chiết khấu', screenId: 'settingsTiers' },
+  { key: 'rbac', label: 'Ma trận phân quyền', screenId: 'settingsRbac' },
+  { key: 'integrations', label: 'Tích hợp', screenId: 'settingsIntegrations' },
 ]
 
-const ADMIN_ONLY_TABS = new Set<SystemTabKey>(['rbac', 'integrations'])
+export function getVisibleSettingsTabs(
+  roleCode?: string | null,
+  permissionCodes: ReadonlySet<string> = new Set<string>(),
+  permissionStatus: 'loading' | 'ready' | 'error' = 'ready',
+): readonly SettingsTabDefinition[] {
+  const role = normalizeRoleCode(roleCode) as AppRole | null
+  return SETTINGS_TABS.filter((tab) => canReadAccess(
+    resolveEffectiveScreenAccess(tab.screenId, role, permissionCodes, permissionStatus),
+  ))
+}
 
-export const SettingsTabBar: React.FC<SettingsTabBarProps> = ({ activeTab, onSelectTab, isAdmin }) => {
+export const SettingsTabBar: React.FC<SettingsTabBarProps> = ({ activeTab, onSelectTab, tabs }) => {
   return (
     <nav aria-label="Các mục cấu hình hệ thống" className="overflow-x-auto border-b border-slate-200">
       <div className="flex min-w-max gap-5">
-        {TABS.filter((tab) => isAdmin || !ADMIN_ONLY_TABS.has(tab.key)).map((tab) => {
+        {tabs.map((tab) => {
           const isActive = activeTab === tab.key
           return (
             <button

@@ -25,10 +25,11 @@ export const approvalsQueryKeys = {
 }
 
 // --- Overview Stats ---
-export function useApprovalsOverviewStatsQuery() {
+export function useApprovalsOverviewStatsQuery(enabled = true) {
   return useQuery({
     queryKey: approvalsQueryKeys.overviewStats(),
     queryFn: () => approvalsService.getOverviewStats(),
+    enabled,
   })
 }
 
@@ -125,17 +126,19 @@ export function useAllBookCopiesQuery(enabled: boolean = true) {
   })
 }
 
-export function useApprovalsQuery(query: InventoryAdjustmentQuery) {
+export function useApprovalsQuery(query: InventoryAdjustmentQuery, enabled = true) {
   return useQuery({
     queryKey: approvalsQueryKeys.inventoryList(query),
     queryFn: () => approvalsService.getAdjustments(query),
+    enabled,
   })
 }
 
-export function useApprovalsStatsQuery() {
+export function useApprovalsStatsQuery(enabled = true) {
   return useQuery({
     queryKey: approvalsQueryKeys.inventoryStats(),
     queryFn: () => approvalsService.getStats(),
+    enabled,
   })
 }
 

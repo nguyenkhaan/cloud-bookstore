@@ -7,7 +7,7 @@ test('approval navigation is a compact header tab bar without screen-code or rol
   const pageSource = readFileSync(new URL('../src/features/approvals/pages/ApprovalsPage.tsx', import.meta.url), 'utf8')
   const tabSource = readFileSync(new URL('../src/features/approvals/components/ApprovalTabBar.tsx', import.meta.url), 'utf8')
 
-  assert.match(pageSource, /pageHeaderContent=\{<ApprovalTabBar activeTab=\{activeTab\} counts=\{approvalCounts\} onSelectTab=\{handleSelectTab\} \/>\}/)
+  assert.match(pageSource, /pageHeaderContent=\{<ApprovalTabBar activeTab=\{activeTab\} counts=\{approvalCounts\} onSelectTab=\{handleSelectTab\} tabs=\{visibleTabs\} \/>\}/)
   assert.doesNotMatch(pageSource, /SCR-APP-01/)
   assert.doesNotMatch(pageSource, /Không gian phê duyệt tập trung dành riêng/)
   assert.match(tabSource, /<nav aria-label="Các nhóm yêu cầu phê duyệt"/)
