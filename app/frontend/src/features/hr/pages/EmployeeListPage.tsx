@@ -155,7 +155,7 @@ export default function EmployeeListPage() {
                 options={[
                   { value: '', label: 'Vai trò: Tất cả' },
                   { value: 'ADMIN', label: 'Quản trị viên' },
-                  { value: 'CASHIER', label: 'Nhân viên' },
+                  { value: 'CASHIER', label: 'Thu ngân' },
                   { value: 'INVENTORY_MANAGER', label: 'Quản lý kho' },
                 ]}
                 searchable={false}

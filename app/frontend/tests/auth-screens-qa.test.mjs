@@ -171,12 +171,12 @@ describe('AUTH screens QA single-fault isolation & entrypoint parity', { concurr
 
   test('auth.mock provides deterministic role mappings, devices, and notification defaults', () => {
     assert.equal(authMock.getRoleBadgeLabel('ADMIN'), 'Quản trị viên (Admin)')
-    assert.equal(authMock.getRoleBadgeLabel('CASHIER'), 'Nhân viên (Cashier)')
-    assert.equal(authMock.getRoleBadgeLabel('INVENTORY_MANAGER'), 'Quản lý kho (Warehouse)')
+    assert.equal(authMock.getRoleBadgeLabel('CASHIER'), 'Thu ngân (Cashier)')
+    assert.equal(authMock.getRoleBadgeLabel('INVENTORY_MANAGER'), 'Quản lý kho (Inventory)')
     assert.equal(authMock.getRoleBadgeLabel(undefined, 'Khách'), 'Khách')
 
     assert.equal(authMock.getRolePermissionLabel('ADMIN'), 'Quản trị viên (Toàn quyền)')
-    assert.equal(authMock.getRolePermissionLabel('CASHIER'), 'Nhân viên bán hàng (Quầy giao dịch)')
+    assert.equal(authMock.getRolePermissionLabel('CASHIER'), 'Thu ngân (Quầy giao dịch)')
     assert.equal(authMock.getRolePermissionLabel('INVENTORY_MANAGER'), 'Quản lý kho (Kho & đầu sách)')
 
     const adminMock = authMock.getMockProfileForUser({

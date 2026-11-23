@@ -27,7 +27,7 @@ after(async () => {
 
 test('resolveHrRoleCode uses only normalized AuthUser role data', () => {
   assert.equal(roleUtil.resolveHrRoleCode({ role: 'Quản trị viên', roleCode: 'ADMIN' }), 'ADMIN')
-  assert.equal(roleUtil.resolveHrRoleCode({ role: 'Nhân viên', roleCode: 'CASHIER' }), 'CASHIER')
+  assert.equal(roleUtil.resolveHrRoleCode({ role: 'Thu ngân', roleCode: 'CASHIER' }), 'CASHIER')
   assert.equal(
     roleUtil.resolveHrRoleCode({ role: 'Quản lý kho', roleCode: 'INVENTORY_MANAGER' }),
     'INVENTORY_MANAGER',

@@ -50,7 +50,7 @@ export default function CustomerDetailPage() {
   const { data: customer, isLoading, isError, error } = useCustomer(id)
   const updateCustomerMutation = useUpdateCustomer()
 
-  // Warehouse (INVENTORY_MANAGER) chỉ được xem tab thu mua (CUS-003).
+  // Inventory (INVENTORY_MANAGER) chỉ được xem tab thu mua (CUS-003).
   // Nếu TS báo không có `roleCode`, đổi theo field thật trong features/auth/auth.type.ts.
   const canViewFullHistory = can('CustomerHistory.GetSummary')
   const { data: summaryData } = useCustomerHistorySummary(id, canViewFullHistory)

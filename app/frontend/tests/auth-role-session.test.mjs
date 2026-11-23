@@ -46,11 +46,13 @@ after(async () => {
   await server?.close()
 })
 
-test('normalizeRoleCode accepts three canonical roles and supported aliases', () => {
+test('normalizeRoleCode accepts exactly three canonical role identifiers', () => {
   assert.equal(roleModule.normalizeRoleCode('ADMIN'), 'ADMIN')
-  assert.equal(roleModule.normalizeRoleCode('super_admin'), 'ADMIN')
-  assert.equal(roleModule.normalizeRoleCode('employee'), 'CASHIER')
-  assert.equal(roleModule.normalizeRoleCode('WAREHOUSE'), 'INVENTORY_MANAGER')
+  assert.equal(roleModule.normalizeRoleCode(' cashier '), 'CASHIER')
+  assert.equal(roleModule.normalizeRoleCode('INVENTORY_MANAGER'), 'INVENTORY_MANAGER')
+  assert.equal(roleModule.normalizeRoleCode('super_admin'), null)
+  assert.equal(roleModule.normalizeRoleCode('employee'), null)
+  assert.equal(roleModule.normalizeRoleCode('WAREHOUSE'), null)
   assert.equal(roleModule.normalizeRoleCode('unknown-role'), null)
 })
 
@@ -84,9 +86,20 @@ test('readStoredUser rejects malformed or unrecognized cached role', () => {
   storage.setItem(
     'cloud-bookstore.user-info',
     JSON.stringify({
+      id: 'legacy-employee',
+      name: 'Legacy employee',
+      role: 'Employee',
+      roleCode: 'EMPLOYEE',
+    }),
+  )
+  assert.equal(clientModule.readStoredUser(), null)
+
+  storage.setItem(
+    'cloud-bookstore.user-info',
+    JSON.stringify({
       id: 'user-cashier',
-      name: 'Nhân viên',
-      role: 'Nhân viên',
+      name: 'Thu ngân',
+      role: 'Thu ngân',
       roleCode: 'CASHIER',
     }),
   )
@@ -95,19 +108,20 @@ test('readStoredUser rejects malformed or unrecognized cached role', () => {
 
 test('formatUser preserves BrowserSessionUser id and normalized role', () => {
   const user = authModule.formatUser({
-    id: 'user-employee',
-    fullName: 'Nhân viên bán hàng',
-    role: 'employee',
-    email: 'employee@example.test',
+    id: 'user-cashier',
+    fullName: 'Thu ngân bán hàng',
+    role: 'CASHIER',
+    email: 'cashier@example.test',
     avatarUrl: null,
   })
 
-  assert.equal(user.id, 'user-employee')
+  assert.equal(user.id, 'user-cashier')
   assert.equal(user.roleCode, 'CASHIER')
-  assert.equal(user.role, 'Nhân viên')
+  assert.equal(user.role, 'Thu ngân')
 })
 
 test('role resolution never reads previewRole query state', () => {
   assert.equal(hrRoleModule.resolveHrRoleCode({ role: 'Quản trị viên', roleCode: 'ADMIN' }), 'ADMIN')
+  assert.equal(hrRoleModule.resolveHrRoleCode({ role: 'Nhân viên' }), undefined)
   assert.equal(hrRoleModule.getPreviewRoleFromSearch, undefined)
 })

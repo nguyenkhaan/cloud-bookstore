@@ -6,20 +6,13 @@ export type HrRoleCode = AppRole
 const ROLE_LABELS: Record<HrRoleCode, string> = {
   ADMIN: 'Quản trị viên',
   INVENTORY_MANAGER: 'Quản lý kho',
-  CASHIER: 'Nhân viên',
+  CASHIER: 'Thu ngân',
 }
 
 export function resolveHrRoleCode(
   user?: { role?: string; roleCode?: string } | null,
 ): HrRoleCode | undefined {
-  const directCode = normalizeRoleCode(user?.roleCode)
-  if (directCode) return directCode
-
-  const displayRole = user?.role?.toLowerCase() ?? ''
-  if (displayRole.includes('quản lý kho') || displayRole.includes('kho')) return 'INVENTORY_MANAGER'
-  if (displayRole.includes('admin') || displayRole.includes('quản trị')) return 'ADMIN'
-  if (displayRole.includes('nhân viên') || displayRole.includes('thu ngân')) return 'CASHIER'
-  return undefined
+  return normalizeRoleCode(user?.roleCode) ?? undefined
 }
 
 export function isHrAdmin(roleCode?: string | null): boolean {

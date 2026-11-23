@@ -82,27 +82,27 @@ git commit -m "docs(rbac): define canonical role identifiers"
 - `EMPLOYEE`, `WAREHOUSE`, `SUPER_ADMIN`, and unknown values normalize to `null`; stale cache/session data cannot grant access.
 - `CASHIER` is labelled `Thu ngân` and `INVENTORY_MANAGER` remains the Inventory/warehouse-management role in product UI.
 
-- [ ] **Step 1: Write failing normalization and display-label tests**
+- [x] **Step 1: Write failing normalization and display-label tests**
 
 Assert all canonical values pass and every removed alias returns `null`; assert `formatUser` labels `CASHIER` as `Thu ngân`.
 
-- [ ] **Step 2: Run the focused test and confirm failure**
+- [x] **Step 2: Run the focused test and confirm failure**
 
 Run: `cd app/frontend && bun run test -- tests/auth-role-session.test.mjs`
 
 Expected: FAIL because the normalizer still accepts legacy aliases and displays Cashier as `Nhân viên`.
 
-- [ ] **Step 3: Remove legacy aliases and update product-facing role labels**
+- [x] **Step 3: Remove legacy aliases and update product-facing role labels**
 
 Keep `WarehouseAllowed` and HR Employee domain identifiers unchanged.
 
-- [ ] **Step 4: Run focused tests**
+- [x] **Step 4: Run focused tests**
 
 Run: `cd app/frontend && bun run test -- tests/auth-role-session.test.mjs tests/auth-screens-qa.test.mjs tests/sidebar-role-nav.test.mjs`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/frontend/src app/frontend/tests

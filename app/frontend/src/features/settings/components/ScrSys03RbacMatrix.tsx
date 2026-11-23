@@ -16,7 +16,7 @@ export function ScrSys03RbacMatrix({ isAdmin }: { isAdmin: boolean }) {
   const [confirm, setConfirm] = useState(false)
   const items = draft ?? query.data?.items ?? []
   const roles = [
-    ['cashierAllowed', 'Nhân viên'], ['warehouseAllowed', 'Quản lý kho'], ['adminAllowed', 'Admin'],
+    ['cashierAllowed', 'Thu ngân'], ['warehouseAllowed', 'Quản lý kho'], ['adminAllowed', 'Admin'],
   ] as const
 
   const save = async () => {

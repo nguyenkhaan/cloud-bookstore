@@ -21,7 +21,7 @@ export function mapRoleToDisplay(role?: string): string {
     case 'ADMIN':
       return 'Quản trị viên'
     case 'CASHIER':
-      return 'Nhân viên'
+      return 'Thu ngân'
     case 'INVENTORY_MANAGER':
       return 'Quản lý kho'
     default:

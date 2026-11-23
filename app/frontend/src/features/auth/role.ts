@@ -4,11 +4,8 @@ export type AppRole = (typeof APP_ROLES)[number]
 
 const ROLE_ALIASES: Record<string, AppRole> = {
   ADMIN: 'ADMIN',
-  SUPER_ADMIN: 'ADMIN',
   CASHIER: 'CASHIER',
-  EMPLOYEE: 'CASHIER',
   INVENTORY_MANAGER: 'INVENTORY_MANAGER',
-  WAREHOUSE: 'INVENTORY_MANAGER',
 }
 
 export function normalizeRoleCode(value?: string | null): AppRole | null {
