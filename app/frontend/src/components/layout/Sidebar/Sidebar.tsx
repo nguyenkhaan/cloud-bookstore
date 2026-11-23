@@ -21,13 +21,23 @@ import { Logo } from '@/components/common/Logo';
 import { AuthContext } from '@/context/AuthProvider';
 import { brand } from '@/lib/brand';
 import { hrPaths } from '@/features/hr/hr.route';
-import { HR_ADMIN_ONLY_NAV_IDS } from '@/features/hr/hr-role.util';
+import { normalizeRoleCode } from '@/features/auth/role';
+import { usePermissions } from '@/hooks/usePermissions';
+import {
+  canReadAccess,
+  getEffectiveAccess,
+  resolveEffectiveScreenAccess,
+} from '@/routes/screen-access.policy';
+import type { AppRole } from '@/features/auth/role';
+import type { AccessLevel, ScreenId } from '@/routes/screen-access.policy';
 
 export interface NavItem {
   id: string;
   label: string;
   href?: string;
   icon: React.ComponentType<{ size?: number; className?: string }>;
+  screenId: ScreenId;
+  childScreenIds?: readonly ScreenId[];
 }
 
 export interface SidebarProps {
@@ -45,38 +55,86 @@ export interface SidebarProps {
 }
 
 const HR_SUB_NAV_ITEMS = [
-  { id: 'hr-employees', label: 'Danh sách nhân viên', href: hrPaths.employees },
-  { id: 'hr-shifts', label: 'Phân công ca', href: hrPaths.shifts },
-  { id: 'hr-attendance', label: 'Chấm công & Lương ca', href: hrPaths.attendance },
-  { id: 'hr-personal-attendance', label: 'Chấm công cá nhân', href: hrPaths.personalAttendance },
-  { id: 'hr-requests', label: 'Đơn xét duyệt', href: hrPaths.requests },
-  { id: 'hr-payroll', label: 'Bảng lương', href: hrPaths.payroll },
-  { id: 'hr-payslip', label: 'Phiếu lương', href: hrPaths.payslip },
+  { id: 'hr-employees', label: 'Danh sách nhân viên', href: hrPaths.employees, screenId: 'hrEmployees' },
+  { id: 'hr-shifts', label: 'Phân công ca', href: hrPaths.shifts, screenId: 'hrShifts' },
+  { id: 'hr-attendance', label: 'Chấm công & Lương ca', href: hrPaths.attendance, screenId: 'hrAttendance' },
+  { id: 'hr-personal-attendance', label: 'Chấm công cá nhân', href: hrPaths.personalAttendance, screenId: 'hrPersonalAttendance' },
+  { id: 'hr-requests', label: 'Đơn xét duyệt', href: hrPaths.requests, screenId: 'hrRequests' },
+  { id: 'hr-payroll', label: 'Bảng lương', href: hrPaths.payroll, screenId: 'hrPayroll' },
+  { id: 'hr-payslip', label: 'Phiếu lương', href: hrPaths.payslip, screenId: 'hrPayslip' },
 ] as const;
 
 const DEFAULT_NAV_ITEMS: NavItem[] = [
-  { id: 'overview', label: 'Tổng quan', icon: DashboardIcon },
-  { id: 'pos', label: 'Quầy giao dịch', icon: PosIcon },
-  { id: 'inventory', label: 'Quản lý sách', icon: InventoryIcon },
-  { id: 'warehouse', label: 'NCC & Kho', icon: WarehouseIcon },
-  { id: 'customers', label: 'Khách hàng', icon: CustomerIcon },
-  { id: 'hr', label: 'Nhân sự & tiền lương', icon: StaffIcon },
-  { id: 'approvals', label: 'Phê duyệt', icon: ApprovalIcon },
-  { id: 'audit', label: 'Nhật ký kiểm toán', icon: AuditIcon },
-  { id: 'reports', label: 'Báo cáo & thuế', icon: ReportIcon },
-  { id: 'settings', label: 'Cấu hình hệ thống', icon: SettingsIcon },
+  { id: 'overview', label: 'Tổng quan', icon: DashboardIcon, screenId: 'dashboard' },
+  { id: 'pos', label: 'Quầy giao dịch', icon: PosIcon, screenId: 'pos' },
+  {
+    id: 'inventory',
+    label: 'Quản lý sách',
+    icon: InventoryIcon,
+    screenId: 'catalogSeries',
+    childScreenIds: ['catalogCategories', 'catalogSeries', 'catalogTitles'],
+  },
+  {
+    id: 'warehouse',
+    label: 'NCC & Kho',
+    icon: WarehouseIcon,
+    screenId: 'suppliers',
+    childScreenIds: ['suppliers', 'stockReceipts', 'stockOut', 'inventoryCheck', 'stockAlerts'],
+  },
+  { id: 'customers', label: 'Khách hàng', icon: CustomerIcon, screenId: 'customers' },
+  { id: 'hr', label: 'Nhân sự & tiền lương', icon: StaffIcon, screenId: 'hr' },
+  { id: 'approvals', label: 'Phê duyệt', icon: ApprovalIcon, screenId: 'approvals' },
+  { id: 'audit', label: 'Nhật ký kiểm toán', icon: AuditIcon, screenId: 'audit' },
+  { id: 'reports', label: 'Báo cáo & thuế', icon: ReportIcon, screenId: 'reports' },
+  { id: 'settings', label: 'Cấu hình hệ thống', icon: SettingsIcon, screenId: 'settings' },
 ];
 
+function getRole(roleCode?: string | null): AppRole | null {
+  return normalizeRoleCode(roleCode) as AppRole | null;
+}
+
+function getItemScreenIds(item: NavItem): readonly ScreenId[] {
+  return item.childScreenIds ?? [item.screenId];
+}
+
+function resolveAccess(
+  screenId: ScreenId,
+  role: AppRole | null,
+  permissionCodes: ReadonlySet<string>,
+  permissionStatus: 'loading' | 'ready' | 'error',
+): AccessLevel {
+  return resolveEffectiveScreenAccess(screenId, role, permissionCodes, permissionStatus);
+}
+
+function hasReadableScreen(
+  screenIds: readonly ScreenId[],
+  role: AppRole | null,
+  permissionCodes = new Set<string>(),
+  permissionStatus: 'loading' | 'ready' | 'error' = 'ready',
+): boolean {
+  return role !== null && screenIds.some((screenId) =>
+    canReadAccess(resolveAccess(screenId, role, permissionCodes, permissionStatus)),
+  );
+}
+
 export function canAccessNavItem(id: string, roleCode?: string): boolean {
-  if (!roleCode) return true;
-  const normalized = roleCode.toUpperCase();
-  if (id === 'audit') {
-    return normalized === 'ADMIN' || normalized === 'INVENTORY_MANAGER';
-  }
-  if (id === 'reports') {
-    return normalized === 'ADMIN';
-  }
-  return true;
+  const role = getRole(roleCode);
+  const item = DEFAULT_NAV_ITEMS.find((candidate) => candidate.id === id);
+  return item ? hasReadableScreen(getItemScreenIds(item), role) : false;
+}
+
+export function visibleNavItemIdsFor(roleCode?: string): string[] {
+  const role = getRole(roleCode);
+  return DEFAULT_NAV_ITEMS
+    .filter((item) => hasReadableScreen(getItemScreenIds(item), role))
+    .map((item) => item.id);
+}
+
+export function visibleHrSubNavItemIdsFor(roleCode?: string): string[] {
+  const role = getRole(roleCode);
+  return HR_SUB_NAV_ITEMS
+    .filter((item) => hasReadableScreen([item.screenId], role))
+    .map((item) => item.id);
 }
 
 export function navLabelFor(id: string): string {
@@ -110,17 +168,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const auth = useContext(AuthContext);
   const inRouterContext = useInRouterContext();
   const effectiveRole = userRoleCode ?? userRole ?? auth?.session?.user?.roleCode;
+  const role = getRole(effectiveRole);
+  const permissions = usePermissions();
+  const permissionStatus = permissions.isError
+    ? 'error'
+    : permissions.isPending
+      ? 'loading'
+      : 'ready';
   const [isHrExpanded, setIsHrExpanded] = useState(
     currentPath === 'hr' || activeHref.startsWith('/hr'),
   );
 
-  const isNonAdmin =
-    userRoleCode === 'CASHIER' || userRoleCode === 'INVENTORY_MANAGER'
-      || effectiveRole?.toUpperCase() === 'CASHIER'
-      || effectiveRole?.toUpperCase() === 'INVENTORY_MANAGER';
-
   const visibleNavItems = DEFAULT_NAV_ITEMS.filter(
-    (item) => canAccessNavItem(item.id, effectiveRole) && (!isNonAdmin || !HR_ADMIN_ONLY_NAV_IDS.has(item.id)),
+    (item) => hasReadableScreen(
+      getItemScreenIds(item),
+      role,
+      permissions.permissionCodes,
+      permissionStatus,
+    ),
   );
 
   const handleSignOut = () => {
@@ -206,7 +271,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                 {isHrGroup && !isCollapsed && isHrExpanded && (
                   <div className="ml-4 space-y-0.5 border-l border-slate-200 pl-3" data-testid="sidebar-hr-submenu">
-                    {HR_SUB_NAV_ITEMS.filter((sub) => sub.id !== 'hr-attendance' || !isNonAdmin).map((sub) => {
+                    {HR_SUB_NAV_ITEMS.filter((sub) => hasReadableScreen(
+                      [sub.screenId],
+                      role,
+                      permissions.permissionCodes,
+                      permissionStatus,
+                    )).map((sub) => {
                       const isSubActive =
                         activeHref === sub.href ||
                         activeHref.startsWith(`${sub.href}/`);

@@ -10,6 +10,7 @@ const src = (...parts) => path.join(frontendRoot, 'src', ...parts)
 
 let server
 let roleUtil
+let sidebarModule
 
 before(async () => {
   server = await createServer({
@@ -17,6 +18,7 @@ before(async () => {
     server: { hmr: false, middlewareMode: true },
   })
   roleUtil = await server.ssrLoadModule('/src/features/hr/hr-role.util.ts')
+  sidebarModule = await server.ssrLoadModule('/src/components/layout/Sidebar/Sidebar.tsx')
 })
 
 after(async () => {
@@ -40,16 +42,32 @@ test('resolveHrRoleCode handles AuthUser roleCode without query-string role over
   )
 })
 
-test('Sidebar hides admin-only nav items for CASHIER and INVENTORY_MANAGER and renders HRM sub-menu', () => {
+test('Sidebar follows the shared top-level and HR child access matrix', () => {
   const sidebarSource = readFileSync(src('components', 'layout', 'Sidebar', 'Sidebar.tsx'), 'utf8')
   const mainLayoutSource = readFileSync(src('components', 'layout', 'MainLayout.tsx'), 'utf8')
 
-  for (const adminNavId of ['approvals', 'audit', 'reports', 'settings']) {
-    assert.ok(roleUtil.HR_ADMIN_ONLY_NAV_IDS.has(adminNavId), `missing admin-only nav id: ${adminNavId}`)
+  const expectedTopLevel = {
+    ADMIN: ['overview', 'pos', 'inventory', 'warehouse', 'customers', 'hr', 'approvals', 'audit', 'reports', 'settings'],
+    CASHIER: ['overview', 'pos', 'inventory', 'customers', 'hr', 'approvals', 'settings'],
+    INVENTORY_MANAGER: ['overview', 'pos', 'inventory', 'warehouse', 'customers', 'hr', 'approvals', 'audit', 'settings'],
+  }
+  const expectedHrChildren = {
+    ADMIN: ['hr-employees', 'hr-shifts', 'hr-attendance', 'hr-personal-attendance', 'hr-requests', 'hr-payroll', 'hr-payslip'],
+    CASHIER: ['hr-shifts', 'hr-personal-attendance', 'hr-requests', 'hr-payslip'],
+    INVENTORY_MANAGER: ['hr-shifts', 'hr-personal-attendance', 'hr-requests', 'hr-payslip'],
   }
 
-  assert.match(sidebarSource, /HR_ADMIN_ONLY_NAV_IDS/)
-  assert.match(sidebarSource, /userRoleCode === 'CASHIER' \|\| userRoleCode === 'INVENTORY_MANAGER'/)
+  for (const [role, expected] of Object.entries(expectedTopLevel)) {
+    assert.deepEqual(sidebarModule.visibleNavItemIdsFor(role), expected, role)
+    assert.deepEqual(sidebarModule.visibleHrSubNavItemIdsFor(role), expectedHrChildren[role], role)
+  }
+
+  assert.equal(sidebarModule.canAccessNavItem('approvals', 'CASHIER'), true)
+  assert.equal(sidebarModule.canAccessNavItem('settings', 'INVENTORY_MANAGER'), true)
+
+  assert.doesNotMatch(sidebarSource, /HR_ADMIN_ONLY_NAV_IDS/)
+  assert.doesNotMatch(sidebarSource, /isNonAdmin/)
+  assert.match(sidebarSource, /screenId:/)
   assert.match(sidebarSource, /data-testid="sidebar-hr-submenu"/)
   assert.match(sidebarSource, /Danh sách nhân viên/)
   assert.match(sidebarSource, /Phân công ca/)
