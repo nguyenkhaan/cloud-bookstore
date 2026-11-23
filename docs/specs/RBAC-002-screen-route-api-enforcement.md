@@ -6,7 +6,7 @@ Accepted — người dùng chấp thuận mô hình phân quyền kết hợp v
 
 ## Objective
 
-Ba vai trò nghiệp vụ `ADMIN`, `CASHIER` (Employee/Nhân viên) và `INVENTORY_MANAGER` (Inventory/Quản lý kho) chỉ nhìn thấy, đọc và thao tác trên các màn hình phù hợp với trách nhiệm của mình.
+Ba vai trò nghiệp vụ duy nhất là `ADMIN` (Admin/Quản trị viên), `CASHIER` (Cashier/Thu ngân) và `INVENTORY_MANAGER` (Inventory/Quản lý kho). Mỗi role chỉ nhìn thấy, đọc và thao tác trên các màn hình phù hợp với trách nhiệm của mình.
 
 Quyền phải được thực thi đồng thời ở ba lớp:
 
@@ -69,7 +69,7 @@ Ma trận bên dưới là baseline khi chưa có cấu hình động. Permissio
 
 ## Actors and Permissions
 
-### Employee — `CASHIER`
+### Cashier / Thu ngân — `CASHIER`
 
 Thực hiện bán, thuê, gia hạn, trả, thu mua, thanh toán, ca thu ngân; quản lý khách trong phạm vi giao dịch; xem danh mục; chấm công, tạo yêu cầu và xem lương của bản thân.
 
@@ -83,7 +83,7 @@ Quản lý danh mục, metadata, nhà cung cấp, nhập/xuất, CopyBarcode, ki
 
 ## Default Screen Access Matrix
 
-| Tên màn hình + route | Employee | Admin | Inventory |
+| Tên màn hình + route | Cashier | Admin | Inventory |
 | --- | :---: | :---: | :---: |
 | Xác thực trước đăng nhập — `/login`, `/register`, `/verify-register`, `/forgot-password`, `/reset-password` | N | N | N |
 | Đổi mật khẩu bắt buộc — `/change-password`, `/first-change-password` | R, U | R, U | R, U |
@@ -138,17 +138,17 @@ Quản lý danh mục, metadata, nhà cung cấp, nhập/xuất, CopyBarcode, ki
 
 Các giới hạn sau được thực thi ngoài ma trận động và không thể nới bằng việc cấp một permission API đơn lẻ:
 
-1. Employee tại `/pos` được bán, thuê, gia hạn, trả và thu mua nhưng không được duyệt phạt, đảo giao dịch hoặc điều chỉnh két.
+1. Cashier tại `/pos` được bán, thuê, gia hạn, trả và thu mua nhưng không được duyệt phạt, đảo giao dịch hoặc điều chỉnh két.
 2. Inventory tại `/pos` chỉ thấy tab Thu mua. Khi mở `/pos`, tab mặc định phải là tab đầu tiên role được phép; tab bán, thuê, gia hạn, trả và thanh toán không được render.
-3. Employee và Inventory tại `/customers` được tra cứu và tạo khách phục vụ giao dịch. Dữ liệu nhạy cảm, gắn cờ vi phạm và xóa hồ sơ cần quyền riêng; mặc định chỉ Admin được thao tác đầy đủ.
-4. Employee chỉ đọc danh mục. Admin và Inventory mới được tạo/sửa/xóa thể loại, bộ sách, đầu sách, ấn bản và bản sách.
-5. Employee và Inventory tại `/hr/requests` chỉ tạo, xem và hủy đơn của chính mình. Hàng đợi duyệt của người khác không được tải về client.
-6. Employee tại `/approvals` chỉ xem/theo dõi hoặc hủy yêu cầu ngoại lệ do mình tạo.
+3. Cashier và Inventory tại `/customers` được tra cứu và tạo khách phục vụ giao dịch. Dữ liệu nhạy cảm, gắn cờ vi phạm và xóa hồ sơ cần quyền riêng; mặc định chỉ Admin được thao tác đầy đủ.
+4. Cashier chỉ đọc danh mục. Admin và Inventory mới được tạo/sửa/xóa thể loại, bộ sách, đầu sách, ấn bản và bản sách.
+5. Cashier và Inventory tại `/hr/requests` chỉ tạo, xem và hủy đơn của chính mình. Hàng đợi duyệt của người khác không được tải về client.
+6. Cashier tại `/approvals` chỉ xem/theo dõi hoặc hủy yêu cầu ngoại lệ do mình tạo.
 7. Inventory tại `/approvals` được tạo, xem và hủy yêu cầu điều chỉnh kho của mình; không được duyệt, từ chối hoặc áp dụng.
 8. Chỉ Admin được duyệt ngoại lệ nhạy cảm. Admin không được duyệt, từ chối hoặc áp dụng yêu cầu do chính mình tạo.
 9. Inventory tại `/audit` chỉ xem audit của danh mục, bản sách, nhà cung cấp, nhập/xuất và kiểm kê. Audit tài khoản, lương, két, RBAC, cấu hình và secret là Admin-only.
-10. Employee và Inventory được đọc chính sách thuê và thành viên nhưng không được tải lịch sử thay đổi cấu hình.
-11. Employee và Inventory chỉ xem phiếu lương, chấm công, ca làm và yêu cầu gắn với chính actor trong session. Backend không tin `employeeId` hoặc actor ID do URL/body gửi lên.
+10. Cashier và Inventory được đọc chính sách thuê và thành viên nhưng không được tải lịch sử thay đổi cấu hình.
+11. Cashier và Inventory chỉ xem phiếu lương, chấm công, ca làm và yêu cầu gắn với chính actor trong session. Backend không tin `employeeId` hoặc actor ID do URL/body gửi lên.
 12. `/book-series` là màn hình thử nghiệm trùng trách nhiệm với `/catalog/series`; phải bị loại khỏi navigation và production routing.
 
 ## Enforcement Design
@@ -206,7 +206,7 @@ Quyền mở API không mặc nhiên cho phép đọc mọi bản ghi. Query/ser
 - `SELF`: chấm công, phiếu lương, ca làm và hồ sơ cá nhân của actor.
 - `OWN_REQUESTS`: yêu cầu do actor tạo; không tải queue của người khác.
 - `WAREHOUSE`: audit và báo cáo thuộc danh mục, bản sách, nhà cung cấp, nhập/xuất, kiểm kê.
-- `TRANSACTION_CONTEXT`: Employee chỉ xem dữ liệu kho/khách cần thiết cho giao dịch đang xử lý.
+- `TRANSACTION_CONTEXT`: Cashier chỉ xem dữ liệu kho/khách cần thiết cho giao dịch đang xử lý.
 - `ALL`: chỉ Admin hoặc permission protected được chỉ định rõ.
 
 Client-provided `employeeId`, `requestedBy`, `approvedBy`, actor ID hoặc role không được dùng làm nguồn quyền.
@@ -262,22 +262,22 @@ Khi chưa từng lưu RBAC matrix, permission mặc định lấy từ metadata 
 
 Hai năng lực trong SSOT chưa có màn hình canonical và cần spec/plan riêng:
 
-1. Báo cáo kho, đề xuất route `/reports/inventory`: Employee `N`, Admin `R`, Inventory `R`.
-2. Báo cáo giao dịch/ca cá nhân của Employee: ưu tiên tích hợp dữ liệu scoped vào `/dashboard` và `/pos/shift`; nếu tạo route mới phải bổ sung policy trước khi phát hành.
+1. Báo cáo kho, đề xuất route `/reports/inventory`: Cashier `N`, Admin `R`, Inventory `R`.
+2. Báo cáo giao dịch/ca cá nhân của Cashier: ưu tiên tích hợp dữ liệu scoped vào `/dashboard` và `/pos/shift`; nếu tạo route mới phải bổ sung policy trước khi phát hành.
 
 Các thiếu sót này không chặn triển khai enforcement cho route hiện có.
 
 ## Acceptance Criteria
 
-1. Có đúng ba role nghiệp vụ; mọi alias `EMPLOYEE`/`WAREHOUSE` chỉ được normalize về role chuẩn, không tạo role mới.
+1. Có đúng ba role nghiệp vụ: `ADMIN`, `CASHIER` và `INVENTORY_MANAGER`; mọi alias cũ hoặc role không hợp lệ phải bị từ chối fail-closed.
 2. Mỗi route authenticated và mỗi tab nghiệp vụ có một screen policy; policy thiếu bị fail closed.
 3. Với từng ô `N`, item không có trong Sidebar, URL trực tiếp không mount query nghiệp vụ và người dùng nhận 403 hoặc redirect guest-only đúng thiết kế.
 4. Với từng ô `R`, người dùng đọc được dữ liệu đúng scope nhưng không thấy action ghi; gọi trực tiếp unsafe API bị 403 và dữ liệu không đổi.
 5. Với từng ô `R, U`, chỉ action có permission tương ứng được render và API hợp lệ thực thi thành công.
 6. Sidebar và route guard dùng chung policy resolver; test contract chứng minh không có nav item cho route mà guard từ chối và không có route được phép nhưng navigation vô cớ ẩn.
-7. Inventory mở `/pos` chỉ thấy tab Thu mua; Employee/Admin thấy đúng tab theo permission. Tab mặc định không bao giờ là tab bị cấm.
-8. Employee và Inventory không tải danh sách nhân viên, bảng lương toàn cửa hàng, queue duyệt của người khác, RBAC matrix, integration secret hoặc báo cáo tài chính.
-9. Employee/Inventory chỉ đọc phiếu lương, chấm công, ca và yêu cầu của chính actor dù sửa `employeeId` hoặc request payload.
+7. Inventory mở `/pos` chỉ thấy tab Thu mua; Cashier/Admin thấy đúng tab theo permission. Tab mặc định không bao giờ là tab bị cấm.
+8. Cashier và Inventory không tải danh sách nhân viên, bảng lương toàn cửa hàng, queue duyệt của người khác, RBAC matrix, integration secret hoặc báo cáo tài chính.
+9. Cashier/Inventory chỉ đọc phiếu lương, chấm công, ca và yêu cầu của chính actor dù sửa `employeeId` hoặc request payload.
 10. Inventory đọc audit đúng `WAREHOUSE` scope và không nhận audit tài khoản, lương, két, RBAC hoặc cấu hình.
 11. Chỉ Admin có thể duyệt ngoại lệ; Admin tự duyệt yêu cầu của mình bị từ chối và không thay đổi dữ liệu.
 12. Cấp/thu hồi permission động có hiệu lực từ request kế tiếp; quyền Admin-only không thể cấp cho role khác hoặc tắt cho Admin.

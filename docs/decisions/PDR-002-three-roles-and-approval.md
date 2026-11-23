@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded by [PDR-008](./PDR-008-canonical-role-identifiers.md) for canonical role identifiers and labels. Approval responsibilities remain accepted.
 
 ## Date
 

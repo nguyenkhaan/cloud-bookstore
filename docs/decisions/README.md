@@ -43,12 +43,13 @@ Feature, business rule, spec hoặc mã nguồn bị ảnh hưởng.
 | Record | Trạng thái | Nội dung |
 | --- | --- | --- |
 | [`PDR-001`](./PDR-001-internal-store-only.md) | Accepted | Hệ thống chỉ phục vụ nội bộ cửa hàng |
-| [`PDR-002`](./PDR-002-three-roles-and-approval.md) | Accepted | Ba role và Admin duyệt ngoại lệ |
+| [`PDR-002`](./PDR-002-three-roles-and-approval.md) | Superseded in part | Ba role và Admin duyệt ngoại lệ; canonical identifiers superseded by PDR-008 |
 | [`PDR-003`](./PDR-003-rental-and-membership-policy.md) | Accepted | Chính sách thuê và thành viên |
 | [`PDR-004`](./PDR-004-required-integrations-and-fallbacks.md) | Accepted | Tích hợp thật và fallback |
 | [`PDR-005`](./PDR-005-title-edition-copy-identification.md) | Accepted | Tách đầu sách, ấn bản và bản vật lý |
 | [`PDR-006`](./PDR-006-simple-staff-payroll-and-cash.md) | Accepted | Chấm công, lương và két tối giản cho MVP |
 | [`PDR-007`](./PDR-007-dual-channel-book-copy-availability.md) | Accepted | Bản sách mặc định dùng được cho cả bán và thuê |
+| [`PDR-008`](./PDR-008-canonical-role-identifiers.md) | Accepted | Canonical `ADMIN`, `CASHIER`, `INVENTORY_MANAGER` role identifiers |
 | [`ADR-001`](./ADR-001-postgresql-primary-database.md) | Accepted | PostgreSQL là cơ sở dữ liệu chính |
 | [`ADR-002`](./ADR-002-aspnet-core-backend.md) | Accepted | ASP.NET Core là backend chính thức |
 | [`ADR-003`](./ADR-003-browser-cookie-authentication.md) | Accepted | JWT browser session dùng HttpOnly cookie và synchronizer CSRF token |

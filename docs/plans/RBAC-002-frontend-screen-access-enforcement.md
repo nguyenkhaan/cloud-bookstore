@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Canonical-role correction (2026-11-23):** [`PDR-008`](../decisions/PDR-008-canonical-role-identifiers.md) supersedes legacy Employee/Warehouse alias statements below. Current authorization accepts only `ADMIN`, `CASHIER` and `INVENTORY_MANAGER`; detailed task text remains as execution history.
+
 **Goal:** Thực thi ma trận quyền màn hình `R`/`U`/`N` cho ba role tại frontend, đồng bộ từ role session đến Sidebar, `RoleGuard`, tab và action, để người dùng có thể đăng nhập từng tài khoản và kiểm tra đúng workspace của mình.
 
 **Architecture:** Role chuẩn hóa được lấy từ `/auth/session`, giữ trong `AuthProvider` và chỉ cache tạm trong `sessionStorage`; cache không phải nguồn quyền và không được dùng trước khi session server hoàn tất khởi tạo. Một screen-policy catalog thuần là nguồn duy nhất cho Sidebar, route guard và child/tab policy; permission API hiện có tiếp tục quyết định action động qua TanStack Query. `RoleGuard.tsx` chặn route `N`, còn các component dùng cùng resolver để chuyển giữa chỉ đọc và có thao tác.
@@ -14,7 +16,7 @@
 
 - Phạm vi của plan này chỉ gồm `app/frontend` và tài liệu/evidence liên quan; không sửa backend, database, OpenAPI hoặc generated `src/contract/api-contract.ts`.
 - Frontend guard là kiểm soát UX và phòng truy cập nhầm, không phải security boundary. Plan này chưa thể tuyên bố hoàn tất yêu cầu backend authorization trong spec.
-- Chỉ có ba role chuẩn: `ADMIN`, `CASHIER`, `INVENTORY_MANAGER`; alias `SUPER_ADMIN`, `EMPLOYEE`, `WAREHOUSE` chỉ được normalize, không tạo role mới.
+- Chỉ có ba role chuẩn: `ADMIN`, `CASHIER`, `INVENTORY_MANAGER`; mọi alias cũ hoặc role không hợp lệ phải fail closed.
 - Role lấy từ response login/session. Không tạo role selector, không dùng query string `previewRole`, không tin `localStorage`/`sessionStorage` như nguồn quyền.
 - `sessionStorage` chỉ cache `AuthUser` của session hiện tại; `RequireSession`/`RoleGuard` không render protected content trước khi `/auth/session` xác nhận.
 - Role không hợp lệ, policy thiếu hoặc permission chưa xác định phải fail closed.
@@ -31,7 +33,7 @@
 - Inventory mở `/pos`: chỉ tab Thu mua được render và được chọn mặc định, không phát request/tab bán–thuê trước khi guard; Task 6 phải kiểm thử.
 - Người dùng nhập trực tiếp route `N` hoặc alias route: child không mount/query và trang 403 xuất hiện; Task 4 phải kiểm thử.
 - Permission đang loading, lỗi hoặc bị thu hồi khi trang mở: action ghi fail closed, dữ liệu form không bị xóa bởi guard; Task 3 và Task 7 phải kiểm thử.
-- URL có `:employeeId` hoặc query `previewRole`: Employee/Inventory không được nâng role hoặc xem dữ liệu người khác; Task 8 phải kiểm thử.
+- URL có `:employeeId` hoặc query `previewRole`: Cashier/Inventory không được nâng role hoặc xem dữ liệu người khác; Task 8 phải kiểm thử.
 
 ---
 
@@ -176,7 +178,7 @@ git commit -m "feat(rbac): normalize frontend session roles"
 - Produces: `getReadableChildIds(parentId: ScreenId, role: AppRole): ScreenId[]`.
 - Produces: `getFirstAllowedWorkspacePath(role: AppRole): string`.
 - Each policy may declare `path`, `navId`, `children`, `readPermissions`, `updatePermissions`, `permissionMode: 'static' | 'api'`, `maximumAccessByRole` and `dataScope` (`SELF`, `OWN_REQUESTS`, `WAREHOUSE`, `TRANSACTION_CONTEXT`, `ALL`).
-- `maximumAccessByRole` is the immutable ceiling from protected constraints: for example Employee catalog, non-Admin customer detail and non-Admin Settings cannot be raised above `R` by a permission code.
+- `maximumAccessByRole` is the immutable ceiling from protected constraints: for example Cashier catalog, non-Admin customer detail and non-Admin Settings cannot be raised above `R` by a permission code.
 - Consumed by: Tasks 3–6.
 
 **Acceptance Criteria:**
@@ -184,7 +186,7 @@ git commit -m "feat(rbac): normalize frontend session roles"
 - Unknown screen ID is impossible at compile time; missing runtime policy resolves to `N`.
 - Parent access is readable when at least one child is readable, including Inventory `/pos` through `pos.buyback`.
 - `/book-series` is `N` for all roles and is never returned as a workspace destination.
-- Admin-only screens cannot be upgraded for Employee/Inventory by child aggregation.
+- Admin-only screens cannot be upgraded for Cashier/Inventory by child aggregation.
 
 - [x] **Step 1: Write the expected matrix test**
 
@@ -347,7 +349,7 @@ git commit -m "feat(rbac): guard every frontend route"
 **Acceptance Criteria:**
 - Sidebar and route guard agree for every role and screen.
 - Top-level group is hidden only when all child screens are `N`.
-- Employee sees POS, catalog, customers, HR, approvals and read-only settings; does not see warehouse, audit or reports.
+- Cashier sees POS, catalog, customers, HR, approvals and read-only settings; does not see warehouse, audit or reports.
 - Inventory sees POS because Thu mua is allowed, plus catalog, warehouse, customers, HR, approvals, audit and settings; does not see reports.
 - Admin sees every production workspace.
 - HR submenu hides employee list, admin attendance, payroll and employee-specific payslip detail from non-Admin while keeping personal screens.
@@ -404,8 +406,8 @@ git commit -m "feat(rbac): derive navigation from screen policy"
 
 **Acceptance Criteria:**
 - Inventory opening `/pos` sees only Thu mua; `activeTab` starts at `buyback`; customer display and “Giao dịch mới” actions are absent.
-- Employee/Admin see POS tabs allowed by the policy; forbidden tabs never render.
-- Employee cannot see/load Điều chỉnh kho in Approvals; Inventory/Admin can create an adjustment request, while decision buttons remain Admin-only.
+- Cashier/Admin see POS tabs allowed by the policy; forbidden tabs never render.
+- Cashier cannot see/load Điều chỉnh kho in Approvals; Inventory/Admin can create an adjustment request, while decision buttons remain Admin-only.
 - Non-Admin Settings shows only Rental and Membership; direct `/settings/rbac` or `/settings/integrations` is blocked by `RoleGuard` before any sensitive query.
 - Changing role/session resets an active tab that is no longer readable to the first allowed tab.
 - Disallowed child queries are `enabled: false` and receive no SSR/browser request.
@@ -426,7 +428,7 @@ Use child policy IDs; do not write `roleCode === ...` branches inside `PosWorksp
 
 - [x] **Step 4: Filter Approval tabs and gate their queries**
 
-Do not call inventory-adjustment list/stats for Employee. Keep Admin-only decision behavior and maker-checker presentation.
+Do not call inventory-adjustment list/stats for Cashier. Keep Admin-only decision behavior and maker-checker presentation.
 
 - [x] **Step 5: Migrate Settings tabs to child policy**
 
@@ -470,11 +472,11 @@ git commit -m "feat(rbac): enforce role-aware workspace tabs"
 - Read-only role may still use non-mutating search/filter/export/print only when the operation does not expose a protected dataset.
 
 **Acceptance Criteria:**
-- Employee catalog pages retain search/navigation but expose no metadata/copy create, edit, delete, status, shelf, image or label mutation.
+- Cashier catalog pages retain search/navigation but expose no metadata/copy create, edit, delete, status, shelf, image or label mutation.
 - Admin/Inventory actions follow live permission codes; revocation removes or disables the relevant action without hiding readable data.
 - Customer list create remains available per matrix; customer detail edit/delete/flag actions require effective update permission and protected constraints.
-- Supplier/warehouse actions are absent for Employee because the route itself is `N` and remain permission-gated for Admin/Inventory.
-- Settings Rental/Tiers are read-only for Employee/Inventory; RBAC/Integrations never mount for them.
+- Supplier/warehouse actions are absent for Cashier because the route itself is `N` and remain permission-gated for Admin/Inventory.
+- Settings Rental/Tiers are read-only for Cashier/Inventory; RBAC/Integrations never mount for them.
 - Existing unguarded CopyDetail edit/delete/label buttons are covered.
 - Permission error leaves forms readable where allowed but disables submit; it does not clear draft values.
 
@@ -486,7 +488,7 @@ Record every mutating control in the test expectation table; do not refactor unr
 
 - [x] **Step 2: Write failing action-visibility tests**
 
-Cover Employee read-only catalog, Inventory/Admin write action, customer list/detail distinction, CopyDetail actions and Settings read-only/error state.
+Cover Cashier read-only catalog, Inventory/Admin write action, customer list/detail distinction, CopyDetail actions and Settings read-only/error state.
 
 - [x] **Step 3: Run focused tests and confirm failure**
 
@@ -540,7 +542,7 @@ git commit -m "feat(rbac): enforce read-only business screens"
 
 **Acceptance Criteria:**
 - Adding `?previewRole=ADMIN` cannot expose Admin navigation, route, tabs or actions.
-- Employee/Inventory see own shifts, personal attendance, own requests and own payslip; admin-only HR screens return 403 before page queries.
+- Cashier/Inventory see own shifts, personal attendance, own requests and own payslip; admin-only HR screens return 403 before page queries.
 - Non-Admin does not see the “Đơn cần duyệt” tab or receive its dataset.
 - `/hr/payslip/:employeeId` is Admin-only; `/hr/payslip` remains readable for all authenticated roles.
 - Approval cancel/ownership UI compares stable actor ID. Only Admin decision controls render, and self-request warning still suppresses decision controls.
@@ -635,11 +637,11 @@ Expected: no whitespace errors or unintended generated/temp files.
 
 Run backend/frontend using the repository's existing local commands. Do not place account credentials in the plan, logs, screenshots or Git.
 
-- [ ] **Step 5: UAT with Employee account**
+- [ ] **Step 5: UAT with Cashier account**
 
 - Sidebar shows Dashboard, POS, Catalog, Customers, HR, Approvals and Settings; Warehouse, Audit and Reports are absent.
 - `/pos` shows sale/rental/renewal/return/buyback; `/pos/shift` is operable.
-- Catalog is readable but metadata/copy mutation actions are always absent because Employee has an immutable `R` ceiling.
+- Catalog is readable but metadata/copy mutation actions are always absent because Cashier has an immutable `R` ceiling.
 - HR shows own shifts, personal attendance, own requests and own payslip; `/hr/employees`, `/hr/attendance`, `/hr/payroll`, `/hr/payroll/adjustments/new`, `/hr/payslip/<other>` show 403.
 - `/settings` shows only Rental and Membership in read-only mode; RBAC/Integrations direct URLs show 403.
 - Warehouse, Audit and Reports direct URLs show 403.
@@ -662,7 +664,7 @@ Run backend/frontend using the repository's existing local commands. Do not plac
 
 - [ ] **Step 8: Cross-account cache verification**
 
-Sign out in the order Admin → Employee → Inventory in the same browser tab. After each login, confirm Sidebar, route access and actions change immediately and no permissions from the previous role remain.
+Sign out in the order Admin → Cashier → Inventory in the same browser tab. After each login, confirm Sidebar, route access and actions change immediately and no permissions from the previous role remain.
 
 - [x] **Step 9: Record evidence and commit**
 
@@ -681,7 +683,7 @@ git commit -m "docs(rbac): record frontend access verification"
 - Build: `bun run build` reaches `tsc -b` but remains blocked by the same pre-existing baseline errors already present at the T06 checkpoint: unused imports/variables in Audit/Dashboard/TaxDeclaration, two nullable-price arguments in `BookCopyLifecycleDrawer.tsx`, and the unused `BookCopyLifecycleDrawer` import in `CopyDetailPage.tsx`. No T07/T08-specific TypeScript error was introduced; the unchanged price errors are still at the lifecycle drawer render path.
 - Static search: production `src` has no `previewRole`, `getPreviewRoleFromSearch`, `HR_ADMIN_ONLY_NAV_IDS`, `ADMIN_ONLY_TABS`, inline `function RequireRole`, or `/book-series` route. Remaining raw role comparisons are immutable view variants (Audit/Dashboard/Attendance/ShiftRecords), not a screen matrix or query-string override.
 - Hygiene: `git diff --check` passes and `git status --short --untracked-files=all` is clean; no temporary screenshots, logs, secrets or generated artifacts remain.
-- Manual UAT: **pending user execution** with real Admin, Employee/Cashier and Inventory/Warehouse accounts. The application was not started with credentials and no credentials were written to docs/logs/Git. Backend authorization and data-scope remain deferred as required by the frontend-only boundary.
+- Manual UAT: **pending user execution** with real Admin, Cashier and Inventory accounts. The application was not started with credentials and no credentials were written to docs/logs/Git. Backend authorization and data-scope remain deferred as required by the frontend-only boundary.
 
 ## Final Definition of Done
 
