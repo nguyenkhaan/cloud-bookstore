@@ -3,8 +3,8 @@ import type { FormEvent } from 'react'
 import { X } from 'lucide-react'
 import { Button } from '@/components/common/Button'
 import { SelectBox } from '@/components/common/SelectBox'
+import { TextField } from '@/components/common/TextField'
 import { notify } from '@/components/common/Toast'
-import { cn } from '@/lib/cn'
 import { HR_EMPLOYEE_ROLE_OPTIONS } from '../hr-employees.mock'
 import { useCreateHrEmployeeMutation } from '../hr-employees.hook'
 import type { BackendRoleName, HrEmployee } from '../hr-employees.type'
@@ -157,120 +157,58 @@ function AddEmployeeModalForm({
 
         <form className="mt-5 space-y-4" noValidate onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <div
-                className={cn(
-                  'rounded-xl border bg-white px-3.5 py-2.5 transition-colors focus-within:border-indigo-600 focus-within:ring-3 focus-within:ring-indigo-600/15',
-                  nameError ? 'border-rose-500' : 'border-slate-200',
-                )}
-              >
-                <label
-                  className="block text-[11px] font-semibold text-slate-500"
-                  htmlFor={fullNameId}
-                >
-                  Họ và tên *
-                </label>
-                <input
-                  aria-describedby={nameError ? `${fullNameId}-error` : undefined}
-                  aria-invalid={Boolean(nameError) || undefined}
-                  className="mt-1 block w-full border-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
-                  id={fullNameId}
-                  onChange={(event) => {
-                    setFullName(event.target.value)
-                    if (nameError) setNameError(null)
-                  }}
-                  placeholder="Nguyễn Hoài An"
-                  type="text"
-                  value={fullName}
-                />
-              </div>
-              {nameError && (
-                <p
-                  className="mt-1 text-xs text-rose-600"
-                  id={`${fullNameId}-error`}
-                >
-                  {nameError}
-                </p>
-              )}
-            </div>
+            <TextField
+              hint={nameError}
+              id={fullNameId}
+              invalid={Boolean(nameError)}
+              label="Họ và tên *"
+              onChange={(event) => {
+                setFullName(event.target.value)
+                if (nameError) setNameError(null)
+              }}
+              placeholder="Nguyễn Hoài An"
+              type="text"
+              value={fullName}
+              variant="outlined"
+            />
+
+            <TextField
+              hint={emailError}
+              id={emailId}
+              invalid={Boolean(emailError)}
+              label="Email đăng nhập *"
+              onChange={(event) => {
+                setEmail(event.target.value)
+                if (emailError) setEmailError(null)
+              }}
+              placeholder="nv.an@comicpos.vn"
+              type="email"
+              value={email}
+              variant="outlined"
+            />
+
+            <TextField
+              hint={phoneError}
+              id={phoneId}
+              invalid={Boolean(phoneError)}
+              label="Số điện thoại *"
+              onChange={(event) => {
+                setPhone(event.target.value)
+                if (phoneError) setPhoneError(null)
+              }}
+              placeholder="0908 000 015"
+              type="tel"
+              value={phone}
+              variant="outlined"
+            />
 
             <div>
-              <div
-                className={cn(
-                  'rounded-xl border bg-white px-3.5 py-2.5 transition-colors focus-within:border-indigo-600 focus-within:ring-3 focus-within:ring-indigo-600/15',
-                  emailError ? 'border-rose-500' : 'border-slate-200',
-                )}
-              >
-                <label
-                  className="block text-[11px] font-semibold text-slate-500"
-                  htmlFor={emailId}
-                >
-                  Email đăng nhập *
-                </label>
-                <input
-                  aria-describedby={emailError ? `${emailId}-error` : undefined}
-                  aria-invalid={Boolean(emailError) || undefined}
-                  className="mt-1 block w-full border-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
-                  id={emailId}
-                  onChange={(event) => {
-                    setEmail(event.target.value)
-                    if (emailError) setEmailError(null)
-                  }}
-                  placeholder="nv.an@comicpos.vn"
-                  type="email"
-                  value={email}
-                />
-              </div>
-              {emailError && (
-                <p
-                  className="mt-1 text-xs text-rose-600"
-                  id={`${emailId}-error`}
-                >
-                  {emailError}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <div
-                className={cn(
-                  'rounded-xl border bg-white px-3.5 py-2.5 transition-colors focus-within:border-indigo-600 focus-within:ring-3 focus-within:ring-indigo-600/15',
-                  phoneError ? 'border-rose-500' : 'border-slate-200',
-                )}
-              >
-                <label
-                  className="block text-[11px] font-semibold text-slate-500"
-                  htmlFor={phoneId}
-                >
-                  Số điện thoại *
-                </label>
-                <input
-                  aria-describedby={phoneError ? `${phoneId}-error` : undefined}
-                  aria-invalid={Boolean(phoneError) || undefined}
-                  className="mt-1 block w-full border-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
-                  id={phoneId}
-                  onChange={(event) => {
-                    setPhone(event.target.value)
-                    if (phoneError) setPhoneError(null)
-                  }}
-                  placeholder="0908 000 015"
-                  type="tel"
-                  value={phone}
-                />
-              </div>
-              {phoneError && (
-                <p
-                  className="mt-1 text-xs text-rose-600"
-                  id={`${phoneId}-error`}
-                >
-                  {phoneError}
-                </p>
-              )}
-            </div>
-
-            <div>
+              <span className="mb-1.5 block text-[13px] font-semibold text-slate-700">
+                Vai trò *
+              </span>
               <SelectBox
-                label="Vai trò *"
+                hideLabel
+                label="Vai trò"
                 onChange={setRoleCode}
                 options={HR_EMPLOYEE_ROLE_OPTIONS}
                 searchable={false}
@@ -278,33 +216,22 @@ function AddEmployeeModalForm({
               />
             </div>
 
-            <div>
-              <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 transition-colors focus-within:border-indigo-600 focus-within:ring-3 focus-within:ring-indigo-600/15">
-                <label
-                  className="block text-[11px] font-semibold text-slate-500"
-                  htmlFor={jobTitleId}
-                >
-                  Chức danh (không bắt buộc)
-                </label>
-                <input
-                  className="mt-1 block w-full border-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
-                  id={jobTitleId}
-                  onChange={(event) => setJobTitle(event.target.value)}
-                  placeholder="Thu ngân"
-                  type="text"
-                  value={jobTitle}
-                />
-              </div>
-            </div>
+            <TextField
+              id={jobTitleId}
+              label="Chức danh (không bắt buộc)"
+              onChange={(event) => setJobTitle(event.target.value)}
+              placeholder="Thu ngân"
+              type="text"
+              value={jobTitle}
+              variant="outlined"
+            />
 
-            <div className="rounded-xl border border-slate-200 bg-slate-50/60 px-3.5 py-2.5">
-              <div className="text-[11px] font-semibold text-slate-500">
-                Trạng thái ban đầu
-              </div>
-              <div className="mt-1 text-sm font-medium text-slate-800">
-                Chờ thiết lập mật khẩu
-              </div>
-            </div>
+            <TextField
+              label="Trạng thái ban đầu"
+              readOnly
+              value="Chờ thiết lập mật khẩu"
+              variant="outlined"
+            />
           </div>
 
           {generalError && (

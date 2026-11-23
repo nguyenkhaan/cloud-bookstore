@@ -313,14 +313,9 @@ export function PayslipDisputeDetailModal({
             </div>
           )}
 
-          <div className="pt-2">
-            <Button
-              className="min-h-[44px] w-full"
-              onClick={onClose}
-              type="button"
-              variant="primary"
-            >
-              Đóng phản hồi
+          <div className="flex justify-end pt-2">
+            <Button onClick={onClose} type="button" variant="secondary">
+              Đóng
             </Button>
           </div>
         </div>

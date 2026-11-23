@@ -181,20 +181,30 @@ function PayrollZaloPreviewModalBody({
             <p className="mt-1 text-sm font-bold text-slate-900">
               {previewTarget.fullName} · {previewTarget.employeeCode}
             </p>
-            <p className="mt-1.5 text-xs text-slate-600">
-              Lương công: {formatVnd(previewTarget.baseSalary)} · OT:{' '}
-              {formatVnd(previewTarget.overtimeAmount)}
-            </p>
-            <p className="mt-0.5 text-xs text-slate-600">
-              Thưởng: {formatVnd(previewTarget.bonus)} · Phụ cấp:{' '}
-              {formatVnd(previewTarget.allowance)}
-            </p>
-            <p className="mt-0.5 text-xs text-slate-600">
-              Khấu trừ: {formatVnd(previewTarget.deduction)} · Trích nộp:{' '}
-              {formatVnd(previewTarget.mandatoryContribution)}
-            </p>
-            <p className="mt-2.5 text-base font-bold text-indigo-600">
-              THỰC LĨNH · {formatVnd(previewTarget.netPay)}
+            <dl className="mt-2 space-y-1 text-sm text-slate-700">
+              {(
+                [
+                  ['Lương công', previewTarget.baseSalary],
+                  ['OT', previewTarget.overtimeAmount],
+                  ['Thưởng', previewTarget.bonus],
+                  ['Phụ cấp', previewTarget.allowance],
+                  ['Khấu trừ', previewTarget.deduction],
+                  ['Trích nộp', previewTarget.mandatoryContribution],
+                ] as const
+              ).map(([label, amount]) => (
+                <div className="flex items-center justify-between gap-4" key={label}>
+                  <dt>{label}</dt>
+                  <dd className="font-medium text-slate-900">
+                    {formatVnd(amount)}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            <p className="mt-3 flex items-center justify-between gap-4 border-t border-slate-100 pt-2.5 text-sm font-bold text-slate-900">
+              <span>THỰC LĨNH</span>
+              <span className="text-indigo-700">
+                {formatVnd(previewTarget.netPay)}
+              </span>
             </p>
           </div>
 

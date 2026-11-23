@@ -7,11 +7,14 @@ import type { LowStockAlertRow } from '../dashboard.type'
 export interface LowStockAlertsTableProps {
   rows: LowStockAlertRow[]
   totalLowStockCount: number | string
+  /** Omitted when the current role cannot open the stock alerts screen. */
+  stockAlertsPath?: string
 }
 
 export const LowStockAlertsTable: React.FC<LowStockAlertsTableProps> = ({
   rows,
   totalLowStockCount,
+  stockAlertsPath,
 }) => {
   return (
     <Card title="Cảnh báo tồn kho thấp">
@@ -53,15 +56,17 @@ export const LowStockAlertsTable: React.FC<LowStockAlertsTableProps> = ({
         </div>
       )}
 
-      <div className="mt-4">
-        <Link
-          to="/catalog/titles"
-          className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 transition-colors hover:bg-slate-50"
-        >
-          Xem {totalLowStockCount} cảnh báo tồn
-          <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-        </Link>
-      </div>
+      {stockAlertsPath && (
+        <div className="mt-4">
+          <Link
+            to={stockAlertsPath}
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 transition-colors hover:bg-slate-50"
+          >
+            Xem {totalLowStockCount} cảnh báo tồn
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
+        </div>
+      )}
     </Card>
   )
 }

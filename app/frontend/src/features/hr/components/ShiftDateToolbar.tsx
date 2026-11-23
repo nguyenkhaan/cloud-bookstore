@@ -1,4 +1,4 @@
-import { SelectBox } from '@/components/common'
+import { DateInput, SelectBox } from '@/components/common'
 import type { SelectOption } from '@/components/common/SelectBox/selectBox.utils'
 
 export type ShiftStatusFilter = 'all' | 'assigned' | 'unassigned' | 'attendance-missing' | 'empty'
@@ -50,7 +50,7 @@ export function ShiftDateToolbar({
     <div className="grid gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs sm:grid-cols-2 xl:grid-cols-4">
       <div>
         <label className="block text-xs font-semibold text-slate-600" htmlFor="shift-date">Ngày làm</label>
-        <input className="mt-2 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-800 outline-none transition focus:border-indigo-600 focus:ring-3 focus:ring-indigo-600/15" id="shift-date" onChange={(event) => onDateChange(event.target.value)} type="date" value={date} />
+        <div className="mt-2"><DateInput className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-800 outline-none transition focus:border-indigo-600 focus:ring-3 focus:ring-indigo-600/15" id="shift-date" onChange={(event) => onDateChange(event.target.value)} value={date} /></div>
       </div>
       <SelectBox label="Nhân viên" onChange={onEmployeeChange} options={employeeOptions} value={employee} />
       <SelectBox label="Thứ tự ca" onChange={onShiftOrderChange} options={shiftOptions} value={shiftOrder} />

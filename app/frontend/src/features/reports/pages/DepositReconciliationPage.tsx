@@ -27,6 +27,10 @@ const STATUS_OPTIONS = [
   { value: 'CAPPED', label: 'Chạm trần cọc' },
 ]
 
+function formatGroupedDigits(digits: string): string {
+  return digits === '' ? '' : Number(digits).toLocaleString('vi-VN')
+}
+
 export default function DepositReconciliationPage() {
   const navigate = useNavigate()
   const { signOut } = useAuth()
@@ -235,13 +239,13 @@ export default function DepositReconciliationPage() {
           />
           <StatCard
             label="Cọc đã hoàn"
-            value={`−${formatVnd(data?.refundedInPeriod)}`}
+            value={formatSignedVnd(-toNumber(data?.refundedInPeriod))}
             valueColor="default"
             description="Hoàn tiền mặt / Ngân hàng"
           />
           <StatCard
             label="Cấn trừ / Mất sách"
-            value={`−${formatVnd(data?.deductedAndLostTotalInPeriod)}`}
+            value={formatSignedVnd(-toNumber(data?.deductedAndLostTotalInPeriod))}
             valueColor="amber"
             description={`${formatVnd(data?.deductedFeeInPeriod)} phí + ${formatVnd(data?.lostRetainedInPeriod)} mất`}
           />
@@ -265,7 +269,7 @@ export default function DepositReconciliationPage() {
 
         {/* Source Reconciliation + Refund Rule */}
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-          <Card title="Đối chiếu nguồn giữ tiền" className="lg:col-span-2">
+          <Card title="Đối chiếu nguồn giữ tiền" className="h-full lg:col-span-2">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
@@ -284,15 +288,17 @@ export default function DepositReconciliationPage() {
                       <label htmlFor="cash-actual-input" className="sr-only">
                         Tiền mặt thực tế xác minh
                       </label>
-                      <input
-                        id="cash-actual-input"
-                        type="number"
-                        min={0}
-                        step={1000}
-                        value={cashActualInput ?? String(suggestedCash)}
-                        onChange={(e) => setCashActualInput(e.target.value)}
-                        className="h-9 w-36 rounded-lg border border-slate-200 bg-slate-50 px-2.5 font-mono text-xs text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
-                      />
+                      <div className="flex h-9 w-36 items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 focus-within:border-indigo-500 focus-within:bg-white">
+                        <input
+                          id="cash-actual-input"
+                          type="text"
+                          inputMode="numeric"
+                          value={formatGroupedDigits(cashActualInput ?? String(suggestedCash))}
+                          onChange={(e) => setCashActualInput(e.target.value.replace(/\D/g, ''))}
+                          className="min-w-0 flex-1 bg-transparent font-mono text-xs text-slate-900 focus:outline-none"
+                        />
+                        <span aria-hidden="true" className="text-xs text-slate-500">đ</span>
+                      </div>
                     </td>
                     <td
                       className={`px-4 py-3.5 font-semibold ${
@@ -309,15 +315,17 @@ export default function DepositReconciliationPage() {
                       <label htmlFor="bank-actual-input" className="sr-only">
                         Số dư ngân hàng thực tế xác minh
                       </label>
-                      <input
-                        id="bank-actual-input"
-                        type="number"
-                        min={0}
-                        step={1000}
-                        value={bankActualInput ?? String(bankObligation)}
-                        onChange={(e) => setBankActualInput(e.target.value)}
-                        className="h-9 w-36 rounded-lg border border-slate-200 bg-slate-50 px-2.5 font-mono text-xs text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
-                      />
+                      <div className="flex h-9 w-36 items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 focus-within:border-indigo-500 focus-within:bg-white">
+                        <input
+                          id="bank-actual-input"
+                          type="text"
+                          inputMode="numeric"
+                          value={formatGroupedDigits(bankActualInput ?? String(bankObligation))}
+                          onChange={(e) => setBankActualInput(e.target.value.replace(/\D/g, ''))}
+                          className="min-w-0 flex-1 bg-transparent font-mono text-xs text-slate-900 focus:outline-none"
+                        />
+                        <span aria-hidden="true" className="text-xs text-slate-500">đ</span>
+                      </div>
                     </td>
                     <td
                       className={`px-4 py-3.5 font-semibold ${
@@ -364,7 +372,7 @@ export default function DepositReconciliationPage() {
             )}
           </Card>
 
-          <Card title="Nguyên tắc hoàn cọc">
+          <Card title="Nguyên tắc hoàn cọc" className="h-full">
             <div className="text-xl font-bold tracking-tight text-indigo-600">
               max(0, Cọc − Khoản trừ)
             </div>

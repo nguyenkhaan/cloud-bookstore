@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button, SelectBox } from '@/components/common'
+import { Button, DateInput, SelectBox } from '@/components/common'
 import type { SelectOption } from '@/components/common/SelectBox/selectBox.utils'
 import type { ShiftRecordDisplay } from '../hr-shift.type'
 
@@ -54,7 +54,7 @@ export function ShiftRecordDrawer({ open, readOnly, record, onClose, onSave }: S
           <SelectBox disabled={readOnly} label="Nhân viên" onChange={setEmployee} options={employeeOptions} value={employee} />
           <div>
             <label className="block text-xs font-semibold text-slate-600" htmlFor="record-work-date">Ngày làm</label>
-            <input disabled={readOnly} className="mt-2 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-800 outline-none transition focus:border-indigo-600 focus:ring-3 focus:ring-indigo-600/15" id="record-work-date" onChange={(event) => setDate(event.target.value)} type="date" value={date} />
+            <div className="mt-2"><DateInput disabled={readOnly} className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-800 outline-none transition focus:border-indigo-600 focus:ring-3 focus:ring-indigo-600/15" id="record-work-date" onChange={(event) => setDate(event.target.value)} value={date} /></div>
           </div>
           <SelectBox disabled={readOnly} label="Thứ tự ca" onChange={setShiftOrder} options={shiftOptions} value={shiftOrder} />
           <div>

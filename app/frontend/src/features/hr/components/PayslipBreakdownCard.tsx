@@ -63,7 +63,7 @@ export function PayslipBreakdownCard({
               <th className="rounded-r-lg px-3 py-3 text-right">Thành tiền</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 [&>tr:nth-child(even)]:bg-slate-50/60 [&>tr]:transition-colors [&>tr:hover]:bg-indigo-50/40">
             <tr>
               <td className="px-3 py-3.5 font-semibold text-slate-900">
                 Lương công tiêu chuẩn
@@ -176,16 +176,16 @@ export function PayslipBreakdownCard({
         </table>
       </div>
 
-      <div className="mt-4 space-y-1.5 border-t border-slate-100 pt-4 text-xs">
-        <div className="flex items-center gap-4">
+      <div className="mt-4 space-y-1.5 border-t border-slate-100 px-3 pt-4 text-xs">
+        <div className="flex items-center justify-end gap-6">
           <span className="text-slate-500">Tổng thu nhập</span>
-          <span className="font-bold text-slate-900">
+          <span className="min-w-28 text-right font-bold text-slate-900">
             {formatVnd(payslip.totalIncome)}
           </span>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-end gap-6">
           <span className="text-slate-500">Tổng khấu trừ</span>
-          <span className="font-bold text-slate-900">
+          <span className="min-w-28 text-right font-bold text-slate-900">
             {payslip.totalDeduction > 0
               ? `−${formatVnd(payslip.totalDeduction)}`
               : '0đ'}

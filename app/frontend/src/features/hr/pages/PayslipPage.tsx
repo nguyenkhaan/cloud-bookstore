@@ -7,7 +7,6 @@ import { notify } from '@/components/common/Toast'
 import { MainLayout } from '@/components/layout'
 import { useAuth } from '@/features/auth/auth.hook'
 import { workspacePathFor } from '@/features/workspace/workspace.route'
-import { cn } from '@/lib/cn'
 import { PayslipAdminReconcilePanel } from '../components/PayslipAdminReconcilePanel'
 import { PayslipBreakdownCard } from '../components/PayslipBreakdownCard'
 import { PayslipDisputePanel } from '../components/PayslipDisputePanel'
@@ -131,56 +130,16 @@ export default function PayslipPage() {
 
             <div className="min-w-0 space-y-6 lg:col-span-4">
               <Card padding="lg" title="Kỳ lương">
-                <div className="space-y-4">
-                  <SelectBox
-                    label="Tháng / Năm"
-                    onChange={setPeriodKey}
-                    options={PAYSLIP_PERIOD_OPTIONS.map((item) => ({
-                      value: item.periodKey,
-                      label: item.periodKey,
-                    }))}
-                    searchable={false}
-                    value={periodKey}
-                  />
-
-                  <div className="overflow-hidden rounded-xl border border-slate-100">
-                    <div className="grid grid-cols-2 bg-slate-50 px-3 py-2 text-[11px] font-semibold text-slate-500">
-                      <span>Kỳ lương</span>
-                      <span>Trạng thái</span>
-                    </div>
-                    <div className="divide-y divide-slate-100">
-                      {payslip.availablePeriods.map((period) => {
-                        const isSelected = period.periodKey === periodKey
-                        return (
-                          <button
-                            className={cn(
-                              'grid w-full grid-cols-2 px-3 py-2.5 text-left text-xs transition-colors',
-                              isSelected
-                                ? 'bg-indigo-50/80 font-bold text-indigo-700'
-                                : 'bg-white text-slate-700 hover:bg-slate-50',
-                            )}
-                            key={period.periodKey}
-                            onClick={() => setPeriodKey(period.periodKey)}
-                            type="button"
-                          >
-                            <span>{period.periodKey}</span>
-                            <span
-                              className={cn(
-                                isSelected
-                                  ? 'text-indigo-700'
-                                  : period.status === 'pending_payout'
-                                    ? 'text-amber-700'
-                                    : 'text-slate-600',
-                              )}
-                            >
-                              {period.statusShortLabel}
-                            </span>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </div>
+                <SelectBox
+                  label="Tháng / Năm"
+                  onChange={setPeriodKey}
+                  options={PAYSLIP_PERIOD_OPTIONS.map((item) => ({
+                    value: item.periodKey,
+                    label: item.periodKey,
+                  }))}
+                  searchable={false}
+                  value={periodKey}
+                />
               </Card>
 
               {isAdmin ? (

@@ -1,5 +1,7 @@
 import { useState, useTransition } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Badge } from '@/components/common/Badge'
+import type { BadgeVariant } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { SearchIcon } from '@/components/common/Icons'
@@ -14,6 +16,13 @@ import { useHrEmployeesQuery } from '../hr-employees.hook'
 import type { BackendRoleName, HrEmployeeStatus } from '../hr-employees.type'
 import { formatHrRoleLabel, isHrAdmin, resolveHrRoleCode } from '../hr-role.util'
 import { hrPaths } from '../hr.route'
+
+const STATUS_BADGE_VARIANTS: Record<HrEmployeeStatus, BadgeVariant> = {
+  active: 'success',
+  in_shift: 'info',
+  pending_activation: 'warning',
+  locked: 'danger',
+}
 
 const PAGE_SIZE = 6
 
@@ -184,7 +193,7 @@ export default function EmployeeListPage() {
             </div>
           </div>
 
-          <div className="mt-5 overflow-x-auto">
+          <div className="mt-5 max-w-5xl overflow-x-auto">
             <table className="w-full min-w-[700px] text-left text-xs">
               <thead>
                 <tr className="bg-indigo-50/50 text-[11px] font-semibold text-slate-500">
@@ -253,8 +262,10 @@ export default function EmployeeListPage() {
                         {formatHrRoleLabel(employee.roleCode)}
                       </td>
 
-                      <td className="px-3 py-3.5 align-top text-slate-600">
-                        {HR_EMPLOYEE_STATUS_LABELS[employee.status]}
+                      <td className="px-3 py-3.5 align-top">
+                        <Badge variant={STATUS_BADGE_VARIANTS[employee.status]}>
+                          {HR_EMPLOYEE_STATUS_LABELS[employee.status]}
+                        </Badge>
                       </td>
 
                       <td className="px-3 py-3.5 align-top">

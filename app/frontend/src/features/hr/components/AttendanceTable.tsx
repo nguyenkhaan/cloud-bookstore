@@ -45,7 +45,7 @@ export function AttendanceTable({ rows, onAdjust }: AttendanceTableProps) {
               <th className="px-3 py-2.5">Giờ công</th>
               <th className="px-3 py-2.5">Trạng thái</th>
               <th className="px-3 py-2.5">Lương ca</th>
-              <th className="rounded-r-lg px-3 py-2.5 text-right">Action</th>
+              <th className="rounded-r-lg px-3 py-2.5 text-right">Thao tác</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">

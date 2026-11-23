@@ -11,7 +11,7 @@ export function SettingsHistory({ group, isAdmin }: { group: string; isAdmin: bo
   const canReadHistory = isAdmin && can('Settings.GetHistory')
   const query = useSettingsHistory(group, canReadHistory)
   if (!canReadHistory) return null
-  return <section className="min-w-0 space-y-3 border-t border-slate-200 pt-5" aria-labelledby={`history-${group}`}>
+  return <section className="min-w-0 space-y-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-xs" aria-labelledby={`history-${group}`}>
     <h2 id={`history-${group}`} className="text-base font-semibold text-slate-900">Lịch sử thay đổi · 100 lần gần nhất</h2>
     {query.isPending ? <p role="status">Đang tải lịch sử…</p> : query.isError ? <div role="alert"><p>Không thể tải lịch sử.</p><button type="button" className="min-h-11 underline" onClick={() => void query.refetch()}>Thử lại</button></div> : <>
       {!query.data?.length && <p className="text-sm text-slate-500">Chưa có thay đổi được ghi nhận.</p>}

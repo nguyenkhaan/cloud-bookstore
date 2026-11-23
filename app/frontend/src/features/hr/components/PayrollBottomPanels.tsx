@@ -64,7 +64,7 @@ export function PayrollBottomPanels({
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="lg:col-span-8">
-          <Card padding="lg" title={leftCardTitle}>
+          <Card className="h-full" padding="lg" title={leftCardTitle}>
             {isSettled ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -284,7 +284,7 @@ export function PayrollBottomPanels({
         </div>
 
         <div className="lg:col-span-4">
-          <Card padding="lg" title="Điều chỉnh có kiểm soát">
+          <Card className="h-full" padding="lg" title="Điều chỉnh có kiểm soát">
             <div className="space-y-4">
               <p className="text-xs leading-relaxed text-slate-600">
                 {isSettled

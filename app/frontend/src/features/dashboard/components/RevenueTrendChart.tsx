@@ -61,12 +61,13 @@ export const RevenueTrendChart: React.FC<RevenueTrendChartProps> = ({
     <Card
       title="Doanh thu theo thời gian"
       subtitle={rangeLabel}
+      className="h-full"
     >
       {/* Segmented Range Toggle */}
       <div
         role="tablist"
         aria-label="Khoảng thời gian xu hướng doanh thu"
-        className="mb-4 grid grid-cols-2 rounded-xl bg-indigo-50/70 p-1 text-xs"
+        className="mb-4 inline-flex rounded-xl bg-indigo-50/70 p-1 text-xs"
       >
         <button
           type="button"
@@ -215,12 +216,10 @@ export const RevenueTrendChart: React.FC<RevenueTrendChartProps> = ({
       )}
 
       {points.length > 0 && points.length <= 10 && (
-        <div className="mt-2 text-[11px] text-slate-500">
-          {points.map((p) => formatMillions(p.totalAmount)).join(' · ')} ={' '}
-          <span className="font-semibold text-slate-700">
-            {formatMillions(totalAmount)} triệu đồng
-          </span>
-        </div>
+        <p className="sr-only">
+          {points.map((p) => `${p.label}: ${formatMillions(p.totalAmount)}`).join(' · ')} · Tổng{' '}
+          {formatMillions(totalAmount)} triệu đồng
+        </p>
       )}
     </Card>
   )

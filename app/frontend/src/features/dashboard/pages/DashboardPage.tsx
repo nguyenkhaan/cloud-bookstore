@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Calendar } from 'lucide-react'
-import { StatCard } from '@/components/common'
+import { DateInput, StatCard } from '@/components/common'
 import { MainLayout } from '@/components/layout'
 import { useAuth } from '@/features/auth/auth.hook'
+import { catalogPaths } from '@/features/catalog/catalog.route'
 import type { DashboardPageProps, DashboardTrendRange } from '@/features/dashboard/dashboard.type'
 import { workspacePathFor } from '@/features/workspace/workspace.route'
+import { useScreenAccess } from '@/hooks/useScreenAccess'
 import { AttentionPanel } from '../components/AttentionPanel'
 import { LowStockAlertsTable } from '../components/LowStockAlertsTable'
 import { OverdueRentalsTable } from '../components/OverdueRentalsTable'
@@ -24,6 +26,7 @@ export function DashboardPage({ onSignOut }: DashboardPageProps) {
   const { session } = useAuth()
   const currentUser = session?.user ?? { name: 'Khách', role: 'Chưa xác thực', roleCode: '' }
   const isAdmin = currentUser.roleCode === 'ADMIN'
+  const stockAlertsAccess = useScreenAccess('stockAlerts')
 
   const [selectedDate, setSelectedDate] = useState<string>(getTodayVnDateInput)
   const [trendRange, setTrendRange] = useState<DashboardTrendRange>('WEEK')
@@ -55,15 +58,15 @@ export function DashboardPage({ onSignOut }: DashboardPageProps) {
             className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs"
           >
             <Calendar className="h-3.5 w-3.5 text-indigo-600" aria-hidden="true" />
-            <input
+            <DateInput
               id="dashboard-date-picker"
-              type="date"
               value={selectedDate}
               onChange={(e) => {
                 if (e.target.value) setSelectedDate(e.target.value)
               }}
               aria-label="Chọn ngày xem tổng quan"
               className="bg-transparent text-xs font-semibold text-slate-800 focus:outline-none cursor-pointer"
+              displayClassName="left-0 text-xs font-semibold"
             />
             <span className="hidden text-slate-400 sm:inline">· {dateBadgeSuffix}</span>
           </label>
@@ -180,6 +183,7 @@ export function DashboardPage({ onSignOut }: DashboardPageProps) {
                 }
               }
               vietQrSuccessRatePct={data?.vietQrSuccessRatePct ?? 0}
+              vietQrTotalCount={data?.vietQrTotalCount ?? 0}
               isAdmin={isAdmin}
             />
           </div>
@@ -190,6 +194,7 @@ export function DashboardPage({ onSignOut }: DashboardPageProps) {
           <LowStockAlertsTable
             rows={data?.lowStockAlerts ?? []}
             totalLowStockCount={data?.attention?.lowStockEditionCount ?? 0}
+            stockAlertsPath={stockAlertsAccess.canRead ? catalogPaths.stockAlerts : undefined}
           />
           <OverdueRentalsTable rows={data?.overdueCustomers ?? []} />
         </div>

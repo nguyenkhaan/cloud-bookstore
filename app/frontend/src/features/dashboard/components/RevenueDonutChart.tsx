@@ -81,6 +81,7 @@ export const RevenueDonutChart: React.FC<RevenueDonutChartProps> = ({ structure 
     <Card
       title="Cơ cấu doanh thu"
       subtitle="Hôm nay · Bao gồm tiền phạt"
+      className="h-full"
     >
       <div className="flex flex-col items-center py-2">
         <div className="relative flex h-44 w-44 items-center justify-center">

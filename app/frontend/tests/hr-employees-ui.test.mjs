@@ -164,7 +164,7 @@ test('SCR-HRM-01 UI includes required data-testid hooks and excludes whitelist/r
   assert.doesNotMatch(detailSource, /HrModuleTabs/)
 
   assert.match(addModalSource, /data-testid="hrm01-add-submit-btn"/)
-  assert.match(addModalSource, /aria-invalid/)
+  assert.match(addModalSource, /invalid=\{Boolean\(/)
   assert.doesNotMatch(addModalSource, /Nhân viên tự thiết lập mật khẩu qua email/)
 
   assert.match(editModalSource, /data-testid="hrm01-edit-submit-btn"/)

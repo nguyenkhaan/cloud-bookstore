@@ -42,7 +42,6 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
   const [initialized, setInitialized] = useState(false)
   const updateMutation = useUpdateRentalPolicy()
 
-  const [activeSubTab, setActiveSubTab] = useState<'policy' | 'penalties' | 'history'>('policy')
   const [maxExtensions, setMaxExtensions] = useState<number>(2)
   const [extensionDays, setExtensionDays] = useState<number>(7)
   const [graceHours, setGraceHours] = useState<number>(2)
@@ -125,39 +124,6 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Sub Tabs */}
-      <div className="flex items-center gap-4 bg-indigo-50/60 p-2 rounded-xl text-xs font-medium text-slate-600 border border-indigo-100/80">
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('policy')}
-          className={`px-3 py-1.5 rounded-lg transition-colors font-semibold ${
-            activeSubTab === 'policy' ? 'bg-white text-indigo-700 shadow-xs' : 'hover:text-slate-900'
-          }`}
-        >
-          ▣ Chính sách cho thuê
-        </button>
-        <span className="text-slate-300">│</span>
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('penalties')}
-          className={`px-3 py-1.5 rounded-lg transition-colors font-semibold ${
-            activeSubTab === 'penalties' ? 'bg-white text-indigo-700 shadow-xs' : 'hover:text-slate-900'
-          }`}
-        >
-          Xử phạt & Bồi thường
-        </button>
-        <span className="text-slate-300">│</span>
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('history')}
-          className={`px-3 py-1.5 rounded-lg transition-colors font-semibold ${
-            activeSubTab === 'history' ? 'bg-white text-indigo-700 shadow-xs' : 'hover:text-slate-900'
-          }`}
-        >
-          Lịch sử áp dụng
-        </button>
-      </div>
-
       {/* Main Grid: Left content (2 cols) & Right sidebar (1 col) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column: 2 spans */}
@@ -170,14 +136,14 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Tỷ lệ tiền cọc (Cố định) */}
-              <div className="border border-slate-200 rounded-xl p-3.5 bg-slate-50/60">
-                <span className="text-[11px] font-semibold text-slate-500 block mb-1">Tỷ lệ tiền cọc · Cố định</span>
-                <span className="text-sm font-bold text-slate-900 block">100% giá bán thực tế</span>
+              <div className="rounded-xl bg-slate-50 px-3.5 py-3">
+                <span className="text-xs font-medium text-slate-500 block mb-1">Tỷ lệ tiền cọc · Cố định</span>
+                <span className="text-sm font-semibold text-slate-700 block">100% giá bán thực tế</span>
               </div>
 
               {/* Số lần gia hạn tối đa */}
-              <div className="border border-slate-200 rounded-xl p-3.5 bg-white focus-within:border-indigo-600 focus-within:ring-1 focus-within:ring-indigo-600">
-                <label htmlFor="max-extensions-input" className="text-[11px] font-semibold text-slate-600 block mb-1">
+              <div>
+                <label htmlFor="max-extensions-input" className="text-xs font-semibold text-slate-700 block mb-1.5">
                   Số lần gia hạn tối đa *
                 </label>
                 <div className="flex items-center gap-2">
@@ -189,15 +155,15 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
                     disabled={!canEdit}
                     value={maxExtensions}
                     onChange={(e) => setMaxExtensions(Number(e.target.value))}
-                    className="w-20 text-sm font-semibold text-slate-900 border border-slate-200 rounded-lg px-2.5 py-1 focus:outline-none focus:border-indigo-600 disabled:bg-slate-100"
+                    className="min-h-10 w-24 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 disabled:bg-slate-100"
                   />
                   <span className="text-xs text-slate-500">lần (Mặc định: 2 lần)</span>
                 </div>
               </div>
 
               {/* Số ngày gia hạn mỗi lần */}
-              <div className="border border-slate-200 rounded-xl p-3.5 bg-white focus-within:border-indigo-600 focus-within:ring-1 focus-within:ring-indigo-600">
-                <label htmlFor="extension-days-input" className="text-[11px] font-semibold text-slate-600 block mb-1">
+              <div>
+                <label htmlFor="extension-days-input" className="text-xs font-semibold text-slate-700 block mb-1.5">
                   Số ngày gia hạn mỗi lần *
                 </label>
                 <div className="flex items-center gap-2">
@@ -209,16 +175,16 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
                     disabled={!canEdit}
                     value={extensionDays}
                     onChange={(e) => setExtensionDays(Number(e.target.value))}
-                    className="w-20 text-sm font-semibold text-slate-900 border border-slate-200 rounded-lg px-2.5 py-1 focus:outline-none focus:border-indigo-600 disabled:bg-slate-100"
+                    className="min-h-10 w-24 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 disabled:bg-slate-100"
                   />
                   <span className="text-xs text-slate-500">ngày (Mặc định: 7 ngày)</span>
                 </div>
               </div>
 
               {/* Thời điểm thu phí thuê */}
-              <div className="border border-slate-200 rounded-xl p-3.5 bg-slate-50/60">
-                <span className="text-[11px] font-semibold text-slate-500 block mb-1">Thời điểm thu phí thuê</span>
-                <span className="text-sm font-bold text-slate-900 block">Khi trả & Quyết toán</span>
+              <div className="rounded-xl bg-slate-50 px-3.5 py-3">
+                <span className="text-xs font-medium text-slate-500 block mb-1">Thời điểm thu phí thuê</span>
+                <span className="text-sm font-semibold text-slate-700 block">Khi trả & Quyết toán</span>
               </div>
             </div>
 
@@ -239,8 +205,8 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Khung giờ miễn phạt */}
-              <div className="border border-slate-200 rounded-xl p-3.5 bg-white focus-within:border-indigo-600 focus-within:ring-1 focus-within:ring-indigo-600">
-                <label htmlFor="grace-hours-input" className="text-[11px] font-semibold text-slate-600 block mb-1">
+              <div>
+                <label htmlFor="grace-hours-input" className="text-xs font-semibold text-slate-700 block mb-1.5">
                   Khung giờ miễn phạt *
                 </label>
                 <div className="flex items-center gap-2">
@@ -252,15 +218,15 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
                     disabled={!canEdit}
                     value={graceHours}
                     onChange={(e) => setGraceHours(Number(e.target.value))}
-                    className="w-20 text-sm font-semibold text-slate-900 border border-slate-200 rounded-lg px-2.5 py-1 focus:outline-none focus:border-indigo-600 disabled:bg-slate-100"
+                    className="min-h-10 w-24 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 disabled:bg-slate-100"
                   />
                   <span className="text-xs text-slate-500">giờ sau 23:59 ngày đến hạn</span>
                 </div>
               </div>
 
               {/* Hệ số phạt trả trễ */}
-              <div className="border border-slate-200 rounded-xl p-3.5 bg-white focus-within:border-indigo-600 focus-within:ring-1 focus-within:ring-indigo-600">
-                <label htmlFor="late-rate-input" className="text-[11px] font-semibold text-slate-600 block mb-1">
+              <div>
+                <label htmlFor="late-rate-input" className="text-xs font-semibold text-slate-700 block mb-1.5">
                   Hệ số phạt trả trễ *
                 </label>
                 <div className="flex items-center gap-2">
@@ -273,7 +239,7 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
                     disabled={!canEdit}
                     value={latePenaltyRate}
                     onChange={(e) => setLatePenaltyRate(Number(e.target.value))}
-                    className="w-20 text-sm font-semibold text-slate-900 border border-slate-200 rounded-lg px-2.5 py-1 focus:outline-none focus:border-indigo-600 disabled:bg-slate-100"
+                    className="min-h-10 w-24 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 disabled:bg-slate-100"
                   />
                   <span className="text-xs text-slate-500">% đơn giá thuê/ngày gốc</span>
                 </div>
@@ -354,7 +320,7 @@ export const ScrSys01RentalPolicy: React.FC<ScrSys01RentalPolicyProps> = ({ isAd
         </div>
 
         {/* Right column: 1 span */}
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 lg:sticky lg:top-6 lg:self-start">
           {/* Card: Phạm vi áp dụng */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col gap-4 shadow-xs">
             <h2 className="text-base font-semibold text-slate-900">Phạm vi áp dụng</h2>

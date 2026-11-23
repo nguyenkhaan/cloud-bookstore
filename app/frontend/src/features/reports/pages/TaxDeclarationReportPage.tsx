@@ -98,7 +98,7 @@ export default function TaxDeclarationReportPage() {
 
         {/* Kỳ kê khai Card */}
         <Card title="Kỳ kê khai" className="print:hidden">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-end">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-stretch">
             <div className="md:col-span-3">
               <SelectBox
                 label="Loại kỳ"
@@ -146,9 +146,11 @@ export default function TaxDeclarationReportPage() {
             </div>
 
             <div className="md:col-span-2">
-              <div className="mb-1 text-[11px] font-medium text-slate-500">Phạm vi</div>
-              <div className="flex h-11 items-center rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-medium text-slate-700 truncate">
-                {data?.storeScopeLabel || 'Nhà sách Mây - Cơ sở 01'}
+              <div className="h-full rounded-xl border border-slate-200 bg-slate-50">
+                <div className="px-3.5 pt-2.5 text-xs font-semibold text-slate-600">Phạm vi</div>
+                <div className="flex min-h-[44px] items-center truncate px-3.5 pt-1 pb-2.5 text-[15px] text-indigo-950">
+                  {data?.storeScopeLabel || 'Nhà sách Mây - Cơ sở 01'}
+                </div>
               </div>
             </div>
 
@@ -157,7 +159,7 @@ export default function TaxDeclarationReportPage() {
                 type="button"
                 onClick={() => taxQuery.refetch()}
                 disabled={taxQuery.isFetching}
-                className="h-11 w-full"
+                className="h-full min-h-[44px] w-full"
               >
                 <RefreshCw
                   className={`mr-1.5 h-3.5 w-3.5 ${taxQuery.isFetching ? 'animate-spin' : ''}`}
@@ -210,7 +212,7 @@ export default function TaxDeclarationReportPage() {
                   <th className="px-4 py-2.5 font-semibold first:rounded-l-xl">Khoản mục</th>
                   <th className="px-4 py-2.5 font-semibold">Điều kiện ghi nhận</th>
                   <th className="px-4 py-2.5 font-semibold">Nguồn truy nguyên</th>
-                  <th className="px-4 py-2.5 font-semibold last:rounded-r-xl">Số tiền</th>
+                  <th className="px-4 py-2.5 text-right font-semibold last:rounded-r-xl">Số tiền</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -219,14 +221,14 @@ export default function TaxDeclarationReportPage() {
                     <td className="px-4 py-3.5 font-semibold text-slate-900">{item.title}</td>
                     <td className="px-4 py-3.5 text-slate-600">{item.recognitionRule}</td>
                     <td className="px-4 py-3.5 font-mono text-[11px] text-slate-700">{item.sourceTrace}</td>
-                    <td className="px-4 py-3.5 font-semibold text-slate-900">{formatVnd(item.amount)}</td>
+                    <td className="px-4 py-3.5 text-right font-semibold text-slate-900">{formatVnd(item.amount)}</td>
                   </tr>
                 ))}
                 <tr className="bg-slate-50/70 font-bold">
                   <td colSpan={3} className="px-4 py-3.5 text-slate-900">
                     Tổng doanh thu chịu thuế
                   </td>
-                  <td className="px-4 py-3.5 text-slate-900">{formatVnd(data?.totalTaxableRevenue)}</td>
+                  <td className="px-4 py-3.5 text-right text-slate-900">{formatVnd(data?.totalTaxableRevenue)}</td>
                 </tr>
               </tbody>
             </table>
@@ -242,7 +244,7 @@ export default function TaxDeclarationReportPage() {
                   <th className="px-4 py-2.5 font-semibold first:rounded-l-xl">Khoản mục</th>
                   <th className="px-4 py-2.5 font-semibold">Chứng từ bắt buộc</th>
                   <th className="px-4 py-2.5 font-semibold">Nguồn truy nguyên</th>
-                  <th className="px-4 py-2.5 font-semibold last:rounded-r-xl">Số tiền</th>
+                  <th className="px-4 py-2.5 text-right font-semibold last:rounded-r-xl">Số tiền</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -251,14 +253,14 @@ export default function TaxDeclarationReportPage() {
                     <td className="px-4 py-3.5 font-semibold text-slate-900">{item.title}</td>
                     <td className="px-4 py-3.5 text-slate-600">{item.requiredDocuments}</td>
                     <td className="px-4 py-3.5 font-mono text-[11px] text-slate-700">{item.sourceTrace}</td>
-                    <td className="px-4 py-3.5 font-semibold text-slate-900">{formatVnd(item.amount)}</td>
+                    <td className="px-4 py-3.5 text-right font-semibold text-slate-900">{formatVnd(item.amount)}</td>
                   </tr>
                 ))}
                 <tr className="bg-slate-50/70 font-bold">
                   <td colSpan={3} className="px-4 py-3.5 text-slate-900">
                     Tổng chi phí đầu vào hợp lệ
                   </td>
-                  <td className="px-4 py-3.5 text-slate-900">{formatVnd(data?.totalEligibleExpense)}</td>
+                  <td className="px-4 py-3.5 text-right text-slate-900">{formatVnd(data?.totalEligibleExpense)}</td>
                 </tr>
               </tbody>
             </table>
@@ -288,20 +290,20 @@ export default function TaxDeclarationReportPage() {
         {/* Section C: Khoản loại trừ minh bạch */}
         <Card title="C. Khoản loại trừ minh bạch - KHÔNG đưa vào thuế">
           <div className="overflow-x-auto">
-            <table className="min-w-[600px] w-full text-left text-xs">
+            <table className="min-w-[680px] w-full text-left text-xs">
               <thead>
                 <tr className="rounded-xl bg-indigo-50/70 text-slate-600">
                   <th className="px-4 py-2.5 font-semibold first:rounded-l-xl">Luồng tiền giữ hộ</th>
-                  <th className="px-4 py-2.5 font-semibold">Giá trị kỳ này</th>
-                  <th className="px-4 py-2.5 font-semibold last:rounded-r-xl">Cách xử lý</th>
+                  <th className="px-4 py-2.5 font-semibold">Cách xử lý</th>
+                  <th className="px-4 py-2.5 text-right font-semibold last:rounded-r-xl">Giá trị kỳ này</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {(data?.excludedItems ?? []).map((item) => (
                   <tr key={item.itemKey} className="hover:bg-slate-50/70">
                     <td className="px-4 py-3.5 font-semibold text-slate-900">{item.title}</td>
-                    <td className="px-4 py-3.5 font-semibold text-slate-900">{formatVnd(item.amount)}</td>
                     <td className="px-4 py-3.5 text-slate-600">{item.treatmentNote}</td>
+                    <td className="px-4 py-3.5 text-right font-semibold text-slate-900">{formatVnd(item.amount)}</td>
                   </tr>
                 ))}
               </tbody>

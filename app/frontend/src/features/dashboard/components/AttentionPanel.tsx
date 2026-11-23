@@ -8,17 +8,20 @@ import type { OverviewAttention } from '../dashboard.type'
 export interface AttentionPanelProps {
   attention: OverviewAttention
   vietQrSuccessRatePct: number | string
+  vietQrTotalCount: number | string
   isAdmin: boolean
 }
 
 export const AttentionPanel: React.FC<AttentionPanelProps> = ({
   attention,
   vietQrSuccessRatePct,
+  vietQrTotalCount,
   isAdmin,
 }) => {
   const rateNum = toNumber(vietQrSuccessRatePct)
   const targetNum = toNumber(attention.vietQrTargetPct)
   const pendingQrNum = toNumber(attention.vietQrPendingOrFailedCount)
+  const hasVietQrTransactions = toNumber(vietQrTotalCount) > 0
   const isHealthyVietQr = rateNum >= targetNum && pendingQrNum === 0
   const delta = rateNum - targetNum
 
@@ -47,22 +50,28 @@ export const AttentionPanel: React.FC<AttentionPanelProps> = ({
 
         <div
           className={`rounded-xl border p-3.5 ${
-            isHealthyVietQr
+            !hasVietQrTransactions
+              ? 'border-slate-200 bg-slate-50 text-slate-600'
+              : isHealthyVietQr
               ? 'border-emerald-200 bg-emerald-50/70 text-emerald-800'
               : 'border-amber-200 bg-amber-50/70 text-amber-800'
           }`}
         >
           <div className="flex items-start gap-2">
             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-            <p className="leading-relaxed">
-              VietQR đạt {formatPercent(rateNum)}{' '}
-              {delta >= 0
-                ? `(vượt mục tiêu ${delta.toFixed(1)} điểm %)`
-                : `(thấp hơn mục tiêu ${Math.abs(delta).toFixed(1)} điểm %)`}
-              . {pendingQrNum > 0
-                ? `${pendingQrNum} giao dịch cần đối soát thủ công, không xác nhận thu hai lần.`
-                : 'Tất cả giao dịch trực tuyến đã đối soát ổn định.'}
-            </p>
+            {hasVietQrTransactions ? (
+              <p className="leading-relaxed">
+                VietQR đạt {formatPercent(rateNum)}{' '}
+                {delta >= 0
+                  ? `(vượt mục tiêu ${delta.toFixed(1)} điểm %)`
+                  : `(thấp hơn mục tiêu ${Math.abs(delta).toFixed(1)} điểm %)`}
+                . {pendingQrNum > 0
+                  ? `${pendingQrNum} giao dịch cần đối soát thủ công, không xác nhận thu hai lần.`
+                  : 'Tất cả giao dịch trực tuyến đã đối soát ổn định.'}
+              </p>
+            ) : (
+              <p className="leading-relaxed">Chưa có giao dịch VietQR trong ngày.</p>
+            )}
           </div>
         </div>
 

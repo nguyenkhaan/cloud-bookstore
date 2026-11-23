@@ -248,7 +248,7 @@ export function PayrollTableSection({
                     </td>
                     <td className="px-3 py-3.5 align-middle whitespace-nowrap">
                       <button
-                        className="font-medium text-indigo-600 hover:underline"
+                        className="font-medium text-emerald-700 hover:underline"
                         onClick={() => onOpenBreakdown(row)}
                         type="button"
                       >
@@ -257,7 +257,7 @@ export function PayrollTableSection({
                     </td>
                     <td className="px-3 py-3.5 align-middle whitespace-nowrap">
                       <button
-                        className="font-medium text-indigo-600 hover:underline"
+                        className="font-medium text-emerald-700 hover:underline"
                         onClick={() => onOpenBreakdown(row)}
                         type="button"
                       >
@@ -266,7 +266,7 @@ export function PayrollTableSection({
                     </td>
                     <td className="px-3 py-3.5 align-middle whitespace-nowrap">
                       <button
-                        className="font-medium text-indigo-600 hover:underline"
+                        className="font-medium text-rose-700 hover:underline"
                         onClick={() => onOpenBreakdown(row)}
                         type="button"
                       >
@@ -275,7 +275,7 @@ export function PayrollTableSection({
                     </td>
                     <td className="px-3 py-3.5 align-middle whitespace-nowrap">
                       <button
-                        className="font-medium text-indigo-600 hover:underline"
+                        className="font-medium text-rose-700 hover:underline"
                         onClick={() => onOpenBreakdown(row)}
                         type="button"
                       >

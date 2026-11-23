@@ -118,8 +118,7 @@ test('integration section saves omit every other draft and preserve drafts after
       assert.ok(form.find(n => n.type === 'input' && n.props.value === (savedSections.has(fields[i][0]) ? value : `Draft ${value}`)))
     }
   }
-  await form.button('Lưu toàn bộ').props.onClick()
-  assert.deepEqual(Object.keys(form.requests.at(-1)).sort(), ['vietQr', 'zaloOa', 'bookMetadata', 'smtp', 'changeReason'].sort())
+  assert.equal(form.button('Lưu toàn bộ'), undefined)
 })
 
 test('membership save rejects invalid values and accepts discounts through 100%', async () => {
@@ -157,7 +156,7 @@ test('successful integration save replaces saved plaintext secrets but retains o
   await form.button('Lưu VietQR').props.onClick(); form.render()
   assert.equal(form.input('vietqr-apikey').props.value, '********')
   assert.equal(form.input('smtp-pass').props.value, 'unsaved-smtp-secret')
-  await form.button('Lưu toàn bộ').props.onClick(); form.render()
+  await form.button('Lưu SMTP').props.onClick(); form.render()
   assert.equal(form.input('smtp-pass').props.value, '********')
 })
 

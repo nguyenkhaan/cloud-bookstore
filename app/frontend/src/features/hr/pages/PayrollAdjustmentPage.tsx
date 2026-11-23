@@ -1,6 +1,7 @@
 import { useId, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { Paperclip } from 'lucide-react'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { SelectBox } from '@/components/common/SelectBox'
@@ -158,6 +159,7 @@ export default function PayrollAdjustmentPage() {
           </Card>
         ) : (
           <Card
+            className="max-w-3xl"
             padding="lg"
             subtitle={`Kỳ nguồn: ${sourceCode} · Đã trả ${summary?.payoutDate ?? '03/10/2026'} · Chứng từ ${summary?.transactionRef ?? 'BANK-PAY-20261003-001'}`}
             title="Khoản điều chỉnh ADJ-202610-001"
@@ -228,18 +230,22 @@ export default function PayrollAdjustmentPage() {
                   >
                     Số tiền điều chỉnh <span className="text-rose-600">*</span>
                   </label>
-                  <input
-                    aria-describedby={amountError ? amountErrorId : undefined}
-                    aria-invalid={amountError ? true : undefined}
-                    className="mt-1 w-full bg-transparent text-[15px] font-medium text-indigo-950 outline-none"
-                    id={amountId}
-                    onChange={(event) => {
-                      setAmountInput(event.target.value)
-                      if (amountError) setAmountError(null)
-                    }}
-                    type="text"
-                    value={amountInput}
-                  />
+                  <div className="mt-1 flex items-center gap-2">
+                    <input
+                      aria-describedby={amountError ? amountErrorId : undefined}
+                      aria-invalid={amountError ? true : undefined}
+                      className="min-w-0 flex-1 bg-transparent text-[15px] font-medium text-indigo-950 outline-none"
+                      id={amountId}
+                      inputMode="numeric"
+                      onChange={(event) => {
+                        setAmountInput(event.target.value.replace(/\D/g, ''))
+                        if (amountError) setAmountError(null)
+                      }}
+                      type="text"
+                      value={amountInput.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
+                    />
+                    <span className="shrink-0 text-sm text-slate-500">đ</span>
+                  </div>
                   {amountError && (
                     <p
                       className="mt-1 text-xs font-medium text-rose-600"
@@ -302,17 +308,20 @@ export default function PayrollAdjustmentPage() {
                 )}
               </div>
 
-              <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5">
+              <div>
                 <span className="block text-xs font-semibold text-slate-600">
                   Chứng từ / Quyết định kèm theo
                 </span>
-                <div className="mt-1.5 flex items-center justify-between gap-3">
+                <div className="mt-1.5">
                   <button
-                    className="text-sm text-slate-700 hover:text-indigo-700"
+                    className="flex min-h-[44px] w-full items-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3.5 py-3 text-left text-sm text-slate-700 transition-colors hover:border-indigo-400 hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
                     onClick={() => fileInputRef.current?.click()}
                     type="button"
                   >
-                    {attachmentName || 'Chọn tệp hoặc kéo thả minh chứng tại đây'}
+                    <Paperclip aria-hidden="true" className="shrink-0 text-slate-400" size={16} />
+                    <span className="truncate">
+                      {attachmentName || 'Chọn tệp chứng từ đính kèm'}
+                    </span>
                   </button>
                   <input
                     className="hidden"
@@ -333,7 +342,7 @@ export default function PayrollAdjustmentPage() {
                 sau khi Admin duyệt.
               </p>
 
-              <div className="flex flex-wrap items-center gap-2.5 pt-1">
+              <div className="flex flex-wrap items-center justify-end gap-2.5 pt-1">
                 <Button
                   className="min-h-[44px]"
                   onClick={() => navigate(hrPaths.payroll)}

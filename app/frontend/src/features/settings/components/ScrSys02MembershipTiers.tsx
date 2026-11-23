@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from 'react'
+import { Button } from '@/components/common/Button'
 import { notify } from '@/components/common/Toast'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useMembershipPolicy, useUpdateMembershipPolicy } from '../settings.hook'
 import type { MembershipTierItem } from '../settings.type'
+
+const TIER_LABELS: Record<string, string> = { REGULAR: 'Thường', SILVER: 'Bạc', GOLD: 'Vàng' }
+const formatVnd = (value: number) => new Intl.NumberFormat('vi-VN').format(value)
+const parseDigits = (value: string) => Number(value.replace(/\D/g, ''))
 
 interface ScrSys02MembershipTiersProps {
   isAdmin: boolean
@@ -152,7 +157,7 @@ export const ScrSys02MembershipTiers: React.FC<ScrSys02MembershipTiersProps> = (
         {/* Gold Tier Card */}
         <div className="bg-white border border-amber-200 rounded-2xl p-6 flex flex-col gap-4 shadow-xs ring-1 ring-amber-50">
           <div>
-            <h3 className="text-base font-bold text-slate-900">Gold</h3>
+            <h3 className="text-base font-bold text-slate-900">Hạng Vàng</h3>
           </div>
           <div>
             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-100">
@@ -185,8 +190,8 @@ export const ScrSys02MembershipTiers: React.FC<ScrSys02MembershipTiersProps> = (
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-indigo-50/70 border-b border-slate-200 text-slate-600 font-semibold">
-                <th className="py-3 px-4">Hạng</th>
-                <th className="py-3 px-4">Khoảng chi tiêu hợp lệ</th>
+                <th className="py-3 px-4 w-24">Hạng</th>
+                <th className="py-3 px-4 w-px whitespace-nowrap">Khoảng chi tiêu hợp lệ</th>
                 <th className="py-3 px-4">Cuốn tối đa</th>
                 <th className="py-3 px-4">Ngày tối đa</th>
                 <th className="py-3 px-4">Giảm thuê</th>
@@ -196,18 +201,19 @@ export const ScrSys02MembershipTiers: React.FC<ScrSys02MembershipTiersProps> = (
             <tbody className="divide-y divide-slate-100">
               {tiers.map((tier, idx) => (
                 <tr key={tier.name} className="hover:bg-slate-50/70">
-                  <td className="py-3.5 px-4 font-bold text-slate-900">{tier.displayName}</td>
-                  <td className="py-3.5 px-4 text-slate-600">
+                  <td className="py-3.5 px-4 font-bold text-slate-900">{TIER_LABELS[tier.name] ?? tier.displayName}</td>
+                  <td className="py-3.5 px-4 w-px whitespace-nowrap text-slate-600">
                     {idx === 0 && `0đ ≤ chi tiêu < ${new Intl.NumberFormat('vi-VN').format(silverTier.minSpend)}đ`}
                     {idx === 1 && (
                       <div className="flex items-center gap-1.5">
                         <input
-                          type="number"
-                          step="100000"
+                          type="text"
+                          inputMode="numeric"
+                          aria-label={`Ngưỡng chi tiêu tối thiểu hạng ${TIER_LABELS[tier.name] ?? tier.displayName}`}
                           disabled={!canEdit}
-                          value={tier.minSpend}
-                          onChange={(e) => handleTierChange(idx, 'minSpend', Number(e.target.value))}
-                          className="w-28 border border-slate-200 rounded px-2 py-0.5 text-xs font-semibold focus:border-indigo-600 focus:outline-none"
+                          value={formatVnd(tier.minSpend)}
+                          onChange={(e) => handleTierChange(idx, 'minSpend', parseDigits(e.target.value))}
+                          className="w-28 border border-slate-200 rounded px-2 py-0.5 text-right text-xs font-semibold focus:border-indigo-600 focus:outline-none"
                         />
                         <span>đ ≤ chi tiêu &lt; {new Intl.NumberFormat('vi-VN').format(goldTier.minSpend)}đ</span>
                       </div>
@@ -216,12 +222,13 @@ export const ScrSys02MembershipTiers: React.FC<ScrSys02MembershipTiersProps> = (
                       <div className="flex items-center gap-1.5">
                         <span>Chi tiêu ≥</span>
                         <input
-                          type="number"
-                          step="100000"
+                          type="text"
+                          inputMode="numeric"
+                          aria-label={`Ngưỡng chi tiêu tối thiểu hạng ${TIER_LABELS[tier.name] ?? tier.displayName}`}
                           disabled={!canEdit}
-                          value={tier.minSpend}
-                          onChange={(e) => handleTierChange(idx, 'minSpend', Number(e.target.value))}
-                          className="w-28 border border-slate-200 rounded px-2 py-0.5 text-xs font-semibold focus:border-indigo-600 focus:outline-none"
+                          value={formatVnd(tier.minSpend)}
+                          onChange={(e) => handleTierChange(idx, 'minSpend', parseDigits(e.target.value))}
+                          className="w-28 border border-slate-200 rounded px-2 py-0.5 text-right text-xs font-semibold focus:border-indigo-600 focus:outline-none"
                         />
                         <span>đ</span>
                       </div>
@@ -313,12 +320,12 @@ export const ScrSys02MembershipTiers: React.FC<ScrSys02MembershipTiersProps> = (
           <div className="text-xs text-slate-500">
             Cập nhật gần nhất: {policy?.lastUpdatedAt ? new Date(policy.lastUpdatedAt).toLocaleDateString('vi-VN') : '18/10/2026'} · {policy?.lastUpdatedByName ?? 'Admin'}
           </div>
-          <div className="pt-2">
+          <div className="flex justify-end pt-2">
             <button
               type="button"
               disabled={!canEdit || updateMutation.isPending}
               onClick={() => setShowConfirmModal(true)}
-              className="w-full py-2.5 px-4 bg-indigo-600 text-white font-semibold text-xs rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50 shadow-xs"
+              className="min-h-11 py-2.5 px-4 bg-indigo-600 text-white font-semibold text-xs rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50 shadow-xs"
             >
               {updateMutation.isPending ? 'Đang lưu...' : 'Lưu thay đổi hạng'}
             </button>
@@ -354,13 +361,9 @@ export const ScrSys02MembershipTiers: React.FC<ScrSys02MembershipTiersProps> = (
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowConfirmModal(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-              >
+              <Button type="button" variant="secondary" onClick={() => setShowConfirmModal(false)}>
                 Hủy bỏ
-              </button>
+              </Button>
               <button
                 type="button"
                 disabled={updateMutation.isPending || !changeReason.trim()}
