@@ -24,7 +24,7 @@ export default function EmployeeDetailPage() {
     role: 'Quản trị viên',
     roleCode: 'ADMIN',
   }
-  const effectiveRoleCode = resolveHrRoleCode(currentUser, location.search)
+  const effectiveRoleCode = resolveHrRoleCode(currentUser)
   const isAdmin = isHrAdmin(effectiveRoleCode)
 
   const { data: employee, isLoading } = useHrEmployeeDetailQuery(id)

@@ -148,6 +148,7 @@ export function usePayslipDetailQuery(employeeId: string, periodKey: string) {
   return useQuery({
     queryKey: hrPayrollKeys.payslip(employeeId, periodKey),
     queryFn: () => getPayslipDetail(employeeId, periodKey),
+    enabled: Boolean(employeeId),
   })
 }
 

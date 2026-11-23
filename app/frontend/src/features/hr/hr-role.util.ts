@@ -3,29 +3,15 @@ import type { AppRole } from '@/features/auth/role'
 
 export type HrRoleCode = AppRole
 
-export const HR_ADMIN_ONLY_NAV_IDS = new Set([
-  'approvals',
-  'audit',
-  'reports',
-  'settings',
-])
-
 const ROLE_LABELS: Record<HrRoleCode, string> = {
   ADMIN: 'Quản trị viên',
   INVENTORY_MANAGER: 'Quản lý kho',
   CASHIER: 'Nhân viên',
 }
 
-export function getPreviewRoleFromSearch(search?: string): HrRoleCode | undefined {
-  void search
-  return undefined
-}
-
 export function resolveHrRoleCode(
   user?: { role?: string; roleCode?: string } | null,
-  search?: string,
 ): HrRoleCode | undefined {
-  void search
   const directCode = normalizeRoleCode(user?.roleCode)
   if (directCode) return directCode
 

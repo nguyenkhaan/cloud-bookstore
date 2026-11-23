@@ -46,10 +46,25 @@ test('Unified /hr attendance & shifts admin management uses AdminAttendanceSecti
   assert.match(adminSection, /data-testid="attendance-admin-section"/)
   assert.match(attendancePage, /data-testid="attendance-employee-section"/)
   assert.match(attendancePage, /currentUser\.roleCode === 'ADMIN'/)
-  assert.match(attendancePage, /previewRole !== 'CASHIER' &&[\s\S]*previewRole !== 'INVENTORY_MANAGER'/)
+  assert.doesNotMatch(attendancePage, /previewRole|getPreviewRoleFromSearch|location\.search/)
   assert.match(shiftPage, /currentUser\.roleCode === 'ADMIN'/)
   assert.doesNotMatch(attendancePage, /AdminHrTabs|\/admin\/hr/)
   assert.doesNotMatch(shiftPage, /AdminHrTabs|\/admin\/hr/)
+})
+
+test('HR pages cannot elevate authorization from previewRole and admin-only routes are guarded', () => {
+  const routes = readSource('routes', 'AppRoutes.tsx')
+  const hrSource = [
+    readSource('features', 'hr', 'pages', 'EmployeeListPage.tsx'),
+    readSource('features', 'hr', 'pages', 'EmployeeDetailPage.tsx'),
+    readSource('features', 'hr', 'pages', 'PayrollPage.tsx'),
+    readSource('features', 'hr', 'pages', 'PayrollAdjustmentPage.tsx'),
+    readSource('features', 'hr', 'pages', 'PayslipPage.tsx'),
+  ].join('\n')
+  assert.doesNotMatch(hrSource, /previewRole|getPreviewRoleFromSearch/)
+  for (const screenId of ['hrEmployees', 'hrEmployeeDetail', 'hrPayroll', 'hrPayrollAdjustment', 'hrEmployeePayslip']) {
+    assert.match(routes, new RegExp(`RoleGuard screenId="${screenId}"`))
+  }
 })
 
 test('Unified /hr routes are session guarded and zero /admin/hr routes remain', () => {

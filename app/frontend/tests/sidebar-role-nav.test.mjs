@@ -25,21 +25,14 @@ after(async () => {
   await server?.close()
 })
 
-test('resolveHrRoleCode handles AuthUser roleCode without query-string role overrides', () => {
-  assert.equal(roleUtil.resolveHrRoleCode({ role: 'Quản trị viên', roleCode: 'ADMIN' }, ''), 'ADMIN')
-  assert.equal(roleUtil.resolveHrRoleCode({ role: 'Nhân viên', roleCode: 'CASHIER' }, ''), 'CASHIER')
+test('resolveHrRoleCode uses only normalized AuthUser role data', () => {
+  assert.equal(roleUtil.resolveHrRoleCode({ role: 'Quản trị viên', roleCode: 'ADMIN' }), 'ADMIN')
+  assert.equal(roleUtil.resolveHrRoleCode({ role: 'Nhân viên', roleCode: 'CASHIER' }), 'CASHIER')
   assert.equal(
-    roleUtil.resolveHrRoleCode({ role: 'Quản lý kho', roleCode: 'INVENTORY_MANAGER' }, ''),
+    roleUtil.resolveHrRoleCode({ role: 'Quản lý kho', roleCode: 'INVENTORY_MANAGER' }),
     'INVENTORY_MANAGER',
   )
-  assert.equal(
-    roleUtil.resolveHrRoleCode({ role: 'Quản trị viên', roleCode: 'ADMIN' }, '?previewRole=CASHIER'),
-    'ADMIN',
-  )
-  assert.equal(
-    roleUtil.resolveHrRoleCode({ role: 'Quản trị viên', roleCode: 'ADMIN' }, '?previewRole=INVENTORY_MANAGER'),
-    'ADMIN',
-  )
+  assert.equal(roleUtil.getPreviewRoleFromSearch, undefined)
 })
 
 test('Sidebar follows the shared top-level and HR child access matrix', () => {

@@ -447,9 +447,10 @@ export async function getPayslipDetail(
     payrollPeriodsStore.find((p) => p.periodKey === normalizedPeriod) ??
     payrollPeriodsStore[0]
 
-  const row =
-    payrollPeriod.rows.find((r) => r.id === employeeId) ??
-    payrollPeriod.rows[0]
+  const row = payrollPeriod.rows.find((r) => r.id === employeeId)
+  if (!row) {
+    throw new Error('Chưa có mã nhân viên tương ứng để tải phiếu lương cá nhân. Vui lòng đồng bộ hồ sơ nhân sự với tài khoản đăng nhập.')
+  }
 
   const isPendingPayout = normalizedPeriod === '10/2026'
   const totalIncome =

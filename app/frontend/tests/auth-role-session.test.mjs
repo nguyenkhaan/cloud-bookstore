@@ -107,12 +107,7 @@ test('formatUser preserves BrowserSessionUser id and normalized role', () => {
   assert.equal(user.role, 'Nhân viên')
 })
 
-test('previewRole query cannot replace the authenticated role', () => {
-  assert.equal(
-    hrRoleModule.resolveHrRoleCode(
-      { role: 'Quản trị viên', roleCode: 'ADMIN' },
-      '?previewRole=CASHIER',
-    ),
-    'ADMIN',
-  )
+test('role resolution never reads previewRole query state', () => {
+  assert.equal(hrRoleModule.resolveHrRoleCode({ role: 'Quản trị viên', roleCode: 'ADMIN' }), 'ADMIN')
+  assert.equal(hrRoleModule.getPreviewRoleFromSearch, undefined)
 })

@@ -56,6 +56,9 @@ export default function ApprovalsPage() {
   useEffect(() => {
     if (!visibleTabs.some((tab) => tab.key === activeTab)) setActiveTab(firstVisibleTab)
   }, [activeTab, firstVisibleTab, visibleTabs])
+  const effectiveActiveTab = visibleTabs.some((tab) => tab.key === activeTab)
+    ? activeTab
+    : firstVisibleTab
 
   // Selected IDs for drawers
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null)
@@ -110,7 +113,7 @@ export default function ApprovalsPage() {
   return (
     <MainLayout
       actionButton={
-        activeTab === 'inventory-adjustment' ? (
+        effectiveActiveTab === 'inventory-adjustment' ? (
           <div className="flex gap-2">
             <Button
               onClick={() => setIsCreateModalOpen(true)}
@@ -130,7 +133,7 @@ export default function ApprovalsPage() {
       onNavigate={navigateFromSidebar}
       onSignOut={signOut}
       pageTitle="Trung tâm Phê duyệt ngoại lệ"
-      pageHeaderContent={<ApprovalTabBar activeTab={activeTab} counts={approvalCounts} onSelectTab={handleSelectTab} tabs={visibleTabs} />}
+      pageHeaderContent={<ApprovalTabBar activeTab={effectiveActiveTab} counts={approvalCounts} onSelectTab={handleSelectTab} tabs={visibleTabs} />}
       user={currentUser}
     >
       <div className="space-y-6">
@@ -163,22 +166,22 @@ export default function ApprovalsPage() {
         </div>
 
         {/* Tab 1 Content: Duyệt Giá Thu mua Sách cũ */}
-        {activeTab === 'old-book-price' && (
+        {effectiveActiveTab === 'old-book-price' && (
           <BuybackApprovalsTable onSelectRequest={(id) => setSelectedBuybackId(id)} />
         )}
 
         {/* Tab 2 Content: Duyệt Phạt Hư hỏng Ngoài Khung */}
-        {activeTab === 'damage-penalty' && (
+        {effectiveActiveTab === 'damage-penalty' && (
           <DamagePenaltyApprovalsTable onSelectRequest={(id) => setSelectedDamageId(id)} />
         )}
 
         {/* Tab 4 Content: Duyệt Xuất hủy & Đảo Hóa đơn */}
-        {activeTab === 'disposal-reversal' && (
+        {effectiveActiveTab === 'disposal-reversal' && (
           <DisposalReversalApprovalsTable onSelectRequest={(id) => setSelectedDisposalId(id)} />
         )}
 
         {/* Tab 3 Content: Duyệt Điều chỉnh Kho sau Kiểm kê */}
-        {activeTab === 'inventory-adjustment' && (
+        {effectiveActiveTab === 'inventory-adjustment' && (
           <div className="space-y-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-slate-200 bg-white p-3 shadow-2xs">
               <div className="flex flex-1 items-center gap-2">

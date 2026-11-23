@@ -95,6 +95,7 @@ function generateRequestCode(): string {
 export async function getHrRequestsSummary(
   mineFilter: HrRequestFilterQuery = {},
   approvalFilter: HrRequestFilterQuery = {},
+  includeApproval = true,
 ): Promise<HrRequestsSummaryData> {
   const allMine = requestStore.filter((item) => item.isOwnedByCurrentUser)
   const allApprovalQueue = requestStore.filter(
@@ -103,13 +104,13 @@ export async function getHrRequestsSummary(
 
   return {
     myRequests: allMine.filter((item) => matchesFilter(item, mineFilter)),
-    approvalQueue: allApprovalQueue.filter((item) =>
-      matchesFilter(item, approvalFilter),
-    ),
+    approvalQueue: includeApproval
+      ? allApprovalQueue.filter((item) => matchesFilter(item, approvalFilter))
+      : [],
     myCount: allMine.length,
-    pendingApprovalCount: allApprovalQueue.filter(
-      (item) => item.status === 'pending',
-    ).length,
+    pendingApprovalCount: includeApproval
+      ? allApprovalQueue.filter((item) => item.status === 'pending').length
+      : 0,
   }
 }
 

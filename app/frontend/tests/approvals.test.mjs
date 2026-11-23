@@ -7,12 +7,24 @@ test('approval navigation is a compact header tab bar without screen-code or rol
   const pageSource = readFileSync(new URL('../src/features/approvals/pages/ApprovalsPage.tsx', import.meta.url), 'utf8')
   const tabSource = readFileSync(new URL('../src/features/approvals/components/ApprovalTabBar.tsx', import.meta.url), 'utf8')
 
-  assert.match(pageSource, /pageHeaderContent=\{<ApprovalTabBar activeTab=\{activeTab\} counts=\{approvalCounts\} onSelectTab=\{handleSelectTab\} tabs=\{visibleTabs\} \/>\}/)
+  assert.match(pageSource, /pageHeaderContent=\{<ApprovalTabBar activeTab=\{effectiveActiveTab\} counts=\{approvalCounts\} onSelectTab=\{handleSelectTab\} tabs=\{visibleTabs\} \/>\}/)
   assert.doesNotMatch(pageSource, /SCR-APP-01/)
   assert.doesNotMatch(pageSource, /Không gian phê duyệt tập trung dành riêng/)
   assert.match(tabSource, /<nav aria-label="Các nhóm yêu cầu phê duyệt"/)
   assert.match(tabSource, /border-b-2/)
   assert.doesNotMatch(tabSource, /bg-indigo-600 text-white/)
+})
+
+test('approval ownership uses stable actor IDs and hides self-decision controls', () => {
+  const pageSource = readFileSync(new URL('../src/features/approvals/pages/ApprovalsPage.tsx', import.meta.url), 'utf8')
+  const inventorySource = readFileSync(new URL('../src/features/catalog/pages/InventoryCheckPage.tsx', import.meta.url), 'utf8')
+  assert.match(pageSource, /const currentUserId = session\?\.user\?\.id/)
+  assert.match(inventorySource, /const currentUserId = session\?\.user\?\.id/)
+  for (const file of ['AdjustmentDetailDrawer.tsx', 'BuybackDetailDrawer.tsx', 'DamagePenaltyDetailDrawer.tsx', 'DisposalReversalDetailDrawer.tsx']) {
+    const drawerSource = readFileSync(new URL(`../src/features/approvals/components/${file}`, import.meta.url), 'utf8')
+    assert.match(drawerSource, /currentUserId && detail\?\.requestedBy && currentUserId === detail\.requestedBy/)
+    assert.doesNotMatch(drawerSource, /currentUserId[^\n]*requestedByName/)
+  }
 })
 
 describe('Approvals feature: types, presentation, and service mapping', () => {
