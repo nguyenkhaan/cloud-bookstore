@@ -1,4 +1,5 @@
 import { usePermissions } from '@/hooks/usePermissions'
+import { useScreenAccess } from '@/hooks/useScreenAccess'
 import { useRef, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import { ImagePlus, Pencil, Trash2 } from 'lucide-react'
@@ -15,6 +16,11 @@ type EditTab = 'details' | 'image'
 
 export function SeriesCardActions({ series }: { series: BookSeries }) {
   const { can } = usePermissions()
+  const screenAccess = useScreenAccess('catalogSeries')
+  const canUpdate = screenAccess.canUpdate && can('BookSeries.UpdateBookSeries')
+  const canUpdateStatus = screenAccess.canUpdate && can('BookSeries.UpdateBookSeriesStatus')
+  const canUpdateImage = screenAccess.canUpdate && can('BookSeries.UpdateBookSeriesImage') && can('Uploads.CreateSignature')
+  const canDelete = screenAccess.canUpdate && can('BookSeries.DeleteBookSeries')
   const editTriggerRef = useRef<HTMLButtonElement>(null)
   const deleteTriggerRef = useRef<HTMLButtonElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
@@ -51,6 +57,7 @@ export function SeriesCardActions({ series }: { series: BookSeries }) {
 
   const handleDetailsSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (!canUpdate && !canUpdateStatus) return
     const trimmedName = name.trim()
     if (!trimmedName) {
       setDetailsError('Tên bộ sách là bắt buộc.')
@@ -59,19 +66,21 @@ export function SeriesCardActions({ series }: { series: BookSeries }) {
 
     setDetailsError('')
     try {
-      if (can("BookSeries.UpdateBookSeries")) await updateSeries.mutateAsync({ seriesId: series.id, request: { name: trimmedName, description: description.trim() || null } })
+      if (canUpdate) await updateSeries.mutateAsync({ seriesId: series.id, request: { name: trimmedName, description: description.trim() || null } })
     } catch (error) {
       setDetailsError(error instanceof Error ? error.message : 'Không thể lưu thông tin bộ sách.')
       return
     }
 
     if (isActive !== series.isActive) {
-      try {
-        await updateStatus.mutateAsync({ seriesId: series.id, isActive })
-      } catch (error) {
-        const detail = error instanceof Error ? ` ${error.message}` : ''
-        setDetailsError(`Thông tin chung đã được lưu, nhưng không thể cập nhật trạng thái.${detail}`)
-        return
+      if (canUpdateStatus) {
+        try {
+          await updateStatus.mutateAsync({ seriesId: series.id, isActive })
+        } catch (error) {
+          const detail = error instanceof Error ? ` ${error.message}` : ''
+          setDetailsError(`Thông tin chung đã được lưu, nhưng không thể cập nhật trạng thái.${detail}`)
+          return
+        }
       }
     }
 
@@ -79,6 +88,7 @@ export function SeriesCardActions({ series }: { series: BookSeries }) {
   }
 
   const attachImage = async (uploaded: UploadedImage) => {
+    if (!canUpdateImage) return
     setImageError('')
     try {
       await replaceSeriesImage.mutateAsync({ seriesId: series.id, imageUpload: uploaded.imageUpload })
@@ -95,6 +105,7 @@ export function SeriesCardActions({ series }: { series: BookSeries }) {
   }
 
   const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    if (!canUpdateImage) return
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file) return
@@ -114,6 +125,7 @@ export function SeriesCardActions({ series }: { series: BookSeries }) {
   }
 
   const handleDelete = async () => {
+    if (!canDelete) return
     setDeleteError('')
     try {
       await deleteSeries.mutateAsync(series.id)
@@ -129,7 +141,7 @@ export function SeriesCardActions({ series }: { series: BookSeries }) {
         <button
           aria-label={`Chỉnh sửa ${series.name}`}
           className="grid h-11 w-11 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-2xs transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 motion-reduce:transition-none"
-          disabled={!can("BookSeries.UpdateBookSeries") && !can("BookSeries.UpdateBookSeriesStatus") && !can("BookSeries.UpdateBookSeriesImage")}
+          disabled={!canUpdate && !canUpdateStatus && !canUpdateImage}
           onClick={openEdit}
           ref={editTriggerRef}
           type="button"
@@ -143,7 +155,7 @@ export function SeriesCardActions({ series }: { series: BookSeries }) {
             setDeleteError('')
             setActiveDialog('delete')
           }}
-          disabled={!can("BookSeries.DeleteBookSeries")}
+          disabled={!canDelete}
           ref={deleteTriggerRef}
           type="button"
         >
@@ -164,18 +176,18 @@ export function SeriesCardActions({ series }: { series: BookSeries }) {
           {activeTab === 'details' ? (
             <form aria-labelledby={`series-${series.id}-details-tab`} className="space-y-4 pt-5" id={`series-${series.id}-details`} role="tabpanel" onSubmit={handleDetailsSubmit}>
               {detailsError && <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs leading-5 text-rose-700" role="alert">{detailsError}</p>}
-              <TextField label="Tên bộ sách *" maxLength={255} onChange={(event) => setName(event.target.value)} required value={name} />
+              <TextField disabled={!canUpdate} label="Tên bộ sách *" maxLength={255} onChange={(event) => setName(event.target.value)} required value={name} />
               <label className="block rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 focus-within:border-indigo-600 focus-within:ring-3 focus-within:ring-indigo-600/15">
                 <span className="block text-xs font-semibold text-slate-500">Mô tả</span>
                 <textarea disabled={!can("BookSeries.UpdateBookSeries")} className="mt-1 block min-h-24 w-full resize-y bg-transparent text-sm text-indigo-950 outline-none" onChange={(event) => setDescription(event.target.value)} value={description} />
               </label>
               <label className="flex min-h-11 cursor-pointer items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3">
                 <span><span className="block text-sm font-semibold text-slate-800">Đang hoạt động</span><span className="mt-0.5 block text-xs text-slate-500">Bộ sách hiện có thể được sử dụng trong danh mục.</span></span>
-                <input aria-label="Đang hoạt động" checked={isActive} className="h-5 w-5 accent-indigo-600" onChange={(event) => setIsActive(event.target.checked)} type="checkbox" />
+                <input aria-label="Đang hoạt động" checked={isActive} className="h-5 w-5 accent-indigo-600" disabled={!canUpdateStatus} onChange={(event) => setIsActive(event.target.checked)} type="checkbox" />
               </label>
               <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
                 <Button onClick={() => setActiveDialog(null)} type="button" variant="ghost">Hủy</Button>
-                <Button disabled={!can("BookSeries.UpdateBookSeries") && !can("BookSeries.UpdateBookSeriesStatus")} loading={isSaving} type="submit">{isSaving ? 'Đang lưu…' : 'Lưu thay đổi'}</Button>
+                <Button disabled={!canUpdate && !canUpdateStatus} loading={isSaving} type="submit">{isSaving ? 'Đang lưu…' : 'Lưu thay đổi'}</Button>
               </div>
             </form>
           ) : (
@@ -189,11 +201,11 @@ export function SeriesCardActions({ series }: { series: BookSeries }) {
                   <p className="mt-1 text-xs leading-5 text-slate-500">{previewUrl ? 'Ảnh hiện tại sẽ được thay thế sau khi bạn chọn ảnh mới.' : 'Bộ sách này chưa có ảnh bìa.'}</p>
                   {imageError && <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs leading-5 text-rose-700" role="alert">{imageError}</p>}
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <input accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={isImageBusy || !can("BookSeries.UpdateBookSeriesImage") || !can("Uploads.CreateSignature")} onChange={handleImageChange} ref={imageInputRef} type="file" />
-                    <Button disabled={isImageBusy || !can("BookSeries.UpdateBookSeriesImage") || !can("Uploads.CreateSignature")} loading={isImageBusy} onClick={() => imageInputRef.current?.click()} type="button" variant="outline">
+                    <input accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={isImageBusy || !canUpdateImage} onChange={handleImageChange} ref={imageInputRef} type="file" />
+                    <Button disabled={isImageBusy || !canUpdateImage} loading={isImageBusy} onClick={() => imageInputRef.current?.click()} type="button" variant="outline">
                       {isImageUploading ? 'Đang tải ảnh…' : replaceSeriesImage.isPending ? 'Đang lưu ảnh…' : previewUrl ? 'Thay ảnh' : 'Chọn ảnh'}
                     </Button>
-                    {pendingImage && !isImageBusy && <Button onClick={() => void attachImage(pendingImage)} type="button" variant="outline">Thử lưu ảnh</Button>}
+                    {pendingImage && !isImageBusy && canUpdateImage && <Button onClick={() => void attachImage(pendingImage)} type="button" variant="outline">Thử lưu ảnh</Button>}
                     {series.imageUrl && <Button disabled type="button" variant="ghost">Xóa ảnh</Button>}
                   </div>
                 </div>

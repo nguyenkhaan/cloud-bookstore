@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Button, Card, ConfirmationDialog } from '@/components/common'
 import { BarcodeLabelsPrintModal } from '@/components/common/BarcodeLabel/BarcodeLabelsPrintModal'
 import { usePermissions } from '@/hooks/usePermissions'
+import { useScreenAccess } from '@/hooks/useScreenAccess'
 import { catalogPaths } from '../catalog.route'
 import { useCopyQuery, useCreateCopyLabelMutation, useDeleteCopyMutation, useEditionQuery, useTitleQuery, useUpdateCopyMutation, useUpdateCopyStatusMutation } from '../catalog.hook'
 import { availabilityLabel, formatVnd } from '../catalog.presentation'
@@ -18,6 +19,11 @@ export default function CopyDetailPage() {
   const { copyId = '' } = useParams()
   const navigate = useNavigate()
   const { can } = usePermissions()
+  const screenAccess = useScreenAccess('catalogCopyDetail')
+  const canUpdateCopy = screenAccess.canUpdate && can('BookCopies.UpdateBookCopy')
+  const canDeleteCopy = screenAccess.canUpdate && can('BookCopies.DeleteBookCopy')
+  const canUpdateStatus = screenAccess.canUpdate && can('BookCopies.UpdateBookCopyStatus')
+  const canCreateLabel = screenAccess.canUpdate && can('BookCopies.CreateBookCopyLabel')
   const [dialog, setDialog] = useState<'edit' | 'delete' | 'print' | null>(null)
   const [actionError, setActionError] = useState('')
   const copyQuery = useCopyQuery(copyId)
@@ -33,11 +39,13 @@ export default function CopyDetailPage() {
   if (!copy || copyQuery.error) return <CatalogWorkspace title="Bản sách vật lý"><ErrorState message="Không tìm thấy bản sách yêu cầu." /></CatalogWorkspace>
 
   const handleDelete = async () => {
+    if (!canDeleteCopy) return
     setActionError('')
     try { await deleteCopy.mutateAsync(copyId); navigate(catalogPaths.editionDetail(copy.editionId)) }
     catch (cause) { setActionError(cause instanceof Error ? cause.message : 'Không thể xóa bản sách.') }
   }
   const handleDiscontinue = async () => {
+    if (!canUpdateStatus) return
     setActionError('')
     try { await updateStatus.mutateAsync({ copyId, request: { status: 'DISCONTINUED', reason: 'Ngừng sử dụng từ trang chi tiết bản sách' } }); setDialog(null) }
     catch (cause) { setActionError(cause instanceof Error ? cause.message : 'Không thể ngừng sử dụng bản sách.') }
@@ -45,12 +53,13 @@ export default function CopyDetailPage() {
   const canDiscontinue = !['RENTED', 'SOLD', 'DISPOSED', 'DISCONTINUED'].includes(copy.status)
 
   const handlePrintLabel = () => {
+    if (!canCreateLabel) return
     void createLabel.mutateAsync(copyId).catch(() => null)
     setDialog('print')
   }
 
   return <CatalogWorkspace
-    action={<div className="flex flex-wrap gap-2"><Button onClick={handlePrintLabel} variant="outline">In tem Barcode</Button><Button onClick={() => setDialog('edit')} variant="secondary">Chỉnh sửa</Button><Button onClick={() => { setActionError(''); setDialog('delete') }} variant="outline">Xóa</Button>{can("BookCopies.UpdateBookCopyStatus") && canDiscontinue && <Button disabled={updateStatus.isPending} onClick={() => void handleDiscontinue()} variant="ghost">Ngừng sử dụng</Button>}</div>}
+    action={<div className="flex flex-wrap gap-2">{canCreateLabel && <Button onClick={handlePrintLabel} variant="outline">In tem Barcode</Button>}{canUpdateCopy && <Button onClick={() => setDialog('edit')} variant="secondary">Chỉnh sửa</Button>}{canDeleteCopy && <Button onClick={() => { setActionError(''); setDialog('delete') }} variant="outline">Xóa</Button>}{canUpdateStatus && canDiscontinue && <Button disabled={updateStatus.isPending} onClick={() => void handleDiscontinue()} variant="ghost">Ngừng sử dụng</Button>}</div>}
     title={copy.copyBarcode}>
     {actionError && <p className="text-sm text-rose-700" role="alert">{actionError}</p>}
     <Card padding="none"><div className="flex flex-col gap-5 p-5 sm:flex-row">
@@ -63,8 +72,8 @@ export default function CopyDetailPage() {
         {copy.conditionNote && <p className="mt-5 text-sm leading-6 text-slate-600">{copy.conditionNote}</p>}
       </div>
     </div></Card>
-    {dialog === 'edit' && <CopyEditorDialog copy={copy} editionId={copy.editionId} editionImageUrl={copy.editionImageUrl || editionQuery.data?.coverImageUrl} onClose={() => setDialog(null)} onSave={async (request) => { await updateCopy.mutateAsync({ copyId, request: request as UpdateCopyRequest }) }} />}
-    {dialog === 'delete' && <ConfirmationDialog actions={<><Button onClick={() => setDialog(null)} variant="ghost">Hủy</Button><Button loading={deleteCopy.isPending} onClick={() => void handleDelete()} variant="danger">Xóa bản sách</Button></>} error={actionError} message="Chỉ xóa hẳn bản chưa có lịch sử bán, thuê hoặc kiểm kê. Nếu đã có lịch sử, hãy ngừng sử dụng; bản đã bán tự không còn khả dụng." onClose={() => setDialog(null)} title={`Xóa ${copy.copyBarcode}`} />}
+    {dialog === 'edit' && canUpdateCopy && <CopyEditorDialog copy={copy} editionId={copy.editionId} editionImageUrl={copy.editionImageUrl || editionQuery.data?.coverImageUrl} onClose={() => setDialog(null)} onSave={async (request) => { await updateCopy.mutateAsync({ copyId, request: request as UpdateCopyRequest }) }} />}
+    {dialog === 'delete' && canDeleteCopy && <ConfirmationDialog actions={<><Button onClick={() => setDialog(null)} variant="ghost">Hủy</Button><Button loading={deleteCopy.isPending} onClick={() => void handleDelete()} variant="danger">Xóa bản sách</Button></>} error={actionError} message="Chỉ xóa hẳn bản chưa có lịch sử bán, thuê hoặc kiểm kê. Nếu đã có lịch sử, hãy ngừng sử dụng; bản đã bán tự không còn khả dụng." onClose={() => setDialog(null)} title={`Xóa ${copy.copyBarcode}`} />}
     {dialog === 'print' && (
       <BarcodeLabelsPrintModal
         batchCode={copy.copyBarcode}

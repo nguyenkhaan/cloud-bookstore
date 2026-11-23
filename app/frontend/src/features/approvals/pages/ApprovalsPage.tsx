@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MainLayout } from '@/components/layout'
 import { Button, SelectBox, StatCard } from '@/components/common'
 import { notify } from '@/components/common/Toast'
 import { useAuth } from '@/features/auth/auth.hook'
+import { normalizeRoleCode } from '@/features/auth/role'
+import { usePermissions } from '@/hooks/usePermissions'
 import { workspacePathFor } from '@/features/workspace/workspace.route'
 import {
   useApprovalsOverviewStatsQuery,
@@ -18,7 +20,7 @@ import {
 } from '../approvals.presentation'
 import type { ApprovalTabKey, InventoryAdjustmentQuery, InventoryAdjustmentStatus } from '../approvals.type'
 import { AdjustmentDetailDrawer } from '../components/AdjustmentDetailDrawer'
-import { ApprovalTabBar } from '../components/ApprovalTabBar'
+import { ApprovalTabBar, getVisibleApprovalTabs } from '../components/ApprovalTabBar'
 import { BuybackApprovalsTable } from '../components/BuybackApprovalsTable'
 import { BuybackDetailDrawer } from '../components/BuybackDetailDrawer'
 import { CreateAdjustmentModal } from '../components/CreateAdjustmentModal'
@@ -30,12 +32,33 @@ import { DisposalReversalDetailDrawer } from '../components/DisposalReversalDeta
 export default function ApprovalsPage() {
   const navigate = useNavigate()
   const { session, signOut } = useAuth()
+  const permissions = usePermissions()
+  const roleCode = session?.user?.roleCode
+  const role = normalizeRoleCode(roleCode)
+  const permissionStatus = permissions.isError
+    ? 'error'
+    : permissions.isPending
+      ? 'loading'
+      : 'ready'
+  const visibleTabs = useMemo(
+    () => getVisibleApprovalTabs(roleCode, permissions.permissionCodes, permissionStatus),
+    [permissionStatus, permissions.permissionCodes, roleCode],
+  )
+  const firstVisibleTab = visibleTabs[0]?.key ?? 'old-book-price'
 
-  const [activeTab, setActiveTab] = useState<ApprovalTabKey>('inventory-adjustment')
+  const [activeTab, setActiveTab] = useState<ApprovalTabKey>(firstVisibleTab)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<InventoryAdjustmentStatus | ''>('')
   const [page, setPage] = useState(1)
   const pageSize = 10
+  const canReadInventoryAdjustment = visibleTabs.some((tab) => tab.key === 'inventory-adjustment')
+
+  useEffect(() => {
+    if (!visibleTabs.some((tab) => tab.key === activeTab)) setActiveTab(firstVisibleTab)
+  }, [activeTab, firstVisibleTab, visibleTabs])
+  const effectiveActiveTab = visibleTabs.some((tab) => tab.key === activeTab)
+    ? activeTab
+    : firstVisibleTab
 
   // Selected IDs for drawers
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null)
@@ -52,16 +75,16 @@ export default function ApprovalsPage() {
     status: statusFilter || undefined,
   }
 
-  const { data: pageResult, isLoading } = useApprovalsQuery(queryParams)
-  const { data: stats } = useApprovalsStatsQuery()
-  const { data: overviewStats } = useApprovalsOverviewStatsQuery()
+  const { data: pageResult, isLoading } = useApprovalsQuery(queryParams, canReadInventoryAdjustment)
+  const { data: stats } = useApprovalsStatsQuery(canReadInventoryAdjustment)
+  const { data: overviewStats } = useApprovalsOverviewStatsQuery(canReadInventoryAdjustment)
 
-  const currentUser = session?.user ?? { name: 'Nhân viên', role: 'Chưa xác thực' }
-  const currentUserId = session?.user?.name
-  const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(session?.user?.roleCode ?? '')
+  const currentUser = session?.user ?? { name: 'Người dùng nội bộ', role: 'Chưa xác thực' }
+  const currentUserId = session?.user?.id
+  const isAdmin = role === 'ADMIN'
 
   const navigateFromSidebar = (item: string) => {
-    const path = workspacePathFor(item)
+    const path = workspacePathFor(item, roleCode)
     if (path) navigate(path)
   }
 
@@ -84,13 +107,13 @@ export default function ApprovalsPage() {
   }
 
   const handleSelectTab = (tab: ApprovalTabKey) => {
-    setActiveTab(tab)
+    if (visibleTabs.some((candidate) => candidate.key === tab)) setActiveTab(tab)
   }
 
   return (
     <MainLayout
       actionButton={
-        activeTab === 'inventory-adjustment' ? (
+        effectiveActiveTab === 'inventory-adjustment' ? (
           <div className="flex gap-2">
             <Button
               onClick={() => setIsCreateModalOpen(true)}
@@ -110,7 +133,7 @@ export default function ApprovalsPage() {
       onNavigate={navigateFromSidebar}
       onSignOut={signOut}
       pageTitle="Trung tâm Phê duyệt ngoại lệ"
-      pageHeaderContent={<ApprovalTabBar activeTab={activeTab} counts={approvalCounts} onSelectTab={handleSelectTab} />}
+      pageHeaderContent={<ApprovalTabBar activeTab={effectiveActiveTab} counts={approvalCounts} onSelectTab={handleSelectTab} tabs={visibleTabs} />}
       user={currentUser}
     >
       <div className="space-y-6">
@@ -143,22 +166,22 @@ export default function ApprovalsPage() {
         </div>
 
         {/* Tab 1 Content: Duyệt Giá Thu mua Sách cũ */}
-        {activeTab === 'old-book-price' && (
+        {effectiveActiveTab === 'old-book-price' && (
           <BuybackApprovalsTable onSelectRequest={(id) => setSelectedBuybackId(id)} />
         )}
 
         {/* Tab 2 Content: Duyệt Phạt Hư hỏng Ngoài Khung */}
-        {activeTab === 'damage-penalty' && (
+        {effectiveActiveTab === 'damage-penalty' && (
           <DamagePenaltyApprovalsTable onSelectRequest={(id) => setSelectedDamageId(id)} />
         )}
 
         {/* Tab 4 Content: Duyệt Xuất hủy & Đảo Hóa đơn */}
-        {activeTab === 'disposal-reversal' && (
+        {effectiveActiveTab === 'disposal-reversal' && (
           <DisposalReversalApprovalsTable onSelectRequest={(id) => setSelectedDisposalId(id)} />
         )}
 
         {/* Tab 3 Content: Duyệt Điều chỉnh Kho sau Kiểm kê */}
-        {activeTab === 'inventory-adjustment' && (
+        {effectiveActiveTab === 'inventory-adjustment' && (
           <div className="space-y-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-slate-200 bg-white p-3 shadow-2xs">
               <div className="flex flex-1 items-center gap-2">
@@ -349,13 +372,15 @@ export default function ApprovalsPage() {
         requestId={selectedDisposalId}
       />
 
-      <CreateAdjustmentModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={() => {
-          notify.success('Đã gửi đề nghị điều chỉnh kho sang Trung tâm Phê duyệt thành công.')
-        }}
-      />
+      {canReadInventoryAdjustment && (
+        <CreateAdjustmentModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSuccess={() => {
+            notify.success('Đã gửi đề nghị điều chỉnh kho sang Trung tâm Phê duyệt thành công.')
+          }}
+        />
+      )}
     </MainLayout>
   )
 }

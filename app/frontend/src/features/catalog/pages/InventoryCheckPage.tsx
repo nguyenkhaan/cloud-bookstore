@@ -18,6 +18,8 @@ import {
 import type { BookCopyStatus, InventoryVarianceType } from '@/features/approvals/approvals.type'
 import { AdjustmentDetailDrawer } from '@/features/approvals/components/AdjustmentDetailDrawer'
 import { useAuth } from '@/features/auth/auth.hook'
+import { usePermissions } from '@/hooks/usePermissions'
+import { useScreenAccess } from '@/hooks/useScreenAccess'
 
 type VarianceFilter = InventoryVarianceType | ''
 
@@ -31,6 +33,10 @@ const FILTERS: { value: VarianceFilter; label: string }[] = [
 export default function InventoryCheckPage() {
   const navigate = useNavigate()
   const { session } = useAuth()
+  const { can } = usePermissions()
+  const screenAccess = useScreenAccess('inventoryCheck')
+  const canCreateRequest = screenAccess.canUpdate && can('InventoryAdjustmentRequests.CreateRequest')
+  const canDecideRequest = screenAccess.canUpdate && can('InventoryAdjustmentRequests.UpdateRequestStatus')
 
   const [varianceFilter, setVarianceFilter] = useState<VarianceFilter>('')
   const [search, setSearch] = useState('')
@@ -52,10 +58,11 @@ export default function InventoryCheckPage() {
     varianceType: varianceFilter || undefined,
   })
 
-  const currentUserId = session?.user?.name
-  const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(session?.user?.roleCode ?? '')
+  const currentUserId = session?.user?.id
+  const isAdmin = canDecideRequest
 
   const openModal = (rows?: DiscrepancyRow[]) => {
+    if (!canCreateRequest) return
     setModalRows(rows)
     setModalSeed((seed) => seed + 1)
     setIsModalOpen(true)
@@ -80,7 +87,7 @@ export default function InventoryCheckPage() {
   }
 
   const handleCreateFromScan = () => {
-    if (!scannedCopy) return
+    if (!scannedCopy || !canCreateRequest) return
     openModal([
       {
         id: `scan-${scannedCopy.id}`,
@@ -176,9 +183,9 @@ export default function InventoryCheckPage() {
                   {' - '}Giá bán: <strong>{formatVnd(scannedCopy.sellingPrice)}</strong>
                 </p>
               </div>
-              <Button onClick={handleCreateFromScan} variant="outline">
+              {canCreateRequest && <Button onClick={handleCreateFromScan} variant="outline">
                 Lập đề nghị cho bản sách này
-              </Button>
+              </Button>}
             </div>
           )}
         </section>
@@ -302,9 +309,9 @@ export default function InventoryCheckPage() {
               Lập phiếu đề nghị điều chỉnh kho sau khi hoàn tất đối soát. Khi được duyệt: bản thiếu chuyển Thất lạc; không cập nhật tồn tự động khi chỉ mới quét.
             </p>
           </div>
-          <Button onClick={() => openModal()} variant="primary">
+          {canCreateRequest && <Button onClick={() => openModal()} variant="primary">
             Lập Phiếu Đề nghị Điều chỉnh Kho →
-          </Button>
+          </Button>}
         </section>
       </div>
 
@@ -315,7 +322,7 @@ export default function InventoryCheckPage() {
         requestId={selectedRequestId}
       />
 
-      <CreateAdjustmentModal
+      {canCreateRequest && <CreateAdjustmentModal
         initialRows={modalRows}
         isOpen={isModalOpen}
         key={modalSeed}
@@ -324,7 +331,7 @@ export default function InventoryCheckPage() {
           notify.success('Đã gửi đề nghị điều chỉnh thành công! Đang chuyển đến Trung tâm Phê duyệt...')
           navigate('/approvals')
         }}
-      />
+      />}
     </WarehouseWorkspace>
   )
 }

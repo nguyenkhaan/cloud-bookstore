@@ -1,5 +1,5 @@
 import { useState, useTransition } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { SearchIcon } from '@/components/common/Icons'
@@ -31,7 +31,6 @@ const MY_REQUESTS_PAGE_SIZE = 10
 
 export default function HrRequestsPage() {
   const navigate = useNavigate()
-  const location = useLocation()
   const { session, signOut } = useAuth()
   const [, startTransition] = useTransition()
 
@@ -51,14 +50,11 @@ export default function HrRequestsPage() {
     role: 'Quản trị viên',
     roleCode: 'ADMIN',
   }
-  const effectiveRoleCode = resolveHrRoleCode(currentUser, location.search)
+  const effectiveRoleCode = resolveHrRoleCode(currentUser)
   const isAdmin = isHrAdmin(effectiveRoleCode)
   const effectiveRoleLabel = formatHrRoleLabel(effectiveRoleCode)
-  const subtitleUserName =
-    effectiveRoleCode === 'CASHIER' && currentUser.name === 'Nguyễn Minh Anh'
-      ? 'Trần Hoàng Phong'
-      : currentUser.name
-  const subtitleCode = effectiveRoleCode === 'ADMIN' ? 'NV-0001' : 'NV-0002'
+  const subtitleUserName = currentUser.name
+  const subtitleCode = currentUser.id ? `Tài khoản ${currentUser.id.slice(0, 8)}` : 'Mã nhân viên chưa đồng bộ'
 
   const { data, isLoading } = useHrRequestsSummaryQuery(
     {
@@ -71,6 +67,7 @@ export default function HrRequestsPage() {
       monthKey: approvalMonth,
       status: approvalStatus,
     },
+    isAdmin,
   )
 
   const myRequests = data?.myRequests ?? []
@@ -140,7 +137,7 @@ export default function HrRequestsPage() {
           className="flex flex-wrap gap-2 rounded-2xl bg-indigo-50/70 p-1.5"
           role="tablist"
         >
-          <button
+          {isAdmin && <button
             aria-selected={activeTab === 'mine'}
             className={cn(
               'min-h-[44px] min-w-[180px] cursor-pointer rounded-xl px-5 py-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600',
@@ -154,7 +151,7 @@ export default function HrRequestsPage() {
             type="button"
           >
             Đơn của tôi ({myCount})
-          </button>
+          </button>}
 
           <button
             aria-selected={activeTab === 'pending'}
@@ -173,7 +170,7 @@ export default function HrRequestsPage() {
           </button>
         </div>
 
-        {activeTab === 'mine' ? (
+        {activeTab === 'mine' || !isAdmin ? (
           <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_390px]">
             <Card padding="lg" title="Các yêu cầu đã gửi">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

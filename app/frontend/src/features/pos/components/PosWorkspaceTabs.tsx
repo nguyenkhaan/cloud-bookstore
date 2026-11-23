@@ -1,16 +1,17 @@
 import type { PosTab } from '../pos-transaction.type'
-import { posTabs } from '../pos-transaction.fixture'
+import type { PosTabDefinition } from '../pos-transaction.fixture'
 
 interface PosWorkspaceTabsProps {
   activeTab: PosTab
   onChange: (tab: PosTab) => void
+  tabs: readonly PosTabDefinition[]
 }
 
-export function PosWorkspaceTabs({ activeTab, onChange }: PosWorkspaceTabsProps) {
+export function PosWorkspaceTabs({ activeTab, onChange, tabs }: PosWorkspaceTabsProps) {
   return (
     <div className="overflow-x-auto rounded-2xl border border-indigo-100 bg-indigo-50/60 p-1">
       <div className="flex min-w-max gap-1" role="tablist" aria-label="Nghiệp vụ quầy giao dịch">
-        {posTabs.map((tab) => {
+        {tabs.map((tab) => {
           const isActive = tab.id === activeTab
           return (
             <button

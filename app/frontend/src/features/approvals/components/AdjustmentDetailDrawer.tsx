@@ -64,7 +64,7 @@ export const AdjustmentDetailDrawer: React.FC<AdjustmentDetailDrawerProps> = ({
   if (!requestId) return null
 
   const isSelfRequest = Boolean(
-    currentUserId && detail?.requestedByName && currentUserId.toLowerCase() === detail.requestedByName.toLowerCase(),
+    currentUserId && detail?.requestedBy && currentUserId === detail.requestedBy,
   )
   const canAdminDecide = isAdmin && !isSelfRequest && (detail?.status === 'PENDING_APPROVAL' || detail?.status === 'APPROVED')
   const canCreatorCancel = isSelfRequest && detail?.status === 'PENDING_APPROVAL'

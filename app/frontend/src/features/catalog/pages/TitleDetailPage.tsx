@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Button, Card } from '@/components/common'
 import { usePermissions } from '@/hooks/usePermissions'
+import { useScreenAccess } from '@/hooks/useScreenAccess'
 import { catalogPaths } from '../catalog.route'
 import { useCreateEditionMutation, useEditionsQuery, useSeriesQuery, useTitleQuery, useUpdateTitleMutation } from '../catalog.hook'
 import { formatVnd } from '../catalog.presentation'
@@ -15,6 +16,9 @@ import { ErrorState, LoadingRows } from './SeriesListPage'
 
 export default function TitleDetailPage() {
   const { can } = usePermissions()
+  const screenAccess = useScreenAccess('catalogTitleDetail')
+  const canUpdateTitle = screenAccess.canUpdate && can('BookTitles.UpdateTitle')
+  const canCreateEdition = screenAccess.canUpdate && can('Editions.CreateEdition')
   const { titleId = '' } = useParams()
   const [isTitleEditorOpen, setIsTitleEditorOpen] = useState(false)
   const [isEditionEditorOpen, setIsEditionEditorOpen] = useState(false)
@@ -35,7 +39,7 @@ export default function TitleDetailPage() {
 
   return (
     <CatalogWorkspace
-      action={<div className="flex flex-wrap gap-2">{can('BookTitles.UpdateTitle') && <Button onClick={() => setIsTitleEditorOpen(true)} variant="secondary">Chỉnh sửa đầu sách</Button>}{can('Editions.CreateEdition') && <Button onClick={() => setIsEditionEditorOpen(true)}>+ Thêm ấn bản</Button>}</div>}
+      action={<div className="flex flex-wrap gap-2">{canUpdateTitle && <Button onClick={() => setIsTitleEditorOpen(true)} variant="secondary">Chỉnh sửa đầu sách</Button>}{canCreateEdition && <Button onClick={() => setIsEditionEditorOpen(true)}>+ Thêm ấn bản</Button>}</div>}
       title={title.name}
     >
       <Card padding="none">
@@ -58,8 +62,8 @@ export default function TitleDetailPage() {
           </div>
         )}
       </section>
-      {isTitleEditorOpen && <TitleEditorDialog onClose={() => setIsTitleEditorOpen(false)} onSave={async (request) => { await updateTitle.mutateAsync({ titleId, request }) }} series={seriesQuery.data ?? []} title={title} />}
-      {isEditionEditorOpen && <EditionEditorDialog onClose={() => setIsEditionEditorOpen(false)} onSave={async (request) => { await createEdition.mutateAsync(request as CreateEditionRequest) }} titleId={titleId} />}
+      {isTitleEditorOpen && canUpdateTitle && <TitleEditorDialog onClose={() => setIsTitleEditorOpen(false)} onSave={async (request) => { await updateTitle.mutateAsync({ titleId, request }) }} series={seriesQuery.data ?? []} title={title} />}
+      {isEditionEditorOpen && canCreateEdition && <EditionEditorDialog onClose={() => setIsEditionEditorOpen(false)} onSave={async (request) => { await createEdition.mutateAsync(request as CreateEditionRequest) }} titleId={titleId} />}
     </CatalogWorkspace>
   )
 }

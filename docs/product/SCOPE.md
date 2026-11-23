@@ -6,7 +6,7 @@
 
 - Một web app nội bộ cho một cửa hàng vật lý.
 - POS tại quầy và giao diện quản trị/kho theo quyền.
-- Ba vai trò: Admin, Nhân viên và Quản lý kho.
+- Ba vai trò: Admin / Quản trị viên (`ADMIN`), Cashier / Thu ngân (`CASHIER`) và Inventory / Quản lý kho (`INVENTORY_MANAGER`).
 - Tài khoản nhân viên, xác thực, phân quyền và audit log.
 - Danh mục, bộ sách, đầu sách/tập, ấn bản và từng bản sách vật lý.
 - Nhà cung cấp, nhập/xuất kho, cấp/in `CopyBarcode`, kiểm kê và cảnh báo tồn.

@@ -1,5 +1,7 @@
 import axios from 'axios'
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios'
+import { normalizeRoleCode } from '@/features/auth/role'
+import type { AppRole } from '@/features/auth/role'
 
 const rawBaseUrl = (import.meta.env.VITE_BASE_URL ?? '').trim()
 const backendUrl = rawBaseUrl.replace(/\/+$/, '')
@@ -75,9 +77,10 @@ export function clearCsrfToken(): void {
 }
 
 export interface StoredUser {
+  id?: string
   name: string
   role: string
-  roleCode?: string
+  roleCode: AppRole
   email?: string
   avatarUrl?: string
 }
@@ -86,7 +89,21 @@ export function readStoredUser(): StoredUser | null {
   try {
     const raw = getSessionStorage()?.getItem(USER_STORAGE_KEY)
     if (!raw) return null
-    return JSON.parse(raw) as StoredUser
+    const parsed: unknown = JSON.parse(raw)
+    if (typeof parsed !== 'object' || parsed === null) return null
+
+    const value = parsed as Record<string, unknown>
+    const roleCode = normalizeRoleCode(typeof value.roleCode === 'string' ? value.roleCode : null)
+    if (!roleCode || typeof value.name !== 'string' || typeof value.role !== 'string') return null
+
+    return {
+      id: typeof value.id === 'string' ? value.id : undefined,
+      name: value.name,
+      role: value.role,
+      roleCode,
+      email: typeof value.email === 'string' ? value.email : undefined,
+      avatarUrl: typeof value.avatarUrl === 'string' ? value.avatarUrl : undefined,
+    }
   } catch {
     return null
   }
@@ -94,7 +111,9 @@ export function readStoredUser(): StoredUser | null {
 
 export function persistStoredUser(user: StoredUser): void {
   try {
-    getSessionStorage()?.setItem(USER_STORAGE_KEY, JSON.stringify(user))
+    const roleCode = normalizeRoleCode(user.roleCode)
+    if (!roleCode) return
+    getSessionStorage()?.setItem(USER_STORAGE_KEY, JSON.stringify({ ...user, roleCode }))
   } catch {
     // Keep in-memory when browser storage is unavailable.
   }

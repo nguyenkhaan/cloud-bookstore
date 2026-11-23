@@ -5,7 +5,8 @@ import { ArrowUpRight, Search } from 'lucide-react'
 import { Button, Card, ConfirmationDialog, SelectBox, TextField } from '@/components/common'
 import type { SelectOption } from '@/components/common'
 import { notify } from '@/components/common/Toast'
-import { useAuth } from '@/features/auth/auth.hook'
+import { usePermissions } from '@/hooks/usePermissions'
+import { useScreenAccess } from '@/hooks/useScreenAccess'
 import { catalogPaths } from '../catalog.route'
 import {
   useCreateSupplierMutation,
@@ -37,8 +38,12 @@ function formatVnd(amount: number): string {
 
 export default function SuppliersPage() {
   const navigate = useNavigate()
-  const { session } = useAuth()
-  const canEdit = ['ADMIN', 'INVENTORY_MANAGER'].includes(session?.user?.roleCode ?? 'ADMIN')
+  const { can } = usePermissions()
+  const screenAccess = useScreenAccess('suppliers')
+  const canCreate = screenAccess.canUpdate && can('Suppliers.CreateSupplier')
+  const canUpdate = screenAccess.canUpdate && can('Suppliers.UpdateSupplier')
+  const canUpdateStatus = screenAccess.canUpdate && can('Suppliers.UpdateSupplierStatus')
+  const canDelete = screenAccess.canUpdate && can('Suppliers.DeleteSupplier')
 
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'ACTIVE' | 'ALL' | 'INACTIVE'>('ALL')
@@ -121,7 +126,7 @@ export default function SuppliersPage() {
 
   const handleSaveSelected = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!selectedSupplier) return
+    if (!selectedSupplier || !canUpdate) return
     const trimmedName = currentForm.name.trim()
     if (!trimmedName) {
       setEditError('Tên nhà cung cấp không được để trống.')
@@ -147,7 +152,7 @@ export default function SuppliersPage() {
   }
 
   const handleToggleActive = async () => {
-    if (!selectedSupplier) return
+    if (!selectedSupplier || !canUpdateStatus) return
     const nextState = !selectedSupplier.isActive
     setEditError('')
     try {
@@ -168,6 +173,7 @@ export default function SuppliersPage() {
 
   const handleCreateSupplier = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (!canCreate) return
     if (!newName.trim()) {
       setAddError('Vui lòng nhập tên nhà cung cấp.')
       return
@@ -194,7 +200,7 @@ export default function SuppliersPage() {
   }
 
   const handleDelete = async () => {
-    if (!selectedSupplier) return
+    if (!selectedSupplier || !canDelete) return
     setDeleteError('')
     try {
       await deleteSupplier.mutateAsync(selectedSupplier.id)
@@ -209,7 +215,7 @@ export default function SuppliersPage() {
   return (
     <WarehouseWorkspace
       action={
-        canEdit ? (
+        canCreate ? (
           <Button onClick={() => setIsAddDialogOpen(true)}>+ Thêm nhà cung cấp</Button>
         ) : undefined
       }
@@ -378,17 +384,17 @@ export default function SuppliersPage() {
                 {selectedSupplier.code} - {selectedSupplier.name}
               </p>
             </div>
-            {canEdit && (
+            {(canUpdateStatus || canDelete) && (
               <div className="flex items-center gap-2">
                 <Button
-                  disabled={updateStatus.isPending}
+                  disabled={!canUpdateStatus || updateStatus.isPending}
                   onClick={() => void handleToggleActive()}
                   type="button"
                   variant="outline"
                 >
                   {selectedSupplier.isActive ? 'Ngừng hợp tác' : 'Kích hoạt lại'}
                 </Button>
-                {selectedSupplier.receiptCount === 0 && (
+                {selectedSupplier.receiptCount === 0 && canDelete && (
                   <Button
                     onClick={() => {
                       setDeleteError('')
@@ -413,7 +419,7 @@ export default function SuppliersPage() {
 
             <div className="grid gap-4 md:grid-cols-3">
               <TextField
-                disabled={!canEdit}
+                disabled={!canUpdate}
                 label="Tên pháp lý / Tên nhà cung cấp *"
                 onChange={(e) => {
                   ensureEditSynced()
@@ -423,7 +429,7 @@ export default function SuppliersPage() {
                 value={currentForm.name}
               />
               <TextField
-                disabled={!canEdit}
+                disabled={!canUpdate}
                 label="Số điện thoại liên hệ"
                 onChange={(e) => {
                   ensureEditSynced()
@@ -432,7 +438,7 @@ export default function SuppliersPage() {
                 value={currentForm.phone}
               />
               <TextField
-                disabled={!canEdit}
+                disabled={!canUpdate}
                 label="Mã số thuế"
                 onChange={(e) => {
                   ensureEditSynced()
@@ -443,7 +449,7 @@ export default function SuppliersPage() {
             </div>
 
             <TextField
-              disabled={!canEdit}
+              disabled={!canUpdate}
               label="Địa chỉ trụ sở"
               onChange={(e) => {
                 ensureEditSynced()
@@ -462,7 +468,7 @@ export default function SuppliersPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3 pt-1">
-              {canEdit && (
+              {canUpdate && (
                 <Button loading={updateSupplier.isPending} type="submit" variant="primary">
                   Lưu hồ sơ
                 </Button>
@@ -481,7 +487,7 @@ export default function SuppliersPage() {
         </Card>
       )}
 
-      {isAddDialogOpen && (
+      {isAddDialogOpen && canCreate && (
         <CatalogDialog onClose={() => setIsAddDialogOpen(false)} title="Thêm nhà cung cấp mới">
           <form className="space-y-4" onSubmit={(e) => void handleCreateSupplier(e)}>
             {addError && (

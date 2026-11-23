@@ -42,7 +42,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   const location = useLocation();
   const auth = useContext(AuthContext);
   const effectiveUser = user ?? auth?.session?.user;
-  const userRoleCode = resolveHrRoleCode(effectiveUser, location.search);
+  const userRoleCode = resolveHrRoleCode(effectiveUser);
 
   return (
       <div className="flex min-h-screen bg-slate-50 text-slate-800 antialiased font-sans">

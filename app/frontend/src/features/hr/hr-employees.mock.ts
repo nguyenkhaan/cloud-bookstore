@@ -14,7 +14,7 @@ export const HR_EMPLOYEE_STATUS_LABELS: Record<HrEmployeeStatus, string> = {
 
 export const HR_EMPLOYEE_ROLE_OPTIONS: { value: BackendRoleName; label: string }[] = [
   { value: 'ADMIN', label: 'Quản trị viên' },
-  { value: 'CASHIER', label: 'Nhân viên' },
+  { value: 'CASHIER', label: 'Thu ngân' },
   { value: 'INVENTORY_MANAGER', label: 'Quản lý kho' },
 ]
 

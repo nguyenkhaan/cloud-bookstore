@@ -4,7 +4,8 @@ import { ChevronDown, ChevronRight, FolderPlus, Search } from 'lucide-react'
 import { Button, Card, ConfirmationDialog, SelectBox, TextField } from '@/components/common'
 import type { SelectOption } from '@/components/common'
 import { notify } from '@/components/common/Toast'
-import { useAuth } from '@/features/auth/auth.hook'
+import { usePermissions } from '@/hooks/usePermissions'
+import { useScreenAccess } from '@/hooks/useScreenAccess'
 import {
   useCategoriesQuery,
   useCreateCategoryMutation,
@@ -61,8 +62,12 @@ const MIN_STOCK_OPTIONS: SelectOption<string>[] = [
 ]
 
 export default function CategoryTreePage() {
-  const { session } = useAuth()
-  const canEdit = ['ADMIN', 'INVENTORY_MANAGER'].includes(session?.user?.roleCode ?? 'ADMIN')
+  const { can } = usePermissions()
+  const screenAccess = useScreenAccess('catalogCategories')
+  const canCreate = screenAccess.canUpdate && can('Categories.CreateCategory')
+  const canUpdate = screenAccess.canUpdate && can('Categories.UpdateCategory')
+  const canUpdateStatus = screenAccess.canUpdate && can('Categories.UpdateCategoryStatus')
+  const canDelete = screenAccess.canUpdate && can('Categories.DeleteCategory')
 
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
@@ -281,6 +286,7 @@ export default function CategoryTreePage() {
 
   const handleSave = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (isCreatingNew ? !canCreate : !canUpdate) return
     const trimmedName = currentFormValues.name.trim()
     if (!trimmedName) {
       setFormError('Tên thể loại không được để trống.')
@@ -326,7 +332,7 @@ export default function CategoryTreePage() {
   }
 
   const handleToggleStatus = async () => {
-    if (!activeSelectedNode) return
+    if (!activeSelectedNode || !canUpdateStatus) return
     const nextActive = !activeSelectedNode.isActive
     if (isUsingFallback) {
       notify.success(nextActive ? 'Đã kích hoạt lại danh mục.' : 'Đã chuyển danh mục sang ngừng sử dụng.')
@@ -345,7 +351,7 @@ export default function CategoryTreePage() {
   }
 
   const handleDelete = async () => {
-    if (!activeSelectedNode) return
+    if (!activeSelectedNode || !canDelete) return
     setDeleteError('')
     try {
       await deleteCategory.mutateAsync(activeSelectedNode.id)
@@ -414,7 +420,7 @@ export default function CategoryTreePage() {
             </div>
           </button>
 
-          {canEdit && node.level < 3 && (
+          {canCreate && node.level < 3 && (
             <button
               aria-label={`Thêm thể loại con vào ${node.name}`}
               className="rounded-lg p-1.5 text-slate-400 opacity-80 transition hover:bg-indigo-100/70 hover:text-indigo-700 group-hover:opacity-100"
@@ -443,7 +449,7 @@ export default function CategoryTreePage() {
   return (
     <CatalogWorkspace
       action={
-        canEdit ? (
+        canCreate ? (
           <Button onClick={() => handleStartCreate(null)}>+ Thêm thể loại</Button>
         ) : undefined
       }
@@ -537,7 +543,7 @@ export default function CategoryTreePage() {
                 </p>
               </div>
 
-              {!isCreatingNew && activeSelectedNode && canEdit && activeSelectedNode.level < 3 && (
+              {!isCreatingNew && activeSelectedNode && canCreate && activeSelectedNode.level < 3 && (
                 <Button
                   onClick={() => handleStartCreate(activeSelectedNode.id)}
                   variant="outline"
@@ -556,7 +562,7 @@ export default function CategoryTreePage() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <TextField
-                  disabled={!canEdit}
+                  disabled={!canUpdate && !canCreate}
                   label="Tên thể loại *"
                   onChange={(e) => {
                     ensureNodeSynced()
@@ -568,7 +574,7 @@ export default function CategoryTreePage() {
                 />
 
                 <SelectBox
-                  disabled={!canEdit}
+                  disabled={!canUpdate && !canCreate}
                   label="Danh mục cha"
                   onChange={(val) => {
                     ensureNodeSynced()
@@ -585,7 +591,7 @@ export default function CategoryTreePage() {
                 <span className="block text-xs font-semibold text-slate-500">Mô tả</span>
                 <input
                   className="mt-1 block w-full bg-transparent text-sm text-slate-900 outline-hidden"
-                  disabled={!canEdit}
+                  disabled={!canUpdate && !canCreate}
                   onChange={(e) => {
                     ensureNodeSynced()
                     setFormDescription(e.target.value)
@@ -598,7 +604,7 @@ export default function CategoryTreePage() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <SelectBox
-                  disabled={!canEdit}
+                  disabled={!canUpdate && !canCreate}
                   label="Tồn tối thiểu mặc định / đầu sách"
                   onChange={(val) => {
                     ensureNodeSynced()
@@ -610,7 +616,7 @@ export default function CategoryTreePage() {
                 />
 
                 <SelectBox
-                  disabled={!canEdit}
+                  disabled={!canUpdate && !canCreate}
                   label="Trạng thái"
                   onChange={(val) => {
                     ensureNodeSynced()
@@ -638,15 +644,17 @@ export default function CategoryTreePage() {
                 </div>
               )}
 
-              {canEdit && (
+              {(canUpdate || canCreate || canUpdateStatus || canDelete) ? (
                 <div className="flex flex-wrap items-center gap-2.5 pt-1">
-                  <Button
-                    loading={createCategory.isPending || updateCategory.isPending}
-                    type="submit"
-                    variant="primary"
-                  >
-                    {isCreatingNew ? 'Tạo danh mục' : 'Lưu danh mục'}
-                  </Button>
+                  {((isCreatingNew && canCreate) || (!isCreatingNew && canUpdate)) && (
+                    <Button
+                      loading={createCategory.isPending || updateCategory.isPending}
+                      type="submit"
+                      variant="primary"
+                    >
+                      {isCreatingNew ? 'Tạo danh mục' : 'Lưu danh mục'}
+                    </Button>
+                  )}
 
                   {isCreatingNew ? (
                     <Button
@@ -663,7 +671,7 @@ export default function CategoryTreePage() {
                     activeSelectedNode && (
                       <>
                         <Button
-                          disabled={updateCategoryStatus.isPending}
+                          disabled={!canUpdateStatus || updateCategoryStatus.isPending}
                           onClick={() => void handleToggleStatus()}
                           type="button"
                           variant="outline"
@@ -671,7 +679,7 @@ export default function CategoryTreePage() {
                           {activeSelectedNode.isActive ? 'Ngừng sử dụng' : 'Kích hoạt lại'}
                         </Button>
 
-                        {!hasSubCategoriesOrTitles && !isUsingFallback && (
+                        {!hasSubCategoriesOrTitles && !isUsingFallback && canDelete && (
                           <Button
                             onClick={() => {
                               setDeleteError('')
@@ -687,7 +695,7 @@ export default function CategoryTreePage() {
                     )
                   )}
                 </div>
-              )}
+              ) : null}
             </form>
           </Card>
 

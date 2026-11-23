@@ -21,10 +21,11 @@ export const hrRequestKeys = {
 export function useHrRequestsSummaryQuery(
   mineFilter: HrRequestFilterQuery,
   approvalFilter: HrRequestFilterQuery,
+  includeApproval = true,
 ) {
   return useQuery({
     queryKey: hrRequestKeys.summary(mineFilter, approvalFilter),
-    queryFn: () => getHrRequestsSummary(mineFilter, approvalFilter),
+    queryFn: () => getHrRequestsSummary(mineFilter, approvalFilter, includeApproval),
   })
 }
 

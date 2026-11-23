@@ -41,7 +41,7 @@ test('SCR-HRM-04 files exist and /hr/requests route is guarded in AppRoutes.tsx'
   }
 
   const routesContent = readFileSync(src('routes', 'AppRoutes.tsx'), 'utf8')
-  assert.match(routesContent, /path="\/hr\/requests"\s+element=\{<RequireSession><HrRequestsPage\s*\/>/)
+  assert.match(routesContent, /path="\/hr\/requests"\s+element=\{<RequireSession><RoleGuard screenId="hrRequests"><HrRequestsPage\s*\/>/)
 })
 
 test('SCR-HRM-04 normalizes request statuses to 3 values and never uses legacy Chờ quản lý duyệt', () => {
@@ -116,10 +116,12 @@ test('SCR-HRM-04 UI places ApprovalHistoryCard inside Đơn cần duyệt tab an
 
   assert.match(pageSource, /data-testid="hrm04-tab-mine"/)
   assert.match(pageSource, /data-testid="hrm04-tab-pending"/)
+  assert.match(pageSource, /isAdmin && <button/)
+  assert.match(pageSource, /useHrRequestsSummaryQuery\([\s\S]*isAdmin/)
   assert.match(pageSource, /MY_REQUESTS_PAGE_SIZE = 10/)
   assert.doesNotMatch(pageSource, /HrModuleTabs/)
 
-  const afterMineStart = pageSource.split("activeTab === 'mine' ? (")[1] ?? ''
+  const afterMineStart = pageSource.split("activeTab === 'mine' || !isAdmin ? (")[1] ?? ''
   const [mineBranch = '', pendingBranch = ''] = afterMineStart.split(') : (\n          <div className="space-y-4">')
   assert.doesNotMatch(mineBranch, /ApprovalHistoryCard/)
   assert.match(pendingBranch, /ApprovalHistoryCard/)

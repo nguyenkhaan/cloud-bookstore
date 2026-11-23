@@ -34,7 +34,7 @@ export default function EmployeeListPage() {
     role: 'Quản trị viên',
     roleCode: 'ADMIN',
   }
-  const effectiveRoleCode = resolveHrRoleCode(currentUser, location.search)
+  const effectiveRoleCode = resolveHrRoleCode(currentUser)
   const isAdmin = isHrAdmin(effectiveRoleCode)
 
   const { data, isLoading } = useHrEmployeesQuery({
@@ -155,7 +155,7 @@ export default function EmployeeListPage() {
                 options={[
                   { value: '', label: 'Vai trò: Tất cả' },
                   { value: 'ADMIN', label: 'Quản trị viên' },
-                  { value: 'CASHIER', label: 'Nhân viên' },
+                  { value: 'CASHIER', label: 'Thu ngân' },
                   { value: 'INVENTORY_MANAGER', label: 'Quản lý kho' },
                 ]}
                 searchable={false}

@@ -35,8 +35,16 @@ function mount(file, name, data, options = {}) {
   vm.runInNewContext(code, { exports, React, require: id => {
     if (id === 'react') return React
     if (id.endsWith('settings.hook')) return hooks
+    if (id.endsWith('features/auth/role')) return { normalizeRoleCode: value => ['ADMIN', 'CASHIER', 'INVENTORY_MANAGER'].includes(value) ? value : null }
+    if (id.endsWith('SettingsTabBar')) return {
+      SettingsTabBar: 'SettingsTabBar',
+      getVisibleSettingsTabs: role => role === 'ADMIN'
+        ? [{ key: 'rental', label: 'Tham số thuê' }, { key: 'tiers', label: 'Hạng thành viên' }, { key: 'rbac', label: 'Ma trận phân quyền' }, { key: 'integrations', label: 'Tích hợp' }]
+        : [{ key: 'rental', label: 'Tham số thuê' }, { key: 'tiers', label: 'Hạng thành viên' }],
+    }
     if (id === 'react-router-dom') return { useLocation: () => location, useNavigate: () => path => navigations.push(path) }
     if (id.endsWith('auth.hook')) return { useAuth: () => ({ session: { user: { roleCode: options.roleCode ?? 'ADMIN' } } }) }
+    if (id.endsWith('usePermissions')) return { usePermissions: () => ({ can: () => true }) }
     if (id.endsWith('settings.route')) return { settingsPaths: { rental: '/settings/rental', tiers: '/settings/tiers', rbac: '/settings/rbac', integrations: '/settings/integrations' } }
     return { ...panels, Button: 'button', TextField: 'input', ConfirmationDialog: 'confirmation', notify: { success() {}, error() {} }, MainLayout: 'MainLayout', SettingsTabBar: 'SettingsTabBar' }
   } })
@@ -183,7 +191,7 @@ test('settings navigation belongs below the page title without screen-code or ro
   const rentalSource = readFileSync(new URL('../src/features/settings/components/ScrSys01RentalPolicy.tsx', import.meta.url), 'utf8')
   const integrationsSource = readFileSync(new URL('../src/features/settings/components/ScrSys04Integrations.tsx', import.meta.url), 'utf8')
 
-  assert.match(pageSource, /pageHeaderContent=\{<SettingsTabBar activeTab=\{activeTab\} isAdmin=\{isAdmin\} onSelectTab=\{handleSelectTab\} \/>\}/)
+  assert.match(pageSource, /pageHeaderContent=\{<SettingsTabBar activeTab=\{activeTab\} tabs=\{visibleTabs\} onSelectTab=\{handleSelectTab\} \/>\}/)
   assert.doesNotMatch(pageSource, /screenCode=/)
   assert.doesNotMatch(pageSource, /max-w-7xl/)
   assert.match(tabSource, /<nav aria-label="Các mục cấu hình hệ thống"/)
@@ -196,7 +204,14 @@ test('settings navigation belongs below the page title without screen-code or ro
 
 test('non-admin users are not offered Settings tabs whose APIs are Admin-only', () => {
   const bar = mount('components/SettingsTabBar.tsx', 'SettingsTabBar', undefined, {
-    props: { activeTab: 'rental', isAdmin: false, onSelectTab() {} },
+    props: {
+      activeTab: 'rental',
+      tabs: [
+        { key: 'rental', label: 'Tham số thuê' },
+        { key: 'tiers', label: 'Hạng thành viên' },
+      ],
+      onSelectTab() {},
+    },
   })
 
   assert.ok(bar.button('Tham số thuê'))

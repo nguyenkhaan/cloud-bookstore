@@ -1,23 +1,45 @@
 import type { ApprovalTabKey } from '../approvals.type'
+import { normalizeRoleCode } from '@/features/auth/role'
+import { canReadAccess, resolveEffectiveScreenAccess } from '@/routes/screen-access.policy'
+import type { AppRole } from '@/features/auth/role'
+import type { ScreenId } from '@/routes/screen-access.policy'
 
 interface ApprovalTabBarProps {
   activeTab: ApprovalTabKey
   counts: Record<ApprovalTabKey, number>
   onSelectTab: (tab: ApprovalTabKey) => void
+  tabs: readonly ApprovalTabDefinition[]
 }
 
-const TABS: Array<{ key: ApprovalTabKey; label: string }> = [
-  { key: 'old-book-price', label: 'Thu mua vượt hạn mức' },
-  { key: 'damage-penalty', label: 'Phạt hư hỏng' },
-  { key: 'inventory-adjustment', label: 'Điều chỉnh kho' },
-  { key: 'disposal-reversal', label: 'Xuất hủy / Đảo hóa đơn' },
+export type ApprovalTabDefinition = {
+  key: ApprovalTabKey
+  label: string
+  screenId: ScreenId
+}
+
+export const APPROVAL_TABS: readonly ApprovalTabDefinition[] = [
+  { key: 'old-book-price', label: 'Thu mua vượt hạn mức', screenId: 'approvalsRequests' },
+  { key: 'damage-penalty', label: 'Phạt hư hỏng', screenId: 'approvalsRequests' },
+  { key: 'inventory-adjustment', label: 'Điều chỉnh kho', screenId: 'approvalsInventoryAdjustment' },
+  { key: 'disposal-reversal', label: 'Xuất hủy / Đảo hóa đơn', screenId: 'approvalsRequests' },
 ]
 
-export function ApprovalTabBar({ activeTab, counts, onSelectTab }: ApprovalTabBarProps) {
+export function getVisibleApprovalTabs(
+  roleCode?: string | null,
+  permissionCodes: ReadonlySet<string> = new Set<string>(),
+  permissionStatus: 'loading' | 'ready' | 'error' = 'ready',
+): readonly ApprovalTabDefinition[] {
+  const role = normalizeRoleCode(roleCode) as AppRole | null
+  return APPROVAL_TABS.filter((tab) => canReadAccess(
+    resolveEffectiveScreenAccess(tab.screenId, role, permissionCodes, permissionStatus),
+  ))
+}
+
+export function ApprovalTabBar({ activeTab, counts, onSelectTab, tabs }: ApprovalTabBarProps) {
   return (
     <nav aria-label="Các nhóm yêu cầu phê duyệt" className="overflow-x-auto border-b border-slate-200">
       <div className="flex min-w-max gap-5">
-        {TABS.map((tab) => {
+        {tabs.map((tab) => {
           const isActive = activeTab === tab.key
           const pendingCount = counts[tab.key]
 

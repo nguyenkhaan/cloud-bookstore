@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { notify } from '@/components/common/Toast'
+import { usePermissions } from '@/hooks/usePermissions'
 import { useMembershipPolicy, useUpdateMembershipPolicy } from '../settings.hook'
 import type { MembershipTierItem } from '../settings.type'
 
@@ -8,6 +9,8 @@ interface ScrSys02MembershipTiersProps {
 }
 
 export const ScrSys02MembershipTiers: React.FC<ScrSys02MembershipTiersProps> = ({ isAdmin }) => {
+  const { can } = usePermissions()
+  const canEdit = isAdmin && can('Settings.UpdateMembershipPolicy')
   const { data: policy, isLoading, isError, refetch } = useMembershipPolicy()
   const [initialized, setInitialized] = useState(false)
   const updateMutation = useUpdateMembershipPolicy()
@@ -36,7 +39,7 @@ export const ScrSys02MembershipTiers: React.FC<ScrSys02MembershipTiersProps> = (
   }
 
   const handleSave = async () => {
-    if (!isAdmin) {
+    if (!canEdit) {
       notify.error('Chỉ Admin mới có quyền thay đổi cấu hình hạng thành viên.')
       return
     }
@@ -201,7 +204,7 @@ export const ScrSys02MembershipTiers: React.FC<ScrSys02MembershipTiersProps> = (
                         <input
                           type="number"
                           step="100000"
-                          disabled={!isAdmin}
+                          disabled={!canEdit}
                           value={tier.minSpend}
                           onChange={(e) => handleTierChange(idx, 'minSpend', Number(e.target.value))}
                           className="w-28 border border-slate-200 rounded px-2 py-0.5 text-xs font-semibold focus:border-indigo-600 focus:outline-none"
@@ -215,7 +218,7 @@ export const ScrSys02MembershipTiers: React.FC<ScrSys02MembershipTiersProps> = (
                         <input
                           type="number"
                           step="100000"
-                          disabled={!isAdmin}
+                          disabled={!canEdit}
                           value={tier.minSpend}
                           onChange={(e) => handleTierChange(idx, 'minSpend', Number(e.target.value))}
                           className="w-28 border border-slate-200 rounded px-2 py-0.5 text-xs font-semibold focus:border-indigo-600 focus:outline-none"
@@ -229,7 +232,7 @@ export const ScrSys02MembershipTiers: React.FC<ScrSys02MembershipTiersProps> = (
                       type="number"
                       min="1"
                       max="20"
-                      disabled={!isAdmin}
+                      disabled={!canEdit}
                       value={tier.maxBooks}
                       onChange={(e) => handleTierChange(idx, 'maxBooks', Number(e.target.value))}
                       className="w-16 border border-slate-200 rounded px-2 py-0.5 text-xs font-bold focus:border-indigo-600 focus:outline-none"
@@ -240,7 +243,7 @@ export const ScrSys02MembershipTiers: React.FC<ScrSys02MembershipTiersProps> = (
                       type="number"
                       min="1"
                       max="90"
-                      disabled={!isAdmin}
+                      disabled={!canEdit}
                       value={tier.maxRentalDays}
                       onChange={(e) => handleTierChange(idx, 'maxRentalDays', Number(e.target.value))}
                       className="w-16 border border-slate-200 rounded px-2 py-0.5 text-xs font-bold focus:border-indigo-600 focus:outline-none"
@@ -252,7 +255,7 @@ export const ScrSys02MembershipTiers: React.FC<ScrSys02MembershipTiersProps> = (
                         type="number"
                         min="0"
                         max="100"
-                        disabled={!isAdmin}
+                        disabled={!canEdit}
                         value={tier.rentDiscountPct}
                         onChange={(e) => handleTierChange(idx, 'rentDiscountPct', Number(e.target.value))}
                         className="w-16 border border-slate-200 rounded px-2 py-0.5 text-xs font-bold text-indigo-600 focus:border-indigo-600 focus:outline-none"
@@ -266,7 +269,7 @@ export const ScrSys02MembershipTiers: React.FC<ScrSys02MembershipTiersProps> = (
                         type="number"
                         min="0"
                         max="100"
-                        disabled={!isAdmin}
+                        disabled={!canEdit}
                         value={tier.saleDiscountPct}
                         onChange={(e) => handleTierChange(idx, 'saleDiscountPct', Number(e.target.value))}
                         className="w-16 border border-slate-200 rounded px-2 py-0.5 text-xs font-bold text-indigo-600 focus:border-indigo-600 focus:outline-none"
@@ -313,7 +316,7 @@ export const ScrSys02MembershipTiers: React.FC<ScrSys02MembershipTiersProps> = (
           <div className="pt-2">
             <button
               type="button"
-              disabled={!isAdmin || updateMutation.isPending}
+              disabled={!canEdit || updateMutation.isPending}
               onClick={() => setShowConfirmModal(true)}
               className="w-full py-2.5 px-4 bg-indigo-600 text-white font-semibold text-xs rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50 shadow-xs"
             >

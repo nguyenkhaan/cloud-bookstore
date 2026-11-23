@@ -1,5 +1,5 @@
 import { useContext, useMemo, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/common'
 import { AuthContext } from '@/context/AuthProvider'
 import { MainLayout } from '@/components/layout'
@@ -9,7 +9,6 @@ import { AdminAttendanceSection } from '../components/AdminAttendanceSection'
 import { AttendanceCard } from '../components/AttendanceCard'
 import { AttendanceDateFilter } from '../components/AttendanceDateFilter'
 import { hrPaths } from '../hr.route'
-import { getPreviewRoleFromSearch } from '../hr-role.util'
 
 type AttendancePageProps = {
   personalOnly?: boolean
@@ -17,15 +16,11 @@ type AttendancePageProps = {
 
 export default function AttendancePage({ personalOnly = false }: AttendancePageProps) {
   const navigate = useNavigate()
-  const location = useLocation()
   const auth = useContext(AuthContext)
-  const currentUser = auth?.session?.user ?? { name: 'Khách', role: 'Nhân viên', roleCode: undefined }
-  const previewRole = getPreviewRoleFromSearch(location.search)
+  const currentUser = auth?.session?.user ?? { name: 'Khách', role: 'Thu ngân', roleCode: undefined }
   const isAdminView =
     currentUser.roleCode === 'ADMIN' &&
-    !personalOnly &&
-    previewRole !== 'CASHIER' &&
-    previewRole !== 'INVENTORY_MANAGER'
+    !personalOnly
 
   const [rows, setRows] = useState(attendanceRows)
   const [date, setDate] = useState(attendanceDemoDate)

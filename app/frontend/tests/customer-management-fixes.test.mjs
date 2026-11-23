@@ -441,6 +441,7 @@ describe('AC 2 & AC 4: CustomerListPage rendering & cleanup contracts', { concur
       goldCount: 1,
       flaggedCount: 1,
     })
+    queryClient.setQueryData(['role-permissions', undefined, undefined, 'ADMIN'], ['Customers.CreateCustomer'])
 
     const html = renderToStaticMarkup(
       el(
@@ -675,7 +676,7 @@ describe('AC 5: Presentation helpers, routing, and CustomerDetailPage', { concur
       defaultOptions: { queries: { retry: false, staleTime: Infinity } },
     })
     populatedClient.setQueryData(hookMod.customerKeys.detail(silverCustomer.id), silverCustomer)
-    populatedClient.setQueryData(['role-permissions', undefined, 'ADMIN'], [
+    populatedClient.setQueryData(['role-permissions', undefined, undefined, 'ADMIN'], [
       'CustomerHistory.GetSummary', 'CustomerHistory.GetRentals', 'CustomerHistory.GetSales',
       'CustomerHistory.GetBuybacks', 'CustomerHistory.GetViolations', 'Customers.UpdateCustomer',
     ])

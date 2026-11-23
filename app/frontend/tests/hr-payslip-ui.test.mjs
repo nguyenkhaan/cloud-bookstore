@@ -49,11 +49,11 @@ test('SCR-HRM-06 routes, components, and unified terminology exist without forbi
   const routesContent = readFileSync(src('routes', 'AppRoutes.tsx'), 'utf8')
   assert.match(
     routesContent,
-    /path="\/hr\/payslip"\s+element=\{<RequireSession><PayslipPage\s*\/>/,
+    /path="\/hr\/payslip"\s+element=\{<RequireSession><RoleGuard screenId="hrPayslip"><PayslipPage\s*\/>/,
   )
   assert.match(
     routesContent,
-    /path="\/hr\/payslip\/:employeeId"\s+element=\{<RequireSession><PayslipPage\s*\/>/,
+    /path="\/hr\/payslip\/:employeeId"\s+element=\{<RequireSession><RoleGuard screenId="hrEmployeePayslip"><PayslipPage\s*\/>/,
   )
 
   const payslipPageSource = readFileSync(

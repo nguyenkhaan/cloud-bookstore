@@ -146,11 +146,12 @@ test('Phase 2: SCR-HRM-04 supports all 3 request types, filters, and rejected de
   assert.ok(filteredRejected.myRequests.some((item) => item.id === explanation.id))
 })
 
-test('Phase 2: role resolution ignores invalid ?previewRole= values and hrPaths exposes Wave 1 routes', () => {
+test('Phase 2: role resolution has no query-string override and hrPaths exposes Wave 1 routes', () => {
   assert.equal(
-    roleUtil.resolveHrRoleCode({ role: 'Quản trị viên', roleCode: 'ADMIN' }, '?previewRole=SUPERUSER'),
+    roleUtil.resolveHrRoleCode({ role: 'Quản trị viên', roleCode: 'ADMIN' }),
     'ADMIN',
   )
+  assert.equal(roleUtil.getPreviewRoleFromSearch, undefined)
   assert.equal(hrRoutes.hrPaths.root, '/hr')
   assert.equal(hrRoutes.hrPaths.employees, '/hr/employees')
   assert.equal(hrRoutes.hrPaths.requests, '/hr/requests')

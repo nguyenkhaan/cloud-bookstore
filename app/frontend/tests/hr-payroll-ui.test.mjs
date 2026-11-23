@@ -59,11 +59,11 @@ test('SCR-HRM-05 routes, files, and forbidden card guard exist', () => {
   const routesContent = readFileSync(src('routes', 'AppRoutes.tsx'), 'utf8')
   assert.match(
     routesContent,
-    /path="\/hr\/payroll"\s+element=\{<RequireSession><PayrollPage\s*\/>/,
+    /path="\/hr\/payroll"\s+element=\{<RequireSession><RoleGuard screenId="hrPayroll"><PayrollPage\s*\/>/,
   )
   assert.match(
     routesContent,
-    /path="\/hr\/payroll\/adjustments\/new"\s+element=\{<RequireSession><PayrollAdjustmentPage\s*\/>/,
+    /path="\/hr\/payroll\/adjustments\/new"\s+element=\{<RequireSession><RoleGuard screenId="hrPayrollAdjustment"><PayrollAdjustmentPage\s*\/>/,
   )
 
   const payrollPageSource = readFileSync(

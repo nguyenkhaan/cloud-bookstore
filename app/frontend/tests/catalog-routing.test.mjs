@@ -54,3 +54,11 @@ test('every sidebar workspace has a route and a feature-owned placeholder page',
     assert.ok(existsSync(path.join(frontendRoot, 'src', 'features', module, 'pages')), `${module} needs a feature page`)
   }
 })
+
+test('workspace navigation never returns an unreadable destination for a supplied role', () => {
+  assert.equal(workspaceRoutes.workspacePathFor('reports', 'ADMIN'), '/reports')
+  assert.equal(workspaceRoutes.workspacePathFor('reports', 'CASHIER'), undefined)
+  assert.equal(workspaceRoutes.workspacePathFor('reports', 'INVENTORY_MANAGER'), undefined)
+  assert.equal(workspaceRoutes.workspacePathFor('pos', 'INVENTORY_MANAGER'), '/pos')
+  assert.equal(workspaceRoutes.workspacePathFor('settings', 'CASHIER'), '/settings')
+})

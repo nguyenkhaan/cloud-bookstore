@@ -1,4 +1,5 @@
 import { usePermissions } from '@/hooks/usePermissions'
+import { useScreenAccess } from '@/hooks/useScreenAccess'
 import { useId, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -42,12 +43,14 @@ export default function CustomerDetailPage() {
   const navigate = useNavigate()
   const { session, signOut } = useAuth()
   const { can } = usePermissions()
+  const screenAccess = useScreenAccess('customerDetail')
+  const canUpdateCustomer = screenAccess.canUpdate && can('Customers.UpdateCustomer')
   const tabsBaseId = useId()
 
   const { data: customer, isLoading, isError, error } = useCustomer(id)
   const updateCustomerMutation = useUpdateCustomer()
 
-  // Warehouse (INVENTORY_MANAGER) chỉ được xem tab thu mua (CUS-003).
+  // Inventory (INVENTORY_MANAGER) chỉ được xem tab thu mua (CUS-003).
   // Nếu TS báo không có `roleCode`, đổi theo field thật trong features/auth/auth.type.ts.
   const canViewFullHistory = can('CustomerHistory.GetSummary')
   const { data: summaryData } = useCustomerHistorySummary(id, canViewFullHistory)
@@ -364,19 +367,18 @@ export default function CustomerDetailPage() {
 
             {/* Primary Actions */}
             <div className="mt-5 space-y-2.5">
-              <Button
+              {canUpdateCustomer && <Button
                   className="min-h-[44px]"
                   fullWidth
                   icon={<Pencil aria-hidden="true" className="size-4" />}
-                  disabled={!can("Customers.UpdateCustomer")}
                   onClick={() => setIsEditDialogOpen(true)}
                   type="button"
                   variant="primary"
               >
                 Chỉnh sửa thông tin
-              </Button>
+              </Button>}
 
-              <Button
+              {canUpdateCustomer && <Button
                   className={
                     customer.isFlagged
                         ? 'min-h-[44px] border-emerald-200 bg-emerald-50/60 text-emerald-700 hover:bg-emerald-100/70'
@@ -389,13 +391,12 @@ export default function CustomerDetailPage() {
                         : <Lock aria-hidden="true" className="size-4" />
                   }
                   loading={updateCustomerMutation.isPending}
-                  disabled={!can("Customers.UpdateCustomer")}
                   onClick={handleToggleRentalLock}
                   type="button"
                   variant="secondary"
               >
                 {customer.isFlagged ? 'Mở quyền thuê sách' : 'Chặn quyền thuê sách'}
-              </Button>
+              </Button>}
             </div>
           </section>
 
@@ -505,16 +506,15 @@ export default function CustomerDetailPage() {
                             </p>
                           </div>
                         </div>
-                        <Button
+                        {canUpdateCustomer && <Button
                             className="min-h-[44px]"
-                            disabled={!can("Customers.UpdateCustomer")}
                   onClick={() => setIsEditDialogOpen(true)}
                             size="sm"
                             type="button"
                             variant="outline"
                         >
                           Cập nhật ghi chú
-                        </Button>
+                        </Button>}
                       </div>
                     </div>
                 )}
@@ -560,7 +560,7 @@ export default function CustomerDetailPage() {
           </div>
         </div>
 
-        {isEditDialogOpen && (
+        {isEditDialogOpen && canUpdateCustomer && (
             <EditCustomerDialog
                 customer={customer}
                 isOpen={isEditDialogOpen}

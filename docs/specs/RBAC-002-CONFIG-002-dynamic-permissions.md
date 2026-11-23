@@ -7,10 +7,10 @@ Accepted — người dùng chọn 1B, 2A ngày 2026-11-20; quyền nhạy cảm
 Admin cấp hoặc thu hồi quyền cho ba role; API thực thi thay đổi ngay. Mọi lần lưu cấu hình có lịch sử truy vết.
 
 ## References
-`RBAC-001`–`RBAC-003`, `CONFIG-001`–`CONFIG-003`, `PDR-002`, `ADR-006`, `BR-CONFIG-001`.
+`RBAC-001`–`RBAC-003`, `CONFIG-001`–`CONFIG-003`, `PDR-002`, `PDR-008`, `ADR-006`, `BR-CONFIG-001`.
 
 ## Actors and Permissions
-Admin quản trị quyền và cấu hình. Nhân viên (`CASHIER`), Quản lý kho (`INVENTORY_MANAGER`) nhận quyền theo role. Các API vốn chỉ Admin (duyệt ngoại lệ, đổi role, quản trị cấu hình và audit toàn hệ thống) vẫn chỉ Admin; không được tự khóa quyền quản trị RBAC.
+Admin (`ADMIN`) quản trị quyền và cấu hình. Cashier / Thu ngân (`CASHIER`) và Inventory / Quản lý kho (`INVENTORY_MANAGER`) nhận quyền theo role. Các API vốn chỉ Admin (duyệt ngoại lệ, đổi role, quản trị cấu hình và audit toàn hệ thống) vẫn chỉ Admin; không được tự khóa quyền quản trị RBAC.
 
 ## Preconditions
 Có phiên đăng nhập hợp lệ. Danh mục quyền lấy từ thao tác API thực sự được triển khai, không dùng nhãn tự do hoặc màn hình demo để giả lập quyền backend.

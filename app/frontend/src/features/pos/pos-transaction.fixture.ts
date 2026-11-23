@@ -10,6 +10,10 @@ import type {
   ReturnFixture,
   SaleFixture,
 } from './pos-transaction.type'
+import { normalizeRoleCode } from '@/features/auth/role'
+import { canReadAccess, resolveEffectiveScreenAccess } from '@/routes/screen-access.policy'
+import type { AppRole } from '@/features/auth/role'
+import type { ScreenId } from '@/routes/screen-access.policy'
 
 export const posMockStates: PosMockStates = {
   empty: 'empty',
@@ -21,11 +25,25 @@ export const posMockStates: PosMockStates = {
 }
 
 export const posTabs = [
-  { id: 'sale', label: 'Bán hàng' },
-  { id: 'rental', label: 'Cho thuê' },
-  { id: 'renewal', label: 'Gia hạn' },
-  { id: 'return', label: 'Trả & quyết toán' },
+  { id: 'sale', label: 'Bán hàng', screenId: 'posSale' },
+  { id: 'rental', label: 'Cho thuê', screenId: 'posRental' },
+  { id: 'renewal', label: 'Gia hạn', screenId: 'posRenewal' },
+  { id: 'return', label: 'Trả & quyết toán', screenId: 'posReturn' },
+  { id: 'buyback', label: 'Thu mua', screenId: 'posBuyback' },
 ] as const
+
+export type PosTabDefinition = (typeof posTabs)[number]
+
+export function getVisiblePosTabs(
+  roleCode?: string | null,
+  permissionCodes: ReadonlySet<string> = new Set<string>(),
+  permissionStatus: 'loading' | 'ready' | 'error' = 'ready',
+): readonly PosTabDefinition[] {
+  const role = normalizeRoleCode(roleCode) as AppRole | null
+  return posTabs.filter((tab) => canReadAccess(
+    resolveEffectiveScreenAccess(tab.screenId as ScreenId, role, permissionCodes, permissionStatus),
+  ))
+}
 
 export const copyFixtures: BookCopyFixture[] = [
   {

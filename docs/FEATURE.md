@@ -19,7 +19,7 @@
 | AUTH-003 | Open policy | Nhân viên đăng ký bằng email được cho phép và xác thực OTP. |
 | AUTH-004 | Open policy | Đăng nhập, đăng xuất, đổi mật khẩu và đặt lại mật khẩu. |
 | AUTH-005 | Required | Admin khóa, mở khóa hoặc vô hiệu hóa tài khoản không được bảo vệ. |
-| RBAC-001 | Required | Hệ thống có đúng ba vai trò nghiệp vụ: Admin, Nhân viên và Quản lý kho. |
+| RBAC-001 | Required | Hệ thống có đúng ba vai trò nghiệp vụ: `ADMIN` (Admin/Quản trị viên), `CASHIER` (Cashier/Thu ngân) và `INVENTORY_MANAGER` (Inventory/Quản lý kho). |
 | RBAC-002 | Required | Backend kiểm tra quyền trên mọi API được bảo vệ; Admin cấu hình quyền theo thao tác cho ba role, hiệu lực từ request tiếp theo (ADR-007). |
 | RBAC-003 | Required | Chỉ Admin được phê duyệt ngoại lệ nhạy cảm. |
 | AUD-001 | Required | Ghi audit log cho quyền, giá, kho, tài chính, chấm công, lương và cấu hình. |

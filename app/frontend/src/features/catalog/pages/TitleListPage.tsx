@@ -1,4 +1,5 @@
 import { usePermissions } from '@/hooks/usePermissions'
+import { useScreenAccess } from '@/hooks/useScreenAccess'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Button, Card, SelectBox, TextField } from '@/components/common'
@@ -13,6 +14,8 @@ import { EmptyState, ErrorState, LoadingRows } from './SeriesListPage'
 
 export default function TitleListPage() {
   const { can } = usePermissions()
+  const screenAccess = useScreenAccess('catalogTitles')
+  const canCreate = screenAccess.canUpdate && can('BookTitles.CreateTitle')
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const [isEditorOpen, setIsEditorOpen] = useState(false)
@@ -24,12 +27,13 @@ export default function TitleListPage() {
   const titles = titlesQuery.data ?? []
 
   const handleSave = async (request: Parameters<typeof createTitle.mutateAsync>[0]) => {
+    if (!canCreate) return
     await createTitle.mutateAsync(request)
   }
 
   return (
     <CatalogWorkspace
-      action={can("BookTitles.CreateTitle") && <Button onClick={() => setIsEditorOpen(true)}>+ Thêm đầu sách</Button>}
+      action={canCreate && <Button onClick={() => setIsEditorOpen(true)}>+ Thêm đầu sách</Button>}
       title="Danh mục đầu sách"
     >
       <Card className="overflow-hidden" padding="none">

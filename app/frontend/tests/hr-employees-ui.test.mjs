@@ -48,8 +48,8 @@ test('SCR-HRM-01 routes and feature files exist and are guarded in AppRoutes.tsx
   assert.equal(hrRoutes.hrPaths.employeeDetail('NV-0002'), '/hr/employees/NV-0002')
 
   const routesContent = readFileSync(src('routes', 'AppRoutes.tsx'), 'utf8')
-  assert.match(routesContent, /path="\/hr\/employees"\s+element=\{<RequireSession><EmployeeListPage\s*\/>/)
-  assert.match(routesContent, /path="\/hr\/employees\/:id"\s+element=\{<RequireSession><EmployeeDetailPage\s*\/>/)
+  assert.match(routesContent, /path="\/hr\/employees"\s+element=\{<RequireSession><RoleGuard screenId="hrEmployees"><EmployeeListPage\s*\/>/)
+  assert.match(routesContent, /path="\/hr\/employees\/:id"\s+element=\{<RequireSession><RoleGuard screenId="hrEmployeeDetail"><EmployeeDetailPage\s*\/>/)
 })
 
 test('employee list service filters, paginates, computes KPIs, and creates new accounts', async () => {

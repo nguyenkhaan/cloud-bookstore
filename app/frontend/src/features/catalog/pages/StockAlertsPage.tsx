@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import { Button, StatCard } from '@/components/common'
 import type { SelectOption } from '@/components/common'
 import { notify } from '@/components/common/Toast'
-import { useAuth } from '@/features/auth/auth.hook'
+import { usePermissions } from '@/hooks/usePermissions'
+import { useScreenAccess } from '@/hooks/useScreenAccess'
 import { catalogPaths } from '../catalog.route'
 import {
   useEditionStockAlertsQuery,
@@ -25,9 +26,9 @@ import {
 
 export default function StockAlertsPage() {
   const navigate = useNavigate()
-  const { session } = useAuth()
-  const roleCode = session?.user?.roleCode
-  const canConfigureThresholds = roleCode !== 'CASHIER'
+  const { can } = usePermissions()
+  const screenAccess = useScreenAccess('stockAlerts')
+  const canConfigureThresholds = screenAccess.canUpdate && can('Editions.UpdateEditionThresholds')
 
   const [search, setSearch] = useState('')
   const [severityFilter, setSeverityFilter] = useState<AlertSeverity>('ALL')
@@ -110,7 +111,7 @@ export default function StockAlertsPage() {
 
   const handleSaveThresholds = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!selectedEdition) return
+    if (!selectedEdition || !canConfigureThresholds) return
 
     const trimmedSale = displayMinSale.trim()
     const trimmedRental = displayMinRental.trim()

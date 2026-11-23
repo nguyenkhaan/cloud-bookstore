@@ -45,7 +45,7 @@ export default function PayrollPage() {
     role: 'Quản trị viên',
     roleCode: 'ADMIN',
   }
-  const effectiveRoleCode = resolveHrRoleCode(currentUser, location.search)
+  const effectiveRoleCode = resolveHrRoleCode(currentUser)
   const isAdmin = isHrAdmin(effectiveRoleCode)
   const effectiveRoleLabel = formatHrRoleLabel(effectiveRoleCode)
 

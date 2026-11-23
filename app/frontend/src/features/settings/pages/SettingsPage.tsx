@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { MainLayout } from '@/components/layout'
 import { useAuth } from '@/features/auth/auth.hook'
-import { SettingsTabBar } from '../components/SettingsTabBar'
+import { normalizeRoleCode } from '@/features/auth/role'
+import { getVisibleSettingsTabs, SettingsTabBar } from '../components/SettingsTabBar'
 import { ScrSys01RentalPolicy } from '../components/ScrSys01RentalPolicy'
 import { ScrSys02MembershipTiers } from '../components/ScrSys02MembershipTiers'
 import { ScrSys03RbacMatrix } from '../components/ScrSys03RbacMatrix'
@@ -16,7 +17,11 @@ export default function SettingsPage() {
   const location = useLocation()
   const { session, signOut } = useAuth()
 
-  const isAdmin = session?.user?.roleCode === 'ADMIN'
+  const roleCode = session?.user?.roleCode
+  const role = normalizeRoleCode(roleCode)
+  const visibleTabs = getVisibleSettingsTabs(roleCode)
+  const firstVisibleTab = visibleTabs[0]?.key ?? 'rental'
+  const isAdmin = role === 'ADMIN'
 
   // Determine active tab from current URL pathname
   const requestedTab: SystemTabKey = useMemo(() => {
@@ -27,9 +32,9 @@ export default function SettingsPage() {
     return 'rental'
   }, [location.pathname])
 
-  const activeTab: SystemTabKey = !isAdmin && (requestedTab === 'rbac' || requestedTab === 'integrations')
-    ? 'rental'
-    : requestedTab
+  const activeTab: SystemTabKey = visibleTabs.some((tab) => tab.key === requestedTab)
+    ? requestedTab
+    : firstVisibleTab
 
   useEffect(() => {
     if (activeTab !== requestedTab) {
@@ -78,7 +83,7 @@ export default function SettingsPage() {
       onNavigate={(id) => navigate(`/${id}`)}
       onSignOut={signOut}
       pageTitle={breadcrumbTitle}
-      pageHeaderContent={<SettingsTabBar activeTab={activeTab} isAdmin={isAdmin} onSelectTab={handleSelectTab} />}
+      pageHeaderContent={<SettingsTabBar activeTab={activeTab} tabs={visibleTabs} onSelectTab={handleSelectTab} />}
       breadcrumbs={[
         { label: 'Cấu hình hệ thống', to: settingsPaths.rental },
         { label: breadcrumbTitle },

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { SelectBox } from '@/components/common/SelectBox'
@@ -25,7 +25,6 @@ import {
 
 export default function PayslipPage() {
   const navigate = useNavigate()
-  const location = useLocation()
   const { employeeId: routeEmployeeId } = useParams<{ employeeId?: string }>()
   const { session, signOut } = useAuth()
 
@@ -34,19 +33,18 @@ export default function PayslipPage() {
     role: 'Quản trị viên',
     roleCode: 'ADMIN',
   }
-  const effectiveRoleCode = resolveHrRoleCode(currentUser, location.search)
+  const effectiveRoleCode = resolveHrRoleCode(currentUser)
   const isAdmin = isHrAdmin(effectiveRoleCode)
   const effectiveRoleLabel = formatHrRoleLabel(effectiveRoleCode)
 
-  const targetEmployeeId =
-    routeEmployeeId ||
-    (effectiveRoleCode === 'INVENTORY_MANAGER' ? 'NV-0003' : 'NV-0002')
+  const targetEmployeeId = isAdmin ? (routeEmployeeId || 'NV-0002') : (currentUser.id ?? '')
 
   const [periodKey, setPeriodKey] = useState('09/2026')
   const [drawerType, setDrawerType] =
     useState<PayslipSourceDrawerType | null>(null)
 
-  const { data: payslip } = usePayslipDetailQuery(targetEmployeeId, periodKey)
+  const payslipQuery = usePayslipDetailQuery(targetEmployeeId, periodKey)
+  const payslip = payslipQuery.data
 
   const navigateFromSidebar = (id: string) => {
     const targetPath = workspacePathFor(id)
@@ -64,7 +62,7 @@ export default function PayslipPage() {
             : 'Trần Hoàng Phong'),
         role:
           effectiveRoleCode === 'CASHIER'
-            ? 'Nhân viên · Thu ngân'
+            ? 'Thu ngân'
             : effectiveRoleLabel,
         roleCode: effectiveRoleCode,
       }
@@ -73,7 +71,7 @@ export default function PayslipPage() {
     ? `Góc nhìn Admin · Đối soát phiếu lương của ${payslip?.employeeName ?? 'Trần Hoàng Phong'}`
     : `Phiếu lương của bạn · ${payslip?.employeeCode ?? targetEmployeeId} · ${
         effectiveRoleCode === 'CASHIER'
-          ? 'Nhân viên / Thu ngân'
+          ? 'Thu ngân'
           : effectiveRoleLabel
       }`
 
@@ -116,6 +114,12 @@ export default function PayslipPage() {
       user={headerUser}
     >
       <div className="space-y-6">
+        {!payslip && !payslipQuery.isLoading && (
+          <Card role="status">
+            <p className="text-sm font-semibold text-slate-800">Chưa thể tải phiếu lương cá nhân.</p>
+            <p className="mt-1 text-xs leading-5 text-slate-600">Hồ sơ tài khoản chưa có mã nhân viên đồng bộ. Cần backend cung cấp mapping SELF trước khi hiển thị dữ liệu lương.</p>
+          </Card>
+        )}
         {payslip && (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
             <div className="min-w-0 lg:col-span-8">
