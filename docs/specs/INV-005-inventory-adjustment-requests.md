@@ -9,7 +9,7 @@ Cho phép nhân sự kho (`INVENTORY_MANAGER`, `ADMIN`) lập yêu cầu điều
 ## References
 - Feature IDs: `INV-005`, `RBAC-001`, `RBAC-002`, `RBAC-003`, `AUD-001`, `AUD-002`
 - Business Rules: `BR-GEN-001`, `BR-GEN-003`, `BR-GEN-007`, `BR-INV-002`–`BR-INV-007`
-- Decision Records: `PDR-001`, `PDR-002`, `PDR-005`, `ADR-001`, `ADR-002`, `ADR-003`, `ADR-005`
+- Decision Records: `PDR-001`, `PDR-002`, `PDR-005`, `PDR-008`, `ADR-001`, `ADR-002`, `ADR-003`, `ADR-005`
 - Workflow: `WF-06`
 - Database Schema (không sửa đổi): [`docs/DATABASE.txt`](../DATABASE.txt) (`inventory_adjustment_requests`, `inventory_checks`, `book_copies`, `audit_logs`, `employee`)
 - Plan Step: [`P10-S03`](../plans/phase-10-kiem-ke-va-dieu-chinh-kho.md#step-p10-s03--duyệt-chênh-lệch)
@@ -20,7 +20,7 @@ Cho phép nhân sự kho (`INVENTORY_MANAGER`, `ADMIN`) lập yêu cầu điều
   - Được xem danh sách (lọc, phân trang) và chi tiết yêu cầu kèm lịch sử audit của yêu cầu (`GET`).
   - Được hủy (`CANCELLED`) yêu cầu ở trạng thái `PENDING_APPROVAL` do chính mình tạo.
   - **Không** được phê duyệt (`APPROVED`), từ chối (`REJECTED`) hoặc áp dụng (`APPLIED`) bất kỳ yêu cầu nào (`403 Forbidden`).
-- **`CASHIER` (Nhân viên quầy)**:
+- **`CASHIER` (Cashier / Thu ngân)**:
   - Theo ma trận quyền [`ROLES.md`](../product/ROLES.md#L20), không có quyền tạo, xem hoặc xử lý điều chỉnh chênh lệch kho (`403 Forbidden`).
 - **`ADMIN` (Quản trị viên)**:
   - Có quyền xem danh sách, xem chi tiết, lập yêu cầu điều chỉnh.

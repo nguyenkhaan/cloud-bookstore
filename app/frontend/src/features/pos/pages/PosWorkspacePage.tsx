@@ -41,7 +41,7 @@ export default function PosWorkspacePage() {
   const [damageTarget, setDamageTarget] = useState<ReturnLineFixture | null>(null)
   const [damageApprovalStatus, setDamageApprovalStatus] = useState<string>()
   const [quickPickerPreview, setQuickPickerPreview] = useState<QuickSeriesFixture>()
-  const currentUser = auth?.session?.user ?? { name: 'Nguyễn Minh Anh', role: 'Nhân viên' }
+  const currentUser = auth?.session?.user ?? { name: 'Nguyễn Minh Anh', role: 'Thu ngân' }
   const canOpenCustomerDisplay = role !== null && canReadAccess(
     resolveEffectiveScreenAccess('posCustomerDisplay', role, permissions.permissionCodes, permissionStatus),
   )

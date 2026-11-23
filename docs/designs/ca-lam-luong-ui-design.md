@@ -219,7 +219,7 @@ Kiểm tra tại khoảng `390px`, `768px` và `1440px`:
 - Focus ring phải nhìn thấy trên mọi button, input, select, tab và row action.
 - Dialog có tiêu đề, mô tả, đóng bằng Escape và focus hợp lý.
 - Label dùng tiếng Việt nhất quán: `Ca làm`, `Thứ tự ca`, `Check-in`, `Check-out`, `Thiếu chấm công`, `Lương ca`.
-- Không dùng tên vai trò cũ như `Manager`, `Cashier`, `Clerk`; chỉ dùng `Admin`, `Employee/Nhân viên`, `Warehouse/Quản lý kho` theo role hiện hành.
+- Chỉ dùng ba vai trò hiện hành: `Admin/Quản trị viên` (`ADMIN`), `Cashier/Thu ngân` (`CASHIER`) và `Inventory/Quản lý kho` (`INVENTORY_MANAGER`); không dùng các nhãn vai trò cũ như `Manager`, `Employee`, `Warehouse` hoặc `Clerk`.
 
 ## Ranh giới UI-only
 

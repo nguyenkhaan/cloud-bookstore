@@ -11,7 +11,7 @@ Tài liệu này là hàng đợi quyết định, không phải implementation 
 | OQ-006 | P0 | Nhà cung cấp VietQR/ngân hàng, chuẩn ký webhook, retry và quyền đối soát thủ công là gì? | Thanh toán chuyển khoản |
 | OQ-007 | P1 | Dùng Zalo OA trực tiếp hay nhà cung cấp trung gian; mẫu tin, lịch nhắc và retry ra sao? | Thông báo khách hàng |
 | OQ-008 | P1 | Việc chi tiền mặt vượt số dư lý thuyết của két đang mở được xử lý thế nào? | Ca thu ngân |
-| OQ-009 | P1 | Hạn mức giá/tổng phiếu thu mua cho Nhân viên và Quản lý kho là bao nhiêu? | Thu mua, phê duyệt |
+| OQ-009 | P1 | Hạn mức giá/tổng phiếu thu mua cho Cashier / Thu ngân và Inventory / Quản lý kho là bao nhiêu? | Thu mua, phê duyệt |
 | OQ-010 | P1 | Quy tắc ca qua ngày và cơ chế xác thực check-in/check-out là gì? | Chấm công |
 | OQ-011 | P1 | Cọc bị giữ, tiền phạt và bồi thường được phân loại kế toán/thuế thế nào? | Báo cáo tài chính/thuế |
 | OQ-012 | P2 | Mẫu Excel/PDF và các cột bắt buộc của từng báo cáo là gì? | Xuất báo cáo |

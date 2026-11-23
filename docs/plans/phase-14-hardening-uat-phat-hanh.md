@@ -4,6 +4,8 @@
 
 Chứng minh hệ thống an toàn, ổn định và dùng được tại quầy trước production.
 
+> **RBAC terminology note (2026-11-23):** The canonical-role correction is complete in [`RBAC-002-canonical-role-identifiers.md`](./RBAC-002-canonical-role-identifiers.md). This Phase 14 plan remains open: P14-S04 and its checkpoints still require manual Admin/Cashier/Inventory UAT and product sign-off.
+
 ## Step P14-S01 — Rà soát security/privacy
 
 **Mô tả ngắn:** Kiểm tra auth, RBAC, input validation, rate limit, CORS/CSRF theo cơ chế auth và dependency vulnerabilities.
@@ -91,12 +93,12 @@ Chứng minh hệ thống an toàn, ổn định và dùng được tại quầy
 
 ## Step P14-S04 — Nghiệm thu tại quầy
 
-**Mô tả ngắn:** Admin, Nhân viên và Quản lý kho chạy kịch bản đúng vai trò với máy quét và máy in tem.
+**Mô tả ngắn:** Admin / Quản trị viên, Cashier / Thu ngân và Inventory / Quản lý kho chạy kịch bản đúng vai trò với máy quét và máy in tem.
 
 **Tham chiếu:** Feature/OQ Không; Rule Toàn bộ rule Accepted và NFR đã duyệt; Workflow `WF-01`–`WF-11`.
 
 **Công việc:**
-- [ ] Admin, Nhân viên và Quản lý kho chạy kịch bản đúng vai trò với máy quét và máy in tem.
+- [ ] Admin / Quản trị viên, Cashier / Thu ngân và Inventory / Quản lý kho chạy kịch bản đúng vai trò với máy quét và máy in tem.
 - [ ] Chạy bán, thuê–trả, thu mua, kiểm kê, đóng két, công/lương và fallback tích hợp.
 - [ ] Ghi lỗi theo feature ID; sửa yêu cầu bằng spec/decision trước khi sửa code nếu hành vi mong đợi thay đổi.
 

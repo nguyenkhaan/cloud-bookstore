@@ -120,15 +120,17 @@ git commit -m "fix(rbac): accept only canonical role identifiers"
 - Remaining `Employee` references are HR/domain entities; remaining `WarehouseAllowed` references are backend/contract compatibility fields.
 - Existing matrix tests still prove the same access results for canonical roles.
 
-- [ ] **Step 1: Search and classify remaining legacy terms**
+- [x] **Step 1: Search and classify remaining legacy terms**
 
 Run targeted searches for `EMPLOYEE|WAREHOUSE|Employee|Warehouse|Nhân viên` in role-context files; inspect every retained match.
 
-- [ ] **Step 2: Update scoped labels, tests and documentation**
+Retained uppercase values are non-role concepts only: `NotificationRecipientType.EMPLOYEE`, the `WAREHOUSE` audit data scope, and documented data-scope references. HR `Employee` names remain the employee domain; `WarehouseAllowed` remains an API compatibility field.
+
+- [x] **Step 2: Update scoped labels, tests and documentation**
 
 Do not mechanically rename HR employees or `WarehouseAllowed` contract fields.
 
-- [ ] **Step 3: Run verification**
+- [x] **Step 3: Run verification**
 
 Run from `app/frontend`:
 
@@ -140,7 +142,9 @@ bun run build
 
 Also run `git diff --check` and `git status --short` from repository root. Record existing build baseline errors separately if they remain.
 
-- [ ] **Step 4: Record evidence and commit**
+Evidence: focused RBAC suites pass (12 tests); full frontend test suite passes; `bun run lint` exits 0 with existing warnings; `git diff --check` passes. `bun run build` remains blocked by nine pre-existing errors in Audit, BookCopyLifecycleDrawer, CopyDetailPage, Dashboard and TaxDeclarationReportPage; no changed RBAC file appears in the build output.
+
+- [x] **Step 4: Record evidence and commit**
 
 ```bash
 git add docs app/frontend

@@ -7,7 +7,7 @@
 
 Xây dựng hệ thống web nội bộ cho một cửa hàng vật lý bán sách cũ và cho thuê sách/truyện tranh. Hệ thống phải quản lý được từng bản sách vật lý, chuẩn hóa các giao dịch tại quầy, kiểm soát nhân sự và cung cấp dấu vết đầy đủ cho tồn kho và dòng tiền.
 
-Người dùng trực tiếp chỉ gồm Admin, Nhân viên và Quản lý kho. Khách hàng không đăng nhập và không thao tác trên hệ thống.
+Người dùng trực tiếp chỉ gồm Admin / Quản trị viên (`ADMIN`), Cashier / Thu ngân (`CASHIER`) và Inventory / Quản lý kho (`INVENTORY_MANAGER`). Khách hàng không đăng nhập và không thao tác trên hệ thống.
 
 ## Tech Stack
 

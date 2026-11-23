@@ -5,9 +5,9 @@ Tài liệu này mô tả ranh giới logic. Backend dùng ASP.NET Core theo [`A
 
 ```mermaid
 flowchart LR
-    A[Admin] --> UI[POS và trang quản trị nội bộ]
-    E[Nhân viên] --> UI
-    W[Quản lý kho] --> UI
+    A[Admin / Quản trị viên] --> UI[POS và trang quản trị nội bộ]
+    C[Cashier / Thu ngân] --> UI
+    I[Inventory / Quản lý kho] --> UI
     UI --> API[Backend nghiệp vụ]
     API --> DB[(Cơ sở dữ liệu quan hệ)]
     API --> BANK[VietQR / webhook ngân hàng]

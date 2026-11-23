@@ -79,7 +79,7 @@ export default function ApprovalsPage() {
   const { data: stats } = useApprovalsStatsQuery(canReadInventoryAdjustment)
   const { data: overviewStats } = useApprovalsOverviewStatsQuery(canReadInventoryAdjustment)
 
-  const currentUser = session?.user ?? { name: 'Nhân viên', role: 'Chưa xác thực' }
+  const currentUser = session?.user ?? { name: 'Người dùng nội bộ', role: 'Chưa xác thực' }
   const currentUserId = session?.user?.id
   const isAdmin = role === 'ADMIN'
 

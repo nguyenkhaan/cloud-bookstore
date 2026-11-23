@@ -490,7 +490,7 @@ export async function getPayslipDetail(
     employeeId: row.id,
     employeeCode: row.employeeCode,
     employeeName: row.fullName,
-    employeeRoleLabel: row.roleLabel.replace('Nhân viên · ', ''),
+    employeeRoleLabel: row.roleLabel.replace('Thu ngân · ', ''),
     storeName: 'Nhà sách Mây · Cơ sở 01',
     bankAccount: row.bankAccount,
     transactionRef: isPendingPayout ? undefined : 'BANK-PAY-20261003-001',

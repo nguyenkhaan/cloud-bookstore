@@ -17,7 +17,7 @@ type AttendancePageProps = {
 export default function AttendancePage({ personalOnly = false }: AttendancePageProps) {
   const navigate = useNavigate()
   const auth = useContext(AuthContext)
-  const currentUser = auth?.session?.user ?? { name: 'Khách', role: 'Nhân viên', roleCode: undefined }
+  const currentUser = auth?.session?.user ?? { name: 'Khách', role: 'Thu ngân', roleCode: undefined }
   const isAdminView =
     currentUser.roleCode === 'ADMIN' &&
     !personalOnly

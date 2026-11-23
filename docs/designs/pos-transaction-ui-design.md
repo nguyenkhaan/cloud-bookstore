@@ -67,7 +67,7 @@ Thiết kế sẽ bị coi là sai phạm vi nếu:
 
 - Biến một giá trị fixture thành quy tắc nghiệp vụ cố định.
 - Dùng ISBN để nhận diện dòng giao dịch hoặc bản sách vật lý thay cho `CopyBarcode`.
-- Cho phép role `Quản lý` tự duyệt ngoại lệ, vì hệ thống hiện chỉ có `Admin`, `Employee` và `Warehouse`; các tài liệu cũ ghi “Quản lý duyệt” phải ánh xạ về `Admin`.
+- Cho phép role `Quản lý` tự duyệt ngoại lệ, vì hệ thống hiện chỉ có `ADMIN` (Admin), `CASHIER` (Cashier / Thu ngân) và `INVENTORY_MANAGER` (Inventory / Quản lý kho); các tài liệu cũ ghi “Quản lý duyệt” phải ánh xạ về `Admin`.
 - Tạo một màn hình khách hàng công khai hoặc luồng tự phục vụ ngoài màn hình phụ tại quầy.
 - Nhồi cả bảy mã vào một page dài khiến scanner, tổng tiền và hành động chính bị khuất.
 
@@ -365,7 +365,7 @@ Ràng buộc:
 
 - Copy Figma ghi “Quản lý” được chuẩn hóa thành `Admin` theo `PDR-002`.
 - Mức bồi thường, tỷ lệ và trạng thái kho sau hư hỏng là placeholder vì `OQ-004`/`BR-DAMAGE-001` đang mở.
-- Không mô phỏng rằng `Employee` hoặc `Warehouse` có thể tự duyệt.
+- Không mô phỏng rằng `CASHIER` hoặc `INVENTORY_MANAGER` có thể tự duyệt.
 - Modal phải hiển thị rõ trạng thái `Chờ Admin duyệt` nếu không phê duyệt tại chỗ.
 - Fixture của modal dùng người duyệt hiện tại là `Admin`; không tạo role switch hoặc ma trận quyền giả trong lát cắt mock.
 

@@ -4,7 +4,7 @@
 Draft (chờ Product Owner duyệt → Accepted)
 
 ## Objective
-Nhân viên xem lịch sử mua, thuê–trả, thu mua, vi phạm và nghĩa vụ chưa xử lý của một khách ngay trong hồ sơ 360°; mỗi số tiền truy được về chứng từ nguồn.
+Cashier / Thu ngân xem lịch sử mua, thuê–trả, thu mua, vi phạm và nghĩa vụ chưa xử lý của một khách ngay trong hồ sơ 360°; mỗi số tiền truy được về chứng từ nguồn.
 
 ## References
 - Feature: `CUS-003`, `MEMBER-001`, `MEMBER-005`

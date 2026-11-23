@@ -62,7 +62,7 @@ export default function PayslipPage() {
             : 'Trần Hoàng Phong'),
         role:
           effectiveRoleCode === 'CASHIER'
-            ? 'Nhân viên · Thu ngân'
+            ? 'Thu ngân'
             : effectiveRoleLabel,
         roleCode: effectiveRoleCode,
       }
@@ -71,7 +71,7 @@ export default function PayslipPage() {
     ? `Góc nhìn Admin · Đối soát phiếu lương của ${payslip?.employeeName ?? 'Trần Hoàng Phong'}`
     : `Phiếu lương của bạn · ${payslip?.employeeCode ?? targetEmployeeId} · ${
         effectiveRoleCode === 'CASHIER'
-          ? 'Nhân viên / Thu ngân'
+          ? 'Thu ngân'
           : effectiveRoleLabel
       }`
 

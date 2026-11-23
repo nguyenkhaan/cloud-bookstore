@@ -53,7 +53,7 @@ export function getRoleBadgeLabel(roleCode?: string, fallbackRole?: string): str
     case 'INVENTORY_MANAGER':
       return 'Quản lý kho (Inventory)'
     default:
-      return fallbackRole ? `${fallbackRole}` : 'Nhân viên nội bộ'
+      return fallbackRole ? `${fallbackRole}` : 'Người dùng nội bộ'
   }
 }
 
@@ -66,7 +66,7 @@ export function getRolePermissionLabel(roleCode?: string, fallbackRole?: string)
     case 'INVENTORY_MANAGER':
       return 'Quản lý kho (Kho & đầu sách)'
     default:
-      return fallbackRole || 'Nhân viên nội bộ'
+      return fallbackRole || 'Người dùng nội bộ'
   }
 }
 

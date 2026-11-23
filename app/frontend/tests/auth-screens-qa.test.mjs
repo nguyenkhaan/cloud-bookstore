@@ -174,10 +174,12 @@ describe('AUTH screens QA single-fault isolation & entrypoint parity', { concurr
     assert.equal(authMock.getRoleBadgeLabel('CASHIER'), 'Thu ngân (Cashier)')
     assert.equal(authMock.getRoleBadgeLabel('INVENTORY_MANAGER'), 'Quản lý kho (Inventory)')
     assert.equal(authMock.getRoleBadgeLabel(undefined, 'Khách'), 'Khách')
+    assert.equal(authMock.getRoleBadgeLabel(undefined), 'Người dùng nội bộ')
 
     assert.equal(authMock.getRolePermissionLabel('ADMIN'), 'Quản trị viên (Toàn quyền)')
     assert.equal(authMock.getRolePermissionLabel('CASHIER'), 'Thu ngân (Quầy giao dịch)')
     assert.equal(authMock.getRolePermissionLabel('INVENTORY_MANAGER'), 'Quản lý kho (Kho & đầu sách)')
+    assert.equal(authMock.getRolePermissionLabel(undefined), 'Người dùng nội bộ')
 
     const adminMock = authMock.getMockProfileForUser({
       id: '1',

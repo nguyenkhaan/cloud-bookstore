@@ -43,7 +43,7 @@ test('matrix renders three roles and disables every protected grant', () => {
   const html = render(client, React.createElement(ScrSys03RbacMatrix, { isAdmin: true }), 'ADMIN')
   assert.equal((html.match(/type="checkbox"/g) ?? []).length, 3)
   for (const box of html.match(/<input[^>]+type="checkbox"[^>]*>/g)) assert.match(box, /disabled/)
-  assert.match(html, /Nhân viên/)
+  assert.match(html, /Thu ngân/)
   assert.match(html, /Quản lý kho/)
   assert.doesNotMatch(html, /Manager|4 vai trò|39 màn hình/)
   client.clear()

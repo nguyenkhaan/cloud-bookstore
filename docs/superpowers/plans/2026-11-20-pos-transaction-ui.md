@@ -15,7 +15,7 @@
 - Keep all feature-specific code in `app/frontend/src/features/pos`.
 - Use `CopyBarcode` for transaction rows; ISBN may only appear as edition lookup context.
 - Rental deposit display is 100% of each copy's actual selling price; unresolved rental/damage formulas remain fixture labels.
-- `MOD-POS-02` displays an Admin approval fixture only; it must not grant Employee or Warehouse approval.
+- `MOD-POS-02` displays an Admin approval fixture only; it must not grant Cashier or Inventory approval.
 - No new API calls, services, hooks, TanStack Query keys, backend changes, migrations, or generated-contract edits.
 - Reuse existing frontend theme and primitives; do not introduce a parallel design system or `App.css` styles.
 - Preserve `/pos/shift` behavior and route.
