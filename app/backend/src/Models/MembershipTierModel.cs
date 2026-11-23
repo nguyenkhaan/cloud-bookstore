@@ -11,9 +11,9 @@ public class MembershipTierModel
     [Required]
     public MembershipTierName Name { get; set; }
     [Required]
-    public long RankOrder { get; set; } = 0L;
+    public short RankOrder { get; set; }
     public long MinSpend { get; set; } = 0L;
-    public int MaxBooks { get; set; }
+    public short MaxBooks { get; set; }
     public short MaxRentalDays { get; set; }
     [Precision(5, 2)]
     public decimal RentDiscountPct { get; set; }

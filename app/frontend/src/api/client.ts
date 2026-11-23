@@ -1,0 +1,216 @@
+import axios from 'axios'
+import type { AxiosError, InternalAxiosRequestConfig } from 'axios'
+import { normalizeRoleCode } from '@/features/auth/role'
+import type { AppRole } from '@/features/auth/role'
+
+const rawBaseUrl = (import.meta.env.VITE_BASE_URL ?? '').trim()
+const backendUrl = rawBaseUrl.replace(/\/+$/, '')
+const API_BASE_URL = backendUrl
+    ? (backendUrl.endsWith('/api') ? backendUrl : `${backendUrl}/api`)
+    : '/api'
+const CSRF_HEADER = 'X-CSRF-Token'
+const CSRF_STORAGE_KEY = 'cloud-bookstore.csrf-token'
+const USER_STORAGE_KEY = 'cloud-bookstore.user-info'
+const UNSAFE_METHODS = new Set(['delete', 'patch', 'post', 'put'])
+const AUTH_ENDPOINTS = new Set(['/auth/login', '/auth/logout', '/auth/refresh'])
+
+type RetryableRequest = InternalAxiosRequestConfig & { _sessionRetried?: boolean; _csrfRetried?: boolean }
+type SessionRecovery = () => Promise<void>
+type CsrfRecovery = () => Promise<void>
+
+/** Backend code for a 403 caused by a missing/stale CSRF token (not a role/RBAC 403). */
+export const CSRF_REJECTED_CODE = 'CSRF_TOKEN_INVALID'
+type SessionExpiredHandler = () => void
+
+function getSessionStorage(): Storage | null {
+  if (typeof window === 'undefined') return null
+
+  try {
+    return window.sessionStorage
+  } catch {
+    return null
+  }
+}
+
+function readStoredCsrfToken(): string | null {
+  try {
+    return getSessionStorage()?.getItem(CSRF_STORAGE_KEY) || null
+  } catch {
+    return null
+  }
+}
+
+function persistCsrfToken(token: string): void {
+  try {
+    getSessionStorage()?.setItem(CSRF_STORAGE_KEY, token)
+  } catch {
+    // Keep the in-memory token when browser storage is unavailable.
+  }
+}
+
+function removeStoredCsrfToken(): void {
+  try {
+    getSessionStorage()?.removeItem(CSRF_STORAGE_KEY)
+  } catch {
+    // The in-memory token has already been cleared.
+  }
+}
+
+let csrfToken: string | null = readStoredCsrfToken()
+let refreshInFlight: Promise<void> | null = null
+let sessionRecovery: SessionRecovery | null = null
+let sessionExpiredHandler: SessionExpiredHandler | null = null
+let csrfRecovery: CsrfRecovery | null = null
+
+export function setCsrfToken(token: string): void {
+  csrfToken = token
+  persistCsrfToken(token)
+}
+
+export function getCsrfToken(): string | null {
+  return csrfToken
+}
+
+export function clearCsrfToken(): void {
+  csrfToken = null
+  removeStoredCsrfToken()
+}
+
+export interface StoredUser {
+  id?: string
+  name: string
+  role: string
+  roleCode: AppRole
+  email?: string
+  avatarUrl?: string
+}
+
+export function readStoredUser(): StoredUser | null {
+  try {
+    const raw = getSessionStorage()?.getItem(USER_STORAGE_KEY)
+    if (!raw) return null
+    const parsed: unknown = JSON.parse(raw)
+    if (typeof parsed !== 'object' || parsed === null) return null
+
+    const value = parsed as Record<string, unknown>
+    const roleCode = normalizeRoleCode(typeof value.roleCode === 'string' ? value.roleCode : null)
+    if (!roleCode || typeof value.name !== 'string' || typeof value.role !== 'string') return null
+
+    return {
+      id: typeof value.id === 'string' ? value.id : undefined,
+      name: value.name,
+      role: value.role,
+      roleCode,
+      email: typeof value.email === 'string' ? value.email : undefined,
+      avatarUrl: typeof value.avatarUrl === 'string' ? value.avatarUrl : undefined,
+    }
+  } catch {
+    return null
+  }
+}
+
+export function persistStoredUser(user: StoredUser): void {
+  try {
+    const roleCode = normalizeRoleCode(user.roleCode)
+    if (!roleCode) return
+    getSessionStorage()?.setItem(USER_STORAGE_KEY, JSON.stringify({ ...user, roleCode }))
+  } catch {
+    // Keep in-memory when browser storage is unavailable.
+  }
+}
+
+export function removeStoredUser(): void {
+  try {
+    getSessionStorage()?.removeItem(USER_STORAGE_KEY)
+  } catch {
+    // The in-memory user has already been cleared.
+  }
+}
+
+export function setSessionRecovery(recovery: SessionRecovery | null): void {
+  sessionRecovery = recovery
+}
+
+export function setSessionExpiredHandler(handler: SessionExpiredHandler | null): void {
+  sessionExpiredHandler = handler
+}
+
+export function setCsrfRecovery(recovery: CsrfRecovery | null): void {
+  csrfRecovery = recovery
+}
+
+export function isCsrfRejection(error: unknown): boolean {
+  if (!axios.isAxiosError(error) || error.response?.status !== 403) return false
+  const data: unknown = error.response.data
+  return typeof data === 'object' && data !== null && 'code' in data && data.code === CSRF_REJECTED_CODE
+}
+
+function createClient() {
+  const client = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    timeout: 30000,
+    withCredentials: true,
+  })
+
+  client.interceptors.request.use((config) => {
+    if (csrfToken && UNSAFE_METHODS.has(config.method?.toLowerCase() ?? 'get')) {
+      config.headers.set(CSRF_HEADER, csrfToken)
+    }
+    return config
+  })
+
+  return client
+}
+
+async function recoverSession(): Promise<void> {
+  if (!sessionRecovery) {
+    throw new Error('Session recovery is not configured')
+  }
+
+  refreshInFlight ??= sessionRecovery().finally(() => {
+    refreshInFlight = null
+  })
+  await refreshInFlight
+}
+
+export const publicClient = createClient()
+export const privateClient = createClient()
+
+privateClient.interceptors.response.use(
+    (response) => response,
+    async (error: AxiosError<unknown>) => {
+      const request = error.config as RetryableRequest | undefined
+
+      // Another tab or a token refresh may have moved this session to a newer CSRF token:
+      // reload it from the session endpoint and replay the request once.
+      if (isCsrfRejection(error) && request && !request._csrfRetried && csrfRecovery) {
+        request._csrfRetried = true
+        await csrfRecovery()
+        return privateClient.request(request)
+      }
+
+      const isAuthenticationEndpoint = AUTH_ENDPOINTS.has(String(request?.url))
+      if (
+          error.response?.status !== 401 ||
+          !request ||
+          !csrfToken ||
+          request._sessionRetried ||
+          isAuthenticationEndpoint
+      ) {
+        return Promise.reject(error)
+      }
+
+      try {
+        await recoverSession()
+        request._sessionRetried = true
+        return privateClient.request(request)
+      } catch {
+        clearCsrfToken()
+        sessionExpiredHandler?.()
+        return Promise.reject(error)
+      }
+    },
+)

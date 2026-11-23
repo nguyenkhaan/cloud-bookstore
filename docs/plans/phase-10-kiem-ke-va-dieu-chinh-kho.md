@@ -64,9 +64,9 @@ Kiểm kê theo CopyBarcode mà không gây bán/thuê trùng, xử lý chênh l
 
 ## Step P10-S03 — Duyệt chênh lệch
 
-**Mô tả ngắn:** BE tạo đề nghị theo từng chênh lệch; chỉ áp dụng sau Admin duyệt.
+**Mô tả ngắn:** BE tạo đề nghị theo từng chênh lệch trên `inventory_adjustment_requests` (không sửa DB); chỉ Admin duyệt/áp dụng.
 
-**Tham chiếu:** Feature/OQ `INV-005`; Rule `BR-INV-002`–`BR-INV-007`, `BR-GEN-005`, `BR-GEN-007`; Workflow `WF-06`.
+**Tham chiếu:** Feature/OQ `INV-005`; Spec [`INV-005-inventory-adjustment-requests.md`](../specs/INV-005-inventory-adjustment-requests.md); Plan [`INV-005-inventory-adjustment-requests.md`](./INV-005-inventory-adjustment-requests.md); Rule `BR-INV-002`–`BR-INV-007`, `BR-GEN-005`, `BR-GEN-007`; Workflow `WF-06`.
 
 **Công việc:**
 - [ ] BE tạo đề nghị theo từng chênh lệch; chỉ áp dụng sau Admin duyệt.

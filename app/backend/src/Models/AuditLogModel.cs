@@ -7,6 +7,8 @@ public class AuditLogModel
     public DateTime OccurredAt { get; set; } = DateTime.UtcNow;
     public Guid? ActorId { get; set; }
     public IPAddress? IpAddress { get; set; }
+    [MaxLength(255)] public string? UserAgent { get; set; }
+    [MaxLength(80)] public string? CorrelationId { get; set; }
     [MaxLength(60)] public string Action { get; set; } = string.Empty;
     [MaxLength(60)] public string EntityType { get; set; } = string.Empty;
     public Guid EntityId { get; set; }

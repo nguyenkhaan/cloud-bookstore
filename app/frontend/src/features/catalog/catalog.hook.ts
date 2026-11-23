@@ -1,0 +1,763 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMatch, useSearchParams } from 'react-router-dom'
+import type { BreadcrumbItem } from '@/components/common/Breadcrumb'
+import {
+  activateStockReceiptCopies,
+  cancelStockReceipt,
+  completeStockReceipt,
+  confirmStockOut,
+  createCategory,
+  createCopy,
+  createCopyLabel,
+  createEdition,
+  createSeries,
+  createStockOut,
+  createStockReceipt,
+  createSupplier,
+  createTitle,
+  deleteCategory,
+  deleteCopy,
+  deleteCopyImage,
+  deleteEdition,
+  deleteEditionImage,
+  deleteSeries,
+  deleteSeriesImage,
+  deleteSupplier,
+  deleteTitle,
+  deleteTitleImage,
+  getCategory,
+  getCopy,
+  getCopyByBarcode,
+  getCopyHistory,
+  getEdition,
+  getEditionStockAlerts,
+  getSeries,
+  getStockOut,
+  getStockReceipt,
+  getSupplier,
+  getSupplierStats,
+  getTitle,
+  listAllEditions,
+  listCategories,
+  listCopies,
+  listAvailableReceiptLines,
+  listEditions,
+  listSeries,
+  listStockOuts,
+  listStockReceipts,
+  listSuppliers,
+  listTitles,
+  replaceCopyImage,
+  replaceEditionImage,
+  replaceSeriesImage,
+  replaceTitleImage,
+  updateCategory,
+  updateCategoryStatus,
+  updateCopy,
+  updateCopyShelf,
+  updateCopyStatus,
+  updateEdition,
+  updateEditionStatus,
+  updateEditionThresholds,
+  updateSeries,
+  updateSeriesStatus,
+  updateStockReceipt,
+  updateSupplier,
+  updateSupplierStatus,
+  updateTitle,
+  updateTitleStatus,
+} from './catalog.service'
+import { catalogPaths } from './catalog.route'
+import type {
+  ActivateStockReceiptCopiesRequest,
+  BookEdition,
+  CompleteStockReceiptRequest,
+  CreateCategoryRequest,
+  CreateCopyRequest,
+  CreateEditionRequest,
+  CreateSeriesRequest,
+  CreateStockOutRequest,
+  CreateStockReceiptRequest,
+  CreateSupplierRequest,
+  EditionStockAlertFilters,
+  SaveTitleRequest,
+  StockOutListFilters,
+  StockReceiptListFilters,
+  SupplierListFilters,
+  TitleListFilters,
+  UpdateCategoryRequest,
+  UpdateCopyRequest,
+  UpdateCopyShelfRequest,
+  UpdateCopyStatusRequest,
+  UpdateEditionRequest,
+  UpdateEditionThresholdsRequest,
+  UpdateSeriesRequest,
+  UpdateStockReceiptRequest,
+  UpdateSupplierRequest,
+} from './catalog.type'
+import type { CloudinaryUploadResultRequest } from '@/features/uploads/upload.type'
+
+export const catalogQueryKeys = {
+  all: ['catalog'] as const,
+  categories: (search: string) => ['catalog', 'categories', search] as const,
+  category: (categoryId: string) => ['catalog', 'categories', 'detail', categoryId] as const,
+  copies: (editionId: string) => ['catalog', 'editions', editionId, 'copies'] as const,
+  copy: (copyId: string) => ['catalog', 'copies', copyId] as const,
+  copyByBarcode: (barcode: string) => ['catalog', 'copies', 'by-barcode', barcode] as const,
+  copyHistory: (copyId: string) => ['catalog', 'copies', copyId, 'history'] as const,
+  availableReceiptLines: (editionId: string) => ['catalog', 'editions', editionId, 'receipt-lines'] as const,
+  edition: (editionId: string) => ['catalog', 'editions', editionId] as const,
+  editions: (titleId: string) => ['catalog', 'titles', titleId, 'editions'] as const,
+  series: (search: string) => ['catalog', 'series', search] as const,
+  seriesDetail: (seriesId: string) => ['catalog', 'series', 'detail', seriesId] as const,
+  suppliers: (filters: SupplierListFilters = {}) => ['catalog', 'suppliers', filters] as const,
+  supplierStats: () => ['catalog', 'suppliers', 'stats'] as const,
+  supplierDetail: (supplierId: string) => ['catalog', 'suppliers', 'detail', supplierId] as const,
+  stockReceipts: (filters: StockReceiptListFilters = {}) => ['catalog', 'stock-receipts', filters] as const,
+  stockReceiptDetail: (receiptId: string) => ['catalog', 'stock-receipts', 'detail', receiptId] as const,
+  stockOuts: (filters: StockOutListFilters = {}) => ['catalog', 'stock-outs', filters] as const,
+  stockOutDetail: (stockOutId: string) => ['catalog', 'stock-outs', 'detail', stockOutId] as const,
+  stockAlerts: (filters: EditionStockAlertFilters = {}) => ['catalog', 'editions', 'stock-alerts', filters] as const,
+  allEditions: () => ['catalog', 'editions', 'all'] as const,
+  title: (titleId: string) => ['catalog', 'titles', titleId] as const,
+  titles: (filters: TitleListFilters = {}) => ['catalog', 'titles', filters] as const,
+}
+
+// ----------------------------------------------------------------------
+// QUERY HOOKS
+// ----------------------------------------------------------------------
+
+export function useStockOutsQuery(filters: StockOutListFilters = {}) {
+  return useQuery({
+    queryKey: catalogQueryKeys.stockOuts(filters),
+    queryFn: () => listStockOuts(filters),
+  })
+}
+
+export function useStockOutDetailQuery(stockOutId: string) {
+  return useQuery({
+    queryKey: catalogQueryKeys.stockOutDetail(stockOutId),
+    queryFn: () => getStockOut(stockOutId),
+    enabled: Boolean(stockOutId),
+  })
+}
+
+export function useCreateStockOutMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (request: CreateStockOutRequest) => createStockOut(request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog', 'stock-outs'] })
+      queryClient.invalidateQueries({ queryKey: ['approvals'] })
+    },
+  })
+}
+
+export function useConfirmStockOutMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (stockOutId: string) => confirmStockOut(stockOutId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog'] })
+      queryClient.invalidateQueries({ queryKey: ['approvals'] })
+    },
+  })
+}
+
+export function useEditionStockAlertsQuery(filters: EditionStockAlertFilters = {}) {
+  return useQuery({
+    queryKey: catalogQueryKeys.stockAlerts(filters),
+    queryFn: () => getEditionStockAlerts(filters),
+  })
+}
+
+export function useUpdateEditionThresholdsMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ editionId, request }: { editionId: string; request: UpdateEditionThresholdsRequest }) =>
+      updateEditionThresholds(editionId, request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog', 'editions'] })
+    },
+  })
+}
+
+export function useStockReceiptsQuery(filters: StockReceiptListFilters = {}) {
+  return useQuery({
+    queryKey: catalogQueryKeys.stockReceipts(filters),
+    queryFn: () => listStockReceipts(filters),
+  })
+}
+
+export function useStockReceiptDetailQuery(receiptId: string) {
+  return useQuery({
+    queryKey: catalogQueryKeys.stockReceiptDetail(receiptId),
+    queryFn: () => getStockReceipt(receiptId),
+    enabled: Boolean(receiptId),
+  })
+}
+
+export function useAllEditionsQuery() {
+  return useQuery({
+    queryKey: catalogQueryKeys.allEditions(),
+    queryFn: () => listAllEditions(),
+  })
+}
+
+export function useSuppliersQuery(filters: SupplierListFilters = {}) {
+  return useQuery({
+    queryKey: catalogQueryKeys.suppliers(filters),
+    queryFn: () => listSuppliers(filters),
+  })
+}
+
+export function useSupplierStatsQuery() {
+  return useQuery({
+    queryKey: catalogQueryKeys.supplierStats(),
+    queryFn: () => getSupplierStats(),
+  })
+}
+
+export function useSupplierDetailQuery(supplierId: string) {
+  return useQuery({
+    queryKey: catalogQueryKeys.supplierDetail(supplierId),
+    queryFn: () => getSupplier(supplierId),
+    enabled: Boolean(supplierId),
+  })
+}
+
+export function useCategoriesQuery(search = '') {
+  return useQuery({ queryKey: catalogQueryKeys.categories(search), queryFn: () => listCategories(search) })
+}
+
+export function useCategoryQuery(categoryId: string) {
+  return useQuery({
+    queryKey: catalogQueryKeys.category(categoryId),
+    queryFn: () => getCategory(categoryId),
+    enabled: Boolean(categoryId),
+  })
+}
+
+export function useSeriesQuery(search = '') {
+  return useQuery({ queryKey: catalogQueryKeys.series(search), queryFn: () => listSeries(search) })
+}
+
+export function useSeriesDetailQuery(seriesId: string) {
+  return useQuery({
+    queryKey: catalogQueryKeys.seriesDetail(seriesId),
+    queryFn: () => getSeries(seriesId),
+    enabled: Boolean(seriesId),
+  })
+}
+
+export function useTitlesQuery(filters: TitleListFilters = {}) {
+  return useQuery({ queryKey: catalogQueryKeys.titles(filters), queryFn: () => listTitles(filters) })
+}
+
+export function useTitleQuery(titleId: string) {
+  return useQuery({ queryKey: catalogQueryKeys.title(titleId), queryFn: () => getTitle(titleId), enabled: Boolean(titleId) })
+}
+
+export function useEditionsQuery(titleId: string) {
+  return useQuery({ queryKey: catalogQueryKeys.editions(titleId), queryFn: () => listEditions(titleId), enabled: Boolean(titleId) })
+}
+
+export function useEditionQuery(editionId: string) {
+  return useQuery({ queryKey: catalogQueryKeys.edition(editionId), queryFn: () => getEdition(editionId), enabled: Boolean(editionId) })
+}
+
+export function useCopiesQuery(editionId: string) {
+  return useQuery({ queryKey: catalogQueryKeys.copies(editionId), queryFn: () => listCopies(editionId), enabled: Boolean(editionId) })
+}
+
+export function useAvailableReceiptLinesQuery(editionId: string) {
+  return useQuery({ queryKey: catalogQueryKeys.availableReceiptLines(editionId), queryFn: () => listAvailableReceiptLines(editionId), enabled: Boolean(editionId) })
+}
+
+export function useCopyQuery(copyId: string) {
+  return useQuery({ queryKey: catalogQueryKeys.copy(copyId), queryFn: () => getCopy(copyId), enabled: Boolean(copyId) })
+}
+
+export function useCopyByBarcodeQuery(barcode: string) {
+  return useQuery({
+    queryKey: catalogQueryKeys.copyByBarcode(barcode),
+    queryFn: () => getCopyByBarcode(barcode),
+    enabled: Boolean(barcode),
+  })
+}
+
+export function useCopyHistoryQuery(copyId: string) {
+  return useQuery({
+    queryKey: catalogQueryKeys.copyHistory(copyId),
+    queryFn: () => getCopyHistory(copyId),
+    enabled: Boolean(copyId),
+  })
+}
+
+// ----------------------------------------------------------------------
+// BREADCRUMBS
+// ----------------------------------------------------------------------
+
+const CATALOG_ROOT_LABEL = 'Quản lý bộ sách & tiến độ'
+
+function seriesLabel(name?: string | null) {
+  return name ? `Bộ sách ${name}` : 'Bộ sách'
+}
+
+function editionLabel(edition?: Pick<BookEdition, 'editionStatement' | 'isbn'>) {
+  if (edition?.editionStatement) return edition.editionStatement
+  if (edition?.isbn) return `ISBN ${edition.isbn}`
+  return 'Ấn bản'
+}
+
+/**
+ * Builds the header breadcrumb for the current catalog route:
+ * Kho & đầu sách › Bộ sách X › Đầu sách › Ấn bản › CopyBarcode.
+ * Parents are resolved up the Copy → Edition → Title → Series chain and share the
+ * react-query cache with the pages, so no extra requests are made.
+ */
+export function useCatalogBreadcrumbs(): BreadcrumbItem[] {
+  const [searchParams] = useSearchParams()
+  const isCategoryList = Boolean(useMatch(catalogPaths.categoryList))
+  const isTitleList = Boolean(useMatch(catalogPaths.titleList))
+  const isSuppliers = Boolean(useMatch(catalogPaths.suppliers))
+  const isStockReceipts = Boolean(useMatch(catalogPaths.stockReceipts))
+  const isStockOut = Boolean(useMatch(catalogPaths.stockOut))
+  const isInventoryCheck = Boolean(useMatch(catalogPaths.inventoryCheck))
+  const titleMatch = useMatch('/catalog/titles/:titleId')
+  const editionMatch = useMatch('/catalog/editions/:editionId')
+  const copyMatch = useMatch('/catalog/copies/:copyId')
+  const listSeriesId = isTitleList ? searchParams.get('seriesId') ?? '' : ''
+  const seriesDetailQuery = useSeriesDetailQuery(listSeriesId)
+
+  const copyQuery = useCopyQuery(copyMatch?.params.copyId ?? '')
+  const editionId = editionMatch?.params.editionId ?? copyQuery.data?.editionId ?? ''
+  const editionQuery = useEditionQuery(editionId)
+  const titleId = titleMatch?.params.titleId ?? editionQuery.data?.titleId ?? ''
+  const titleQuery = useTitleQuery(titleId)
+  const title = titleQuery.data
+
+  const root: BreadcrumbItem = { label: CATALOG_ROOT_LABEL, to: catalogPaths.seriesList }
+  if (isCategoryList) {
+    return [
+      root,
+      { label: 'Thể loại sách & Cây danh mục' },
+    ]
+  }
+  if (isSuppliers) {
+    return [
+      root,
+      { label: 'Đối tác & Nhà cung cấp' },
+    ]
+  }
+  if (isStockReceipts) {
+    return [
+      root,
+      { label: 'Lập & Quản lý Phiếu nhập kho từ NCC' },
+    ]
+  }
+  if (isStockOut) {
+    return [
+      root,
+      { label: 'Lập Phiếu xuất kho ngoài bán hàng' },
+    ]
+  }
+  if (isInventoryCheck) {
+    return [
+      root,
+      { label: 'Kiểm kê kho & Đối soát sai lệch' },
+    ]
+  }
+
+  if (isTitleList) {
+    return [
+      root,
+      listSeriesId
+          ? { label: seriesLabel(seriesDetailQuery.data?.name), to: catalogPaths.titlesForSeries(listSeriesId) }
+          : { label: 'Danh mục đầu sách', to: catalogPaths.titleList },
+    ]
+  }
+
+  const crumbs: BreadcrumbItem[] = [{ label: 'Không gian làm việc' }, root]
+  if (!titleMatch && !editionMatch && !copyMatch) return crumbs
+
+  // Wait for the title before choosing between a series parent and the plain title list.
+  if (title) {
+    crumbs.push(
+        title.seriesId
+            ? { label: seriesLabel(title.seriesName), to: catalogPaths.titlesForSeries(title.seriesId) }
+            : { label: 'Danh mục đầu sách', to: catalogPaths.titleList },
+    )
+  }
+  if (titleId) {
+    crumbs.push({ label: title?.name ?? 'Đầu sách', to: catalogPaths.titleDetail(titleId) })
+  }
+  if (editionMatch || copyMatch) {
+    if (editionId) crumbs.push({ label: editionLabel(editionQuery.data), to: catalogPaths.editionDetail(editionId) })
+  }
+  if (copyMatch) {
+    crumbs.push({ label: copyQuery.data?.copyBarcode ?? 'Bản sách vật lý' })
+  }
+  return crumbs
+}
+
+// ----------------------------------------------------------------------
+// SERIES MUTATION HOOKS
+// ----------------------------------------------------------------------
+
+export function useCreateStockReceiptMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (request: CreateStockReceiptRequest) => createStockReceipt(request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog', 'stock-receipts'] })
+      queryClient.invalidateQueries({ queryKey: ['catalog', 'suppliers'] })
+    },
+  })
+}
+
+export function useUpdateStockReceiptMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ receiptId, request }: { receiptId: string; request: UpdateStockReceiptRequest }) =>
+      updateStockReceipt(receiptId, request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog', 'stock-receipts'] })
+      queryClient.invalidateQueries({ queryKey: ['catalog', 'suppliers'] })
+    },
+  })
+}
+
+export function useCompleteStockReceiptMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ receiptId, request }: { receiptId: string; request?: CompleteStockReceiptRequest }) =>
+      completeStockReceipt(receiptId, request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog'] })
+    },
+  })
+}
+
+export function useActivateStockReceiptCopiesMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ receiptId, request }: { receiptId: string; request?: ActivateStockReceiptCopiesRequest }) =>
+      activateStockReceiptCopies(receiptId, request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog'] })
+    },
+  })
+}
+
+export function useCancelStockReceiptMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (receiptId: string) => cancelStockReceipt(receiptId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog', 'stock-receipts'] })
+      queryClient.invalidateQueries({ queryKey: ['catalog', 'suppliers'] })
+    },
+  })
+}
+
+export function useCreateSupplierMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (request: CreateSupplierRequest) => createSupplier(request),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'suppliers'] }),
+  })
+}
+
+export function useUpdateSupplierMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ supplierId, request }: { supplierId: string; request: UpdateSupplierRequest }) =>
+      updateSupplier(supplierId, request),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'suppliers'] }),
+  })
+}
+
+export function useUpdateSupplierStatusMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ supplierId, isActive }: { supplierId: string; isActive: boolean }) =>
+      updateSupplierStatus(supplierId, isActive),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'suppliers'] }),
+  })
+}
+
+export function useDeleteSupplierMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (supplierId: string) => deleteSupplier(supplierId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'suppliers'] }),
+  })
+}
+
+export function useCreateCategoryMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (request: CreateCategoryRequest) => createCategory(request),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'categories'] }),
+  })
+}
+
+export function useUpdateCategoryMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ categoryId, request }: { categoryId: string; request: UpdateCategoryRequest }) =>
+      updateCategory(categoryId, request),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'categories'] }),
+  })
+}
+
+export function useUpdateCategoryStatusMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ categoryId, isActive }: { categoryId: string; isActive: boolean }) =>
+      updateCategoryStatus(categoryId, isActive),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'categories'] }),
+  })
+}
+
+export function useDeleteCategoryMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (categoryId: string) => deleteCategory(categoryId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'categories'] }),
+  })
+}
+
+export function useCreateSeriesMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (request: CreateSeriesRequest) => createSeries(request),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'series'] }),
+  })
+}
+
+export function useUpdateSeriesMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ seriesId, request }: { seriesId: string; request: UpdateSeriesRequest }) => updateSeries(seriesId, request),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'series'] }),
+  })
+}
+
+export function useUpdateSeriesStatusMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ seriesId, isActive }: { seriesId: string; isActive: boolean }) => updateSeriesStatus(seriesId, isActive),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'series'] }),
+  })
+}
+
+export function useDeleteSeriesMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (seriesId: string) => deleteSeries(seriesId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'series'] }),
+  })
+}
+
+export function useReplaceSeriesImageMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ seriesId, imageUpload }: { seriesId: string; imageUpload: CloudinaryUploadResultRequest }) =>
+        replaceSeriesImage(seriesId, imageUpload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'series'] }),
+  })
+}
+
+export function useDeleteSeriesImageMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (seriesId: string) => deleteSeriesImage(seriesId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'series'] }),
+  })
+}
+
+// ----------------------------------------------------------------------
+// TITLE MUTATION HOOKS
+// ----------------------------------------------------------------------
+
+export function useCreateTitleMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (request: SaveTitleRequest) => createTitle(request),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog'] }),
+  })
+}
+
+export function useUpdateTitleMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ titleId, request }: { titleId: string; request: SaveTitleRequest }) => updateTitle(titleId, request),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog'] }),
+  })
+}
+
+export function useUpdateTitleStatusMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ titleId, isActive }: { titleId: string; isActive: boolean }) => updateTitleStatus(titleId, isActive),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'titles'] }),
+  })
+}
+
+export function useDeleteTitleMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (titleId: string) => deleteTitle(titleId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog'] }),
+  })
+}
+
+export function useReplaceTitleImageMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ titleId, imageUpload }: { titleId: string; imageUpload: CloudinaryUploadResultRequest }) =>
+        replaceTitleImage(titleId, imageUpload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'titles'] }),
+  })
+}
+
+export function useDeleteTitleImageMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (titleId: string) => deleteTitleImage(titleId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'titles'] }),
+  })
+}
+
+// ----------------------------------------------------------------------
+// EDITION MUTATION HOOKS
+// ----------------------------------------------------------------------
+
+export function useCreateEditionMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (request: CreateEditionRequest) => createEdition(request),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog'] }),
+  })
+}
+
+export function useUpdateEditionMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ editionId, request }: { editionId: string; request: UpdateEditionRequest }) =>
+        updateEdition(editionId, request),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog'] }),
+  })
+}
+
+export function useUpdateEditionStatusMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ editionId, isActive }: { editionId: string; isActive: boolean }) =>
+        updateEditionStatus(editionId, isActive),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'editions'] }),
+  })
+}
+
+export function useDeleteEditionMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (editionId: string) => deleteEdition(editionId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog'] }),
+  })
+}
+
+export function useReplaceEditionImageMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ editionId, imageUpload }: { editionId: string; imageUpload: CloudinaryUploadResultRequest }) =>
+        replaceEditionImage(editionId, imageUpload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'editions'] }),
+  })
+}
+
+export function useDeleteEditionImageMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (editionId: string) => deleteEditionImage(editionId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'editions'] }),
+  })
+}
+
+// ----------------------------------------------------------------------
+// COPY MUTATION HOOKS
+// ----------------------------------------------------------------------
+
+export function useCreateCopyMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (request: CreateCopyRequest) => createCopy(request),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog'] }),
+  })
+}
+
+export function useUpdateCopyMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ copyId, request }: { copyId: string; request: UpdateCopyRequest }) =>
+      updateCopy(copyId, request),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog'] }),
+  })
+}
+
+export function useUpdateCopyStatusMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ copyId, request }: { copyId: string; request: UpdateCopyStatusRequest }) =>
+      updateCopyStatus(copyId, request),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog'] }),
+  })
+}
+
+export function useUpdateCopyShelfMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ copyId, request }: { copyId: string; request: UpdateCopyShelfRequest }) =>
+      updateCopyShelf(copyId, request),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ['catalog'] })
+      void queryClient.invalidateQueries({ queryKey: catalogQueryKeys.copyHistory(variables.copyId) })
+      void queryClient.invalidateQueries({ queryKey: ['audit'] })
+    },
+  })
+}
+
+export function useDeleteCopyMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({ mutationFn: (copyId: string) => deleteCopy(copyId), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog'] }) })
+}
+
+export function useCreateCopyLabelMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (copyId: string) => createCopyLabel(copyId),
+    onSuccess: (_data, copyId) => {
+      void queryClient.invalidateQueries({ queryKey: catalogQueryKeys.copyHistory(copyId) })
+      void queryClient.invalidateQueries({ queryKey: ['audit'] })
+    },
+  })
+}
+
+export function useReplaceCopyImageMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ copyId, imageUpload }: { copyId: string; imageUpload: CloudinaryUploadResultRequest }) =>
+        replaceCopyImage(copyId, imageUpload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'copies'] }),
+  })
+}
+
+export function useDeleteCopyImageMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (copyId: string) => deleteCopyImage(copyId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['catalog', 'copies'] }),
+  })
+}

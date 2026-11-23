@@ -99,7 +99,7 @@ enum RentalSlipStatus {
 
 enum ReturnStatus {
   DRAFT
-  PENDING_APPROVAL
+  AWAITING_DEPOSIT
   READY
   SETTLED
   CANCELLED
@@ -183,24 +183,29 @@ enum NotificationStatus {
   CANCELLED
 }
 
+// PostgreSQL sequence: seq_copy_barcode (bigint, START 1, INCREMENT 1)
+
 table roles {
   id uuid [pk]
-  name RoleName [not null, unique]
+  role_name RoleName [not null, unique]
   is_active boolean [not null, default: true]
   Note: 'Vai trò hệ thống (3 vai trò)'
 }
 
 table employee {
   id uuid [pk]
-  email varchar(255) [not null, unique, note: 'Duy nhất, không phân biệt hoa thường. Đồng thời đóng vai trò whitelist.']
-  password varchar(255) [note: 'Chỉ lưu bản băm. NULL khi mới được Admin thêm vào whitelist.']
-  full_name varchar(150) [not null]
-  phone varchar(20)
+  email varchar(200) [not null, unique, note: 'Email đăng nhập duy nhất; đồng thời đóng vai trò whitelist.']
+  full_name varchar(200) [not null]
+  password text [not null, note: 'Chỉ lưu bản băm.']
+  phone varchar(12) [not null]
   avatar_url text
-  role_id uuid [not null]
-  status EmployeeStatus [not null, default: 'INVITED']
-  created_at timestamptz [not null, default: `now()`]
-  Note: 'Tài khoản nhân viên, đồng thời là danh sách email được phép đăng ký và mã OTP.'
+  role_id uuid [not null, note: 'Concurrency token trong EF Core.']
+  status EmployeeStatus [not null]
+  failed_login_attempts integer [not null]
+  lockout_end_utc timestamptz
+  password_reset_token_hash varchar(128)
+  created_at timestamptz [not null]
+  Note: 'Tài khoản nhân viên, danh sách email được phép đăng ký và trạng thái khóa đăng nhập/reset mật khẩu.'
 }
 
 // ------------------------- 2. KHÁCH HÀNG & CẤU HÌNH -------------------------
@@ -263,15 +268,28 @@ table categories {
   Note: 'Thể loại sách/truyện (phân cấp).'
 }
 
+table book_series {
+  id uuid [pk]
+  name varchar(255) [not null]
+  description text
+  public_image_id varchar(255) [note: 'Cloudinary public_id ảnh công khai (delivery type upload); API trả ImageUrl, không trả public_id']
+  is_active boolean [not null, default: true]
+  created_at timestamptz [not null, default: `now()`]
+  Note: 'Bộ sách gồm nhiều đầu sách/tập; sách độc lập có thể không thuộc bộ.'
+}
+
 table titles {
   id uuid [pk]
+  series_id uuid [note: 'Bộ sách chứa đầu sách/tập; NULL với sách độc lập']
   name varchar(255) [not null]
   volume_label varchar(30) [note: 'Số hoặc nhãn tập ở cấp đầu sách, ví dụ Tập 12']
   author varchar(255)
   original_publish_year smallint [note: 'Năm công bố tác phẩm gốc nếu có; khác năm xuất bản của ấn bản']
   description text
+  public_image_id varchar(255) [note: 'Cloudinary public_id ảnh công khai (delivery type upload); API trả ImageUrl, không trả public_id']
   created_at timestamptz [not null, default: `now()`]
   category_id uuid
+  is_active boolean [not null, default: true]
   Note: "Đầu sách/tập ở cấp nội dung; không phải ấn bản hoặc bản sách vật lý."
 }
 
@@ -285,10 +303,9 @@ table edition {
   publisher varchar(255)
   publish_year smallint
   cover_price bigint [not null, note: 'Giá bìa ước tính - cơ sở đề xuất giá thu mua']
-  default_rent_price bigint [note: 'Đơn giá thuê/ngày mặc định; được snapshot vào dòng phiếu khi thuê']
   min_stock_sale integer [not null, default: 0, note: 'Ngưỡng cảnh báo tồn khả dụng của ấn bản cho nhóm bán']
   min_stock_rental integer [not null, default: 0, note: 'Ngưỡng cảnh báo tồn khả dụng của ấn bản cho nhóm thuê']
-  cover_image_url text
+  public_image_id varchar(255) [note: 'Cloudinary public_id ảnh công khai (delivery type upload); API trả ImageUrl, không trả public_id']
   metadata_source MetadataSource
   metadata_confirmed_by uuid
   metadata_confirmed_at timestamptz
@@ -351,7 +368,9 @@ table book_copies {
   condition_note text
   cost_price bigint [not null]
   selling_price bigint [note: 'Giá bán thực tế; cũng là cơ sở tính cọc. Bắt buộc có trước khi sang available']
+  rental_rate bigint [note: 'Đơn giá thuê/ngày của bản sách; được snapshot vào rental_lines.daily_rate khi thuê']
   shelf_code varchar(30) [note: 'Vị trí kệ (văn bản ở bản lõi)']
+  public_image_id varchar(255) [note: 'Cloudinary public_id ảnh riêng của bản vật lý, công khai (delivery type upload); API trả ImageUrl, không trả public_id']
   receipt_line_id uuid [not null, note: 'Truy nguồn gốc: dòng phiếu nhập hoặc thu mua']
   created_at timestamptz [not null, default: `now()`]
   Note: 'Bản sách vật lý - trung tâm của kho. Tồn kho = đếm theo status, không có bảng tồn kho riêng.'
@@ -540,7 +559,7 @@ table payments {
   method PaymentMethod [not null]
   amount bigint [not null]
   status PaymentStatus [not null, default: 'PENDING']
-  cash_session_id uuid [not null]
+  cash_session_id uuid [note: 'Bắt buộc khi method = CASH; NULL khi method = BANK_TRANSFER']
   // đúng MỘT chứng từ nguồn có giá trị, khớp với payment_type
   sale_invoice_id uuid
   rental_slip_id uuid
@@ -617,3 +636,104 @@ table audit_logs {
   reason text
   Note: 'Nhật ký thao tác nhạy cảm, chỉ ghi thêm (đổi giá, đổi trạng thái sách, duyệt phạt, đổi vai trò...).'
 }
+
+// ------------------------- 10. ẢNH CLOUDINARY -------------------------
+enum UploadOwnerType {
+  BOOK_SERIES_IMAGE
+  TITLE_IMAGE
+  EDITION_IMAGE
+  BOOK_COPY_IMAGE
+  RENTAL_LINE_IMAGE [note: 'Ảnh bằng chứng riêng tư (authenticated); chưa cấp chữ ký ở giai đoạn này']
+  STOCK_RECEIPT_IMAGE [note: 'Ảnh bằng chứng riêng tư (authenticated); chưa cấp chữ ký ở giai đoạn này']
+}
+
+enum UploadIntentStatus {
+  PENDING
+  COMPLETED
+}
+
+table upload_intents {
+  id uuid [pk]
+  owner_type UploadOwnerType [not null]
+  public_image_id varchar(255) [not null, unique, note: 'Do BE sinh: <RootFolder>/<visibility>/<owner-segment>/<intent-id>']
+  status UploadIntentStatus [not null, default: 'PENDING', note: 'Concurrency token: chỉ một request được chuyển PENDING -> COMPLETED']
+  created_by uuid [not null, note: 'FK employee (NoAction); chỉ người tạo được dùng intent']
+  created_at timestamptz [not null, default: `now()`]
+  completed_at timestamptz
+  asset_id varchar(64) [note: 'Metadata Cloudinary, chỉ mang tính thông tin']
+  format varchar(20) [note: 'Metadata Cloudinary, chỉ mang tính thông tin']
+  bytes bigint [note: 'Metadata Cloudinary, chỉ mang tính thông tin']
+  Note: 'Vé ủy quyền upload dùng một lần + bản ghi audit upload. Không entity nào FK tới bảng này; giữ lại vĩnh viễn làm danh mục cho job dọn asset mồ côi sau này.'
+}
+
+table rental_line_images {
+  id uuid [pk]
+  rental_line_id uuid [not null, note: 'FK rental_lines (NoAction): phải xoá ảnh trước khi xoá dòng thuê']
+  public_image_id varchar(255) [not null, unique]
+  created_at timestamptz [not null, default: `now()`]
+  Note: 'Ảnh bằng chứng hư hỏng (authenticated, URL ký). Chỉ có schema; API/service để giai đoạn sau.'
+}
+
+table stock_receipt_images {
+  id uuid [pk]
+  stock_receipt_id uuid [not null, note: 'FK stock_receipts (NoAction): phải xoá ảnh trước khi xoá phiếu nhập']
+  public_image_id varchar(255) [not null, unique]
+  created_at timestamptz [not null, default: `now()`]
+  Note: 'Ảnh chứng từ phiếu nhập (authenticated, URL ký). Chỉ có schema; API/service để giai đoạn sau.'
+}
+
+// ------------------------- 11. QUAN HỆ (TẤT CẢ FK DÙNG DELETE NO ACTION) -------------------------
+Ref: employee.role_id > roles.id [delete: no action]
+Ref: customers.tier_id > membership_tiers.id [delete: no action]
+Ref: system_settings.updated_by > employee.id [delete: no action]
+Ref: categories.parent_id > categories.id [delete: no action]
+Ref: titles.series_id > book_series.id [delete: no action]
+Ref: titles.category_id > categories.id [delete: no action]
+Ref: edition.title_id > titles.id [delete: no action]
+Ref: edition.metadata_confirmed_by > employee.id [delete: no action]
+Ref: stock_receipts.supplier_id > suppliers.id [delete: no action]
+Ref: stock_receipts.seller_id > customers.id [delete: no action]
+Ref: stock_receipts.approved_by > employee.id [delete: no action]
+Ref: stock_receipts.created_by > employee.id [delete: no action]
+Ref: stock_receipt_lines.receipt_id > stock_receipts.id [delete: no action]
+Ref: stock_receipt_lines.edition_id > edition.id [delete: no action]
+Ref: book_copies.edition_id > edition.id [delete: no action]
+Ref: book_copies.receipt_line_id > stock_receipt_lines.id [delete: no action]
+Ref: inventory_checks.copy_id > book_copies.id [delete: no action]
+Ref: inventory_checks.checked_by > employee.id [delete: no action]
+Ref: inventory_adjustment_requests.inventory_check_id > inventory_checks.id [delete: no action]
+Ref: inventory_adjustment_requests.requested_by > employee.id [delete: no action]
+Ref: inventory_adjustment_requests.approved_by > employee.id [delete: no action]
+Ref: sale_invoices.customer_id > customers.id [delete: no action]
+Ref: sale_invoices.cash_session_id > cash_sessions.id [delete: no action]
+Ref: sale_invoices.created_by > employee.id [delete: no action]
+Ref: sale_invoice_lines.invoice_id > sale_invoices.id [delete: no action]
+Ref: sale_invoice_lines.copy_id > book_copies.id [delete: no action]
+Ref: rental_slips.customer_id > customers.id [delete: no action]
+Ref: rental_slips.tier_id > membership_tiers.id [delete: no action]
+Ref: rental_slips.created_by > employee.id [delete: no action]
+Ref: returns.slip_id > rental_slips.id [delete: no action]
+Ref: returns.created_by > employee.id [delete: no action]
+Ref: rental_lines.slip_id > rental_slips.id [delete: no action]
+Ref: rental_lines.copy_id > book_copies.id [delete: no action]
+Ref: rental_lines.return_id > returns.id [delete: no action]
+Ref: rental_lines.damage_level_id > damage_levels.id [delete: no action]
+Ref: rental_lines.damage_approved_by > employee.id [delete: no action]
+Ref: rental_extensions.rental_line_id > rental_lines.id [delete: no action]
+Ref: rental_extensions.performed_by > employee.id [delete: no action]
+Ref: cash_sessions.opened_by > employee.id [delete: no action]
+Ref: cash_sessions.variance_approved_by > employee.id [delete: no action]
+Ref: cash_sessions.closed_by > employee.id [delete: no action]
+Ref: payments.cash_session_id > cash_sessions.id [delete: no action]
+Ref: payments.sale_invoice_id > sale_invoices.id [delete: no action]
+Ref: payments.rental_slip_id > rental_slips.id [delete: no action]
+Ref: payments.stock_receipt_id > stock_receipts.id [delete: no action]
+Ref: payments.return_id > returns.id [delete: no action]
+Ref: payments.work_record_id > employee_work_records.id [delete: no action]
+Ref: payments.created_by > employee.id [delete: no action]
+Ref: employee_work_records.employee_id > employee.id [delete: no action]
+Ref: employee_work_records.approved_by > employee.id [delete: no action]
+Ref: audit_logs.actor_id > employee.id [delete: no action]
+Ref: upload_intents.created_by > employee.id [delete: no action]
+Ref: rental_line_images.rental_line_id > rental_lines.id [delete: no action]
+Ref: stock_receipt_images.stock_receipt_id > stock_receipts.id [delete: no action]

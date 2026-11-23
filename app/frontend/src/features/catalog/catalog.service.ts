@@ -1,0 +1,611 @@
+import axios from 'axios'
+import type { AxiosError, AxiosResponse } from 'axios'
+import { privateClient } from '@/api/client'
+import { uploadImage } from '@/features/uploads/upload.service'
+import type { CloudinaryUploadResultRequest, UploadedImage } from '@/features/uploads/upload.type'
+import type {
+  BookCategory,
+  BookCategoryDetail,
+  BookCopy,
+  BookCopyHistoryItem,
+  BookCopyLabelResponse,
+  AvailableReceiptLine,
+  BookEdition,
+  BookSeries,
+  BookTitle,
+  CreateCategoryRequest,
+  CreateCopyRequest,
+  CreateEditionRequest,
+  CreateSeriesRequest,
+  CreateStockReceiptRequest,
+  CreateSupplierRequest,
+  SaveTitleRequest,
+  StockReceiptDetail,
+  StockReceiptListFilters,
+  StockReceiptSummary,
+  SupplierItem,
+  SupplierListFilters,
+  SupplierStats,
+  TitleListFilters,
+  UpdateCategoryRequest,
+  UpdateCopyRequest,
+  UpdateCopyShelfRequest,
+  UpdateCopyStatusRequest,
+  UpdateEditionRequest,
+  UpdateSeriesRequest,
+  UpdateStockReceiptRequest,
+  UpdateSupplierRequest,
+  CompleteStockReceiptRequest,
+  ActivateStockReceiptCopiesRequest,
+  EditionStockAlertDashboard,
+  EditionStockAlertFilters,
+  EditionStockAlertItem,
+  UpdateEditionThresholdsRequest,
+  CreateStockOutRequest,
+  StockOutDetail,
+  StockOutListFilters,
+} from './catalog.type'
+
+type QueryValue = string | number | boolean | null | undefined
+type CatalogListResponse<T> = T[] | { items?: T[]; data?: T[]; results?: T[] }
+type TitleResponse = BookTitle & { editionsCount?: number; imageUrl?: string | null }
+type EditionResponse = BookEdition & { imageUrl?: string | null }
+type SeriesResponse = BookSeries & { titlesCount?: number; imageUrl?: string | null }
+type CopyResponse = BookCopy & { imageUrl?: string | null }
+
+const endpoints = {
+  categories: '/categories',
+  copies: '/book-copies',
+  editions: '/editions',
+  series: '/book-series',
+  stockOut: '/stock-out',
+  stockReceipts: '/stock-receipts',
+  suppliers: '/suppliers',
+  titles: '/book-titles',
+} as const
+
+export class CatalogApiError extends Error {
+  readonly status: number
+
+  constructor(status: number, message: string) {
+    super(message)
+    this.name = 'CatalogApiError'
+    this.status = status
+  }
+}
+
+function messageFrom(error: AxiosError<unknown>): string {
+  const data = error.response?.data
+  if (typeof data === 'object' && data !== null) {
+    const body = data as Record<string, unknown>
+    if (typeof body.message === 'string') return body.message
+    if (typeof body.detail === 'string') return body.detail
+    if (typeof body.title === 'string') return body.title
+  }
+  return error.message
+}
+
+async function requestData<T>(request: () => Promise<AxiosResponse<T>>): Promise<T> {
+  try {
+    return (await request()).data
+  } catch (error) {
+    if (!axios.isAxiosError(error)) throw error
+    throw new CatalogApiError(error.response?.status ?? 0, messageFrom(error))
+  }
+}
+
+function listFrom<T>(response: CatalogListResponse<T>): T[] {
+  if (Array.isArray(response)) return response
+  return response.items ?? response.data ?? response.results ?? []
+}
+
+function params(input: Record<string, QueryValue>): Record<string, string | number | boolean> {
+  return Object.fromEntries(
+    Object.entries(input).filter((entry): entry is [string, string | number | boolean] => entry[1] !== undefined && entry[1] !== null && entry[1] !== ''),
+  )
+}
+
+function titleForView(title: TitleResponse): BookTitle {
+  return {
+    ...title,
+    coverImageUrl: title.imageUrl ?? title.coverImageUrl ?? null,
+    editionCount: title.editionsCount ?? title.editionCount,
+  }
+}
+
+function editionForView(edition: EditionResponse): BookEdition {
+  return { ...edition, coverImageUrl: edition.imageUrl ?? edition.coverImageUrl ?? null }
+}
+
+function seriesForView(series: SeriesResponse): BookSeries {
+  return { ...series, titleCount: series.titlesCount ?? series.titleCount }
+}
+
+function copyForView(copy: CopyResponse): BookCopy {
+  return copy
+}
+
+// ----------------------------------------------------------------------
+// BOOK SERIES APIS
+// ----------------------------------------------------------------------
+
+export async function listSeries(search = ''): Promise<BookSeries[]> {
+  const response = await requestData(() =>
+    privateClient.get<CatalogListResponse<SeriesResponse>>(endpoints.series, { params: params({ Name: search }) }),
+  )
+  return listFrom(response).map(seriesForView)
+}
+
+export async function listCategories(search = ''): Promise<BookCategory[]> {
+  const response = await requestData(() =>
+    privateClient.get<CatalogListResponse<BookCategory>>(endpoints.categories, {
+      params: params({ Name: search, PageSize: 100 }),
+    }),
+  )
+  return listFrom(response)
+}
+
+export async function getCategory(categoryId: string): Promise<BookCategoryDetail> {
+  return requestData(() =>
+    privateClient.get<BookCategoryDetail>(`${endpoints.categories}/${encodeURIComponent(categoryId)}`),
+  )
+}
+
+export async function createCategory(request: CreateCategoryRequest): Promise<BookCategory> {
+  return requestData(() =>
+    privateClient.post<BookCategory>(endpoints.categories, request),
+  )
+}
+
+export async function updateCategory(categoryId: string, request: UpdateCategoryRequest): Promise<BookCategory> {
+  return requestData(() =>
+    privateClient.put<BookCategory>(`${endpoints.categories}/${encodeURIComponent(categoryId)}`, request),
+  )
+}
+
+export async function updateCategoryStatus(categoryId: string, isActive: boolean): Promise<BookCategory> {
+  return requestData(() =>
+    privateClient.patch<BookCategory>(`${endpoints.categories}/${encodeURIComponent(categoryId)}/status`, { isActive }),
+  )
+}
+
+export async function deleteCategory(categoryId: string): Promise<void> {
+  await requestData(() =>
+    privateClient.delete<void>(`${endpoints.categories}/${encodeURIComponent(categoryId)}`),
+  )
+}
+
+export async function listSuppliers(filters: SupplierListFilters = {}): Promise<SupplierItem[]> {
+  const response = await requestData(() =>
+    privateClient.get<CatalogListResponse<SupplierItem>>(endpoints.suppliers, {
+      params: params({
+        Search: filters.search,
+        IsActive: filters.isActive,
+        HasPending: filters.hasPending,
+        Page: filters.page ?? 1,
+        PageSize: filters.pageSize ?? 50,
+      }),
+    }),
+  )
+  return listFrom(response)
+}
+
+export async function getSupplierStats(): Promise<SupplierStats> {
+  return requestData(() =>
+    privateClient.get<SupplierStats>(`${endpoints.suppliers}/stats`),
+  )
+}
+
+export async function getSupplier(supplierId: string): Promise<SupplierItem> {
+  return requestData(() =>
+    privateClient.get<SupplierItem>(`${endpoints.suppliers}/${encodeURIComponent(supplierId)}`),
+  )
+}
+
+export async function createSupplier(request: CreateSupplierRequest): Promise<SupplierItem> {
+  return requestData(() =>
+    privateClient.post<SupplierItem>(endpoints.suppliers, request),
+  )
+}
+
+export async function updateSupplier(supplierId: string, request: UpdateSupplierRequest): Promise<SupplierItem> {
+  return requestData(() =>
+    privateClient.put<SupplierItem>(`${endpoints.suppliers}/${encodeURIComponent(supplierId)}`, request),
+  )
+}
+
+export async function updateSupplierStatus(supplierId: string, isActive: boolean): Promise<SupplierItem> {
+  return requestData(() =>
+    privateClient.patch<SupplierItem>(`${endpoints.suppliers}/${encodeURIComponent(supplierId)}/status`, { isActive }),
+  )
+}
+
+export async function deleteSupplier(supplierId: string): Promise<void> {
+  await requestData(() =>
+    privateClient.delete<void>(`${endpoints.suppliers}/${encodeURIComponent(supplierId)}`),
+  )
+}
+
+export async function getSeries(seriesId: string): Promise<BookSeries> {
+  const response = await requestData(() =>
+    privateClient.get<SeriesResponse>(`${endpoints.series}/${encodeURIComponent(seriesId)}`),
+  )
+  return seriesForView(response)
+}
+
+export async function createSeries(request: CreateSeriesRequest): Promise<BookSeries> {
+  const response = await requestData(() =>
+    privateClient.post<SeriesResponse>(endpoints.series, request),
+  )
+  return seriesForView(response)
+}
+
+export async function updateSeries(seriesId: string, request: UpdateSeriesRequest): Promise<BookSeries> {
+  const response = await requestData(() =>
+    privateClient.put<SeriesResponse>(`${endpoints.series}/${encodeURIComponent(seriesId)}`, request),
+  )
+  return seriesForView(response)
+}
+
+export async function updateSeriesStatus(seriesId: string, isActive: boolean): Promise<BookSeries> {
+  const response = await requestData(() =>
+    privateClient.patch<SeriesResponse>(`${endpoints.series}/${encodeURIComponent(seriesId)}/status`, { isActive }),
+  )
+  return seriesForView(response)
+}
+
+export async function deleteSeries(seriesId: string): Promise<void> {
+  await requestData(() =>
+    privateClient.delete<void>(`${endpoints.series}/${encodeURIComponent(seriesId)}`),
+  )
+}
+
+export async function replaceSeriesImage(seriesId: string, imageUpload: CloudinaryUploadResultRequest): Promise<BookSeries> {
+  const response = await requestData(() =>
+    privateClient.put<SeriesResponse>(`${endpoints.series}/${encodeURIComponent(seriesId)}/image`, imageUpload),
+  )
+  return seriesForView(response)
+}
+
+export async function deleteSeriesImage(seriesId: string): Promise<void> {
+  await requestData(() =>
+    privateClient.delete<void>(`${endpoints.series}/${encodeURIComponent(seriesId)}/image`),
+  )
+}
+
+// ----------------------------------------------------------------------
+// BOOK TITLES APIS
+// ----------------------------------------------------------------------
+
+export async function listTitles(filters: TitleListFilters = {}): Promise<BookTitle[]> {
+  const response = await requestData(() =>
+    privateClient.get<CatalogListResponse<TitleResponse>>(endpoints.titles, {
+      params: params({
+        Name: filters.search,
+        SeriesId: filters.seriesId,
+        CategoryId: filters.categoryId,
+        Author: filters.author,
+        IsActive: filters.isActive,
+      }),
+    }),
+  )
+  return listFrom(response).map(titleForView)
+}
+
+export async function getTitle(titleId: string): Promise<BookTitle> {
+  const response = await requestData(() =>
+    privateClient.get<TitleResponse>(`${endpoints.titles}/${encodeURIComponent(titleId)}`),
+  )
+  return titleForView(response)
+}
+
+export async function createTitle(request: SaveTitleRequest): Promise<BookTitle> {
+  const response = await requestData(() =>
+    privateClient.post<TitleResponse>(endpoints.titles, request),
+  )
+  return titleForView(response)
+}
+
+export async function updateTitle(titleId: string, request: SaveTitleRequest): Promise<BookTitle> {
+  const response = await requestData(() =>
+    privateClient.put<TitleResponse>(`${endpoints.titles}/${encodeURIComponent(titleId)}`, request),
+  )
+  return titleForView(response)
+}
+
+export async function updateTitleStatus(titleId: string, isActive: boolean): Promise<BookTitle> {
+  const response = await requestData(() =>
+    privateClient.patch<TitleResponse>(`${endpoints.titles}/${encodeURIComponent(titleId)}/status`, { isActive }),
+  )
+  return titleForView(response)
+}
+
+export async function deleteTitle(titleId: string): Promise<void> {
+  await requestData(() =>
+    privateClient.delete<void>(`${endpoints.titles}/${encodeURIComponent(titleId)}`),
+  )
+}
+
+export async function replaceTitleImage(titleId: string, imageUpload: CloudinaryUploadResultRequest): Promise<BookTitle> {
+  const response = await requestData(() =>
+    privateClient.put<TitleResponse>(`${endpoints.titles}/${encodeURIComponent(titleId)}/image`, imageUpload),
+  )
+  return titleForView(response)
+}
+
+export async function deleteTitleImage(titleId: string): Promise<void> {
+  await requestData(() =>
+    privateClient.delete<void>(`${endpoints.titles}/${encodeURIComponent(titleId)}/image`),
+  )
+}
+
+// ----------------------------------------------------------------------
+// EDITIONS APIS
+// ----------------------------------------------------------------------
+
+export async function listEditions(titleId: string): Promise<BookEdition[]> {
+  const response = await requestData(() =>
+    privateClient.get<CatalogListResponse<EditionResponse>>(endpoints.editions, {
+      params: params({ TitleId: titleId }),
+    }),
+  )
+  return listFrom(response).map(editionForView)
+}
+
+export async function listAllEditions(): Promise<BookEdition[]> {
+  const response = await requestData(() =>
+    privateClient.get<CatalogListResponse<EditionResponse>>(endpoints.editions, {
+      params: params({ IsActive: true, PageSize: 100 }),
+    }),
+  )
+  return listFrom(response).map(editionForView)
+}
+
+export async function getEditionStockAlerts(filters: EditionStockAlertFilters = {}): Promise<EditionStockAlertDashboard> {
+  return requestData(() =>
+    privateClient.get<EditionStockAlertDashboard>(`${endpoints.editions}/stock-alerts`, {
+      params: params({
+        Search: filters.search,
+        Channel: filters.channel,
+        Severity: filters.severity,
+        SupplierId: filters.supplierId,
+        OnlyAlerts: filters.onlyAlerts,
+      }),
+    }),
+  )
+}
+
+export async function updateEditionThresholds(
+  editionId: string,
+  request: UpdateEditionThresholdsRequest,
+): Promise<EditionStockAlertItem> {
+  return requestData(() =>
+    privateClient.patch<EditionStockAlertItem>(
+      `${endpoints.editions}/${encodeURIComponent(editionId)}/thresholds`,
+      request,
+    ),
+  )
+}
+
+export async function listStockReceipts(filters: StockReceiptListFilters = {}): Promise<StockReceiptSummary[]> {
+  const response = await requestData(() =>
+    privateClient.get<CatalogListResponse<StockReceiptSummary>>(endpoints.stockReceipts, {
+      params: params({
+        Search: filters.search,
+        SupplierId: filters.supplierId,
+        Status: filters.status,
+        SourceType: filters.sourceType,
+        Page: filters.page ?? 1,
+        PageSize: filters.pageSize ?? 20,
+      }),
+    }),
+  )
+  return listFrom(response)
+}
+
+export async function getStockReceipt(receiptId: string): Promise<StockReceiptDetail> {
+  return requestData(() =>
+    privateClient.get<StockReceiptDetail>(`${endpoints.stockReceipts}/${encodeURIComponent(receiptId)}`),
+  )
+}
+
+export async function createStockReceipt(request: CreateStockReceiptRequest): Promise<StockReceiptDetail> {
+  return requestData(() =>
+    privateClient.post<StockReceiptDetail>(endpoints.stockReceipts, request),
+  )
+}
+
+export async function updateStockReceipt(receiptId: string, request: UpdateStockReceiptRequest): Promise<StockReceiptDetail> {
+  return requestData(() =>
+    privateClient.put<StockReceiptDetail>(`${endpoints.stockReceipts}/${encodeURIComponent(receiptId)}`, request),
+  )
+}
+
+export async function completeStockReceipt(receiptId: string, request: CompleteStockReceiptRequest = {}): Promise<StockReceiptDetail> {
+  return requestData(() =>
+    privateClient.post<StockReceiptDetail>(`${endpoints.stockReceipts}/${encodeURIComponent(receiptId)}/complete`, request),
+  )
+}
+
+export async function activateStockReceiptCopies(receiptId: string, request: ActivateStockReceiptCopiesRequest = {}): Promise<StockReceiptDetail> {
+  return requestData(() =>
+    privateClient.post<StockReceiptDetail>(`${endpoints.stockReceipts}/${encodeURIComponent(receiptId)}/activate`, request),
+  )
+}
+
+export async function cancelStockReceipt(receiptId: string): Promise<StockReceiptDetail> {
+  return requestData(() =>
+    privateClient.post<StockReceiptDetail>(`${endpoints.stockReceipts}/${encodeURIComponent(receiptId)}/cancel`),
+  )
+}
+
+export async function listStockOuts(filters: StockOutListFilters = {}): Promise<StockOutDetail[]> {
+  const response = await requestData(() =>
+    privateClient.get<CatalogListResponse<StockOutDetail>>(endpoints.stockOut, {
+      params: params({
+        Search: filters.search,
+        Status: filters.status,
+        Page: filters.page ?? 1,
+        PageSize: filters.pageSize ?? 20,
+      }),
+    }),
+  )
+  return listFrom(response)
+}
+
+export async function getStockOut(stockOutId: string): Promise<StockOutDetail> {
+  return requestData(() =>
+    privateClient.get<StockOutDetail>(`${endpoints.stockOut}/${encodeURIComponent(stockOutId)}`),
+  )
+}
+
+export async function createStockOut(request: CreateStockOutRequest): Promise<StockOutDetail> {
+  return requestData(() =>
+    privateClient.post<StockOutDetail>(endpoints.stockOut, request),
+  )
+}
+
+export async function confirmStockOut(stockOutId: string): Promise<StockOutDetail> {
+  return requestData(() =>
+    privateClient.post<StockOutDetail>(`${endpoints.stockOut}/${encodeURIComponent(stockOutId)}/confirm`),
+  )
+}
+
+export async function getEdition(editionId: string): Promise<BookEdition> {
+  const response = await requestData(() =>
+    privateClient.get<EditionResponse>(`${endpoints.editions}/${encodeURIComponent(editionId)}`),
+  )
+  return editionForView(response)
+}
+
+export async function createEdition(request: CreateEditionRequest): Promise<BookEdition> {
+  const response = await requestData(() =>
+    privateClient.post<EditionResponse>(endpoints.editions, request),
+  )
+  return editionForView(response)
+}
+
+export async function updateEdition(editionId: string, request: UpdateEditionRequest): Promise<BookEdition> {
+  const response = await requestData(() =>
+    privateClient.put<EditionResponse>(`${endpoints.editions}/${encodeURIComponent(editionId)}`, request),
+  )
+  return editionForView(response)
+}
+
+export async function updateEditionStatus(editionId: string, isActive: boolean): Promise<BookEdition> {
+  const response = await requestData(() =>
+    privateClient.patch<EditionResponse>(`${endpoints.editions}/${encodeURIComponent(editionId)}/status`, { isActive }),
+  )
+  return editionForView(response)
+}
+
+export async function deleteEdition(editionId: string): Promise<void> {
+  await requestData(() =>
+    privateClient.delete<void>(`${endpoints.editions}/${encodeURIComponent(editionId)}`),
+  )
+}
+
+export async function replaceEditionImage(editionId: string, imageUpload: CloudinaryUploadResultRequest): Promise<BookEdition> {
+  const response = await requestData(() =>
+    privateClient.put<EditionResponse>(`${endpoints.editions}/${encodeURIComponent(editionId)}/image`, imageUpload),
+  )
+  return editionForView(response)
+}
+
+export async function deleteEditionImage(editionId: string): Promise<void> {
+  await requestData(() =>
+    privateClient.delete<void>(`${endpoints.editions}/${encodeURIComponent(editionId)}/image`),
+  )
+}
+
+// ----------------------------------------------------------------------
+// BOOK COPIES APIS
+// ----------------------------------------------------------------------
+
+export async function listCopies(editionId: string): Promise<BookCopy[]> {
+  const response = await requestData(() =>
+    privateClient.get<CatalogListResponse<CopyResponse>>(endpoints.copies, {
+      params: params({ EditionId: editionId }),
+    }),
+  )
+  return listFrom(response).map(copyForView)
+}
+
+export async function listAvailableReceiptLines(editionId: string): Promise<AvailableReceiptLine[]> {
+  return requestData(() => privateClient.get<AvailableReceiptLine[]>(`${endpoints.copies}/receipt-lines`, { params: { editionId } }))
+}
+
+export async function getCopy(copyId: string): Promise<BookCopy> {
+  const response = await requestData(() =>
+    privateClient.get<CopyResponse>(`${endpoints.copies}/${encodeURIComponent(copyId)}`),
+  )
+  return copyForView(response)
+}
+
+export async function getCopyByBarcode(copyBarcode: string): Promise<BookCopy> {
+  const response = await requestData(() =>
+    privateClient.get<CopyResponse>(`${endpoints.copies}/by-barcode/${encodeURIComponent(copyBarcode)}`),
+  )
+  return copyForView(response)
+}
+
+export async function getCopyHistory(copyId: string): Promise<BookCopyHistoryItem[]> {
+  return await requestData(() =>
+    privateClient.get<BookCopyHistoryItem[]>(`${endpoints.copies}/${encodeURIComponent(copyId)}/history`),
+  )
+}
+
+export async function createCopy(request: CreateCopyRequest): Promise<BookCopy> {
+  const response = await requestData(() =>
+    privateClient.post<CopyResponse>(endpoints.copies, request),
+  )
+  return copyForView(response)
+}
+
+export async function updateCopy(copyId: string, request: UpdateCopyRequest): Promise<BookCopy> {
+  const response = await requestData(() =>
+    privateClient.put<CopyResponse>(`${endpoints.copies}/${encodeURIComponent(copyId)}`, request),
+  )
+  return copyForView(response)
+}
+
+export async function deleteCopy(copyId: string): Promise<void> {
+  await requestData(() => privateClient.delete<void>(`${endpoints.copies}/${encodeURIComponent(copyId)}`))
+}
+
+export async function updateCopyStatus(copyId: string, request: UpdateCopyStatusRequest): Promise<BookCopy> {
+  const response = await requestData(() =>
+    privateClient.patch<CopyResponse>(`${endpoints.copies}/${encodeURIComponent(copyId)}/status`, request),
+  )
+  return copyForView(response)
+}
+
+export async function updateCopyShelf(copyId: string, request: UpdateCopyShelfRequest): Promise<BookCopy> {
+  const response = await requestData(() =>
+    privateClient.patch<CopyResponse>(`${endpoints.copies}/${encodeURIComponent(copyId)}/shelf`, request),
+  )
+  return copyForView(response)
+}
+
+export async function createCopyLabel(copyId: string): Promise<BookCopyLabelResponse> {
+  return await requestData(() =>
+    privateClient.post<BookCopyLabelResponse>(`${endpoints.copies}/${encodeURIComponent(copyId)}/label`),
+  )
+}
+
+export async function replaceCopyImage(copyId: string, imageUpload: CloudinaryUploadResultRequest): Promise<BookCopy> {
+  const response = await requestData(() =>
+    privateClient.put<CopyResponse>(`${endpoints.copies}/${encodeURIComponent(copyId)}/image`, imageUpload),
+  )
+  return copyForView(response)
+}
+
+export async function deleteCopyImage(copyId: string): Promise<void> {
+  await requestData(() =>
+    privateClient.delete<void>(`${endpoints.copies}/${encodeURIComponent(copyId)}/image`),
+  )
+}
+
+export function uploadBookCover(file: File): Promise<UploadedImage> {
+  return uploadImage('TITLE_IMAGE', file)
+}

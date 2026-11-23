@@ -43,13 +43,18 @@ Feature, business rule, spec hoặc mã nguồn bị ảnh hưởng.
 | Record | Trạng thái | Nội dung |
 | --- | --- | --- |
 | [`PDR-001`](./PDR-001-internal-store-only.md) | Accepted | Hệ thống chỉ phục vụ nội bộ cửa hàng |
-| [`PDR-002`](./PDR-002-three-roles-and-approval.md) | Accepted | Ba role và Admin duyệt ngoại lệ |
+| [`PDR-002`](./PDR-002-three-roles-and-approval.md) | Superseded in part | Ba role và Admin duyệt ngoại lệ; canonical identifiers superseded by PDR-008 |
 | [`PDR-003`](./PDR-003-rental-and-membership-policy.md) | Accepted | Chính sách thuê và thành viên |
 | [`PDR-004`](./PDR-004-required-integrations-and-fallbacks.md) | Accepted | Tích hợp thật và fallback |
 | [`PDR-005`](./PDR-005-title-edition-copy-identification.md) | Accepted | Tách đầu sách, ấn bản và bản vật lý |
 | [`PDR-006`](./PDR-006-simple-staff-payroll-and-cash.md) | Accepted | Chấm công, lương và két tối giản cho MVP |
 | [`PDR-007`](./PDR-007-dual-channel-book-copy-availability.md) | Accepted | Bản sách mặc định dùng được cho cả bán và thuê |
+| [`PDR-008`](./PDR-008-canonical-role-identifiers.md) | Accepted | Canonical `ADMIN`, `CASHIER`, `INVENTORY_MANAGER` role identifiers |
 | [`ADR-001`](./ADR-001-postgresql-primary-database.md) | Accepted | PostgreSQL là cơ sở dữ liệu chính |
 | [`ADR-002`](./ADR-002-aspnet-core-backend.md) | Accepted | ASP.NET Core là backend chính thức |
+| [`ADR-003`](./ADR-003-browser-cookie-authentication.md) | Accepted | JWT browser session dùng HttpOnly cookie và synchronizer CSRF token |
+| [`ADR-005`](./ADR-005-stable-session-csrf-token-and-csrf-scope.md) | Accepted | CSRF token ổn định theo phiên; chỉ kiểm tra CSRF ở endpoint cần đăng nhập |
+| [`ADR-006`](./ADR-006-integration-secret-protection.md) | Accepted | Mã hóa secret tích hợp bằng Data Protection và giữ bền bộ khóa |
+| [`ADR-007`](./ADR-007-dynamic-role-permissions-and-immediate-config.md) | Accepted | Quyền động theo thao tác API; cấu hình hiệu lực ngay và lưu audit |
 
 Quyết định xác thực vẫn mở tại [`OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md); backend tuân theo `ADR-002`.

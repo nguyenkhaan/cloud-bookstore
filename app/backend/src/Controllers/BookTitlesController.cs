@@ -1,0 +1,137 @@
+using backend.src.Configurations;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using backend.src.Dto.AuditLogDto;
+using backend.src.Dto.Common;
+using backend.src.Dto.TitleDto;
+using backend.src.Dto.UploadDto;
+using backend.src.Models.Enums;
+using backend.src.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace backend.src.Controllers;
+
+[ApiController]
+[Route("api/book-titles")]
+public class BookTitlesController(TitleService titleService) : ControllerBase
+{
+    private const string StaffRoles =
+        $"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)},{nameof(RoleName.CASHIER)}";
+
+    [HttpGet]
+    [Permission($"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)},{nameof(RoleName.CASHIER)}")]
+    [ProducesResponseType<PagedResult<TitleResponse>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<TitleResponse>>> GetTitles(
+        [FromQuery] TitleQuery query,
+        CancellationToken cancellationToken)
+    {
+        var result = await titleService.GetTitlesAsync(query, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:guid}")]
+    [Permission($"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)},{nameof(RoleName.CASHIER)}")]
+    [ProducesResponseType<TitleDetailResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<TitleDetailResponse>> GetTitleById(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken)
+    {
+        var result = await titleService.GetTitleByIdAsync(id, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost]
+    [Permission($"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [ProducesResponseType<TitleResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<TitleResponse>> CreateTitle(
+        [FromBody] CreateTitleRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await titleService.CreateTitleAsync(request, BuildAuditContext(), cancellationToken);
+        return CreatedAtAction(nameof(GetTitleById), new { id = result.Id }, result);
+    }
+
+    [HttpPut("{id:guid}")]
+    [Permission($"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [ProducesResponseType<TitleResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<TitleResponse>> UpdateTitle(
+        [FromRoute] Guid id,
+        [FromBody] UpdateTitleRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await titleService.UpdateTitleAsync(id, request, BuildAuditContext(), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPatch("{id:guid}/status")]
+    [Permission($"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [ProducesResponseType<TitleResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<TitleResponse>> UpdateTitleStatus(
+        [FromRoute] Guid id,
+        [FromBody] UpdateTitleStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await titleService.UpdateTitleStatusAsync(id, request, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpDelete("{id:guid}")]
+    [Permission($"{nameof(RoleName.ADMIN)},{nameof(RoleName.INVENTORY_MANAGER)}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteTitle(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken)
+    {
+        await titleService.DeleteTitleAsync(id, BuildAuditContext(), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPut("{id:guid}/image")]
+    [Permission(StaffRoles)]
+    [ProducesResponseType<TitleResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<TitleResponse>> UpdateTitleImage(
+        [FromRoute] Guid id,
+        [FromBody] CloudinaryUploadResultRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await titleService.UpdateTitleImageAsync(id, request, BuildAuditContext(), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpDelete("{id:guid}/image")]
+    [Permission(StaffRoles)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteTitleImage(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken)
+    {
+        await titleService.DeleteTitleImageAsync(id, BuildAuditContext(), cancellationToken);
+        return NoContent();
+    }
+
+    private AuditLogContext BuildAuditContext()
+    {
+        var actorClaim = User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return new AuditLogContext(
+            Guid.TryParse(actorClaim, out var actorId) ? actorId : null,
+            HttpContext.Connection.RemoteIpAddress);
+    }
+}

@@ -1,0 +1,19 @@
+import React from 'react';
+
+export interface FooterProps {
+  version?: string;
+  note?: string;
+}
+
+export const Footer: React.FC<FooterProps> = ({
+  version = '',
+  note = '',
+}) => {
+  return (
+    <footer className="mt-auto flex items-center justify-between border-t border-slate-200/60 py-3 text-[11px] text-slate-600 print:hidden">
+      <div>{note}</div>
+      <div className="font-mono">{version}</div>
+    </footer>
+  );
+};
+

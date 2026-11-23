@@ -2,34 +2,67 @@
 //dotnet ef database update
 // Run: dotnet watch run 
 using backend.src.Data;
+using System.Text.Json;
+using Microsoft.Extensions.Options;
 using backend.src.Exceptions;
+using backend.src.Configurations;
+using backend.src.Infrastructure;
+using backend.src.Models.Enums;
 using backend.src.Scripts;
 using backend.src.Services;
+using backend.src.Bases.Enums;
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Authorization;
 var builder = WebApplication.CreateBuilder(args);
+var authCookieSettings = builder.Configuration
+    .GetSection(AuthCookieSettings.SectionName)
+    .Get<AuthCookieSettings>() ?? new AuthCookieSettings();
+var authSecuritySettings = AuthSecuritySettings.FromConfiguration(builder.Configuration);
 //System Configuration: Controller, Database, Exception...
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    { //Cau hinh de cho phep nhan enum la chuoi khi gui request. 
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(
+            namingPolicy: null,
+            allowIntegerValues: false
+        ));
+    });
+// Microsoft.AspNetCore.OpenApi builds schemas from the HTTP JSON options, not the MVC ones above.
+// Without this, every enum is documented as an integer although the API only accepts names.
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    // Document numeric JSON responses; MVC keeps its existing permissive request-number handling.
+    options.SerializerOptions.NumberHandling = JsonNumberHandling.Strict;
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(
+        namingPolicy: null,
+        allowIntegerValues: false
+    ));
+});
 //CORS configuration
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy
-            .WithOrigins(
-                "https://cloudbook.cloudian.io.vn",
-                "http://localhost:5173"
-            )
+            .WithOrigins(authCookieSettings.AllowedOrigins)
             .WithHeaders(
                 "Content-Type",
                 "Authorization",
-                "Accept"
+                "Accept",
+                authCookieSettings.CsrfHeaderName
             )
+            .AllowCredentials()
             .WithMethods(
                 "GET",
                 "POST",
                 "PUT",
+                "PATCH",
                 "DELETE",
                 "OPTIONS"
             );
@@ -37,7 +70,42 @@ builder.Services.AddCors(options =>
 });
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiHandlerException>();
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+    options.AddOperationTransformer<BearerSecurityOperation>();
+});
+
+builder.Services
+    .AddOptions<AuthSecuritySettings>()
+    .BindConfiguration(AuthSecuritySettings.SectionName)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+builder.Services
+    .AddOptions<AuthCookieSettings>()
+    .BindConfiguration(AuthCookieSettings.SectionName)
+    .ValidateDataAnnotations()
+    .Validate(
+        settings => settings.AllowedOrigins.All(origin =>
+            Uri.TryCreate(origin, UriKind.Absolute, out var parsedOrigin) &&
+            string.Equals(
+                parsedOrigin.GetLeftPart(UriPartial.Authority),
+                origin.TrimEnd('/'),
+                StringComparison.OrdinalIgnoreCase)),
+        "AuthCookies:AllowedOrigins must contain absolute origins without a path.")
+    .ValidateOnStart();
+builder.Services.AddSingleton(authCookieSettings);
+builder.Services.AddSingleton(authSecuritySettings);
+
+builder.Services.AddHttpClient<RedisService>();
+builder.Services.AddTransient<TokenJtiStore>();
+builder.Services.AddScoped<AuthCookieService>();
+builder.Services.AddScoped<ICsrfTokenStore, RedisCsrfTokenStore>();
+builder.Services.AddScoped<CsrfTokenService>();
+builder.Services.AddSingleton(_ => CsrfTokenSigningKey.FromSecret(builder.Configuration["Jwt:AccessSecret:Key"]));
+builder.Services
+    .AddHealthChecks()
+    .AddCheck<RedisReadinessHealthCheck>("redis", tags: ["ready"]);
 
 string connectionString = builder.Configuration["ConnectionStrings:DefaultConnection"] 
     ?? throw new InvalidDataException("Cannot connect to database. Please check your connection string");
@@ -54,6 +122,7 @@ builder.Services
     .AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
     {
+        options.MapInboundClaims = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -63,6 +132,7 @@ builder.Services
 
             ValidIssuer = builder.Configuration["ApiSettings:Issuer"],
             ValidAudience = builder.Configuration["ApiSettings:Audience"],
+            ClockSkew = TimeSpan.Zero,
 
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(
@@ -72,14 +142,146 @@ builder.Services
             ),
             RoleClaimType = "role"
         };
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var selection = AuthTokenSelector.Select(
+                    context.Request,
+                    authCookieSettings.AccessCookieName);
+                if (selection.AccessCookiePresent)
+                {
+                    context.HttpContext.Items[AuthTokenSelector.CookieAuthenticationItem] = true;
+                    if (string.IsNullOrWhiteSpace(selection.Token))
+                    {
+                        context.Fail("Access cookie is invalid.");
+                        return Task.CompletedTask;
+                    }
+
+                    context.Token = selection.Token;
+                    return Task.CompletedTask;
+                }
+
+                if (!string.IsNullOrWhiteSpace(selection.Token))
+                {
+                    context.Token = selection.Token;
+                }
+
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = async context =>
+            {
+                var jti = context.Principal?.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+                if (string.IsNullOrWhiteSpace(jti))
+                {
+                    context.Fail("Token JTI is missing.");
+                    return;
+                }
+                var tokenStore = context.HttpContext.RequestServices.GetRequiredService<TokenJtiStore>();
+                try
+                {
+                    if (!await tokenStore.IsActiveAsync(jti, TokenType.ACCESS, context.HttpContext.RequestAborted))
+                    {
+                        context.Fail("Token has been revoked.");
+                        return;
+                    }
+
+                    var subject = context.Principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                    if (!Guid.TryParse(subject, out var employeeId))
+                    {
+                        context.Fail("Token subject is invalid.");
+                        return;
+                    }
+                    //Getting role name 
+                    var jwtRoleValue = context.Principal?
+                        .FindFirst("role")?
+                        .Value;
+                    var dbContext = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+                    //Lay them va so sanh voi role name ben trong database nua de co the nam duoc ro hon
+                    var employee = await dbContext.Employees
+                        .AsNoTracking()
+                        .Include(employee => employee.Role)
+                        .SingleOrDefaultAsync(item => item.Id == employeeId, context.HttpContext.RequestAborted);
+                    if (employee is null ||
+                        employee.Status != backend.src.Models.Enums.EmployeeStatus.ACTIVE ||
+                        employee.LockoutEndUtc > DateTime.UtcNow)
+                    {
+                        context.Fail("Account is unavailable.");
+                        return;
+                    }
+                    if (!Enum.TryParse<RoleName>(
+                        jwtRoleValue,
+                        ignoreCase: true,
+                        out var jwtRole))
+                    {
+                        context.Fail("Token role is invalid.");
+                        return;
+                    }
+                    if (employee.Role.RoleName != jwtRole)
+                    {
+                        context.Fail("Account role has been changed");
+                        return;
+                    }
+
+                }
+                catch (Exception)
+                {
+                    context.Fail("Token state is unavailable.");
+                }
+            }
+        };
     });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options => options.AddPolicy(PermissionAttribute.PolicyName,
+    policy => policy.RequireAuthenticatedUser().AddRequirements(new PermissionRequirement())));
+builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+builder.Services.AddScoped<RolePermissionService>();
+
+builder.Services
+    .AddOptions<EmailSettings>()
+    .BindConfiguration("Email")
+    .ValidateDataAnnotations()
+    .Validate(
+        settings => Uri.TryCreate(settings.FrontendBaseUrl, UriKind.Absolute, out _),
+        "Email:FrontendBaseUrl must be an absolute URL.")
+    .ValidateOnStart();
+
+builder.Services
+    .AddOptions<CloudinarySettings>()
+    .BindConfiguration(CloudinarySettings.SectionName)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+builder.Services.AddSingleton<ICloudinaryService, CloudinaryService>();
 
 //Dependency Injection
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<SettingService>();
+builder.Services.AddScoped<SystemSettingsService>();
+builder.Services.AddDataProtection().SetApplicationName("CloudBookstore");
 builder.Services.AddScoped<AuthService>();
-
+builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<EmployeeService>();
+builder.Services.AddScoped<AuditLogService>();
+builder.Services.AddScoped<UploadIntentService>();
+builder.Services.AddScoped<CategoryService>();
+builder.Services.AddScoped<SupplierService>();
+builder.Services.AddScoped<StockReceiptService>();
+builder.Services.AddScoped<StockOutService>();
+builder.Services.AddScoped<CustomerBuybackService>();
+builder.Services.AddScoped<BookSeriesService>();
+builder.Services.AddScoped<TitleService>();
+builder.Services.AddScoped<EditionService>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<BookCopyService>();
+builder.Services.AddScoped<CustomerService>();
+builder.Services.AddScoped<CustomerHistoryService>();
+builder.Services.AddScoped<MembershipService>();
+builder.Services.AddScoped<InventoryAdjustmentService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<backend.src.Services.ApprovalServices.BuybackApprovalService>();
+builder.Services.AddScoped<backend.src.Services.ApprovalServices.DamagePenaltyApprovalService>();
+builder.Services.AddScoped<backend.src.Services.ApprovalServices.DisposalReversalApprovalService>();
+builder.Services.AddScoped<backend.src.Services.ApprovalServices.ApprovalsOverviewService>();
+builder.Services.AddScoped<backend.src.Services.ReportServices.ReportsService>();
 //Dependency Injection -> builder.Services.AddScoped<AuthService>();
 var app = builder.Build();
 
@@ -88,14 +290,52 @@ app.UseExceptionHandler(new ExceptionHandlerOptions
     AllowStatusCode404Response = true
 });
 
+app.UseCors("AllowFrontend");
+app.UseMiddleware<UnsafeOriginValidationMiddleware>();
+
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+
+    var csrfHeaderName = app.Services
+        .GetRequiredService<IOptions<AuthCookieSettings>>()
+        .Value.CsrfHeaderName;
+
     app.UseSwaggerUI(options =>
     {
-        options.SwaggerEndpoint("/openapi/v1.json", "Cloud Bookstore API v1");
+        options.SwaggerEndpoint(
+            "/openapi/v1.json",
+            "Cloud Bookstore API v1"
+        );
+
         options.RoutePrefix = "docs";
+
+
+        options.UseRequestInterceptor(
+    $$"""
+    (request) => {
+        const authorized =
+            window.ui?.authSelectors?.authorized()?.toJS?.() ?? {};
+
+        console.log("Swagger authorized:", authorized);
+
+        const csrfToken = authorized["CsrfToken"]?.value;
+
+        console.log("CSRF token found:", Boolean(csrfToken));
+
+        if (csrfToken) {
+            request.headers = request.headers || {};
+            request.headers[{{JsonSerializer.Serialize(csrfHeaderName)}}] = csrfToken;
+        }
+
+        return request;
+    }
+    """
+);
+
+
+
     });
 }
 if (args.Contains("--seed", StringComparer.OrdinalIgnoreCase))
@@ -104,7 +344,12 @@ if (args.Contains("--seed", StringComparer.OrdinalIgnoreCase))
     return;
 }
 app.UseAuthentication();
+app.UseMiddleware<CsrfProtectionMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/api/health/readiness", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
 
 app.Run();

@@ -19,8 +19,8 @@
 | AUTH-003 | Open policy | Nhân viên đăng ký bằng email được cho phép và xác thực OTP. |
 | AUTH-004 | Open policy | Đăng nhập, đăng xuất, đổi mật khẩu và đặt lại mật khẩu. |
 | AUTH-005 | Required | Admin khóa, mở khóa hoặc vô hiệu hóa tài khoản không được bảo vệ. |
-| RBAC-001 | Required | Hệ thống có đúng ba vai trò nghiệp vụ: Admin, Nhân viên và Quản lý kho. |
-| RBAC-002 | Required | Backend kiểm tra quyền trên mọi API được bảo vệ. |
+| RBAC-001 | Required | Hệ thống có đúng ba vai trò nghiệp vụ: `ADMIN` (Admin/Quản trị viên), `CASHIER` (Cashier/Thu ngân) và `INVENTORY_MANAGER` (Inventory/Quản lý kho). |
+| RBAC-002 | Required | Backend kiểm tra quyền trên mọi API được bảo vệ; Admin cấu hình quyền theo thao tác cho ba role, hiệu lực từ request tiếp theo (ADR-007). |
 | RBAC-003 | Required | Chỉ Admin được phê duyệt ngoại lệ nhạy cảm. |
 | AUD-001 | Required | Ghi audit log cho quyền, giá, kho, tài chính, chấm công, lương và cấu hình. |
 | AUD-002 | Required | Tra cứu audit log theo người dùng, hành động, đối tượng và thời gian. |
@@ -170,7 +170,7 @@
 | REPORT-004 | Required | Báo cáo doanh thu, chi phí, nhân sự, lương và ca thu ngân. |
 | REPORT-005 | Open policy | Tổng hợp dữ liệu thuế theo tháng/quý và xuất Excel/PDF; không tự nộp thuế. |
 | CONFIG-001 | Required | Quản lý tham số thuê, thành viên, phạt, thu mua và ngưỡng tồn kho. |
-| CONFIG-002 | Required | Lưu lịch sử thay đổi cấu hình và thời điểm hiệu lực. |
+| CONFIG-002 | Required | Lưu lịch sử giá trị cũ/mới, người đổi, lý do và thời điểm hiệu lực ngay khi lưu; secret được che (ADR-007). |
 | CONFIG-003 | Required | Cấu hình mới không viết lại giao dịch lịch sử. |
 | OPS-001 | Required | Health check và trạng thái tích hợp phục vụ vận hành. |
 | OPS-002 | Open policy | Sao lưu, khôi phục, retention log và giám sát theo mục tiêu NFR được duyệt. |

@@ -14,10 +14,9 @@ public class EditionModel
     [MaxLength(255)] public string? Publisher { get; set; }
     public short? PublishYear { get; set; }
     public long CoverPrice { get; set; }
-    public long? DefaultRentPrice { get; set; }
     public int MinStockSale { get; set; }
     public int MinStockRental { get; set; }
-    public string? CoverImageUrl { get; set; }
+    [MaxLength(255)] public string? PublicImageId { get; set; }
     public MetadataSource? MetadataSource { get; set; }
     public Guid? MetadataConfirmedBy { get; set; }
     public DateTime? MetadataConfirmedAt { get; set; }

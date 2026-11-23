@@ -2,11 +2,13 @@
 
 **Trạng thái:** Accepted
 
-MVP có đúng ba vai trò nghiệp vụ. Tên “Quản lý” hoặc “Thu ngân” trong tài liệu cũ không tạo thêm role; trách nhiệm đó được ánh xạ vào Admin hoặc Nhân viên.
+MVP có đúng ba vai trò nghiệp vụ: `ADMIN` (Admin/Quản trị viên), `CASHIER` (Cashier/Thu ngân) và `INVENTORY_MANAGER` (Inventory/Quản lý kho). Không có role alias hoặc role thứ tư.
 
 ## Ma trận quyền cấp cao
 
-| Năng lực | Admin | Nhân viên | Quản lý kho |
+Đây là quyền mặc định. Theo [ADR-007](../decisions/ADR-007-dynamic-role-permissions-and-immediate-config.md), Admin có thể cấp/thu hồi quyền theo thao tác API cho ba role. Các thao tác vốn chỉ Admin (duyệt ngoại lệ, đổi role, sửa cấu hình, audit toàn hệ thống) vẫn được bảo vệ; không thể tắt quyền quản trị RBAC. Backend đọc quyền mới ở mỗi request. Giao diện làm mới quyền khi focus/refetch và tối đa mỗi 15 giây trong tab đang mở.
+
+| Năng lực | Admin | Cashier / Thu ngân | Inventory / Quản lý kho |
 | --- | :---: | :---: | :---: |
 | Quản lý tài khoản và vai trò | Có | Không | Không |
 | Cấu hình chính sách nghiệp vụ | Có | Không | Không |
@@ -31,15 +33,15 @@ MVP có đúng ba vai trò nghiệp vụ. Tên “Quản lý” hoặc “Thu ng
 - Duyệt thay đổi giá, thu mua vượt hạn mức, chênh lệch kho/két, giao dịch đảo và điều chỉnh dữ liệu đã khóa.
 - Tài khoản Admin gốc được bảo vệ khỏi hạ quyền, khóa hoặc xóa bằng luồng thông thường.
 
-## Nhân viên
+## Cashier / Thu ngân
 
-- Là nhân viên thu ngân đứng tại quầy trong thực tế.
+- Vận hành quầy thu ngân trong thực tế.
 - Thực hiện bán, thuê–trả, gia hạn, thu mua, thanh toán và ca thu ngân.
 - Quản lý hồ sơ khách trong phạm vi giao dịch.
 - Check-in/out và tạo yêu cầu sửa chấm công khi được cấp quyền.
 - Tạo yêu cầu phê duyệt khi vượt quyền; không tự duyệt yêu cầu của mình.
 
-## Quản lý kho
+## Inventory / Quản lý kho
 
 - Quản lý danh mục, metadata, nhà cung cấp, nhập/xuất kho, cấp/in `CopyBarcode`, kiểm kê và cảnh báo tồn.
 - Có thể tiếp nhận/thẩm định sách thu mua nếu được phân công, nhưng ngoại lệ vẫn cần Admin duyệt.

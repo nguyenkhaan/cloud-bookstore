@@ -4,7 +4,7 @@ public class SettingService(IConfiguration configuration)
 {
     public List<string> GetEmailDomains()
     {
-        string? domains = configuration["AppSettings:AllowedEmainDomains"];
+        string? domains = configuration["AppSettings:AllowedEmailDomains"];
         if (string.IsNullOrEmpty(domains)) return [];
         return domains
             .Split(',', StringSplitOptions.RemoveEmptyEntries)

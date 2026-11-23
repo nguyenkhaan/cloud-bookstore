@@ -1,0 +1,116 @@
+import assert from 'node:assert/strict'
+import { existsSync, readFileSync } from 'node:fs'
+import { test } from 'node:test'
+import { fileURLToPath } from 'node:url'
+import path from 'node:path'
+
+const frontendRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const src = (...parts) => path.join(frontendRoot, 'src', ...parts)
+
+test('auth and dashboard UI are organized as feature modules', () => {
+  const expectedFiles = [
+    ['components', 'common', 'TextField', 'TextField.tsx'],
+    ['features', 'auth', 'pages', 'LoginPage.tsx'],
+    ['features', 'auth', 'pages', 'VerifyRegisterPage.tsx'],
+    ['features', 'auth', 'components', 'PasswordField.tsx'],
+    ['features', 'auth', 'auth.hook.ts'],
+    ['features', 'auth', 'auth.service.ts'],
+    ['features', 'auth', 'auth.type.ts'],
+    ['features', 'dashboard', 'pages', 'DashboardPage.tsx'],
+    ['features', 'dashboard', 'dashboard.hook.ts'],
+    ['features', 'dashboard', 'dashboard.service.ts'],
+    ['features', 'dashboard', 'dashboard.type.ts'],
+    ['routes', 'AppRoutes.tsx'],
+  ]
+
+  for (const parts of expectedFiles) {
+    assert.ok(existsSync(src(...parts)), `missing src/${parts.join('/')}`)
+  }
+
+  assert.ok(!existsSync(src('tmp', 'pages', 'Login', 'LoginPage.tsx')))
+  assert.ok(!existsSync(src('tmp', 'pages', 'Dashboard', 'DashboardPage.tsx')))
+  assert.ok(!existsSync(src('features', 'auth', 'pages', 'ActivateAccountPage.tsx')))
+
+  const routes = readFileSync(src('routes', 'AppRoutes.tsx'), 'utf8')
+  assert.match(routes, /from ['"]react-router-dom['"]/)
+  assert.match(routes, /path=['"]\/login['"]/)
+  assert.match(routes, /path=['"]\/dashboard['"]/)
+  assert.doesNotMatch(routes, /@\/tmp\/pages/)
+  assert.match(routes, /path=['"]\/catalog\/series['"]/)
+  assert.match(routes, /path=['"]\/catalog\/titles['"]/)
+})
+
+test('shared components live outside tmp', () => {
+  const sharedFiles = [
+    ['components', 'common', 'Badge', 'Badge.tsx'],
+    ['components', 'common', 'Button', 'Button.tsx'],
+    ['components', 'common', 'Card', 'Card.tsx'],
+    ['components', 'common', 'StatCard', 'StatCard.tsx'],
+    ['components', 'common', 'Icons', 'Icons.tsx'],
+    ['components', 'layout', 'MainLayout.tsx'],
+    ['components', 'layout', 'Header', 'Header.tsx'],
+    ['components', 'layout', 'Sidebar', 'Sidebar.tsx'],
+    ['components', 'layout', 'Footer', 'Footer.tsx'],
+  ]
+
+  for (const parts of sharedFiles) {
+    assert.ok(existsSync(src(...parts)), `missing src/${parts.join('/')}`)
+  }
+
+  assert.ok(!existsSync(src('tmp', 'components', 'common', 'Icons.tsx')))
+})
+
+test('application brand configuration lives in shared lib', () => {
+  assert.ok(existsSync(src('lib', 'brand.ts')))
+  assert.ok(!existsSync(src('tmp', 'config', 'brand.ts')))
+})
+
+test('phase 11 routes and display types stay in their owning features', () => {
+  const expectedFiles = [
+    ['features', 'pos', 'pos.route.ts'],
+    ['features', 'pos', 'pos-shift.type.ts'],
+    ['features', 'hr', 'hr.route.ts'],
+    ['features', 'hr', 'hr-shift.type.ts'],
+    ['features', 'hr', 'attendance.data.ts'],
+    ['features', 'hr', 'components', 'AttendanceCard.tsx'],
+    ['features', 'hr', 'components', 'AttendanceDateFilter.tsx'],
+    ['features', 'hr', 'components', 'AdminAttendanceSection.tsx'],
+  ]
+
+  for (const parts of expectedFiles) {
+    assert.ok(existsSync(src(...parts)), `missing src/${parts.join('/')}`)
+  }
+
+  for (const obsolete of [
+    ['features', 'hr', 'admin-hr.route.ts'],
+    ['features', 'hr', 'components', 'AdminHrTabs.tsx'],
+    ['features', 'hr', 'pages', 'AdminAttendancePage.tsx'],
+  ]) {
+    assert.ok(!existsSync(src(...obsolete)), `obsolete src/${obsolete.join('/')} must not exist`)
+  }
+})
+
+test('React Query is configured at the application root', () => {
+  assert.ok(!existsSync(src('lib', 'query-client.ts')))
+  assert.ok(!existsSync(src('context', 'QueryProvider.tsx')))
+
+  const main = readFileSync(src('main.tsx'), 'utf8')
+  assert.match(main, /import \{ QueryClient, QueryClientProvider \} from ['"]@tanstack\/react-query['"]/)
+  assert.match(main, /const queryClient = new QueryClient\(\)[\s\S]*createRoot/)
+  assert.match(main, /<QueryClientProvider client=\{queryClient\}>/)
+  assert.match(main, /<App\s*\/>/)
+})
+
+test('auth context and provider live in the application context module', () => {
+  assert.ok(existsSync(src('context', 'AuthProvider.ts')))
+  assert.ok(existsSync(src('context', 'auth-provider.tsx')))
+  assert.ok(!existsSync(src('tmp', 'context', 'AuthProvider.tsx')))
+  assert.ok(!existsSync(src('tmp', 'context', 'auth-context.ts')))
+})
+
+test('auth UI uses the shared Tailwind design system without a feature stylesheet', () => {
+  assert.ok(!existsSync(src('features', 'auth', 'auth.css')))
+
+  const app = readFileSync(src('App.tsx'), 'utf8')
+  assert.doesNotMatch(app, /features\/auth\/auth\.css/)
+})

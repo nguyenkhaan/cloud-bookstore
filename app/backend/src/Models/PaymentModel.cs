@@ -11,7 +11,7 @@ public class PaymentModel
     public PaymentMethod Method { get; set; }
     public long Amount { get; set; }
     public PaymentStatus Status { get; set; } = PaymentStatus.PENDING;
-    public Guid CashSessionId { get; set; }
+    public Guid? CashSessionId { get; set; }
     public Guid? SaleInvoiceId { get; set; }
     public Guid? RentalSlipId { get; set; }
     public Guid? StockReceiptId { get; set; }

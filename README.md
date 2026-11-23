@@ -15,6 +15,10 @@ The backend provides a secure REST API backed by PostgreSQL, while the frontend 
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
 ![Bun](https://img.shields.io/badge/Bun-Package_Manager-000000?logo=bun&logoColor=white)
 
+## Local email testing
+
+Start Mailpit with `docker compose up -d mailpit`, then open `http://localhost:8025`. The backend development SMTP settings point to Mailpit on port `1025`. See [email authentication guide](docs/guides/email-authentication.md) for configuration and endpoint contracts.
+
 ## Backend Folder Structure
 
 ```text
@@ -59,3 +63,34 @@ app/frontend/
 ```
 
 Build with Cloudian 💙 Cloud
+
+## Backend configuration
+
+Use `app/backend/appsettings.example.json` as a template. Keep your actual `app/backend/appsettings.json` local; Git ignores it. Configure deployment values through environment variables or your secret manager:
+
+```text
+ConnectionStrings__DefaultConnection
+UpstashRedis__RestUrl
+UpstashRedis__RestToken
+Jwt__AccessSecret__Key
+Jwt__RefreshSecret__Key
+Jwt__VerifyRegisterSecret__Key
+Jwt__ResetPasswordSecret__Key
+AuthSecurity__MaxFailedLoginAttempts
+AuthSecurity__LockoutDurationMinutes
+AuthSecurity__AccessTokenLifetimeMinutes
+AuthSecurity__RefreshTokenLifetimeMinutes
+AuthSecurity__VerificationTokenLifetimeMinutes
+AuthSecurity__ResetPasswordTokenLifetimeMinutes
+Email__FromAddress
+Email__FromName
+Email__SmtpHost
+Email__SmtpPort
+Email__UseStartTls
+Email__FrontendBaseUrl
+Email__VerifyEmailPath
+Email__ResetPasswordPath
+VITE_API_BASE_URL
+```
+
+If any credential was previously committed, rotate it with its provider before relying on the rewritten Git history.
