@@ -47,7 +47,7 @@ test('reports routes and RBAC restrict /reports* to ADMIN only while /dashboard 
   assert.equal(reportsRoutes.reportsPaths.taxDeclaration, '/reports/tax-declaration')
 
   const appRoutes = readSrc('routes', 'AppRoutes.tsx')
-  assert.match(appRoutes, /path="\/dashboard" element=\{<RequireSession><DashboardRoute \/><\/RequireSession>\}/)
+  assert.match(appRoutes, /path="\/dashboard" element=\{<RequireSession><RoleGuard screenId="dashboard"><DashboardRoute \/><\/RoleGuard><\/RequireSession>\}/)
   for (const pathExpr of [
     'reportsPaths.root',
     'reportsPaths.revenueExpense',
@@ -56,7 +56,7 @@ test('reports routes and RBAC restrict /reports* to ADMIN only while /dashboard 
   ]) {
     assert.match(
       appRoutes,
-      new RegExp(`path=\\{${pathExpr}\\}[\\s\\S]*?<RequireSession>[\\s\\S]*?<RequireRole roles=\\{\\['ADMIN'\\]\\}`),
+      new RegExp(`path=\\{${pathExpr}\\}[\\s\\S]*?<RequireSession>[\\s\\S]*?<RoleGuard screenId="${pathExpr.replace('reportsPaths.', 'reports').replace('root', '').replace('revenueExpense', 'RevenueExpense').replace('depositReconciliation', 'DepositReconciliation').replace('taxDeclaration', 'TaxDeclaration')}"`),
     )
   }
 
