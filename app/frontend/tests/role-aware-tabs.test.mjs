@@ -7,6 +7,7 @@ let server
 let posFixture
 let approvalTabs
 let settingsTabs
+let catalogWorkspace
 
 before(async () => {
   server = await createServer({
@@ -16,6 +17,7 @@ before(async () => {
   posFixture = await server.ssrLoadModule('/src/features/pos/pos-transaction.fixture.ts')
   approvalTabs = await server.ssrLoadModule('/src/features/approvals/components/ApprovalTabBar.tsx')
   settingsTabs = await server.ssrLoadModule('/src/features/settings/components/SettingsTabBar.tsx')
+  catalogWorkspace = await server.ssrLoadModule('/src/features/catalog/catalog-tabs.ts')
 })
 
 after(async () => {
@@ -38,6 +40,17 @@ test('Settings child policy exposes only Rental and Membership to non-Admin role
   assert.deepEqual(settingsTabs.getVisibleSettingsTabs('CASHIER').map((tab) => tab.key), ['rental', 'tiers'])
   assert.deepEqual(settingsTabs.getVisibleSettingsTabs('INVENTORY_MANAGER').map((tab) => tab.key), ['rental', 'tiers'])
   assert.deepEqual(settingsTabs.getVisibleSettingsTabs('ADMIN').map((tab) => tab.key), ['rental', 'tiers', 'rbac', 'integrations'])
+})
+
+test('Catalog hides title navigation when its read permission is unavailable', () => {
+  assert.deepEqual(
+    catalogWorkspace.getVisibleCatalogTabs('ADMIN', new Set(['BookTitles.GetTitles']), 'ready').map((tab) => tab.id),
+    ['categories', 'series', 'titles'],
+  )
+  assert.deepEqual(
+    catalogWorkspace.getVisibleCatalogTabs('ADMIN', new Set(), 'ready').map((tab) => tab.id),
+    ['categories', 'series'],
+  )
 })
 
 test('forbidden child queries are disabled before the inventory tab can render', () => {

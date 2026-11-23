@@ -9,38 +9,33 @@ const src = (...parts) => path.join(frontendRoot, 'src', ...parts)
 const featureFiles = [
   ['features', 'hr', 'hr-shift.type.ts'],
   ['features', 'hr', 'pages', 'ShiftRecordsPage.tsx'],
-  ['features', 'hr', 'components', 'ShiftDateToolbar.tsx'],
-  ['features', 'hr', 'components', 'ShiftSummaryCards.tsx'],
-  ['features', 'hr', 'components', 'ShiftRecordsTable.tsx'],
-  ['features', 'hr', 'components', 'ShiftRecordDrawer.tsx'],
+  ['features', 'hr', 'components', 'WeeklyRoster.tsx'],
 ]
 
 function readFeatureFile(parts) {
   return existsSync(src(...parts)) ? readFileSync(src(...parts), 'utf8') : ''
 }
 
-test('shift records are a daily view, not a schedule module', () => {
+test('shift screen presents the Figma weekly roster hierarchy', () => {
   for (const parts of featureFiles) {
     assert.ok(existsSync(src(...parts)), `missing src/${parts.join('/')}`)
   }
 
   const source = featureFiles.map(readFeatureFile).join('\n')
-  for (const label of ['Phân công ca', 'Bản ghi ca', 'Ngày làm', 'Nhân viên', 'Thứ tự ca', 'Trạng thái']) {
+  for (const label of ['Lập lịch phân ca làm việc', 'Lịch toàn cửa hàng', 'Lịch của tôi', 'Ca sáng', 'Ca chiều', 'Ca tối', 'Cần bổ sung']) {
     assert.match(source, new RegExp(label))
   }
 
-  for (const state of ['assigned', 'unassigned', 'attendance-missing', 'empty']) {
-    assert.match(source, new RegExp(state))
-  }
-
-  for (const field of ['Ghi chú']) assert.match(source, new RegExp(field))
-  assert.doesNotMatch(source, /lịch tuần|lịch tháng|lịch lặp|lặp lại|kỳ lương|bảng lương/i)
+  assert.match(source, /WeeklyRoster/)
+  assert.match(source, /isAdminView/)
+  assert.match(source, /overflow-x-auto/)
+  assert.doesNotMatch(source, /ShiftRecordsTable|ShiftDateToolbar|ShiftRecordDrawer/)
 })
 
-test('shift-record UI stays local and keeps filters keyboard-ready', () => {
+test('weekly roster keeps local actions and actor-scoped schedule copy', () => {
   const source = featureFiles.map(readFeatureFile).join('\n')
-  assert.match(source, /Ngày làm|type="date"/)
-  assert.match(source, /SelectBox|select/i)
-  assert.match(source, /aria-label|htmlFor/)
+  assert.match(source, /Công bố lịch làm việc|Đã công bố/)
+  assert.match(source, /Chỉ hiển thị ca làm của bạn/)
+  assert.match(source, /button|Button/)
   assert.doesNotMatch(source, /\.service|\.hook|axios|@tanstack\/react-query|fetch\(/)
 })

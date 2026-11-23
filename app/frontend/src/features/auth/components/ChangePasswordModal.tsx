@@ -14,7 +14,6 @@ import { PasswordStrengthBar } from './PasswordStrengthBar'
 type ChangePasswordModalProps = {
   open: boolean
   onClose: () => void
-  onSuccess: () => void
 }
 
 const checklistItems = [
@@ -24,25 +23,25 @@ const checklistItems = [
   { key: 'special', label: 'Bao gồm ít nhất 1 ký tự đặc biệt' },
 ] as const
 
-export function ChangePasswordModal({ open, onClose, onSuccess }: ChangePasswordModalProps) {
+export function ChangePasswordModal({ open, onClose }: ChangePasswordModalProps) {
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [currentError, setCurrentError] = useState<string | null>(null)
   const [newError, setNewError] = useState<string | null>(null)
   const [confirmError, setConfirmError] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open) return
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !isSubmitting) {
+      if (event.key === 'Escape') {
         onClose()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [open, isSubmitting, onClose])
+  }, [open, onClose])
 
   if (!open) return null
 
@@ -57,12 +56,12 @@ export function ChangePasswordModal({ open, onClose, onSuccess }: ChangePassword
     setCurrentError(null)
     setNewError(null)
     setConfirmError(null)
+    setSubmitError(null)
     onClose()
   }
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (isSubmitting) return
 
     let hasError = false
     if (!currentPassword.trim()) {
@@ -91,20 +90,14 @@ export function ChangePasswordModal({ open, onClose, onSuccess }: ChangePassword
 
     if (hasError) return
 
-    setIsSubmitting(true)
-    await new Promise((resolve) => window.setTimeout(resolve, 300))
-    setIsSubmitting(false)
-    setCurrentPassword('')
-    setNewPassword('')
-    setConfirmPassword('')
-    onSuccess()
+    setSubmitError('Chưa thể cập nhật mật khẩu vì máy chủ chưa hỗ trợ thao tác này. Mật khẩu đã nhập chưa được lưu.')
   }
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget && !isSubmitting) {
+        if (event.target === event.currentTarget) {
           resetAndClose()
         }
       }}
@@ -134,7 +127,6 @@ export function ChangePasswordModal({ open, onClose, onSuccess }: ChangePassword
           <button
             aria-label="Đóng hộp thoại đổi mật khẩu"
             className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
-            disabled={isSubmitting}
             onClick={resetAndClose}
             type="button"
           >
@@ -152,6 +144,7 @@ export function ChangePasswordModal({ open, onClose, onSuccess }: ChangePassword
             onChange={(event) => {
               setCurrentPassword(event.target.value)
               setCurrentError(null)
+              setSubmitError(null)
             }}
             placeholder="Nhập mật khẩu hiện tại"
             required
@@ -170,6 +163,7 @@ export function ChangePasswordModal({ open, onClose, onSuccess }: ChangePassword
               onChange={(event) => {
                 setNewPassword(event.target.value)
                 setNewError(null)
+                setSubmitError(null)
               }}
               placeholder="Nhập mật khẩu mới"
               required
@@ -211,6 +205,7 @@ export function ChangePasswordModal({ open, onClose, onSuccess }: ChangePassword
             onChange={(event) => {
               setConfirmPassword(event.target.value)
               setConfirmError(null)
+              setSubmitError(null)
             }}
             placeholder="Nhập lại mật khẩu mới"
             required
@@ -219,10 +214,15 @@ export function ChangePasswordModal({ open, onClose, onSuccess }: ChangePassword
             variant="outlined"
           />
 
+          {submitError && (
+            <div className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-xs leading-5 text-rose-700" role="alert">
+              {submitError}
+            </div>
+          )}
+
           <div className="mt-2 flex flex-wrap items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
             <Button
               className="min-h-11 px-4"
-              disabled={isSubmitting}
               onClick={resetAndClose}
               size="md"
               type="button"
@@ -232,12 +232,11 @@ export function ChangePasswordModal({ open, onClose, onSuccess }: ChangePassword
             </Button>
             <Button
               className="min-h-11 px-5"
-              loading={isSubmitting}
               size="md"
               type="submit"
               variant="primary"
             >
-              {isSubmitting ? 'Đang cập nhật…' : 'Cập nhật mật khẩu'}
+              Cập nhật mật khẩu
             </Button>
           </div>
         </form>

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, CheckCircle2, FileSpreadsheet, Info, Printer, RefreshCw } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, FileSpreadsheet, Printer, RefreshCw } from 'lucide-react'
 import { Badge, Button, Card, SelectBox, StatCard } from '@/components/common'
 import { MainLayout } from '@/components/layout'
 import { useAuth } from '@/features/auth/auth.hook'

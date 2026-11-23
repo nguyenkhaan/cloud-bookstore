@@ -95,11 +95,11 @@ export function ProfileSecurityPage() {
 
   const initialExtras = useMemo(() => getMockProfileForUser(session?.user), [session?.user])
 
-  const [savedProfile, setSavedProfile] = useState(() => ({
+  const savedProfile = {
     fullName: currentUser.name,
     phone: initialExtras.phone,
     defaultShift: initialExtras.defaultShift,
-  }))
+  }
   const [fullName, setFullName] = useState(savedProfile.fullName)
   const [phone, setPhone] = useState(savedProfile.phone)
   const [defaultShift, setDefaultShift] = useState(savedProfile.defaultShift)
@@ -110,12 +110,10 @@ export function ProfileSecurityPage() {
   const objectUrlRef = useRef<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [lastPasswordChangedLabel, setLastPasswordChangedLabel] = useState(
-    initialExtras.lastPasswordChangedLabel,
-  )
+  const lastPasswordChangedLabel = initialExtras.lastPasswordChangedLabel
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
 
-  const [devices, setDevices] = useState<MockLoginDevice[]>(INITIAL_MOCK_DEVICES)
+  const [devices] = useState<MockLoginDevice[]>(INITIAL_MOCK_DEVICES)
   const [deviceToLogout, setDeviceToLogout] = useState<MockLoginDevice | null>(null)
 
   const [notificationPrefs, setNotificationPrefs] = useState<MockNotificationPrefs>(
@@ -168,12 +166,7 @@ export function ProfileSecurityPage() {
 
     if (hasError) return
 
-    setSavedProfile({
-      fullName: normalizedName,
-      phone: phone.trim(),
-      defaultShift,
-    })
-    notify.success('Đã lưu thông tin hồ sơ cá nhân.')
+    notify.error('Chưa thể lưu hồ sơ vì máy chủ chưa hỗ trợ thao tác này. Thông tin bạn nhập vẫn được giữ trên biểu mẫu.')
   }
 
   const handleResetProfile = () => {
@@ -184,30 +177,14 @@ export function ProfileSecurityPage() {
     setPhoneError(null)
   }
 
-  const handlePasswordUpdated = () => {
-    setIsChangePasswordOpen(false)
-    setLastPasswordChangedLabel('Vừa cập nhật (Hôm nay)')
-    notify.success('Đã cập nhật mật khẩu tài khoản thành công.')
-  }
-
   const handleConfirmLogoutDevice = (deviceId: string) => {
-    setDevices((prev) =>
-      prev.map((device) =>
-        device.id === deviceId ? { ...device, status: 'logged_out' } : device,
-      ),
-    )
-    setDeviceToLogout(null)
-    notify.success('Đã đăng xuất phiên làm việc trên thiết bị đã chọn.')
+    void deviceId
+    notify.error('Chưa thể đăng xuất thiết bị vì máy chủ chưa hỗ trợ thao tác này.')
   }
 
   const handleLogoutAllOtherDevices = () => {
     if (!hasOtherActiveDevices) return
-    setDevices((prev) =>
-      prev.map((device) =>
-        device.isCurrent ? device : { ...device, status: 'logged_out' },
-      ),
-    )
-    notify.success('Đã đăng xuất tất cả các thiết bị khác.')
+    notify.error('Chưa thể đăng xuất các thiết bị khác vì máy chủ chưa hỗ trợ thao tác này.')
   }
 
   return (
@@ -608,7 +585,6 @@ export function ProfileSecurityPage() {
 
       <ChangePasswordModal
         onClose={() => setIsChangePasswordOpen(false)}
-        onSuccess={handlePasswordUpdated}
         open={isChangePasswordOpen}
       />
 

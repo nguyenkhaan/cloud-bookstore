@@ -11,7 +11,7 @@ function readSource(...parts) {
   return existsSync(src(...parts)) ? readFileSync(src(...parts), 'utf8') : ''
 }
 
-test('Unified /hr attendance & shifts admin management uses AdminAttendanceSection without /admin/hr', () => {
+test('Unified /hr attendance & shifts use the Figma workspaces without /admin/hr', () => {
   for (const obsolete of [
     ['features', 'hr', 'admin-hr.route.ts'],
     ['features', 'hr', 'components', 'AdminHrTabs.tsx'],
@@ -22,7 +22,8 @@ test('Unified /hr attendance & shifts admin management uses AdminAttendanceSecti
 
   for (const parts of [
     ['features', 'hr', 'hr.route.ts'],
-    ['features', 'hr', 'components', 'AdminAttendanceSection.tsx'],
+    ['features', 'hr', 'components', 'IntegratedAttendanceWorkspace.tsx'],
+    ['features', 'hr', 'components', 'WeeklyRoster.tsx'],
     ['features', 'hr', 'pages', 'AttendancePage.tsx'],
     ['features', 'hr', 'pages', 'ShiftRecordsPage.tsx'],
   ]) {
@@ -31,20 +32,12 @@ test('Unified /hr attendance & shifts admin management uses AdminAttendanceSecti
 
   const attendancePage = readSource('features', 'hr', 'pages', 'AttendancePage.tsx')
   const shiftPage = readSource('features', 'hr', 'pages', 'ShiftRecordsPage.tsx')
-  const adminSection = readSource('features', 'hr', 'components', 'AdminAttendanceSection.tsx')
-  const source = [
-    adminSection,
-    readSource('features', 'hr', 'components', 'AttendanceFilters.tsx'),
-    readSource('features', 'hr', 'components', 'AttendanceTable.tsx'),
-    readSource('features', 'hr', 'components', 'AttendanceAdjustmentDialog.tsx'),
-  ].join('\n')
-
-  for (const label of ['Lương ca', 'Trạng thái lương ca', 'Điều chỉnh', 'AttendanceTable']) {
-    assert.match(source, new RegExp(label))
-  }
-  assert.match(source, /AttendanceAdjustmentDialog/)
-  assert.match(adminSection, /data-testid="attendance-admin-section"/)
-  assert.match(attendancePage, /data-testid="attendance-employee-section"/)
+  const attendanceWorkspace = readSource('features', 'hr', 'components', 'IntegratedAttendanceWorkspace.tsx')
+  const roster = readSource('features', 'hr', 'components', 'WeeklyRoster.tsx')
+  for (const label of ['Điểm danh ca làm', 'Bảng chấm công tổng thể', 'Khóa công tháng']) assert.match(attendanceWorkspace, new RegExp(label))
+  assert.match(attendanceWorkspace, /isAdminView \? rows : rows\.filter/)
+  assert.match(roster, /Lịch toàn cửa hàng/)
+  assert.match(attendancePage, /IntegratedAttendanceWorkspace/)
   assert.match(attendancePage, /currentUser\.roleCode === 'ADMIN'/)
   assert.doesNotMatch(attendancePage, /previewRole|getPreviewRoleFromSearch|location\.search/)
   assert.match(shiftPage, /currentUser\.roleCode === 'ADMIN'/)
@@ -80,7 +73,7 @@ test('Sidebar unifies HR under a single Nhân sự & tiền lương group', () =
   const workspaceRoute = readSource('features', 'workspace', 'workspace.route.ts')
   assert.match(sidebar, /id: ['"]hr['"], label: ['"]Nhân sự & tiền lương['"]\s*,/)
   assert.match(sidebar, /data-testid="sidebar-hr-submenu"/)
-  assert.match(sidebar, /label: ['"]Chấm công cá nhân['"]/)
+  assert.doesNotMatch(sidebar, /label: ['"]Chấm công cá nhân['"]/)
   assert.doesNotMatch(sidebar, /id: ['"]admin-hr['"]/)
   assert.doesNotMatch(sidebar, /label: ['"]Điểm danh['"]/)
   assert.match(workspaceRoute, /hr:\s*['"]\/hr['"]/)

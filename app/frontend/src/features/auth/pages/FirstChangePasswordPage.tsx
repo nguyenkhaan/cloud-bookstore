@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Info, LogOut } from 'lucide-react'
-import { Button, Card, notify } from '@/components/common'
+import { Info, LogOut } from 'lucide-react'
+import { Button, Card } from '@/components/common'
 import { CenterLayout } from '@/features/auth/components/CenterLayout'
 import { PasswordField } from '@/features/auth/components/PasswordField'
 import {
@@ -14,17 +13,15 @@ import { PasswordStrengthBar } from '@/features/auth/components/PasswordStrength
 import { useAuth } from '@/features/auth/auth.hook'
 
 export function FirstChangePasswordPage() {
-  const navigate = useNavigate()
   const { signOut } = useAuth()
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [confirmError, setConfirmError] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (isSubmitting) return
 
     let hasError = false
     if (!isPasswordAcceptable(newPassword)) {
@@ -43,11 +40,7 @@ export function FirstChangePasswordPage() {
 
     if (hasError) return
 
-    setIsSubmitting(true)
-    await new Promise((resolve) => window.setTimeout(resolve, 350))
-    setIsSubmitting(false)
-    notify.success('Cập nhật mật khẩu thành công. Chào mừng bạn quay lại hệ thống.')
-    navigate('/dashboard', { replace: true })
+    setSubmitError('Chưa thể cập nhật mật khẩu vì máy chủ chưa hỗ trợ thao tác này. Mật khẩu đã nhập chưa được lưu.')
   }
 
   return (
@@ -80,6 +73,7 @@ export function FirstChangePasswordPage() {
               onChange={(event) => {
                 setNewPassword(event.target.value)
                 setPasswordError(null)
+                setSubmitError(null)
               }}
               placeholder="Nhập mật khẩu mới"
               required
@@ -101,6 +95,7 @@ export function FirstChangePasswordPage() {
             onChange={(event) => {
               setConfirmPassword(event.target.value)
               setConfirmError(null)
+                setSubmitError(null)
             }}
             placeholder="Nhập lại mật khẩu mới"
             required
@@ -116,35 +111,31 @@ export function FirstChangePasswordPage() {
             </span>
           </div>
 
+          {submitError && (
+            <div className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-xs leading-5 text-rose-700" role="alert">
+              {submitError}
+            </div>
+          )}
+
           <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
             <Button
               className="min-h-12 px-6 text-[15px]"
               data-testid="auth-first-change-submit"
-              loading={isSubmitting}
               size="lg"
               type="submit"
               variant="primary"
             >
-              {isSubmitting ? 'Đang cập nhật…' : 'Cập nhật mật khẩu'}
+              Cập nhật mật khẩu
             </Button>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <Link
-                className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
-                to="/dashboard"
-              >
-                <ArrowLeft aria-hidden="true" className="size-3.5" />
-                Về trang tổng quan
-              </Link>
-              <button
-                className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-slate-500 transition-colors hover:text-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
-                onClick={signOut}
-                type="button"
-              >
-                <LogOut aria-hidden="true" className="size-3.5" />
-                Đăng xuất
-              </button>
-            </div>
+            <button
+              className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-slate-500 transition-colors hover:text-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
+              onClick={signOut}
+              type="button"
+            >
+              <LogOut aria-hidden="true" className="size-3.5" />
+              Đăng xuất
+            </button>
           </div>
         </form>
       </Card>

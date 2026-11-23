@@ -1,0 +1,86 @@
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { join, resolve } from 'node:path'
+import { after, before, test } from 'node:test'
+import { createServer } from 'vite'
+
+const frontendRoot = resolve(import.meta.dirname, '..')
+const readSource = (...parts) => readFileSync(join(frontendRoot, 'src', ...parts), 'utf8')
+let viteServer
+let barcodeLabelsModule
+
+before(async () => {
+  viteServer = await createServer({
+    appType: 'custom',
+    server: { hmr: false, middlewareMode: true },
+  })
+  barcodeLabelsModule = await viteServer.ssrLoadModule('/src/components/common/BarcodeLabel/barcode-labels-print.ts')
+})
+
+after(async () => {
+  await viteServer?.close()
+})
+
+test('audit page removes unused icon and role derivation', () => {
+  const source = readSource('features', 'audit', 'pages', 'AuditPage.tsx')
+  assert.doesNotMatch(source, /\bInfo\b/)
+  assert.doesNotMatch(source, /isInventoryManager/)
+})
+
+test('dashboard page removes unused formatter imports', () => {
+  const source = readSource('features', 'dashboard', 'pages', 'DashboardPage.tsx')
+  assert.doesNotMatch(source, /\bInfo\b/)
+  assert.doesNotMatch(source, /formatVnDate(?:Short|TimeShort)/)
+})
+
+test('catalog and tax report remove unused imports', () => {
+  const copyDetail = readSource('features', 'catalog', 'pages', 'CopyDetailPage.tsx')
+  const taxReport = readSource('features', 'reports', 'pages', 'TaxDeclarationReportPage.tsx')
+  assert.doesNotMatch(copyDetail, /BookCopyLifecycleDrawer/)
+  assert.doesNotMatch(taxReport, /\bInfo\b/)
+})
+
+test('printed label prices normalize missing values before formatVnd', () => {
+  const drawer = readSource('features', 'catalog', 'components', 'BookCopyLifecycleDrawer.tsx')
+  assert.match(drawer, /formatVnd\(printedLabel\.sellingPrice \?\? null\)/)
+  assert.match(drawer, /formatVnd\(printedLabel\.rentalRate \?\? null\)/)
+})
+
+test('barcode print markup escapes untrusted text values', () => {
+  assert.equal(
+    barcodeLabelsModule.escapePrintHtml(`<img src=x onerror="alert('xss')">`),
+    '&lt;img src=x onerror=&quot;alert(&#39;xss&#39;)&quot;&gt;',
+  )
+})
+
+test('barcode label CSV treats formula prefixes as literal text', () => {
+  const csv = barcodeLabelsModule.buildBarcodeLabelsCsvContent([
+    {
+      barcode: '=2+2',
+      titleName: '+SUM(A1:A2), "Sách"',
+      grade: '@danger',
+      sellingPrice: 125000,
+    },
+  ])
+
+  assert.match(csv, /^CopyBarcode,TenSach,Grade,GiaBanVND\n/)
+  assert.match(csv, /'=2\+2/)
+  assert.match(csv, /"'\+SUM\(A1:A2\), ""Sách"""/)
+  assert.match(csv, /'@danger/)
+})
+
+test('unsupported account actions preserve input instead of reporting fake completion', () => {
+  const firstChange = readSource('features', 'auth', 'pages', 'FirstChangePasswordPage.tsx')
+  const changeModal = readSource('features', 'auth', 'components', 'ChangePasswordModal.tsx')
+  const profile = readSource('features', 'auth', 'pages', 'ProfileSecurityPage.tsx')
+
+  assert.doesNotMatch(firstChange, /setTimeout|notify\.success|to="\/dashboard"/)
+  assert.match(firstChange, /setSubmitError\(/)
+
+  assert.doesNotMatch(changeModal, /setTimeout|onSuccess\(/)
+  assert.match(changeModal, /role="alert"/)
+
+  assert.doesNotMatch(profile, /setSavedProfile\(\{|setDevices\(|setLastPasswordChangedLabel\(/)
+  assert.doesNotMatch(profile, /Đã lưu thông tin hồ sơ cá nhân|Đã đăng xuất phiên làm việc|Đã đăng xuất tất cả các thiết bị khác/)
+  assert.match(profile, /notify\.error\(/)
+})

@@ -111,7 +111,7 @@ export default function AppRoutes() {
       <Route path="/hr/employees/:id" element={<RequireSession><RoleGuard screenId="hrEmployeeDetail"><EmployeeDetailPage /></RoleGuard></RequireSession>} />
       <Route path="/hr/shifts" element={<RequireSession><RoleGuard screenId="hrShifts"><ShiftRecordsPage /></RoleGuard></RequireSession>} />
       <Route path="/hr/attendance" element={<RequireSession><RoleGuard screenId="hrAttendance"><AttendancePage /></RoleGuard></RequireSession>} />
-      <Route path="/hr/attendance/personal" element={<RequireSession><RoleGuard screenId="hrPersonalAttendance"><AttendancePage personalOnly /></RoleGuard></RequireSession>} />
+      <Route path="/hr/attendance/personal" element={<RequireSession><RoleGuard screenId="hrPersonalAttendance"><AttendancePage /></RoleGuard></RequireSession>} />
       <Route path="/hr/requests" element={<RequireSession><RoleGuard screenId="hrRequests"><HrRequestsPage /></RoleGuard></RequireSession>} />
       <Route path="/hr/payroll" element={<RequireSession><RoleGuard screenId="hrPayroll"><PayrollPage /></RoleGuard></RequireSession>} />
       <Route path="/hr/payroll/adjustments/new" element={<RequireSession><RoleGuard screenId="hrPayrollAdjustment"><PayrollAdjustmentPage /></RoleGuard></RequireSession>} />

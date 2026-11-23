@@ -43,8 +43,10 @@ test('admin shift drawer remains editable with a save action', () => {
   assert.doesNotMatch(html, /disabled=""/)
 })
 
-test('shift page passes non-admin permission into the drawer and guards saving', () => {
+test('shift page passes non-admin permission into the weekly roster', () => {
   const source = readFileSync(new URL('../src/features/hr/pages/ShiftRecordsPage.tsx', import.meta.url), 'utf8')
-  assert.match(source, /readOnly=\{!isAdminView\}/)
-  assert.match(source, /onSave=\{\(record\) => \{\s*if \(!isAdminView\) return/)
+  assert.match(source, /<WeeklyRoster actorName=\{currentUser\.name\} isAdminView=\{isAdminView\}/)
+  const roster = readFileSync(new URL('../src/features/hr/components/WeeklyRoster.tsx', import.meta.url), 'utf8')
+  assert.match(roster, /view === 'store' && isAdminView/)
+  assert.match(roster, /disabled=\{!isAdminView\}/)
 })

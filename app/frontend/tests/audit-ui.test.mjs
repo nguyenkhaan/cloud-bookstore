@@ -92,7 +92,7 @@ test('audit is strictly read-only and copy lifecycle is integrated across Audit 
   assert.match(lookupPage, /BookCopyLifecycleDrawer/)
 
   assert.match(editionPage, /BookCopyLifecycleDrawer/)
-  assert.match(copyPage, /BookCopyLifecycleDrawer/)
+  assert.doesNotMatch(copyPage, /BookCopyLifecycleDrawer/)
   assert.match(drawer, /In lại tem dán gáy/)
   assert.match(drawer, /Chuyển vị trí kệ/)
 })

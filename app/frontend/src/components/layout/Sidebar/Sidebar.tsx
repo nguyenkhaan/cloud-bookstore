@@ -57,7 +57,6 @@ const HR_SUB_NAV_ITEMS = [
   { id: 'hr-employees', label: 'Danh sách nhân viên', href: hrPaths.employees, screenId: 'hrEmployees' },
   { id: 'hr-shifts', label: 'Phân công ca', href: hrPaths.shifts, screenId: 'hrShifts' },
   { id: 'hr-attendance', label: 'Chấm công & Lương ca', href: hrPaths.attendance, screenId: 'hrAttendance' },
-  { id: 'hr-personal-attendance', label: 'Chấm công cá nhân', href: hrPaths.personalAttendance, screenId: 'hrPersonalAttendance' },
   { id: 'hr-requests', label: 'Đơn xét duyệt', href: hrPaths.requests, screenId: 'hrRequests' },
   { id: 'hr-payroll', label: 'Bảng lương', href: hrPaths.payroll, screenId: 'hrPayroll' },
   { id: 'hr-payslip', label: 'Phiếu lương', href: hrPaths.payslip, screenId: 'hrPayslip' },

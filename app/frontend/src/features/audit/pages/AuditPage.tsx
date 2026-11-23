@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { History, Info, Lock, RotateCcw, Search } from 'lucide-react'
+import { History, Lock, RotateCcw, Search } from 'lucide-react'
 import { Card, SelectBox } from '@/components/common'
 import { MainLayout } from '@/components/layout'
 import { useAuth } from '@/features/auth/auth.hook'
@@ -18,9 +18,7 @@ const DEFAULT_PAGE_SIZE = 10
 
 export default function AuditPage() {
   const navigate = useNavigate()
-  const { session, signOut } = useAuth()
-  const roleCode = session?.user?.roleCode ?? ''
-  const isInventoryManager = roleCode === 'INVENTORY_MANAGER'
+  const { signOut } = useAuth()
 
   const [searchInput, setSearchInput] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')

@@ -68,13 +68,13 @@ function readMarkup(html) {
 test('ready permission data grants update and revoking update downgrades to read-only', () => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const key = ['role-permissions', 'user-1', 'user-1@example.test', 'ADMIN']
-  client.setQueryData(key, ['BookTitles.Read', 'BookTitles.UpdateTitle'])
+  client.setQueryData(key, ['BookTitles.GetTitles', 'BookTitles.UpdateTitle'])
 
   assert.deepEqual(readMarkup(accessMarkup(client, 'ADMIN', 'catalogTitles')), {
     access: 'U', canRead: true, canUpdate: true, isResolving: false, permissionsError: false,
   })
 
-  client.setQueryData(key, ['BookTitles.Read'])
+  client.setQueryData(key, ['BookTitles.GetTitles'])
   assert.deepEqual(readMarkup(accessMarkup(client, 'ADMIN', 'catalogTitles')), {
     access: 'R', canRead: true, canUpdate: false, isResolving: false, permissionsError: false,
   })
@@ -90,13 +90,13 @@ test('loading and error permission states never grant an update action', () => {
 
   const errorClient = new QueryClient({ defaultOptions: { queries: { retry: false, refetchOnMount: false } } })
   const key = ['role-permissions', 'user-1', 'user-1@example.test', 'ADMIN']
-  errorClient.setQueryData(key, ['BookTitles.Read'])
+  errorClient.setQueryData(key, ['BookTitles.GetTitles'])
   const query = errorClient.getQueryCache().build(errorClient, { queryKey: key, queryFn: async () => [] })
   query.setState({
     status: 'error',
     fetchStatus: 'idle',
     error: new Error('permission unavailable'),
-    data: ['BookTitles.Read'],
+    data: ['BookTitles.GetTitles'],
     dataUpdatedAt: Date.now(),
     errorUpdatedAt: Date.now(),
   })
@@ -113,11 +113,18 @@ test('protected and immutable read-only policies cannot be upgraded by injected 
     'N',
   )
   assert.equal(
-    resolveEffectiveScreenAccess('catalogTitles', 'CASHIER', new Set(['BookTitles.Read', 'BookTitles.UpdateTitle']), 'ready'),
+    resolveEffectiveScreenAccess('catalogTitles', 'CASHIER', new Set(['BookTitles.GetTitles', 'BookTitles.UpdateTitle']), 'ready'),
     'R',
   )
   assert.equal(
     resolveEffectiveScreenAccess('catalogTitles', 'ADMIN', new Set(), 'ready'),
     'N',
+  )
+})
+
+test('catalog title access uses the backend read permission code', () => {
+  assert.equal(
+    resolveEffectiveScreenAccess('catalogTitles', 'ADMIN', new Set(['BookTitles.GetTitles']), 'ready'),
+    'R',
   )
 })

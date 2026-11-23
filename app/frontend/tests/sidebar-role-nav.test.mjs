@@ -45,9 +45,9 @@ test('Sidebar follows the shared top-level and HR child access matrix', () => {
     INVENTORY_MANAGER: ['overview', 'pos', 'inventory', 'warehouse', 'customers', 'hr', 'approvals', 'audit', 'settings'],
   }
   const expectedHrChildren = {
-    ADMIN: ['hr-employees', 'hr-shifts', 'hr-attendance', 'hr-personal-attendance', 'hr-requests', 'hr-payroll', 'hr-payslip'],
-    CASHIER: ['hr-shifts', 'hr-personal-attendance', 'hr-requests', 'hr-payslip'],
-    INVENTORY_MANAGER: ['hr-shifts', 'hr-personal-attendance', 'hr-requests', 'hr-payslip'],
+    ADMIN: ['hr-employees', 'hr-shifts', 'hr-attendance', 'hr-requests', 'hr-payroll', 'hr-payslip'],
+    CASHIER: ['hr-shifts', 'hr-attendance', 'hr-requests', 'hr-payslip'],
+    INVENTORY_MANAGER: ['hr-shifts', 'hr-attendance', 'hr-requests', 'hr-payslip'],
   }
 
   for (const [role, expected] of Object.entries(expectedTopLevel)) {
@@ -65,6 +65,7 @@ test('Sidebar follows the shared top-level and HR child access matrix', () => {
   assert.match(sidebarSource, /Danh sách nhân viên/)
   assert.match(sidebarSource, /Phân công ca/)
   assert.match(sidebarSource, /Chấm công/)
+  assert.doesNotMatch(sidebarSource, /Chấm công cá nhân/)
   assert.match(sidebarSource, /Đơn xét duyệt/)
   assert.match(sidebarSource, /Bảng lương/)
   assert.match(sidebarSource, /Phiếu lương/)

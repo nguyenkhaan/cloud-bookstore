@@ -9,7 +9,6 @@ import { useCopyQuery, useCreateCopyLabelMutation, useDeleteCopyMutation, useEdi
 import { availabilityLabel, formatVnd } from '../catalog.presentation'
 import type { UpdateCopyRequest } from '../catalog.type'
 import { CopyStatusBadge } from '../components/CatalogStatusBadge'
-import { BookCopyLifecycleDrawer } from '../components/BookCopyLifecycleDrawer'
 import { CatalogWorkspace } from '../components/CatalogWorkspace'
 import { CopyEditorDialog } from '../components/CopyEditorDialog'
 import { CoverTile } from '../components/CoverTile'

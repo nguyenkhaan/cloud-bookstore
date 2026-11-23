@@ -1,14 +1,13 @@
 import { Download, Printer, X } from 'lucide-react'
 import { Button } from '../Button/Button'
 import { notify } from '../Toast'
+import {
+  buildBarcodeLabelsCsvContent,
+  escapePrintHtml,
+  type PrintableBarcodeLabelItem,
+} from './barcode-labels-print'
 
-export type PrintableBarcodeLabelItem = {
-  barcode: string
-  titleName: string
-  sellingPrice: number
-  grade?: string | null
-  subtitle?: string | null
-}
+export type { PrintableBarcodeLabelItem } from './barcode-labels-print'
 
 type BarcodeLabelsPrintModalProps = {
   batchCode: string
@@ -135,15 +134,7 @@ export function BarcodeLabelsPrintModal({
   title,
 }: BarcodeLabelsPrintModalProps) {
   const handleDownloadCsv = () => {
-    const header = 'CopyBarcode,TenSach,Grade,GiaBanVND\n'
-    const rows = items
-      .map(
-        (item) =>
-          `"${item.barcode}","${item.titleName.replace(/"/g, '""')}","${item.grade ?? 'A'}",${item.sellingPrice}`,
-      )
-      .join('\n')
-
-    const blob = new Blob([`\uFEFF${header}${rows}`], { type: 'text/csv;charset=utf-8;' })
+    const blob = new Blob([`\uFEFF${buildBarcodeLabelsCsvContent(items)}`], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -163,23 +154,27 @@ export function BarcodeLabelsPrintModal({
     }
 
     const cardsHtml = items
-      .map(
-        (item) => `
+      .map((item) => {
+        const safeBarcode = escapePrintHtml(item.barcode)
+        const safeTitleName = escapePrintHtml(item.titleName)
+        const safeGrade = item.grade ? ` - Grade ${escapePrintHtml(item.grade)}` : ''
+        return `
         <div class="label-card">
           <div class="store-name">CLOUD BOOKSTORE</div>
           <div class="svg-wrap">${buildSvgMarkup(item.barcode)}</div>
-          <div class="barcode-code">${item.barcode}</div>
-          <div class="book-title">${item.titleName}</div>
-          <div class="book-price">Giá bán: ${formatVnd(item.sellingPrice)}${item.grade ? ` - Grade ${item.grade}` : ''}</div>
-        </div>`,
-      )
+          <div class="barcode-code">${safeBarcode}</div>
+          <div class="book-title">${safeTitleName}</div>
+          <div class="book-price">Giá bán: ${formatVnd(item.sellingPrice)}${safeGrade}</div>
+        </div>`
+      })
       .join('')
+    const safeBatchCode = escapePrintHtml(batchCode)
 
     printWin.document.write(`<!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="utf-8" />
-  <title>In tem CopyBarcode - ${batchCode}</title>
+  <title>In tem CopyBarcode - ${safeBatchCode}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; padding: 16px; background: #f8fafc; color: #0f172a; }
@@ -202,7 +197,7 @@ export function BarcodeLabelsPrintModal({
 </head>
 <body>
   <div class="toolbar">
-    <h1>Bản in tem nhiệt CopyBarcode (${batchCode} - ${items.length} tem)</h1>
+    <h1>Bản in tem nhiệt CopyBarcode (${safeBatchCode} - ${items.length} tem)</h1>
     <button class="print-btn" onclick="window.print()">In ngay (Ctrl+P)</button>
   </div>
   <div class="grid">${cardsHtml}</div>

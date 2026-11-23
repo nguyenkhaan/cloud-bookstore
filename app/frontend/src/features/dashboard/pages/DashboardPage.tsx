@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Calendar, Info } from 'lucide-react'
+import { Calendar } from 'lucide-react'
 import { StatCard } from '@/components/common'
 import { MainLayout } from '@/components/layout'
 import { useAuth } from '@/features/auth/auth.hook'
@@ -16,8 +16,6 @@ import { useDashboardOverviewQuery } from '../dashboard.hook'
 import {
   formatPercent,
   formatVnd,
-  formatVnDateShort,
-  formatVnDateTimeShort,
   getTodayVnDateInput,
 } from '../dashboard.presentation'
 

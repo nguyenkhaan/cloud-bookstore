@@ -88,7 +88,6 @@ export const SCREEN_POLICIES = {
       'hrEmployees',
       'hrShifts',
       'hrAttendance',
-      'hrPersonalAttendance',
       'hrRequests',
       'hrPayroll',
       'hrPayslip',
@@ -97,9 +96,11 @@ export const SCREEN_POLICIES = {
   hrEmployees: policy('/hr/employees', access('N', 'U', 'N'), { navId: 'hr.employees' }),
   hrEmployeeDetail: policy('/hr/employees/:id', access('N', 'U', 'N'), { navId: 'hr.employee-detail' }),
   hrShifts: policy('/hr/shifts', access('R', 'U', 'R'), { navId: 'hr.shifts' }),
-  hrAttendance: policy('/hr/attendance', access('N', 'U', 'N'), { navId: 'hr.attendance' }),
-  hrPersonalAttendance: policy('/hr/attendance/personal', access('U', 'U', 'U'), {
-    navId: 'hr.personal-attendance',
+  hrAttendance: policy('/hr/attendance', access('R', 'U', 'R'), {
+    navId: 'hr.attendance',
+    dataScope: 'SELF',
+  }),
+  hrPersonalAttendance: policy('/hr/attendance/personal', access('N', 'N', 'N'), {
     dataScope: 'SELF',
   }),
   hrRequests: policy('/hr/requests', access('U', 'U', 'U'), {
@@ -169,7 +170,7 @@ export const SCREEN_POLICIES = {
   catalogTitles: policy('/catalog/titles', access('R', 'U', 'U'), {
     navId: 'inventory.titles',
     permissionMode: 'api',
-    readPermissions: ['BookTitles.Read'],
+    readPermissions: ['BookTitles.GetTitles'],
     updatePermissions: ['BookTitles.CreateTitle', 'BookTitles.UpdateTitle', 'BookTitles.DeleteTitle'],
     maximumAccessByRole: employeeCatalogCeiling,
   }),

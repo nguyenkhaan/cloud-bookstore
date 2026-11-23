@@ -2,9 +2,11 @@ import type { ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { MainLayout } from '@/components/layout'
 import { useAuth } from '@/features/auth/auth.hook'
+import { usePermissions } from '@/hooks/usePermissions'
 import { workspacePathFor } from '@/features/workspace/workspace.route'
 import { useCatalogBreadcrumbs } from '../catalog.hook'
 import { catalogPaths } from '../catalog.route'
+import { getVisibleCatalogTabs } from '../catalog-tabs'
 
 type CatalogWorkspaceProps = {
   action?: ReactNode
@@ -16,7 +18,18 @@ export function CatalogWorkspace({ action, children, title }: CatalogWorkspacePr
   const location = useLocation()
   const navigate = useNavigate()
   const { session, signOut } = useAuth()
+  const permissions = usePermissions()
   const breadcrumbs = useCatalogBreadcrumbs()
+  const permissionStatus = permissions.isError
+    ? 'error'
+    : permissions.isPending
+      ? 'loading'
+      : 'ready'
+  const visibleTabs = getVisibleCatalogTabs(
+    session?.user?.roleCode,
+    permissions.permissionCodes,
+    permissionStatus,
+  )
 
   const navigateFromSidebar = (item: string) => {
     const path = workspacePathFor(item)
@@ -46,39 +59,27 @@ export function CatalogWorkspace({ action, children, title }: CatalogWorkspacePr
     >
       <div className="space-y-6">
         <nav aria-label="Điều hướng quản lý sách" className="flex w-fit max-w-full gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1 shadow-2xs">
-          <Link
-            aria-current={isCategoriesActive ? 'page' : undefined}
-            className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
-              isCategoriesActive
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-            }`}
-            to={catalogPaths.categoryList}
-          >
-            Thể loại
-          </Link>
-          <Link
-            aria-current={isSeriesActive ? 'page' : undefined}
-            className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
-              isSeriesActive
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-            }`}
-            to={catalogPaths.seriesList}
-          >
-            Bộ sách
-          </Link>
-          <Link
-            aria-current={isTitlesActive ? 'page' : undefined}
-            className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
-              isTitlesActive
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-            }`}
-            to={catalogPaths.titleList}
-          >
-            Đầu sách
-          </Link>
+          {visibleTabs.map((tab) => {
+            const isActive = tab.id === 'categories'
+              ? isCategoriesActive
+              : tab.id === 'series'
+                ? isSeriesActive
+                : isTitlesActive
+            return (
+              <Link
+                aria-current={isActive ? 'page' : undefined}
+                className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                  isActive
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                }`}
+                key={tab.id}
+                to={tab.path}
+              >
+                {tab.label}
+              </Link>
+            )
+          })}
         </nav>
         {children}
       </div>

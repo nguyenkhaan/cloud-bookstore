@@ -508,7 +508,7 @@ export const BookCopyLifecycleDrawer: React.FC<BookCopyLifecycleDrawerProps> = (
                 Grade {printedLabel.conditionGrade} · Kệ {printedLabel.shelfCode || '—'}
               </div>
               <div className="pt-1 text-xs font-semibold text-indigo-700">
-                Bán: {formatVnd(printedLabel.sellingPrice)} · Thuê: {formatVnd(printedLabel.rentalRate)}/ngày
+                Bán: {formatVnd(printedLabel.sellingPrice ?? null)} · Thuê: {formatVnd(printedLabel.rentalRate ?? null)}/ngày
               </div>
             </div>
 
