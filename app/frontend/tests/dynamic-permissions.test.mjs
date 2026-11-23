@@ -38,6 +38,7 @@ test('UI grants follow server permissions independently of role defaults and dis
 
 test('matrix renders three roles and disables every protected grant', () => {
   const client = new QueryClient()
+  client.setQueryData(['role-permissions', 'user-admin', 'staff@example.test', 'ADMIN'], ['Settings.UpdateRbacMatrix'])
   client.setQueryData(['settings', 'rbac'], { items: [{ permissionCode: 'Settings.UpdateRbacMatrix', permissionName: 'Quản trị quyền', moduleTitle: 'Cấu hình', adminOnly: true, cashierAllowed: false, warehouseAllowed: false, adminAllowed: true }] })
   const html = render(client, React.createElement(ScrSys03RbacMatrix, { isAdmin: true }), 'ADMIN')
   assert.equal((html.match(/type="checkbox"/g) ?? []).length, 3)
@@ -50,6 +51,7 @@ test('matrix renders three roles and disables every protected grant', () => {
 
 test('history displays actor, reason and old/new values at the immediate effective time', () => {
   const client = new QueryClient()
+  client.setQueryData(['role-permissions', 'user-admin', 'staff@example.test', 'ADMIN'], ['Settings.GetHistory'])
   client.setQueryData(['settings-history', 'rental'], [{ id: 'audit-1', effectiveAt: '2026-11-20T12:00:00Z', actorName: 'Admin test', reason: 'Đổi số lần gia hạn', beforeJson: '{"maxExtensions":2}', afterJson: '{"maxExtensions":3}' }])
   const html = render(client, React.createElement(SettingsHistory, { group: 'rental', isAdmin: true }), 'ADMIN')
   assert.match(html, /Admin test/)

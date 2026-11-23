@@ -72,13 +72,15 @@ export function SeriesCardActions({ series }: { series: BookSeries }) {
       return
     }
 
-    if (isActive !== series.isActive && canUpdateStatus) {
-      try {
-        await updateStatus.mutateAsync({ seriesId: series.id, isActive })
-      } catch (error) {
-        const detail = error instanceof Error ? ` ${error.message}` : ''
-        setDetailsError(`Thông tin chung đã được lưu, nhưng không thể cập nhật trạng thái.${detail}`)
-        return
+    if (isActive !== series.isActive) {
+      if (canUpdateStatus) {
+        try {
+          await updateStatus.mutateAsync({ seriesId: series.id, isActive })
+        } catch (error) {
+          const detail = error instanceof Error ? ` ${error.message}` : ''
+          setDetailsError(`Thông tin chung đã được lưu, nhưng không thể cập nhật trạng thái.${detail}`)
+          return
+        }
       }
     }
 

@@ -45,8 +45,8 @@ test('customer route is registered and guarded in AppRoutes.tsx', () => {
   const routesContent = readFileSync(src('routes', 'AppRoutes.tsx'), 'utf8')
   assert.match(
     routesContent,
-    /path="\/customers" element=\{<RequireSession><CustomerListPage \/><\/RequireSession>\}/,
-    'AppRoutes must register /customers with RequireSession guard'
+    /path="\/customers" element=\{<RequireSession><RoleGuard screenId="customers"><CustomerListPage \/><\/RoleGuard><\/RequireSession>\}/,
+    'AppRoutes must register /customers with RequireSession and RoleGuard'
   )
 })
 
