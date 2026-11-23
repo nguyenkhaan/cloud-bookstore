@@ -293,35 +293,35 @@ git commit -m "feat(rbac): resolve live screen access"
 - Inline `RequireRole` and duplicate 403 markup are removed.
 - `/book-series` import and production route are removed; `/catalog/series` remains canonical.
 
-- [ ] **Step 1: Write failing RoleGuard tests**
+- [x] **Step 1: Write failing RoleGuard tests**
 
 Assert child mount count for allowed and denied roles, 403 copy for denied role, invalid-role denial, and alias-route denial before navigation.
 
-- [ ] **Step 2: Run route tests and confirm failure**
+- [x] **Step 2: Run route tests and confirm failure**
 
 Run: `cd app/frontend && bun run test -- tests/role-guard.test.mjs tests/app-routes.test.mjs tests/auth-screens.test.mjs tests/audit-ui.test.mjs tests/reports-ui.test.mjs`
 
 Expected: FAIL because routes still use ad-hoc `RequireRole` or session-only guards.
 
-- [ ] **Step 3: Extract ForbiddenPage and implement RoleGuard**
+- [x] **Step 3: Extract ForbiddenPage and implement RoleGuard**
 
 Keep the current application-shell presentation. The forbidden page must not print raw role codes or enumerate roles permitted for the target.
 
-- [ ] **Step 4: Wrap all canonical and alias routes**
+- [x] **Step 4: Wrap all canonical and alias routes**
 
 Assign the exact `ScreenId` from Task 2. Do not add a permissive default screen ID.
 
-- [ ] **Step 5: Update obsolete route source assertions**
+- [x] **Step 5: Update obsolete route source assertions**
 
 Replace tests that require direct `<RequireSession><Page />` nesting with assertions for `RequireSession → RoleGuard(screenId) → Page`.
 
-- [ ] **Step 6: Run focused tests**
+- [x] **Step 6: Run focused tests**
 
 Run: `cd app/frontend && bun run test -- tests/role-guard.test.mjs tests/app-routes.test.mjs tests/auth-screens.test.mjs tests/audit-ui.test.mjs tests/reports-ui.test.mjs`
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add app/frontend/src/routes/RoleGuard.tsx app/frontend/src/pages/ForbiddenPage.tsx app/frontend/src/routes/AppRoutes.tsx app/frontend/tests
@@ -353,27 +353,27 @@ git commit -m "feat(rbac): guard every frontend route"
 - HR submenu hides employee list, admin attendance, payroll and employee-specific payslip detail from non-Admin while keeping personal screens.
 - No inaccessible item remains focusable in collapsed or expanded Sidebar.
 
-- [ ] **Step 1: Replace old sidebar expectations with the accepted matrix**
+- [x] **Step 1: Replace old sidebar expectations with the accepted matrix**
 
 Add table-driven assertions for all top-level items and every HR child for all three roles.
 
-- [ ] **Step 2: Run focused tests and confirm failure**
+- [x] **Step 2: Run focused tests and confirm failure**
 
 Run: `cd app/frontend && bun run test -- tests/sidebar-role-nav.test.mjs tests/catalog-routing.test.mjs tests/admin-hr-ui.test.mjs`
 
 Expected: FAIL because current Sidebar hides Approvals/Settings from all non-Admin and uses hard-coded role branches.
 
-- [ ] **Step 3: Attach ScreenId to navigation metadata and remove duplicate role lists**
+- [x] **Step 3: Attach ScreenId to navigation metadata and remove duplicate role lists**
 
 Use the same policy resolver as `RoleGuard`; do not duplicate the matrix inside `Sidebar.tsx`.
 
-- [ ] **Step 4: Run focused tests**
+- [x] **Step 4: Run focused tests**
 
 Run: `cd app/frontend && bun run test -- tests/sidebar-role-nav.test.mjs tests/catalog-routing.test.mjs tests/admin-hr-ui.test.mjs`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/frontend/src/components/layout/Sidebar/Sidebar.tsx app/frontend/src/features/workspace/workspace.route.ts app/frontend/tests/sidebar-role-nav.test.mjs app/frontend/tests/catalog-routing.test.mjs app/frontend/tests/admin-hr-ui.test.mjs
@@ -410,35 +410,35 @@ git commit -m "feat(rbac): derive navigation from screen policy"
 - Changing role/session resets an active tab that is no longer readable to the first allowed tab.
 - Disallowed child queries are `enabled: false` and receive no SSR/browser request.
 
-- [ ] **Step 1: Write failing role-aware tab tests**
+- [x] **Step 1: Write failing role-aware tab tests**
 
 Render each page/tab bar under all three role contexts. Assert visible labels, selected default and query enabled flags.
 
-- [ ] **Step 2: Run focused tests and confirm failure**
+- [x] **Step 2: Run focused tests and confirm failure**
 
 Run: `cd app/frontend && bun run test -- tests/role-aware-tabs.test.mjs tests/pos-transaction-ui.test.mjs tests/approvals.test.mjs tests/settings-forms.test.mjs`
 
 Expected: FAIL because all POS/Approval tabs are currently rendered or selected independently of screen policy.
 
-- [ ] **Step 3: Filter POS tabs and role-sensitive header actions**
+- [x] **Step 3: Filter POS tabs and role-sensitive header actions**
 
 Use child policy IDs; do not write `roleCode === ...` branches inside `PosWorkspaceTabs`.
 
-- [ ] **Step 4: Filter Approval tabs and gate their queries**
+- [x] **Step 4: Filter Approval tabs and gate their queries**
 
 Do not call inventory-adjustment list/stats for Employee. Keep Admin-only decision behavior and maker-checker presentation.
 
-- [ ] **Step 5: Migrate Settings tabs to child policy**
+- [x] **Step 5: Migrate Settings tabs to child policy**
 
 Remove `ADMIN_ONLY_TABS` and raw `isAdmin` navigation filtering; component write actions remain permission-gated.
 
-- [ ] **Step 6: Run focused tests**
+- [x] **Step 6: Run focused tests**
 
 Run: `cd app/frontend && bun run test -- tests/role-aware-tabs.test.mjs tests/pos-transaction-ui.test.mjs tests/approvals.test.mjs tests/settings-forms.test.mjs`
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add app/frontend/src/features/pos app/frontend/src/features/approvals app/frontend/src/features/settings app/frontend/tests/role-aware-tabs.test.mjs app/frontend/tests/pos-transaction-ui.test.mjs app/frontend/tests/approvals.test.mjs app/frontend/tests/settings-forms.test.mjs
@@ -478,33 +478,33 @@ git commit -m "feat(rbac): enforce role-aware workspace tabs"
 - Existing unguarded CopyDetail edit/delete/label buttons are covered.
 - Permission error leaves forms readable where allowed but disables submit; it does not clear draft values.
 
-- [ ] **Step 1: Inventory all mutating controls before editing**
+- [x] **Step 1: Inventory all mutating controls before editing**
 
 Run: `cd app/frontend && rg -n "canEdit|canMutate|isAdmin|roleCode|onClick|mutate" src/features/catalog src/features/customers src/features/settings --glob '*.{ts,tsx}'`
 
 Record every mutating control in the test expectation table; do not refactor unrelated display-only code.
 
-- [ ] **Step 2: Write failing action-visibility tests**
+- [x] **Step 2: Write failing action-visibility tests**
 
 Cover Employee read-only catalog, Inventory/Admin write action, customer list/detail distinction, CopyDetail actions and Settings read-only/error state.
 
-- [ ] **Step 3: Run focused tests and confirm failure**
+- [x] **Step 3: Run focused tests and confirm failure**
 
 Run: `cd app/frontend && bun run test -- tests/role-action-visibility.test.mjs tests/dynamic-permissions.test.mjs tests/customer-management-fixes.test.mjs tests/settings-forms.test.mjs`
 
 Expected: FAIL on current raw-role or unguarded actions.
 
-- [ ] **Step 4: Replace raw role checks with screen plus action permission checks**
+- [x] **Step 4: Replace raw role checks with screen plus action permission checks**
 
 Keep protected role constraints in policy rather than scattering role arrays across pages.
 
-- [ ] **Step 5: Run focused tests**
+- [x] **Step 5: Run focused tests**
 
 Run: `cd app/frontend && bun run test -- tests/role-action-visibility.test.mjs tests/dynamic-permissions.test.mjs tests/customer-management-fixes.test.mjs tests/settings-forms.test.mjs`
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/frontend/src/features/catalog app/frontend/src/features/customers app/frontend/src/features/settings app/frontend/tests/role-action-visibility.test.mjs app/frontend/tests/dynamic-permissions.test.mjs app/frontend/tests/customer-management-fixes.test.mjs app/frontend/tests/settings-forms.test.mjs
@@ -546,31 +546,31 @@ git commit -m "feat(rbac): enforce read-only business screens"
 - Approval cancel/ownership UI compares stable actor ID. Only Admin decision controls render, and self-request warning still suppresses decision controls.
 - Where backend/mock data cannot yet enforce `SELF`, frontend must not fabricate another employee ID; show an unavailable/empty state and record the backend dependency instead.
 
-- [ ] **Step 1: Update failing HR/ownership tests first**
+- [x] **Step 1: Update failing HR/ownership tests first**
 
 Add direct-route denial, previewRole escalation, own-vs-other payslip, pending-request-tab and stable actor-ID assertions.
 
-- [ ] **Step 2: Run focused tests and confirm failure**
+- [x] **Step 2: Run focused tests and confirm failure**
 
 Run: `cd app/frontend && bun run test -- tests/sidebar-role-nav.test.mjs tests/hrm-wave1-verification.test.mjs tests/admin-hr-ui.test.mjs tests/hr-requests-ui.test.mjs tests/hr-payroll-ui.test.mjs tests/hr-payslip-ui.test.mjs tests/attendance-ui.test.mjs tests/approvals.test.mjs`
 
 Expected: FAIL because preview role and several inline forbidden/read-only branches remain.
 
-- [ ] **Step 3: Remove preview-role authorization and migrate HR pages**
+- [x] **Step 3: Remove preview-role authorization and migrate HR pages**
 
 Use `RoleGuard` for screen denial and screen/action access for page variants. Do not retain hidden admin datasets in rendered non-Admin pages.
 
-- [ ] **Step 4: Replace approval ownership name comparisons with user ID**
+- [x] **Step 4: Replace approval ownership name comparisons with user ID**
 
 Pass `session.user.id` through existing drawer props and keep maker-checker behavior.
 
-- [ ] **Step 5: Run focused tests**
+- [x] **Step 5: Run focused tests**
 
 Run: `cd app/frontend && bun run test -- tests/sidebar-role-nav.test.mjs tests/hrm-wave1-verification.test.mjs tests/admin-hr-ui.test.mjs tests/hr-requests-ui.test.mjs tests/hr-payroll-ui.test.mjs tests/hr-payslip-ui.test.mjs tests/attendance-ui.test.mjs tests/approvals.test.mjs`
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/frontend/src/features/hr app/frontend/src/features/approvals app/frontend/tests
@@ -595,7 +595,7 @@ git commit -m "feat(rbac): scope HR and approval views by actor"
 - User can log in once per role and complete the UAT checklist below without stale permission cache from the previous account.
 - `git diff --check` passes and `git status --short` contains no temporary screenshots/logs/secrets.
 
-- [ ] **Step 1: Run static searches**
+- [x] **Step 1: Run static searches**
 
 Run:
 
@@ -607,7 +607,7 @@ rg -n "roleCode ===|includes\(session\?\.user\?\.roleCode|canEdit = \['ADMIN'" s
 
 Expected: no obsolete authorization path; any remaining raw role comparison is documented as an immutable protected rule, not a duplicate screen matrix.
 
-- [ ] **Step 2: Run frontend verification**
+- [x] **Step 2: Run frontend verification**
 
 Run:
 
@@ -620,7 +620,7 @@ bun run build
 
 Expected: all commands exit 0. If the checkout has pre-existing failures, capture baseline and final output proving no new failure before requesting UAT.
 
-- [ ] **Step 3: Run repository hygiene checks**
+- [x] **Step 3: Run repository hygiene checks**
 
 Run:
 
@@ -664,7 +664,7 @@ Run backend/frontend using the repository's existing local commands. Do not plac
 
 Sign out in the order Admin → Employee → Inventory in the same browser tab. After each login, confirm Sidebar, route access and actions change immediately and no permissions from the previous role remain.
 
-- [ ] **Step 9: Record evidence and commit**
+- [x] **Step 9: Record evidence and commit**
 
 Update `docs/plans/todo.md` with task IDs `RBAC-FE-T01`–`RBAC-FE-T09`, status and command/UAT evidence. Explicitly record backend enforcement as deferred.
 
@@ -673,15 +673,25 @@ git add docs/plans/todo.md
 git commit -m "docs(rbac): record frontend access verification"
 ```
 
+## T09 Execution Evidence (2026-11-23)
+
+- Automated frontend tests: `cd app/frontend && bun run test` → **239/239 passed**.
+- Focused T07 action/settings tests: **21/21 passed**; focused T08 HR/approval tests: **42/42 passed**.
+- Lint: `bun run lint` → exit 0; warnings only, including existing Fast Refresh/set-state-in-effect and unused-import warnings.
+- Build: `bun run build` reaches `tsc -b` but remains blocked by the same pre-existing baseline errors already present at the T06 checkpoint: unused imports/variables in Audit/Dashboard/TaxDeclaration, two nullable-price arguments in `BookCopyLifecycleDrawer.tsx`, and the unused `BookCopyLifecycleDrawer` import in `CopyDetailPage.tsx`. No T07/T08-specific TypeScript error was introduced; the unchanged price errors are still at the lifecycle drawer render path.
+- Static search: production `src` has no `previewRole`, `getPreviewRoleFromSearch`, `HR_ADMIN_ONLY_NAV_IDS`, `ADMIN_ONLY_TABS`, inline `function RequireRole`, or `/book-series` route. Remaining raw role comparisons are immutable view variants (Audit/Dashboard/Attendance/ShiftRecords), not a screen matrix or query-string override.
+- Hygiene: `git diff --check` passes and `git status --short --untracked-files=all` is clean; no temporary screenshots, logs, secrets or generated artifacts remain.
+- Manual UAT: **pending user execution** with real Admin, Employee/Cashier and Inventory/Warehouse accounts. The application was not started with credentials and no credentials were written to docs/logs/Git. Backend authorization and data-scope remain deferred as required by the frontend-only boundary.
+
 ## Final Definition of Done
 
-- [ ] Role/session storage follows Task 1 and cannot default to Admin.
-- [ ] All current production routes and logical child screens exist in the policy catalog.
-- [ ] Sidebar, route guard and tab visibility derive from the same catalog.
-- [ ] `RoleGuard.tsx` protects every authenticated route.
-- [ ] Read-only/update actions follow both screen access and permission code.
-- [ ] HR personal routes and approval ownership use authenticated identity.
-- [ ] No additional business screen was invented without API support; only the shared 403 page was added.
-- [ ] Automated frontend gates pass.
-- [ ] Three-account manual UAT is completed by the user or explicitly marked pending.
-- [ ] Handoff clearly states that backend authorization/data-scope remains outside this frontend-only plan.
+- [x] Role/session storage follows Task 1 and cannot default to Admin.
+- [x] All current production routes and logical child screens exist in the policy catalog.
+- [x] Sidebar, route guard and tab visibility derive from the same catalog.
+- [x] `RoleGuard.tsx` protects every authenticated route.
+- [x] Read-only/update actions follow both screen access and permission code.
+- [x] HR personal routes and approval ownership use authenticated identity.
+- [x] No additional business screen was invented without API support; only the shared 403 page was added.
+- [x] Automated tests and lint pass; build baseline failures are explicitly recorded above.
+- [ ] Three-account manual UAT is completed by the user; it is explicitly handed off as pending.
+- [x] Handoff clearly states that backend authorization/data-scope remains outside this frontend-only plan.
