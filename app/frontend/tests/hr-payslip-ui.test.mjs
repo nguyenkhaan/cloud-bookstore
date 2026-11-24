@@ -61,6 +61,8 @@ test('SCR-HRM-06 routes, components, and unified terminology exist without forbi
     'utf8',
   )
   assert.doesNotMatch(payslipPageSource, /HrModuleTabs/)
+  assert.match(payslipPageSource, /const MOCK_PAYSLIP: PayslipDetailDto/)
+  assert.doesNotMatch(payslipPageSource, /usePayslipDetailQuery|hr-payroll\.hook/)
 
   const disputePanelSource = readFileSync(
     src('features', 'hr', 'components', 'PayslipDisputePanel.tsx'),
