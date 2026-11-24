@@ -76,7 +76,6 @@ export default function SeriesListPage() {
         <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-sm font-bold text-slate-900">Danh sách bộ sách</h2>
-            <p className="mt-0.5 text-xs text-slate-500">Chọn một bộ để xem các đầu sách/tập thuộc bộ đó.</p>
           </div>
           <div className="min-w-0 sm:w-80">
             <TextField label="Tìm bộ sách" onChange={(event) => setSearch(event.target.value)} placeholder="Tên bộ truyện…" value={search} />
