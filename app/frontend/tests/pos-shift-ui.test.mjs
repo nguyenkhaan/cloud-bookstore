@@ -42,3 +42,20 @@ test('POS shift UI stays local and does not introduce data access layers', () =>
   const source = featureFiles.map(readFeatureFile).join('\n')
   assert.doesNotMatch(source, /\.service|\.hook|axios|@tanstack\/react-query|fetch\(/)
 })
+
+test('POS workspace exposes a permission-aware shift navigation action', () => {
+  const pageSource = readFeatureFile(['features', 'pos', 'pages', 'PosWorkspacePage.tsx'])
+  assert.match(pageSource, /resolveEffectiveScreenAccess\('posShift'/)
+  assert.match(pageSource, /navigate\(posPaths\.shift\)/)
+  assert.match(pageSource, /Ca làm việc & Két lương/)
+})
+
+test('POS shift page exposes the POS breadcrumb and back action', () => {
+  const pageSource = readFeatureFile(['features', 'pos', 'pages', 'PosShiftPage.tsx'])
+  assert.match(pageSource, /label: 'Quầy giao dịch', to: posPaths\.root/)
+  assert.match(pageSource, /label: 'Ca làm việc & Két lương'/)
+  assert.match(pageSource, /navigate\(posPaths\.root\)/)
+  assert.match(pageSource, /ArrowLeft/)
+  assert.match(pageSource, /pageTitle=\{<span className="flex flex-col items-start gap-1"><Button/)
+  assert.doesNotMatch(pageSource, /actionButton=.*Quay lại/)
+})
