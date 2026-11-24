@@ -1,4 +1,5 @@
 import { useContext, useState } from 'react'
+import { ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Button, Card } from '@/components/common'
 import { MainLayout as AppLayout } from '@/components/layout'
@@ -9,6 +10,7 @@ import { CashLedgerTable } from '../components/CashLedgerTable'
 import { CashSummaryCards } from '../components/CashSummaryCards'
 import { CloseShiftDialog } from '../components/CloseShiftDialog'
 import { ShiftStatusHeader } from '../components/ShiftStatusHeader'
+import { posPaths } from '../pos.route'
 import type { CashDenomination, PosShiftUiState } from '../pos-shift.type'
 
 const initialDenominations: CashDenomination[] = [
@@ -63,14 +65,14 @@ export default function PosShiftPage() {
 
   return (
     <AppLayout
-      breadcrumbs={[{ label: 'Không gian làm việc' }, { label: 'Ca làm việc & Két tiền mặt', to: '/pos' }]}
+      breadcrumbs={[{ label: 'Không gian làm việc' }, { label: 'Quầy giao dịch', to: posPaths.root }, { label: 'Ca làm việc & Két lương' }]}
       currentPath="pos"
       onNavigate={(item) => {
         const path = workspacePathFor(item)
         if (path) navigate(path)
       }}
       onSignOut={signOut}
-      pageTitle="Ca làm việc & Két tiền mặt"
+      pageTitle={<span className="flex flex-col items-start gap-1"><Button aria-label="Quay lại Quầy giao dịch" className="-ml-2 size-9 p-0" icon={<ArrowLeft aria-hidden="true" className="size-4" />} onClick={() => navigate(posPaths.root)} size="sm" title="Quay lại Quầy giao dịch" variant="ghost" /><span>Ca làm việc & Két tiền mặt</span></span>}
       actionButton={<div className="flex flex-wrap gap-2"><Button onClick={() => window.print()} size="sm" variant="secondary">In biên bản bàn giao · Ctrl P</Button><Button onClick={() => undefined} size="sm" variant="secondary">Rút tiền két nộp quản lý</Button></div>}
       user={currentUser}
     >

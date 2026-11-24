@@ -13,7 +13,7 @@ export interface MainLayoutProps {
   onNavigate?: (id: string) => void;
   onSignOut?: () => void;
   breadcrumbs?: BreadcrumbItem[];
-  pageTitle?: string;
+  pageTitle?: React.ReactNode;
   pageHeaderContent?: React.ReactNode;
   pageSubtitle?: string;
   actionButton?: React.ReactNode;

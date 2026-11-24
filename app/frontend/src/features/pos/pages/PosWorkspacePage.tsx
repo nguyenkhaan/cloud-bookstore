@@ -45,6 +45,9 @@ export default function PosWorkspacePage() {
   const canOpenCustomerDisplay = role !== null && canReadAccess(
     resolveEffectiveScreenAccess('posCustomerDisplay', role, permissions.permissionCodes, permissionStatus),
   )
+  const canOpenShift = role !== null && canReadAccess(
+    resolveEffectiveScreenAccess('posShift', role, permissions.permissionCodes, permissionStatus),
+  )
   const canStartSale = visibleTabs.some((tab) => tab.id === 'sale')
 
   useEffect(() => {
@@ -64,8 +67,11 @@ export default function PosWorkspacePage() {
       onNavigate={(item) => { const path = workspacePathFor(item, roleCode); if (path) navigate(path) }}
       onSignOut={auth?.signOut}
       pageTitle="Quầy giao dịch"
-      actionButton={(canOpenCustomerDisplay || canStartSale) ? (
+      actionButton={(canOpenCustomerDisplay || canOpenShift || canStartSale) ? (
         <div className="flex flex-wrap gap-2">
+          {canOpenShift && (
+            <Button type="button" size="sm" variant="secondary" onClick={() => navigate(posPaths.shift)}>Ca làm việc & Két lương</Button>
+          )}
           {canOpenCustomerDisplay && (
             <a target="_blank" href={posPaths.customerDisplay}>
               <Button type="button" size="sm" variant="secondary" icon={<ExternalLink aria-hidden="true" className="size-3.5" />}>Màn hình chuyển khoản</Button>
