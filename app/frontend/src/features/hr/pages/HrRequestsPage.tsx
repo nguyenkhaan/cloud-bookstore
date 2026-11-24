@@ -121,13 +121,6 @@ export default function HrRequestsPage() {
       currentPath="hr"
       onNavigate={navigateFromSidebar}
       onSignOut={signOut}
-      pageSubtitle={
-        activeTab === 'mine'
-          ? `Đơn của tôi · ${subtitleUserName} · ${subtitleCode} · ${effectiveRoleLabel}`
-          : isAdmin
-            ? 'Đơn cần duyệt · Góc nhìn Admin'
-            : 'Đơn cần duyệt · Chế độ chỉ xem'
-      }
       pageTitle="Đơn xét duyệt"
       user={currentUser}
     >

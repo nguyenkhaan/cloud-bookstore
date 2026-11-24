@@ -47,16 +47,16 @@ test('reports routes and RBAC restrict /reports* to ADMIN only while /dashboard 
   assert.equal(reportsRoutes.reportsPaths.taxDeclaration, '/reports/tax-declaration')
 
   const appRoutes = readSrc('routes', 'AppRoutes.tsx')
-  assert.match(appRoutes, /path="\/dashboard" element=\{<RequireSession><RoleGuard screenId="dashboard"><DashboardRoute \/><\/RoleGuard><\/RequireSession>\}/)
-  for (const pathExpr of [
-    'reportsPaths.root',
-    'reportsPaths.revenueExpense',
-    'reportsPaths.depositReconciliation',
-    'reportsPaths.taxDeclaration',
+  assert.match(appRoutes, /path=\{workspacePaths\.overview\} element=\{<RequireSession><RoleGuard screenId="dashboard"><DashboardRoute \/><\/RoleGuard><\/RequireSession>\}/)
+  for (const [pathExpr, screenId] of [
+    ['workspacePaths.reports', 'reports'],
+    ['reportsPaths.revenueExpense', 'reportsRevenueExpense'],
+    ['reportsPaths.depositReconciliation', 'reportsDepositReconciliation'],
+    ['reportsPaths.taxDeclaration', 'reportsTaxDeclaration'],
   ]) {
     assert.match(
       appRoutes,
-      new RegExp(`path=\\{${pathExpr}\\}[\\s\\S]*?<RequireSession>[\\s\\S]*?<RoleGuard screenId="${pathExpr.replace('reportsPaths.', 'reports').replace('root', '').replace('revenueExpense', 'RevenueExpense').replace('depositReconciliation', 'DepositReconciliation').replace('taxDeclaration', 'TaxDeclaration')}"`),
+      new RegExp(`path=\\{${pathExpr}\\}[\\s\\S]*?<RequireSession>[\\s\\S]*?<RoleGuard screenId="${screenId}"`),
     )
   }
 

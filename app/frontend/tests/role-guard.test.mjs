@@ -79,5 +79,5 @@ test('AppRoutes uses RoleGuard for aliases before navigation and removes ad-hoc 
   assert.doesNotMatch(routesSource, /<RequireRole/)
   assert.doesNotMatch(routesSource, /path="\/book-series"/)
   assert.match(routesSource, /path="\/catalog\/suppliers"[\s\S]*?RoleGuard/)
-  assert.match(routesSource, /path="\/catalog\/series"[\s\S]*?screenId="catalogSeries"/)
+  assert.match(routesSource, /path=\{workspacePaths\.inventory\}[\s\S]*?screenId="catalogSeries"/)
 })

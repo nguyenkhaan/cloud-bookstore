@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { MainLayout } from '@/components/layout'
 import { useAuth } from '@/features/auth/auth.hook'
-import { getFirstAllowedWorkspacePath } from '@/routes/screen-access.policy'
+import { getFirstAllowedWorkspacePath } from '@/features/workspace/workspace.route'
 import type { AppRole } from '@/features/auth/role'
 
 export type ForbiddenPageProps = {

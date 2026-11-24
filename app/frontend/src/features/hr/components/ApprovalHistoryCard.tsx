@@ -21,13 +21,6 @@ export function ApprovalHistoryCard({ request }: ApprovalHistoryCardProps) {
           </p>
         ))}
       </div>
-
-      <div className="mt-4 flex items-start gap-2 rounded-xl bg-indigo-50 px-3.5 py-3 text-xs text-indigo-700">
-        <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-        <span>
-          Đơn được duyệt mới cập nhật Roster hoặc bảng công. Không tự ý bỏ ca khi yêu cầu còn chờ.
-        </span>
-      </div>
     </Card>
   )
 }

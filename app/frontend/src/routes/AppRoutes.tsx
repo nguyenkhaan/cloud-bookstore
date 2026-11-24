@@ -44,6 +44,7 @@ import DepositReconciliationPage from '@/features/reports/pages/DepositReconcili
 import TaxDeclarationReportPage from '@/features/reports/pages/TaxDeclarationReportPage'
 import { reportsPaths } from '@/features/reports/reports.route'
 import SettingsPage from '@/features/settings/pages/SettingsPage'
+import { workspacePaths } from '@/features/workspace/workspace.route'
 import { useAuth } from '@/features/auth/auth.hook'
 import { RoleGuard } from './RoleGuard'
 import NotFound from '@/features/notfound/page';
@@ -66,7 +67,7 @@ function GuestOnly({children} : {children : ReactNode}) {
   const {session , isInitializing} = useAuth() 
   if (isInitializing) return null 
   if (session) 
-    return <Navigate replace to={'/dashboard'} /> 
+    return <Navigate replace to={workspacePaths.overview} />
   return children
 }
 function RequireSession({ children }: { children: ReactNode }) {
@@ -100,13 +101,13 @@ export default function AppRoutes() {
       <Route path="/change-password" element={<RequireSession><RoleGuard screenId="changePassword"><FirstChangePasswordPage /></RoleGuard></RequireSession>} />
       <Route path="/first-change-password" element={<RequireSession><RoleGuard screenId="changePassword"><FirstChangePasswordPage /></RoleGuard></RequireSession>} />
       <Route path="/profile" element={<RequireSession><RoleGuard screenId="profile"><ProfileSecurityPage /></RoleGuard></RequireSession>} />
-      <Route path="/dashboard" element={<RequireSession><RoleGuard screenId="dashboard"><DashboardRoute /></RoleGuard></RequireSession>} />
-      <Route path="/pos" element={<RequireSession><RoleGuard screenId="pos"><PosPage /></RoleGuard></RequireSession>} />
+      <Route path={workspacePaths.overview} element={<RequireSession><RoleGuard screenId="dashboard"><DashboardRoute /></RoleGuard></RequireSession>} />
+      <Route path={workspacePaths.pos} element={<RequireSession><RoleGuard screenId="pos"><PosPage /></RoleGuard></RequireSession>} />
       <Route path="/pos/customer-display" element={<RequireSession><RoleGuard screenId="posCustomerDisplay"><PosCustomerDisplayPage /></RoleGuard></RequireSession>} />
       <Route path="/pos/shift" element={<RequireSession><RoleGuard screenId="posShift"><PosShiftPage /></RoleGuard></RequireSession>} />
-      <Route path="/customers" element={<RequireSession><RoleGuard screenId="customers"><CustomerListPage /></RoleGuard></RequireSession>} />
+      <Route path={workspacePaths.customers} element={<RequireSession><RoleGuard screenId="customers"><CustomerListPage /></RoleGuard></RequireSession>} />
       <Route path="/customers/:id" element={<RequireSession><RoleGuard screenId="customerDetail"><CustomerDetailPage /></RoleGuard></RequireSession>} />
-      <Route path="/hr" element={<RequireSession><RoleGuard screenId="hr"><HumanResourcesPage /></RoleGuard></RequireSession>} />
+      <Route path={workspacePaths.hr} element={<RequireSession><RoleGuard screenId="hr"><HumanResourcesPage /></RoleGuard></RequireSession>} />
       <Route path="/hr/employees" element={<RequireSession><RoleGuard screenId="hrEmployees"><EmployeeListPage /></RoleGuard></RequireSession>} />
       <Route path="/hr/employees/:id" element={<RequireSession><RoleGuard screenId="hrEmployeeDetail"><EmployeeDetailPage /></RoleGuard></RequireSession>} />
       <Route path="/hr/shifts" element={<RequireSession><RoleGuard screenId="hrShifts"><ShiftRecordsPage /></RoleGuard></RequireSession>} />
@@ -117,9 +118,9 @@ export default function AppRoutes() {
       <Route path="/hr/payroll/adjustments/new" element={<RequireSession><RoleGuard screenId="hrPayrollAdjustment"><PayrollAdjustmentPage /></RoleGuard></RequireSession>} />
       <Route path="/hr/payslip" element={<RequireSession><RoleGuard screenId="hrPayslip"><PayslipPage /></RoleGuard></RequireSession>} />
       <Route path="/hr/payslip/:employeeId" element={<RequireSession><RoleGuard screenId="hrEmployeePayslip"><PayslipPage /></RoleGuard></RequireSession>} />
-      <Route path="/approvals" element={<RequireSession><RoleGuard screenId="approvals"><ApprovalsPage /></RoleGuard></RequireSession>} />
+      <Route path={workspacePaths.approvals} element={<RequireSession><RoleGuard screenId="approvals"><ApprovalsPage /></RoleGuard></RequireSession>} />
       <Route
-        path={auditPaths.root}
+        path={workspacePaths.audit}
         element={
           <RequireSession><RoleGuard screenId="audit"><AuditPage /></RoleGuard></RequireSession>
         }
@@ -131,7 +132,7 @@ export default function AppRoutes() {
         }
       />
       <Route
-        path={reportsPaths.root}
+        path={workspacePaths.reports}
         element={
           <RequireSession><RoleGuard screenId="reports"><ReportsPage /></RoleGuard></RequireSession>
         }
@@ -154,18 +155,18 @@ export default function AppRoutes() {
           <RequireSession><RoleGuard screenId="reportsTaxDeclaration"><TaxDeclarationReportPage /></RoleGuard></RequireSession>
         }
       />
-      <Route path="/settings" element={<RequireSession><RoleGuard screenId="settings"><SettingsPage /></RoleGuard></RequireSession>} />
+      <Route path={workspacePaths.settings} element={<RequireSession><RoleGuard screenId="settings"><SettingsPage /></RoleGuard></RequireSession>} />
       <Route path="/settings/rental" element={<RequireSession><RoleGuard screenId="settingsRental"><SettingsPage /></RoleGuard></RequireSession>} />
       <Route path="/settings/tiers" element={<RequireSession><RoleGuard screenId="settingsTiers"><SettingsPage /></RoleGuard></RequireSession>} />
       <Route path="/settings/rbac" element={<RequireSession><RoleGuard screenId="settingsRbac"><SettingsPage /></RoleGuard></RequireSession>} />
       <Route path="/settings/integrations" element={<RequireSession><RoleGuard screenId="settingsIntegrations"><SettingsPage /></RoleGuard></RequireSession>} />
       <Route path="/catalog/categories" element={<RequireSession><RoleGuard screenId="catalogCategories"><CategoryTreePage /></RoleGuard></RequireSession>} />
-      <Route path="/catalog/series" element={<RequireSession><RoleGuard screenId="catalogSeries"><SeriesListPage /></RoleGuard></RequireSession>} />
+      <Route path={workspacePaths.inventory} element={<RequireSession><RoleGuard screenId="catalogSeries"><SeriesListPage /></RoleGuard></RequireSession>} />
       <Route path="/catalog/titles" element={<RequireSession><RoleGuard screenId="catalogTitles"><TitleListPage /></RoleGuard></RequireSession>} />
       <Route path="/catalog/titles/:titleId" element={<RequireSession><RoleGuard screenId="catalogTitleDetail"><TitleDetailPage /></RoleGuard></RequireSession>} />
       <Route path="/catalog/editions/:editionId" element={<RequireSession><RoleGuard screenId="catalogEditionDetail"><EditionDetailPage /></RoleGuard></RequireSession>} />
       <Route path="/catalog/copies/:copyId" element={<RequireSession><RoleGuard screenId="catalogCopyDetail"><CopyDetailPage /></RoleGuard></RequireSession>} />
-      <Route path="/suppliers" element={<RequireSession><RoleGuard screenId="suppliers"><SuppliersPage /></RoleGuard></RequireSession>} />
+      <Route path={workspacePaths.warehouse} element={<RequireSession><RoleGuard screenId="suppliers"><SuppliersPage /></RoleGuard></RequireSession>} />
       <Route path="/stock-receipts" element={<RequireSession><RoleGuard screenId="stockReceipts"><StockReceiptsPage /></RoleGuard></RequireSession>} />
       <Route path="/stock-out" element={<RequireSession><RoleGuard screenId="stockOut"><StockOutPage /></RoleGuard></RequireSession>} />
       <Route path="/inventory-check" element={<RequireSession><RoleGuard screenId="inventoryCheck"><InventoryCheckPage /></RoleGuard></RequireSession>} />

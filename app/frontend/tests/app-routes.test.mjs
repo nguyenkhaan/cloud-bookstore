@@ -14,7 +14,8 @@ const hrPage = readFileSync(path.join(frontendRoot, 'src', 'features', 'hr', 'pa
 test('application routes declare each authentication path once and guard catalog screens', () => {
   assert.equal((routes.match(/path="\/verify-register"/g) ?? []).length, 1)
   for (const path of ['/catalog/series', '/catalog/titles', '/catalog/titles/:titleId', '/catalog/editions/:editionId', '/catalog/copies/:copyId']) {
-    assert.match(routes, new RegExp(`path="${path}" element=\\{<RequireSession>`))
+    const routeExpression = path === '/catalog/series' ? 'path=\\{workspacePaths.inventory\\}' : `path="${path}"`
+    assert.match(routes, new RegExp(`${routeExpression} element=\\{<RequireSession>`))
   }
 })
 
@@ -49,8 +50,9 @@ test('HR routes are unified under /hr/* with session guards and zero /admin/hr r
     '/hr/payslip',
     '/hr/payslip/:employeeId',
   ]) {
-    assert.equal((routes.match(new RegExp(`path="${path}"`, 'g')) ?? []).length, 1)
-    assert.match(routes, new RegExp(`path="${path}"[\\s\\S]*?<RequireSession>`))
+    const routeExpression = path === '/hr' ? 'path=\\{workspacePaths.hr\\}' : `path="${path}"`
+    assert.equal((routes.match(new RegExp(routeExpression, 'g')) ?? []).length, 1)
+    assert.match(routes, new RegExp(`${routeExpression}[\\s\\S]*?<RequireSession>`))
   }
   assert.doesNotMatch(routes, /\/admin\/hr|adminHrPaths|AdminAttendancePage/)
 })

@@ -63,7 +63,8 @@ test('HR pages cannot elevate authorization from previewRole and admin-only rout
 test('Unified /hr routes are session guarded and zero /admin/hr routes remain', () => {
   const routes = readSource('routes', 'AppRoutes.tsx')
   for (const pathName of ['/hr', '/hr/attendance', '/hr/attendance/personal', '/hr/shifts', '/hr/employees', '/hr/requests', '/hr/payroll', '/hr/payslip']) {
-    assert.match(routes, new RegExp(`path="${pathName}" element=\\{<RequireSession>`))
+    const routeExpression = pathName === '/hr' ? 'path=\\{workspacePaths.hr\\}' : `path="${pathName}"`
+    assert.match(routes, new RegExp(`${routeExpression} element=\\{<RequireSession>`))
   }
   assert.doesNotMatch(routes, /\/admin\/hr/)
 })
@@ -71,7 +72,7 @@ test('Unified /hr routes are session guarded and zero /admin/hr routes remain', 
 test('Sidebar unifies HR under a single Nhân sự & tiền lương group', () => {
   const sidebar = readSource('components', 'layout', 'Sidebar', 'Sidebar.tsx')
   const workspaceRoute = readSource('features', 'workspace', 'workspace.route.ts')
-  assert.match(sidebar, /id: ['"]hr['"], label: ['"]Nhân sự & tiền lương['"]\s*,/)
+  assert.match(workspaceRoute, /id: ['"]hr['"], label: ['"]Nhân sự & tiền lương['"]\s*,/)
   assert.match(sidebar, /data-testid="sidebar-hr-submenu"/)
   assert.doesNotMatch(sidebar, /label: ['"]Chấm công cá nhân['"]/)
   assert.doesNotMatch(sidebar, /id: ['"]admin-hr['"]/)
