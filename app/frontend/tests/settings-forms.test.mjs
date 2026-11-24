@@ -44,6 +44,9 @@ function mount(file, name, data, options = {}) {
     }
     if (id === 'react-router-dom') return { useLocation: () => location, useNavigate: () => path => navigations.push(path) }
     if (id.endsWith('auth.hook')) return { useAuth: () => ({ session: { user: { roleCode: options.roleCode ?? 'ADMIN' } } }) }
+    if (id.endsWith('workspace.route')) return {
+      workspacePathFor: item => ({ overview: '/dashboard', warehouse: '/suppliers' })[item],
+    }
     if (id.endsWith('usePermissions')) return { usePermissions: () => ({ can: () => true }) }
     if (id.endsWith('settings.route')) return { settingsPaths: { rental: '/settings/rental', tiers: '/settings/tiers', rbac: '/settings/rbac', integrations: '/settings/integrations' } }
     return { ...panels, Button: 'button', TextField: 'input', ConfirmationDialog: 'confirmation', notify: { success() {}, error() {} }, MainLayout: 'MainLayout', SettingsTabBar: 'SettingsTabBar' }
@@ -226,6 +229,16 @@ test('a non-admin direct link to Integrations returns to an accessible Settings 
   })
 
   assert.deepEqual(page.navigations, ['/settings/rental'])
+})
+
+test('Settings Sidebar navigation delegates workspace IDs to the shared route registry', () => {
+  const page = mount('pages/SettingsPage.tsx', 'default')
+  const layout = page.find(node => node.type === 'MainLayout')
+
+  layout.props.onNavigate('overview')
+  layout.props.onNavigate('warehouse')
+
+  assert.deepEqual(page.navigations, ['/dashboard', '/suppliers'])
 })
 
 test('RBAC uses three boolean grants, locks protected rights and preserves dirty edits on refetch', async () => {

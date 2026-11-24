@@ -233,12 +233,6 @@ export function PayslipBreakdownCard({
           </>
         )}
       </div>
-
-      <p className="mt-3 text-[11px] text-slate-500">
-        {isPaid
-          ? `Nguồn ${payslip.attendanceSourceCode} · Bảng lương ${payslip.payrollCode} đã tất toán. Sai lệch sẽ được xem xét và bù trừ kỳ sau.`
-          : `Nguồn ${payslip.attendanceSourceCode} · Phiếu đã được Admin duyệt. Thông tin chuyển khoản sẽ xuất hiện sau khi xác nhận chi trả.`}
-      </p>
     </Card>
   )
 }

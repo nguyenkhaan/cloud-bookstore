@@ -32,7 +32,7 @@ test('audit routes and RBAC guards restrict /audit* to ADMIN and INVENTORY_MANAG
   assert.equal(auditRoutes.auditPaths.copyLifecycle, '/audit/copy-lifecycle')
 
   const appRoutes = readSrc('routes', 'AppRoutes.tsx')
-  assert.match(appRoutes, /path=\{auditPaths\.root\}[\s\S]*?<RequireSession>[\s\S]*?<RoleGuard screenId="audit">[\s\S]*?<AuditPage \/>/)
+  assert.match(appRoutes, /path=\{workspacePaths\.audit\}[\s\S]*?<RequireSession>[\s\S]*?<RoleGuard screenId="audit">[\s\S]*?<AuditPage \/>/)
   assert.match(appRoutes, /path=\{auditPaths\.copyLifecycle\}[\s\S]*?<RequireSession>[\s\S]*?<RoleGuard screenId="auditCopyLifecycle">[\s\S]*?<CopyLifecycleLookupPage \/>/)
 
   assert.equal(sidebarModule.canAccessNavItem('audit', 'ADMIN'), true)

@@ -62,7 +62,7 @@ export function WeeklyRoster({ actorName, isAdminView }: WeeklyRosterProps) {
 
   return <div className="space-y-5" data-testid="weekly-roster">
     <section className="flex flex-col gap-4 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 lg:flex-row lg:items-center lg:justify-between">
-      <div><p className="text-sm font-bold text-slate-900">Lập lịch phân ca làm việc</p><p className="mt-1 text-xs text-slate-600">Roster tuần {weekLabel} · Nhà sách Mây · {isAdminView ? 'Chế độ điều phối Quản lý' : 'Lịch làm việc của bạn'}</p></div>
+      <div><p className="text-sm font-bold text-slate-900">Lập lịch phân ca làm việc</p></div>
       {isAdminView && <Button icon={<Send size={15} />} onClick={() => setPublished(true)} size="sm">{published ? 'Đã công bố' : 'Công bố lịch làm việc'}</Button>}
     </section>
 
@@ -93,6 +93,13 @@ export function WeeklyRoster({ actorName, isAdminView }: WeeklyRosterProps) {
       })}</div>)}
     </div></div></Card>
 
-    {isAdminView && <div className="grid gap-4 xl:grid-cols-[1.1fr_.9fr]"><Card subtitle="Gán nhanh nhân viên còn trống cho một ca đang thiếu." title="Bổ sung nhân sự vào ca"><div className="flex flex-col gap-3 sm:flex-row sm:items-end"><SelectBox className="min-w-0 flex-1" label="Nhân viên khả dụng" onChange={setAvailableEmployee} options={availableStaff.slice()} searchable={false} value={availableEmployee} /><Button icon={<UserPlus size={15} />} onClick={addAvailableStaff}>Thêm vào ca</Button></div>{assignmentNotice && <p className="mt-3 text-xs text-emerald-700" role="status">{assignmentNotice}</p>}</Card><Card subtitle="Kiểm tra trước khi công bố lịch." title="Cảnh báo cần xử lý"><div className="space-y-2 text-xs"><Badge variant="danger">{shortageCount} ca cần bổ sung</Badge><p className="text-slate-600">2 cảnh báo trùng ca cần được quản lý xác nhận.</p></div></Card></div>}
+    {isAdminView && <div className="grid gap-4 xl:grid-cols-[1.1fr_.9fr]">
+        <Card title="Bổ sung nhân sự vào ca"><div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <SelectBox className="min-w-0 flex-1" label="Nhân viên khả dụng" onChange={setAvailableEmployee} options={availableStaff.slice()} searchable={false} value={availableEmployee} />
+          <Button icon={<UserPlus size={15} />} onClick={addAvailableStaff}>Thêm vào ca
+          </Button>
+          </div>{assignmentNotice && <p className="mt-3 text-xs text-emerald-700" role="status">{assignmentNotice}</p>}</Card><Card title="Cảnh báo cần xử lý"><div className="space-y-2 text-xs"><Badge variant="danger">{shortageCount} ca cần bổ sung</Badge>
+          </div></Card>
+    </div>}
   </div>
 }

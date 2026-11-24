@@ -259,9 +259,3 @@ export function resolveEffectiveScreenAccess(
   const canUpdate = canRead && hasPermission(permissionCodes, screenPolicy.updatePermissions)
   return capAccess(canUpdate ? 'U' : canRead ? 'R' : 'N', maximum)
 }
-
-export function getFirstAllowedWorkspacePath(role: AppRole): string {
-  const preferredScreens: ScreenId[] = ['dashboard', 'pos', 'customers', 'hr', 'settings']
-  const allowedScreen = preferredScreens.find((screenId) => canReadAccess(getEffectiveAccess(screenId, role)))
-  return allowedScreen ? SCREEN_POLICIES[allowedScreen].path : '/login'
-}

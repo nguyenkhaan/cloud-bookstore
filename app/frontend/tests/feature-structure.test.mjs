@@ -34,9 +34,9 @@ test('auth and dashboard UI are organized as feature modules', () => {
   const routes = readFileSync(src('routes', 'AppRoutes.tsx'), 'utf8')
   assert.match(routes, /from ['"]react-router-dom['"]/)
   assert.match(routes, /path=['"]\/login['"]/)
-  assert.match(routes, /path=['"]\/dashboard['"]/)
+  assert.match(routes, /path=\{workspacePaths\.overview\}/)
   assert.doesNotMatch(routes, /@\/tmp\/pages/)
-  assert.match(routes, /path=['"]\/catalog\/series['"]/)
+  assert.match(routes, /path=\{workspacePaths\.inventory\}/)
   assert.match(routes, /path=['"]\/catalog\/titles['"]/)
 })
 

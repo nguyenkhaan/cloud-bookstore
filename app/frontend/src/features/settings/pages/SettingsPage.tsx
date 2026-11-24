@@ -11,6 +11,7 @@ import { ScrSys04Integrations } from '../components/ScrSys04Integrations'
 import { settingsPaths } from '../settings.route'
 import type { SystemTabKey } from '../settings.type'
 import { SettingsHistory } from '../components/SettingsHistory'
+import { workspacePathFor } from '@/features/workspace/workspace.route'
 
 export default function SettingsPage() {
   const navigate = useNavigate()
@@ -80,7 +81,10 @@ export default function SettingsPage() {
   return (
     <MainLayout
       currentPath="settings"
-      onNavigate={(id) => navigate(`/${id}`)}
+      onNavigate={(id) => {
+        const path = workspacePathFor(id)
+        if (path) navigate(path)
+      }}
       onSignOut={signOut}
       pageTitle={breadcrumbTitle}
       pageHeaderContent={<SettingsTabBar activeTab={activeTab} tabs={visibleTabs} onSelectTab={handleSelectTab} />}

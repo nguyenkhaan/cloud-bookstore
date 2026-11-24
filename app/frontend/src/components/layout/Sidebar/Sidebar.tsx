@@ -1,26 +1,20 @@
 import React, { useContext, useState } from 'react';
 import { Link, useInRouterContext } from 'react-router-dom';
 import {
-  DashboardIcon,
-  InventoryIcon,
-  WarehouseIcon,
   HeadphonesIcon,
   PanelToggleIcon,
   ExternalLinkIcon,
   LogoutIcon,
-  PosIcon,
-  CustomerIcon, 
-  StaffIcon, 
-  ApprovalIcon,
-  AuditIcon, 
-  ReportIcon, 
-  SettingsIcon,
   ChevronDownIcon,
 } from '@/components/common/Icons';
 import { Logo } from '@/components/common/Logo';
 import { AuthContext } from '@/context/AuthProvider';
 import { brand } from '@/lib/brand';
 import { hrPaths } from '@/features/hr/hr.route';
+import {
+  workspaceNavItems,
+  workspaceScreenIds,
+} from '@/features/workspace/workspace.route';
 import { normalizeRoleCode } from '@/features/auth/role';
 import { usePermissions } from '@/hooks/usePermissions';
 import {
@@ -30,14 +24,7 @@ import {
 import type { AppRole } from '@/features/auth/role';
 import type { AccessLevel, ScreenId } from '@/routes/screen-access.policy';
 
-export interface NavItem {
-  id: string;
-  label: string;
-  href?: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  screenId: ScreenId;
-  childScreenIds?: readonly ScreenId[];
-}
+export type NavItem = (typeof workspaceNavItems)[number];
 
 export interface SidebarProps {
   currentPath?: string;
@@ -62,37 +49,14 @@ const HR_SUB_NAV_ITEMS = [
   { id: 'hr-payslip', label: 'Phiếu lương', href: hrPaths.payslip, screenId: 'hrPayslip' },
 ] as const;
 
-const DEFAULT_NAV_ITEMS: NavItem[] = [
-  { id: 'overview', label: 'Tổng quan', icon: DashboardIcon, screenId: 'dashboard' },
-  { id: 'pos', label: 'Quầy giao dịch', icon: PosIcon, screenId: 'pos' },
-  {
-    id: 'inventory',
-    label: 'Quản lý sách',
-    icon: InventoryIcon,
-    screenId: 'catalogSeries',
-    childScreenIds: ['catalogCategories', 'catalogSeries', 'catalogTitles'],
-  },
-  {
-    id: 'warehouse',
-    label: 'NCC & Kho',
-    icon: WarehouseIcon,
-    screenId: 'suppliers',
-    childScreenIds: ['suppliers', 'stockReceipts', 'stockOut', 'inventoryCheck', 'stockAlerts'],
-  },
-  { id: 'customers', label: 'Khách hàng', icon: CustomerIcon, screenId: 'customers' },
-  { id: 'hr', label: 'Nhân sự & tiền lương', icon: StaffIcon, screenId: 'hr' },
-  { id: 'approvals', label: 'Phê duyệt', icon: ApprovalIcon, screenId: 'approvals' },
-  { id: 'audit', label: 'Nhật ký kiểm toán', icon: AuditIcon, screenId: 'audit' },
-  { id: 'reports', label: 'Báo cáo & thuế', icon: ReportIcon, screenId: 'reports' },
-  { id: 'settings', label: 'Cấu hình hệ thống', icon: SettingsIcon, screenId: 'settings' },
-];
+const DEFAULT_NAV_ITEMS = workspaceNavItems;
 
 function getRole(roleCode?: string | null): AppRole | null {
   return normalizeRoleCode(roleCode) as AppRole | null;
 }
 
 function getItemScreenIds(item: NavItem): readonly ScreenId[] {
-  return item.childScreenIds ?? [item.screenId];
+  return workspaceScreenIds[item.id];
 }
 
 function resolveAccess(
@@ -136,19 +100,7 @@ export function visibleHrSubNavItemIdsFor(roleCode?: string): string[] {
 }
 
 export function navLabelFor(id: string): string {
-  const labels: Record<string, string> = {
-    overview: 'Tổng quan',
-    inventory: 'Quản lý sách',
-    warehouse: 'NCC & Kho',
-    pos: 'Quầy giao dịch',
-    customers: 'Khách hàng',
-    hr: 'Nhân sự & tiền lương',
-    approvals: 'Phê duyệt',
-    audit: 'Nhật ký kiểm toán',
-    reports: 'Báo cáo & thuế',
-    settings: 'Cấu hình hệ thống',
-  };
-  return labels[id] ?? 'Hệ thống';
+  return workspaceNavItems.find((item) => item.id === id)?.label ?? 'Hệ thống';
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({

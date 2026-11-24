@@ -4,6 +4,7 @@ import { createServer } from 'vite'
 
 let server
 let policy
+let workspaceRoutes
 
 before(async () => {
   server = await createServer({
@@ -11,6 +12,7 @@ before(async () => {
     server: { hmr: false, middlewareMode: true },
   })
   policy = await server.ssrLoadModule('/src/routes/screen-access.policy.ts')
+  workspaceRoutes = await server.ssrLoadModule('/src/features/workspace/workspace.route.ts')
 })
 
 after(async () => {
@@ -110,8 +112,9 @@ test('parent workspaces expose only readable children and aggregate Inventory PO
 test('Admin-only screens cannot be upgraded by child aggregation and BookSeries is never a destination', () => {
   assert.equal(policy.getEffectiveAccess('settingsRbac', 'CASHIER'), 'N')
   assert.equal(policy.getEffectiveAccess('reports', 'INVENTORY_MANAGER'), 'N')
-  assert.equal(policy.getFirstAllowedWorkspacePath('CASHIER'), '/dashboard')
-  assert.equal(policy.getFirstAllowedWorkspacePath('ADMIN'), '/dashboard')
-  assert.equal(policy.getFirstAllowedWorkspacePath('INVENTORY_MANAGER'), '/dashboard')
-  assert.notEqual(policy.getFirstAllowedWorkspacePath('ADMIN'), '/book-series')
+  assert.equal(workspaceRoutes.getFirstAllowedWorkspacePath('CASHIER'), '/dashboard')
+  assert.equal(workspaceRoutes.getFirstAllowedWorkspacePath('ADMIN'), '/dashboard')
+  assert.equal(workspaceRoutes.getFirstAllowedWorkspacePath('INVENTORY_MANAGER'), '/dashboard')
+  assert.notEqual(workspaceRoutes.getFirstAllowedWorkspacePath('ADMIN'), '/book-series')
+  assert.equal(policy.getFirstAllowedWorkspacePath, undefined)
 })
