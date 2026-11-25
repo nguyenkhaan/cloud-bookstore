@@ -55,7 +55,9 @@ public sealed class HrRequestService(AppDbContext dbContext, UploadIntentService
             throw new BadRequestException("Replacement employee is unavailable.");
         if (request.Type == HrRequestType.ATTENDANCE_EXPLANATION && (request.CorrectCheckInAt is null && request.CorrectCheckOutAt is null))
             throw new BadRequestException("Corrected check-in or check-out time is required.");
-        if (request.CorrectCheckInAt > request.CorrectCheckOutAt && request.CorrectCheckOutAt.HasValue)
+        var correctCheckInAt = NormalizeToUtc(request.CorrectCheckInAt);
+        var correctCheckOutAt = NormalizeToUtc(request.CorrectCheckOutAt);
+        if (correctCheckInAt > correctCheckOutAt && correctCheckOutAt.HasValue)
             throw new BadRequestException("Check-out must be later than check-in.");
 
         string? proofPublicId = null;
@@ -67,8 +69,8 @@ public sealed class HrRequestService(AppDbContext dbContext, UploadIntentService
         {
             RequestCode = code, Type = request.Type, RequesterId = actorId, ApplyDate = request.ApplyDate,
             ShiftNo = request.ShiftNo, TargetShiftNo = request.TargetShiftNo,
-            ReplacementEmployeeId = request.ReplacementEmployeeId, CorrectCheckInAt = request.CorrectCheckInAt,
-            CorrectCheckOutAt = request.CorrectCheckOutAt, ProofPublicId = proofPublicId,
+            ReplacementEmployeeId = request.ReplacementEmployeeId, CorrectCheckInAt = correctCheckInAt,
+            CorrectCheckOutAt = correctCheckOutAt, ProofPublicId = proofPublicId,
             Reason = request.Reason.Trim(), Status = HrRequestStatus.PENDING, CreatedAt = now
         };
         dbContext.HrRequests.Add(model);
@@ -77,6 +79,21 @@ public sealed class HrRequestService(AppDbContext dbContext, UploadIntentService
         await dbContext.SaveChangesAsync(cancellationToken);
         return (await MapAsync([model.Id], actorId, cancellationToken)).Single();
     }
+
+    private static readonly TimeSpan StoreUtcOffset = TimeSpan.FromHours(7);
+
+    /// <summary>
+    /// Npgsql only writes <see cref="DateTimeKind.Utc"/> values to timestamptz columns.
+    /// Unspecified values are interpreted as store-local Vietnam time (UTC+7).
+    /// </summary>
+    private static DateTime? NormalizeToUtc(DateTime? value)
+        => value switch
+        {
+            null => null,
+            { Kind: DateTimeKind.Utc } utc => utc,
+            { Kind: DateTimeKind.Local } local => local.ToUniversalTime(),
+            { } unspecified => new DateTimeOffset(DateTime.SpecifyKind(unspecified, DateTimeKind.Unspecified), StoreUtcOffset).UtcDateTime
+        };
 
     public async Task<HrRequestDto> CancelAsync(Guid actorId, Guid requestId, AuditLogContext context, CancellationToken cancellationToken = default)
     {
@@ -107,8 +124,8 @@ public sealed class HrRequestService(AppDbContext dbContext, UploadIntentService
             var workRecord = await dbContext.EmployeeWorkRecords.SingleOrDefaultAsync(record => record.EmployeeId == request.RequesterId
                 && record.WorkDate == request.ApplyDate && record.ShiftNo == request.ShiftNo, cancellationToken)
                 ?? throw new ConflictException("The work record for this attendance request no longer exists.");
-            if (request.CorrectCheckInAt.HasValue) workRecord.CheckInAt = request.CorrectCheckInAt.Value;
-            if (request.CorrectCheckOutAt.HasValue) workRecord.CheckOutAt = request.CorrectCheckOutAt.Value;
+            if (NormalizeToUtc(request.CorrectCheckInAt) is { } correctCheckInAt) workRecord.CheckInAt = correctCheckInAt;
+            if (NormalizeToUtc(request.CorrectCheckOutAt) is { } correctCheckOutAt) workRecord.CheckOutAt = correctCheckOutAt;
             if (workRecord.CheckInAt.HasValue && workRecord.CheckOutAt.HasValue)
             {
                 workRecord.WorkedMinutes = Math.Max(0, (int)(workRecord.CheckOutAt.Value - workRecord.CheckInAt.Value).TotalMinutes);

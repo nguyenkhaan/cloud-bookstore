@@ -124,11 +124,11 @@ export function CreateHrRequestCard({ onCreated }: CreateHrRequestCardProps) {
         replacementEmployeeId: type === 'attendance_explanation' ? null : replacementEmployeeId,
         correctCheckInAt:
           type === 'attendance_explanation' && correctCheckIn
-            ? `${applyDate}T${correctCheckIn}:00`
+            ? `${applyDate}T${correctCheckIn}:00+07:00`
             : null,
         correctCheckOutAt:
           type === 'attendance_explanation' && correctCheckOut
-            ? `${applyDate}T${correctCheckOut}:00`
+            ? `${applyDate}T${correctCheckOut}:00+07:00`
             : null,
         reason: reason.trim(),
         proofUpload,

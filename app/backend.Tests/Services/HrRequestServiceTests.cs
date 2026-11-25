@@ -218,8 +218,8 @@ public sealed class HrRequestServiceTests
         Assert.Contains(reviewed.History, entry => entry.Action == "APPROVED" && entry.Note == "Đã đối chiếu camera quầy.");
 
         var updatedRecord = await db.EmployeeWorkRecords.SingleAsync();
-        Assert.Equal(ApplyDate.ToDateTime(new TimeOnly(8, 0)), updatedRecord.CheckInAt);
-        Assert.Equal(ApplyDate.ToDateTime(new TimeOnly(14, 0)), updatedRecord.CheckOutAt);
+        Assert.Equal(ApplyDate.ToDateTime(new TimeOnly(1, 0), DateTimeKind.Utc), updatedRecord.CheckInAt);
+        Assert.Equal(ApplyDate.ToDateTime(new TimeOnly(7, 0), DateTimeKind.Utc), updatedRecord.CheckOutAt);
         Assert.Equal(360, updatedRecord.WorkedMinutes);
         Assert.Equal(60, updatedRecord.OvertimeMinutes);
         Assert.Equal(AttendanceStatus.PRESENT, updatedRecord.AttendanceStatus);
@@ -230,6 +230,56 @@ public sealed class HrRequestServiceTests
         var audits = await db.AuditLogs.ToListAsync();
         Assert.Contains(audits, audit => audit.Action == "APPROVE_ATTENDANCE_ADJUSTMENT");
         Assert.Contains(audits, audit => audit.Action == "REVIEW_HR_REQUEST" && audit.EntityType == "hr_request");
+    }
+
+    [Fact]
+    public async Task Attendance_explanation_times_with_unspecified_kind_persist_as_utc_on_request_and_work_record ()
+    {
+        await using var db = CreateDbContext();
+        var roles = SeedRoles(db);
+        var requester = NewEmployee(roles[RoleName.CASHIER], "Requester", "requester@comicpos.vn", "NV-0001");
+        var admin = NewEmployee(roles[RoleName.ADMIN], "Admin", "admin@comicpos.vn", "NV-0002");
+        db.Employees.AddRange(requester, admin);
+        db.EmployeeWorkRecords.Add(new EmployeeWorkRecordModel
+        {
+            EmployeeId = requester.Id,
+            WorkDate = ApplyDate,
+            ShiftNo = 1,
+            AttendanceStatus = AttendanceStatus.INCOMPLETE,
+            ShiftSalary = 250_000
+        });
+        await db.SaveChangesAsync();
+        var service = CreateService(db);
+        var checkIn = DateTime.SpecifyKind(ApplyDate.ToDateTime(new TimeOnly(8, 0)), DateTimeKind.Unspecified);
+        var checkOut = DateTime.SpecifyKind(ApplyDate.ToDateTime(new TimeOnly(14, 0)), DateTimeKind.Unspecified);
+
+        var created = await service.CreateAsync(requester.Id,
+            new CreateHrRequestRequest(HrRequestType.ATTENDANCE_EXPLANATION, ApplyDate, 1, null, null, checkIn, checkOut, "Quên chấm công."),
+            new AuditLogContext(requester.Id, null));
+
+        var expectedCheckIn = new DateTime(2026, 11, 20, 1, 0, 0, DateTimeKind.Utc);
+        var expectedCheckOut = new DateTime(2026, 11, 20, 7, 0, 0, DateTimeKind.Utc);
+        var stored = await db.HrRequests.AsNoTracking().SingleAsync(item => item.Id == created.Id);
+        Assert.Equal(DateTimeKind.Utc, stored.CorrectCheckInAt!.Value.Kind);
+        Assert.Equal(DateTimeKind.Utc, stored.CorrectCheckOutAt!.Value.Kind);
+        Assert.Equal(expectedCheckIn, stored.CorrectCheckInAt);
+        Assert.Equal(expectedCheckOut, stored.CorrectCheckOutAt);
+
+        // Simulate a row materialized by Npgsql-less providers with an Unspecified kind, then approve it.
+        var tracked = await db.HrRequests.SingleAsync(item => item.Id == created.Id);
+        tracked.CorrectCheckInAt = checkIn;
+        tracked.CorrectCheckOutAt = checkOut;
+        await db.SaveChangesAsync();
+
+        await service.ReviewAsync(admin.Id, created.Id,
+            new HrRequestReviewRequest(HrRequestStatus.APPROVED, "Đã đối chiếu camera quầy."),
+            new AuditLogContext(admin.Id, null));
+
+        var record = await db.EmployeeWorkRecords.AsNoTracking().SingleAsync();
+        Assert.Equal(DateTimeKind.Utc, record.CheckInAt!.Value.Kind);
+        Assert.Equal(DateTimeKind.Utc, record.CheckOutAt!.Value.Kind);
+        Assert.Equal(expectedCheckIn, record.CheckInAt);
+        Assert.Equal(expectedCheckOut, record.CheckOutAt);
     }
 
     private static AppDbContext CreateDbContext()
