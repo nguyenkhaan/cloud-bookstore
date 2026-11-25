@@ -9,7 +9,7 @@ import { cn } from '@/lib/cn'
 import {
   HR_EMPLOYEE_ROLE_OPTIONS,
   HR_EMPLOYEE_STATUS_OPTIONS,
-} from '../hr-employees.mock'
+} from '../hr-employees.constants'
 import { useUpdateHrEmployeeMutation } from '../hr-employees.hook'
 import type {
   BackendRoleName,

@@ -432,6 +432,18 @@ namespace backend.src.Data.Migrations
                     b.Property<string>("AvatarUrl")
                         .HasColumnType("text");
 
+                    b.Property<string>("BankAccountNumber")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("BankName")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("BranchName")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -440,6 +452,10 @@ namespace backend.src.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<string>("EmployeeCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<int>("FailedLoginAttempts")
                         .HasColumnType("integer");
 
@@ -447,6 +463,16 @@ namespace backend.src.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<decimal?>("HourlyRate")
+                        .HasColumnType("numeric");
+
+                    b.Property<bool>("IsProtected")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("JobTitle")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
 
                     b.Property<DateTime?>("LockoutEndUtc")
                         .HasColumnType("timestamp with time zone");
@@ -475,6 +501,9 @@ namespace backend.src.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("EmployeeCode")
                         .IsUnique();
 
                     b.HasIndex("RoleId");
@@ -559,6 +588,115 @@ namespace backend.src.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("employee_work_records", (string)null);
+                });
+
+            modelBuilder.Entity("backend.src.Models.HrRequestHistoryModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorId");
+
+                    b.HasIndex("RequestId", "OccurredAt");
+
+                    b.ToTable("hr_request_history", (string)null);
+                });
+
+            modelBuilder.Entity("backend.src.Models.HrRequestModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("ApplyDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime?>("CorrectCheckInAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("CorrectCheckOutAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ProofPublicId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid?>("ReplacementEmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RequestCode")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<Guid>("RequesterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ReviewNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ReviewedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<short>("ShiftNo")
+                        .HasColumnType("smallint");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<short?>("TargetShiftNo")
+                        .HasColumnType("smallint");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReplacementEmployeeId");
+
+                    b.HasIndex("RequestCode")
+                        .IsUnique();
+
+                    b.HasIndex("ReviewedBy");
+
+                    b.HasIndex("RequesterId", "Status", "CreatedAt");
+
+                    b.ToTable("hr_requests", (string)null);
                 });
 
             modelBuilder.Entity("backend.src.Models.InventoryAdjustmentRequestModel", b =>
@@ -1775,6 +1913,40 @@ namespace backend.src.Data.Migrations
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("backend.src.Models.HrRequestHistoryModel", b =>
+                {
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("ActorId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("backend.src.Models.HrRequestModel", null)
+                        .WithMany()
+                        .HasForeignKey("RequestId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("backend.src.Models.HrRequestModel", b =>
+                {
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("ReplacementEmployeeId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("RequesterId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewedBy")
+                        .OnDelete(DeleteBehavior.NoAction);
                 });
 
             modelBuilder.Entity("backend.src.Models.InventoryAdjustmentRequestModel", b =>

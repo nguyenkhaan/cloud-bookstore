@@ -5,7 +5,7 @@ import { Button } from '@/components/common/Button'
 import { SelectBox } from '@/components/common/SelectBox'
 import { TextField } from '@/components/common/TextField'
 import { notify } from '@/components/common/Toast'
-import { HR_EMPLOYEE_ROLE_OPTIONS } from '../hr-employees.mock'
+import { HR_EMPLOYEE_ROLE_OPTIONS } from '../hr-employees.constants'
 import { useCreateHrEmployeeMutation } from '../hr-employees.hook'
 import type { BackendRoleName, HrEmployee } from '../hr-employees.type'
 

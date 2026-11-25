@@ -87,7 +87,8 @@ public class AuthService(
             employee.Email,
             employee.FullName,
             employee.Role.RoleName.ToString(),
-            employee.AvatarUrl);
+            employee.AvatarUrl,
+            employee.EmployeeCode);
         return new BrowserAuthenticationSession(accessToken, refreshToken, csrfToken, user);
     }
     public async Task<RegisterResponse> Register(RegisterRequest request)
@@ -302,7 +303,8 @@ public class AuthService(
                     employee.Email,
                     employee.FullName,
                     employee.Role.RoleName.ToString(),
-                    employee.AvatarUrl);
+                    employee.AvatarUrl,
+                    employee.EmployeeCode);
             }
         }
 
@@ -342,7 +344,7 @@ public class AuthService(
 
         var employee = await dbContext.Employees.FindAsync(employeeId);
         if (employee is null ||
-            employee.Status != EmployeeStatus.ACTIVE ||
+            employee.Status is not (EmployeeStatus.ACTIVE or EmployeeStatus.INVITED) ||
             !string.Equals(employee.Email, email, StringComparison.OrdinalIgnoreCase) ||
             !MatchesTokenHash(employee.PasswordResetTokenHash, request.Token))
         {
@@ -351,6 +353,9 @@ public class AuthService(
 
         employee.Password = BCryptHasher.HashPassword(request.NewPassword, workFactor: 12);
         employee.PasswordResetTokenHash = null;
+        employee.Status = EmployeeStatus.ACTIVE;
+        employee.FailedLoginAttempts = 0;
+        employee.LockoutEndUtc = null;
         await dbContext.SaveChangesAsync();
     }
 

@@ -145,7 +145,10 @@ public sealed class UploadIntentService(
         => ownerType is UploadOwnerType.BOOK_SERIES_IMAGE
             or UploadOwnerType.TITLE_IMAGE
             or UploadOwnerType.EDITION_IMAGE
-            or UploadOwnerType.BOOK_COPY_IMAGE;
+            or UploadOwnerType.BOOK_COPY_IMAGE
+            or UploadOwnerType.HR_REQUEST_PROOF
+            or UploadOwnerType.PAYSLIP_DISPUTE_PROOF
+            or UploadOwnerType.PAYROLL_PAYOUT_PROOF;
 
     private static string? NormalizeOptional(string? value, int maxLength, string fieldName)
     {

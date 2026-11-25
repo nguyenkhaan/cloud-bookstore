@@ -1,95 +1,143 @@
-import { createInitialHrRequests } from './hr-requests.mock'
+import { privateClient } from '@/api/client'
+import type { components } from '@/contract/api-contract'
+import { extractHrApiErrorMessage } from './hr-employees.service'
+import { HR_REQUEST_ACTION_LABELS } from './hr-requests.constants'
 import type {
   CreateHrRequestInput,
+  HrApprovalHistoryEntry,
   HrRequestFilterQuery,
+  HrRequestOption,
+  HrRequestOptions,
   HrRequestRecord,
   HrRequestsSummaryData,
+  HrRequestStatus,
+  HrRequestType,
   ReviewHrRequestInput,
 } from './hr-requests.type'
 
-let requestStore: HrRequestRecord[] = createInitialHrRequests()
+type HrRequestDto = components['schemas']['HrRequestDto']
+type HrRequestListDto = components['schemas']['HrRequestListDto']
+type HrRequestOptionsDto = components['schemas']['HrRequestOptionsDto']
+type HrRequestOptionDto = components['schemas']['HrRequestOptionDto']
+type HrRequestHistoryDto = components['schemas']['HrRequestHistoryDto']
+type CreateHrRequestRequest = components['schemas']['CreateHrRequestRequest']
+type HrRequestReviewRequest = components['schemas']['HrRequestReviewRequest']
+type BackendHrRequestType = NonNullable<components['schemas']['HrRequestType']>
+type BackendHrRequestStatus = NonNullable<components['schemas']['HrRequestStatus']>
 
-export function resetHrRequestsStore(): void {
-  requestStore = createInitialHrRequests()
+const TYPE_FROM_API: Record<BackendHrRequestType, HrRequestType> = {
+  SHIFT_SWAP: 'shift_swap',
+  LEAVE: 'leave',
+  ATTENDANCE_EXPLANATION: 'attendance_explanation',
 }
 
-function matchesFilter(
-  item: HrRequestRecord,
-  filter: HrRequestFilterQuery,
-): boolean {
-  if (filter.monthKey && filter.monthKey !== 'all' && item.monthKey !== filter.monthKey) {
-    return false
-  }
-  if (filter.status && item.status !== filter.status) {
-    return false
-  }
-  const search = filter.search?.trim().toLowerCase() ?? ''
-  if (search) {
-    const haystack = `${item.code} ${item.reason} ${item.requesterName} ${item.replacementName}`.toLowerCase()
-    if (!haystack.includes(search)) return false
-  }
-  return true
+const TYPE_TO_API: Record<HrRequestType, BackendHrRequestType> = {
+  shift_swap: 'SHIFT_SWAP',
+  leave: 'LEAVE',
+  attendance_explanation: 'ATTENDANCE_EXPLANATION',
 }
 
-function formatNowTimestamp(): string {
-  const now = new Date()
-  const day = String(now.getDate()).padStart(2, '0')
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const hours = String(now.getHours()).padStart(2, '0')
-  const minutes = String(now.getMinutes()).padStart(2, '0')
-  return `${day}/${month} · ${hours}:${minutes}`
+const STATUS_FROM_API: Record<BackendHrRequestStatus, HrRequestStatus> = {
+  PENDING: 'pending',
+  APPROVED: 'approved',
+  REJECTED: 'rejected',
+  CANCELLED: 'cancelled',
 }
 
-function normalizeApplyDate(raw: string): {
-  displayDate: string
-  shortDayMonth: string
-  monthKey: string
-} {
-  const isoMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw.trim())
-  if (isoMatch) {
-    const [, year, month, day] = isoMatch
-    return {
-      displayDate: `${day}/${month}/${year}`,
-      shortDayMonth: `${day}/${month}`,
-      monthKey: `${year}-${month}`,
-    }
-  }
-  const vnMatch = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(raw.trim())
-  if (vnMatch) {
-    const [, day, month, year] = vnMatch
-    return {
-      displayDate: `${day}/${month}/${year}`,
-      shortDayMonth: `${day}/${month}`,
-      monthKey: `${year}-${month}`,
-    }
-  }
+function formatDate(iso: string): string {
+  const [year, month, day] = iso.split('-')
+  return year && month && day ? `${day}/${month}/${year}` : iso
+}
+
+function monthKeyOf(iso: string): string {
+  return iso.slice(0, 7)
+}
+
+function shortDayMonth(iso: string): string {
+  const [, month, day] = iso.split('-')
+  return month && day ? `${day}/${month}` : iso
+}
+
+function timeOf(value?: string | null): string {
+  if (!value) return '--:--'
+  return value.length >= 16 ? value.slice(11, 16) : value
+}
+
+function formatDateTime(iso?: string | null): string {
+  if (!iso) return ''
+  const [datePart, timePart = ''] = iso.split('T')
+  return `${shortDayMonth(datePart)} · ${timePart.slice(0, 5)}`
+}
+
+function shiftLabel(shiftNo: number): string {
+  return `Ca ${shiftNo}`
+}
+
+function mapHistory(entry: HrRequestHistoryDto): HrApprovalHistoryEntry {
+  const actionLabel = HR_REQUEST_ACTION_LABELS[entry.action] ?? entry.action
+  const note = entry.note?.trim()
   return {
-    displayDate: '20/10/2026',
-    shortDayMonth: '20/10',
-    monthKey: '2026-10',
+    id: entry.id,
+    timestamp: formatDateTime(entry.occurredAt),
+    message: note ? `${entry.actorName} ${actionLabel} - ${note}` : `${entry.actorName} ${actionLabel}.`,
   }
 }
 
-function shortShiftName(label: string): string {
-  const lowered = label.toLowerCase()
-  if (lowered.includes('sáng')) return 'Sáng'
-  if (lowered.includes('chiều')) return 'Chiều'
-  if (lowered.includes('tối')) return 'Tối'
-  return label.split('·')[0]?.trim() || label
+export function mapHrRequest(dto: HrRequestDto): HrRequestRecord {
+  const currentShiftLabel = shiftLabel(dto.shiftNo)
+  const targetShiftLabel = dto.targetShiftNo ? shiftLabel(dto.targetShiftNo) : undefined
+  const dateShiftSummary = `${shortDayMonth(dto.applyDate)} · ${currentShiftLabel}${
+    targetShiftLabel ? ` → ${targetShiftLabel}` : ''
+  }`
+  const hasCorrectedTime = Boolean(dto.correctCheckInAt || dto.correctCheckOutAt)
+  const replacementName = dto.replacementName?.trim() || 'Không áp dụng'
+  return {
+    id: dto.id,
+    code: dto.requestCode,
+    type: TYPE_FROM_API[dto.type],
+    requesterCode: dto.requesterCode,
+    requesterName: dto.requesterName,
+    monthKey: monthKeyOf(dto.applyDate),
+    applyDate: formatDate(dto.applyDate),
+    dateShiftSummary,
+    currentShiftLabel,
+    targetShiftLabel,
+    correctTimeRange: hasCorrectedTime
+      ? `${timeOf(dto.correctCheckInAt)} – ${timeOf(dto.correctCheckOutAt)}`
+      : undefined,
+    replacementName,
+    replacementLabel: dto.replacementEmployeeId ? replacementName : undefined,
+    reason: dto.reason,
+    attachmentLabel: dto.proofUrl ? 'Ảnh minh chứng đã tải lên' : undefined,
+    proofUrl: dto.proofUrl ?? undefined,
+    status: STATUS_FROM_API[dto.status],
+    isOwnedByCurrentUser: dto.isOwnedByCurrentUser || dto.isRequestedByCurrentUser,
+    reviewNote: dto.reviewNote ?? undefined,
+    reviewedBy: dto.reviewedBy ?? undefined,
+    reviewedAt: dto.reviewedAt ? formatDateTime(dto.reviewedAt) : undefined,
+    history: dto.history.map(mapHistory),
+  }
 }
 
-function extractReplacementName(label?: string): string {
-  if (!label) return 'Không áp dụng'
-  return label.split('·')[0]?.trim() || label
+function mapOption(option: HrRequestOptionDto): HrRequestOption {
+  return {
+    value: option.value,
+    label: option.label,
+    applyDate: option.applyDate ?? undefined,
+    shiftNo: option.shiftNo ?? undefined,
+  }
 }
 
-function generateRequestCode(): string {
-  const maxSeq = requestStore.reduce((max, item) => {
-    const match = /-(\d+)$/.exec(item.code)
-    const seq = match ? Number.parseInt(match[1], 10) : 0
-    return Number.isFinite(seq) && seq > max ? seq : max
-  }, 24)
-  return `HR-20261018-${String(maxSeq + 1).padStart(3, '0')}`
+function buildListParams(scope: 'mine' | 'pending', filter: HrRequestFilterQuery) {
+  const month = filter.monthKey && filter.monthKey !== 'all' ? filter.monthKey : undefined
+  return {
+    scope,
+    search: filter.search?.trim() || undefined,
+    month,
+    status: filter.status ? filter.status.toUpperCase() : undefined,
+    page: 1,
+    pageSize: 50,
+  }
 }
 
 export async function getHrRequestsSummary(
@@ -97,20 +145,36 @@ export async function getHrRequestsSummary(
   approvalFilter: HrRequestFilterQuery = {},
   includeApproval = true,
 ): Promise<HrRequestsSummaryData> {
-  const allMine = requestStore.filter((item) => item.isOwnedByCurrentUser)
-  const allApprovalQueue = requestStore.filter(
-    (item) => !item.isOwnedByCurrentUser || item.id === 'HR-20261018-024' || item.status === 'pending',
-  )
+  try {
+    const mineResponse = await privateClient.get<HrRequestListDto>('/hr/requests', {
+      params: buildListParams('mine', mineFilter),
+    })
+    const approvalResponse = includeApproval
+      ? await privateClient.get<HrRequestListDto>('/hr/requests', {
+          params: buildListParams('pending', approvalFilter),
+        })
+      : null
 
-  return {
-    myRequests: allMine.filter((item) => matchesFilter(item, mineFilter)),
-    approvalQueue: includeApproval
-      ? allApprovalQueue.filter((item) => matchesFilter(item, approvalFilter))
-      : [],
-    myCount: allMine.length,
-    pendingApprovalCount: includeApproval
-      ? allApprovalQueue.filter((item) => item.status === 'pending').length
-      : 0,
+    return {
+      myRequests: mineResponse.data.myRequests.map(mapHrRequest),
+      approvalQueue: approvalResponse?.data.approvalQueue.map(mapHrRequest) ?? [],
+      myCount: mineResponse.data.myCount,
+      pendingApprovalCount: mineResponse.data.pendingApprovalCount,
+    }
+  } catch (error) {
+    throw new Error(extractHrApiErrorMessage(error, 'Không thể tải danh sách đơn xét duyệt.'))
+  }
+}
+
+export async function getHrRequestOptions(): Promise<HrRequestOptions> {
+  try {
+    const response = await privateClient.get<HrRequestOptionsDto>('/hr/requests/options')
+    return {
+      employees: response.data.employees.map(mapOption),
+      workRecords: response.data.workRecords.map(mapOption),
+    }
+  } catch (error) {
+    throw new Error(extractHrApiErrorMessage(error, 'Không thể tải dữ liệu gợi ý cho đơn.'))
   }
 }
 
@@ -121,71 +185,34 @@ export async function createHrRequest(
   if (!reason) {
     throw new Error('Vui lòng nhập lý do gửi yêu cầu.')
   }
-
-  const { displayDate, shortDayMonth, monthKey } = normalizeApplyDate(
-    input.applyDate,
-  )
-  const code = generateRequestCode()
-  const replacementName =
-    input.type === 'attendance_explanation'
-      ? 'Không áp dụng'
-      : extractReplacementName(input.replacementLabel)
-
-  let dateShiftSummary = `${shortDayMonth} · ${input.currentShiftLabel.split('·')[0]?.trim() ?? input.currentShiftLabel}`
-  if (input.type === 'shift_swap' && input.targetShiftLabel) {
-    dateShiftSummary = `${shortDayMonth} · ${shortShiftName(input.currentShiftLabel)} → ${shortShiftName(input.targetShiftLabel)}`
-  }
-
-  const requesterName = input.requesterName?.trim() || 'Trần Hoàng Phong'
-  const requesterCode = input.requesterCode?.trim() || 'NV-0002'
-
-  const validationNotice =
-    input.type === 'shift_swap' && replacementName !== 'Không áp dụng'
-      ? `Ca thay thế không trùng giờ. ${replacementName} đã xác nhận đồng ý.`
-      : input.type === 'leave' && replacementName !== 'Không áp dụng'
-        ? `Đã kiểm tra lịch ca của ${replacementName}, không trùng giờ.`
-        : 'Đã ghi nhận thông tin giải trình và tệp chứng từ.'
-
-  const created: HrRequestRecord = {
-    id: code,
-    code,
-    type: input.type,
-    requesterCode,
-    requesterName,
-    monthKey,
-    applyDate: displayDate,
-    dateShiftSummary,
-    currentShiftLabel: input.currentShiftLabel,
-    targetShiftLabel: input.targetShiftLabel,
-    correctTimeRange: input.correctTimeRange?.trim() || undefined,
-    replacementName,
-    replacementLabel: input.replacementLabel,
+  const body: CreateHrRequestRequest = {
+    type: TYPE_TO_API[input.type],
+    applyDate: input.applyDate,
+    shiftNo: input.shiftNo,
+    targetShiftNo: input.targetShiftNo ?? null,
+    replacementEmployeeId: input.replacementEmployeeId ?? null,
+    correctCheckInAt: input.correctCheckInAt ?? null,
+    correctCheckOutAt: input.correctCheckOutAt ?? null,
     reason,
-    attachmentLabel: input.attachmentLabel?.trim() || undefined,
-    validationNotice,
-    status: 'pending',
-    isOwnedByCurrentUser: true,
-    history: [
-      {
-        id: `hist-${code}-1`,
-        timestamp: formatNowTimestamp(),
-        message: `${requesterName} tạo yêu cầu ngày ${shortDayMonth}.`,
-      },
-      {
-        id: `hist-${code}-2`,
-        timestamp: '',
-        message: `Lý do: ${reason}`,
-      },
-      {
-        id: `hist-${code}-3`,
-        timestamp: '',
-        message: 'Chờ Quản trị viên xét duyệt.',
-      },
-    ],
+    proofUpload: input.proofUpload ?? null,
   }
+  try {
+    const response = await privateClient.post<HrRequestDto>('/hr/requests', body)
+    return mapHrRequest(response.data)
+  } catch (error) {
+    throw new Error(extractHrApiErrorMessage(error, 'Không thể gửi yêu cầu. Vui lòng thử lại.'))
+  }
+}
 
-  requestStore = [created, ...requestStore]
-  return created
+export async function cancelHrRequest(requestId: string): Promise<HrRequestRecord> {
+  try {
+    const response = await privateClient.post<HrRequestDto>(
+      `/hr/requests/${encodeURIComponent(requestId)}/cancel`,
+    )
+    return mapHrRequest(response.data)
+  } catch (error) {
+    throw new Error(extractHrApiErrorMessage(error, 'Không thể hủy đơn. Vui lòng thử lại.'))
+  }
 }
 
 export async function reviewHrRequest(
@@ -195,33 +222,17 @@ export async function reviewHrRequest(
   if (!note) {
     throw new Error('Vui lòng nhập ghi chú xét duyệt trước khi xác nhận.')
   }
-
-  const index = requestStore.findIndex((item) => item.id === input.requestId)
-  if (index < 0) {
-    throw new Error('Không tìm thấy đơn cần xét duyệt.')
+  const body: HrRequestReviewRequest = {
+    status: input.decision === 'approved' ? 'APPROVED' : 'REJECTED',
+    note,
   }
-
-  const existing = requestStore[index]
-  const timestamp = formatNowTimestamp()
-  const actionText =
-    input.decision === 'approved' ? 'đã phê duyệt yêu cầu' : 'đã từ chối yêu cầu'
-
-  const updated: HrRequestRecord = {
-    ...existing,
-    status: input.decision,
-    reviewNote: note,
-    reviewedBy: input.reviewerName,
-    reviewedAt: timestamp,
-    history: [
-      ...existing.history,
-      {
-        id: `hist-${existing.code}-${existing.history.length + 1}`,
-        timestamp,
-        message: `${input.reviewerName} (${input.reviewerRoleLabel}) ${actionText}. Ghi chú: ${note}`,
-      },
-    ],
+  try {
+    const response = await privateClient.post<HrRequestDto>(
+      `/hr/requests/${encodeURIComponent(input.requestId)}/review`,
+      body,
+    )
+    return mapHrRequest(response.data)
+  } catch (error) {
+    throw new Error(extractHrApiErrorMessage(error, 'Không thể cập nhật trạng thái đơn.'))
   }
-
-  requestStore = requestStore.map((item, idx) => (idx === index ? updated : item))
-  return updated
 }

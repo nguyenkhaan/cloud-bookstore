@@ -1,6 +1,8 @@
+import type { CloudinaryUploadResultRequest } from '@/features/uploads/upload.type'
+
 export type HrRequestType = 'shift_swap' | 'leave' | 'attendance_explanation'
 
-export type HrRequestStatus = 'pending' | 'approved' | 'rejected'
+export type HrRequestStatus = 'pending' | 'approved' | 'rejected' | 'cancelled'
 
 export interface HrApprovalHistoryEntry {
   id: string
@@ -24,7 +26,7 @@ export interface HrRequestRecord {
   replacementLabel?: string
   reason: string
   attachmentLabel?: string
-  validationNotice?: string
+  proofUrl?: string
   status: HrRequestStatus
   isOwnedByCurrentUser: boolean
   reviewNote?: string
@@ -42,22 +44,19 @@ export interface HrRequestFilterQuery {
 export interface CreateHrRequestInput {
   type: HrRequestType
   applyDate: string
-  currentShiftLabel: string
-  targetShiftLabel?: string
-  correctTimeRange?: string
-  replacementLabel?: string
+  shiftNo: number
+  targetShiftNo?: number | null
+  replacementEmployeeId?: string | null
+  correctCheckInAt?: string | null
+  correctCheckOutAt?: string | null
   reason: string
-  attachmentLabel?: string
-  requesterName?: string
-  requesterCode?: string
+  proofUpload?: CloudinaryUploadResultRequest | null
 }
 
 export interface ReviewHrRequestInput {
   requestId: string
   decision: 'approved' | 'rejected'
   note: string
-  reviewerName: string
-  reviewerRoleLabel: string
 }
 
 export interface HrRequestsSummaryData {
@@ -65,4 +64,16 @@ export interface HrRequestsSummaryData {
   approvalQueue: HrRequestRecord[]
   myCount: number
   pendingApprovalCount: number
+}
+
+export interface HrRequestOption {
+  value: string
+  label: string
+  applyDate?: string | null
+  shiftNo?: number | null
+}
+
+export interface HrRequestOptions {
+  employees: HrRequestOption[]
+  workRecords: HrRequestOption[]
 }

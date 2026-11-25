@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useAuth } from '@/features/auth/auth.hook'
 import {
+  cancelHrRequest,
   createHrRequest,
+  getHrRequestOptions,
   getHrRequestsSummary,
   reviewHrRequest,
 } from './hr-requests.service'
@@ -15,7 +18,9 @@ export const hrRequestKeys = {
   summary: (
     mineFilter: HrRequestFilterQuery,
     approvalFilter: HrRequestFilterQuery,
-  ) => [...hrRequestKeys.all, 'summary', mineFilter, approvalFilter] as const,
+    includeApproval: boolean,
+  ) => [...hrRequestKeys.all, 'summary', mineFilter, approvalFilter, includeApproval] as const,
+  options: () => [...hrRequestKeys.all, 'options'] as const,
 }
 
 export function useHrRequestsSummaryQuery(
@@ -23,9 +28,21 @@ export function useHrRequestsSummaryQuery(
   approvalFilter: HrRequestFilterQuery,
   includeApproval = true,
 ) {
+  const { session } = useAuth()
   return useQuery({
-    queryKey: hrRequestKeys.summary(mineFilter, approvalFilter),
+    queryKey: hrRequestKeys.summary(mineFilter, approvalFilter, includeApproval),
     queryFn: () => getHrRequestsSummary(mineFilter, approvalFilter, includeApproval),
+    enabled: Boolean(session),
+  })
+}
+
+export function useHrRequestOptionsQuery() {
+  const { session } = useAuth()
+  return useQuery({
+    queryKey: hrRequestKeys.options(),
+    queryFn: getHrRequestOptions,
+    enabled: Boolean(session),
+    staleTime: 5 * 60 * 1000,
   })
 }
 
@@ -34,6 +51,17 @@ export function useCreateHrRequestMutation() {
   return useMutation({
     mutationKey: ['hr', 'requests', 'create'],
     mutationFn: (input: CreateHrRequestInput) => createHrRequest(input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: hrRequestKeys.all })
+    },
+  })
+}
+
+export function useCancelHrRequestMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationKey: ['hr', 'requests', 'cancel'],
+    mutationFn: (requestId: string) => cancelHrRequest(requestId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: hrRequestKeys.all })
     },

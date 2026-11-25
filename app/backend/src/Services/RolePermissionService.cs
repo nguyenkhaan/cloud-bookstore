@@ -63,7 +63,8 @@ public sealed class RolePermissionService(AppDbContext db)
             ["InventoryAdjustmentRequests"] = "Điều chỉnh tồn kho", ["ApprovalsOverview"] = "Tổng hợp phê duyệt",
             ["BuybackApprovals"] = "Phê duyệt thu mua", ["DamagePenaltyApprovals"] = "Phê duyệt phạt hư hỏng",
             ["DisposalReversalApprovals"] = "Phê duyệt xuất hủy/đảo giao dịch", ["AuditLog"] = "Nhật ký kiểm toán",
-            ["Settings"] = "Cấu hình hệ thống", ["Employee"] = "Vai trò nhân viên", ["Uploads"] = "Tải ảnh"
+            ["Settings"] = "Cấu hình hệ thống", ["Employee"] = "Vai trò nhân viên", ["Employees"] = "Quản lý nhân viên",
+            ["HrRequests"] = "Đơn xét duyệt", ["Uploads"] = "Tải ảnh"
         };
         var result = new List<RbacMatrixItemDto>();
         foreach (var controller in typeof(RolePermissionService).Assembly.GetTypes().Where(t => typeof(ControllerBase).IsAssignableFrom(t)))

@@ -1,13 +1,18 @@
 import type { components } from '@/contract/api-contract'
 
 export type BackendRoleName = components['schemas']['RoleName']
+export type BackendEmployeeStatus = components['schemas']['EmployeeStatus']
 export type ChangeEmployeeRolePayload = components['schemas']['ChangeEmployeeRequest']
+export type CreateEmployeeRequest = components['schemas']['CreateEmployeeRequest']
+export type UpdateEmployeeRequest = components['schemas']['UpdateEmployeeRequest']
 
+/** UI-facing employee status, mapped from the backend `EmployeeStatus` enum. */
 export type HrEmployeeStatus =
   | 'active'
   | 'in_shift'
   | 'pending_activation'
   | 'locked'
+  | 'revoked'
 
 export type HrEmployeeShiftStatus = 'completed' | 'missing_attendance'
 
@@ -32,8 +37,7 @@ export interface HrEmployee {
   branchName: string
   createdAt: string
   username: string
-  isRootAdmin?: boolean
-  backendId?: string
+  isRootAdmin: boolean
   recentShifts: HrEmployeeShiftRecord[]
 }
 
@@ -61,6 +65,14 @@ export interface HrEmployeeListResult {
   kpi: HrEmployeeKpiSummary
 }
 
+export interface HrEmployeeShiftListResult {
+  items: HrEmployeeShiftRecord[]
+  totalCount: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
 export interface CreateHrEmployeeInput {
   fullName: string
   email: string
@@ -85,11 +97,11 @@ export interface ChangeRoleResult {
   previousRole: BackendRoleName
   currentRole: BackendRoleName
   changedAt: string
-  source: 'api' | 'mock-fallback'
+  source: 'api'
 }
 
 export interface UpdateHrEmployeeResult {
   employee: HrEmployee
   roleChanged: boolean
-  roleChangeSource?: 'api' | 'mock-fallback'
+  roleChangeSource?: 'api'
 }

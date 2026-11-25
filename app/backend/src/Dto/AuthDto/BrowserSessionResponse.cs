@@ -5,7 +5,8 @@ public sealed record BrowserSessionUser(
     string Email,
     string FullName,
     string Role,
-    string? AvatarUrl = null);
+    string? AvatarUrl = null,
+    string? EmployeeCode = null);
 
 public sealed record BrowserSessionResponse(
     string CsrfToken,

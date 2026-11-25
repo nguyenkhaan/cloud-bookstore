@@ -1,4 +1,3 @@
-import { Info } from 'lucide-react'
 import { Card } from '@/components/common/Card'
 import type { HrRequestRecord } from '../hr-requests.type'
 

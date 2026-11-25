@@ -93,8 +93,25 @@ export const SCREEN_POLICIES = {
       'hrPayslip',
     ],
   }),
-  hrEmployees: policy('/hr/employees', access('N', 'U', 'N'), { navId: 'hr.employees' }),
-  hrEmployeeDetail: policy('/hr/employees/:id', access('N', 'U', 'N'), { navId: 'hr.employee-detail' }),
+  hrEmployees: policy('/hr/employees', access('N', 'U', 'N'), {
+    navId: 'hr.employees',
+    permissionMode: 'api',
+    readPermissions: ['Employees.List'],
+    updatePermissions: [
+      'Employees.Create',
+      'Employees.Update',
+      'Employees.ChangeRole',
+      'Employees.ResendSetupEmail',
+    ],
+    protectedRoles: ['ADMIN'],
+  }),
+  hrEmployeeDetail: policy('/hr/employees/:id', access('N', 'U', 'N'), {
+    navId: 'hr.employee-detail',
+    permissionMode: 'api',
+    readPermissions: ['Employees.Get'],
+    updatePermissions: ['Employees.Update', 'Employees.ChangeRole'],
+    protectedRoles: ['ADMIN'],
+  }),
   hrShifts: policy('/hr/shifts', access('R', 'U', 'R'), { navId: 'hr.shifts' }),
   hrAttendance: policy('/hr/attendance', access('R', 'U', 'R'), {
     navId: 'hr.attendance',
@@ -106,6 +123,9 @@ export const SCREEN_POLICIES = {
   hrRequests: policy('/hr/requests', access('U', 'U', 'U'), {
     navId: 'hr.requests',
     dataScope: 'OWN_REQUESTS',
+    permissionMode: 'api',
+    readPermissions: ['HrRequests.List'],
+    updatePermissions: ['HrRequests.Create', 'HrRequests.Cancel'],
   }),
   hrPayroll: policy('/hr/payroll', access('N', 'U', 'N'), { navId: 'hr.payroll' }),
   hrPayrollAdjustment: policy('/hr/payroll/adjustments/new', access('N', 'U', 'N'), { navId: 'hr.payroll-adjustment' }),

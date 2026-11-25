@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted; expanded in part by [PDR-009](./PDR-009-periodic-hrm-requests-payroll-and-direct-onboarding.md)
 
 ## Date
 

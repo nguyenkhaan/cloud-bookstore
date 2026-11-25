@@ -1,115 +1,124 @@
 import { useId, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Info } from 'lucide-react'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { SelectBox } from '@/components/common/SelectBox'
 import { notify } from '@/components/common/Toast'
+import { uploadImage } from '@/features/uploads/upload.service'
 import { cn } from '@/lib/cn'
 import {
-  HR_ATTENDANCE_MISSING_OPTIONS,
-  HR_REPLACEMENT_STAFF_OPTIONS,
-  HR_SHIFT_OPTIONS,
-} from '../hr-requests.mock'
-import { useCreateHrRequestMutation } from '../hr-requests.hook'
+  HR_REQUEST_FORM_TITLES,
+  HR_REQUEST_SHIFT_OPTIONS,
+  HR_REQUEST_TYPE_OPTIONS,
+} from '../hr-requests.constants'
+import { useCreateHrRequestMutation, useHrRequestOptionsQuery } from '../hr-requests.hook'
 import type { HrRequestRecord, HrRequestType } from '../hr-requests.type'
 
-const REQUEST_TYPE_OPTIONS: { value: HrRequestType; label: string }[] = [
-  { value: 'shift_swap', label: 'Đổi ca làm việc' },
-  { value: 'leave', label: 'Xin nghỉ' },
-  { value: 'attendance_explanation', label: 'Giải trình chấm công' },
-]
-
-const FORM_TITLES: Record<HrRequestType, string> = {
-  shift_swap: 'Tạo yêu cầu đổi ca',
-  leave: 'Tạo yêu cầu xin nghỉ',
-  attendance_explanation: 'Tạo yêu cầu giải trình công',
-}
-
 export interface CreateHrRequestCardProps {
-  requesterName: string
-  requesterCode: string
   onCreated?: (created: HrRequestRecord) => void
 }
 
-export function CreateHrRequestCard({
-  requesterName,
-  requesterCode,
-  onCreated,
-}: CreateHrRequestCardProps) {
-  const dateId = useId()
-  const correctTimeId = useId()
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+export function CreateHrRequestCard({ onCreated }: CreateHrRequestCardProps) {
   const reasonId = useId()
-  const attachmentInputRef = useRef<HTMLInputElement>(null)
+  const proofInputRef = useRef<HTMLInputElement>(null)
 
   const [type, setType] = useState<HrRequestType>('shift_swap')
-  const [applyDate, setApplyDate] = useState('2026-10-20')
-  const [currentShiftLabel, setCurrentShiftLabel] = useState(
-    HR_SHIFT_OPTIONS[0].value,
-  )
-  const [targetShiftLabel, setTargetShiftLabel] = useState(
-    HR_SHIFT_OPTIONS[1].value,
-  )
-  const [attendanceSlot, setAttendanceSlot] = useState(
-    HR_ATTENDANCE_MISSING_OPTIONS[0].value,
-  )
-  const [correctTimeRange, setCorrectTimeRange] = useState('08:00 – 13:05')
-  const [replacementLabel, setReplacementLabel] = useState(
-    HR_REPLACEMENT_STAFF_OPTIONS[0].value,
-  )
-  const [reason, setReason] = useState(
-    'Có lịch hẹn khám vào buổi sáng, đã thống nhất đổi ca với Linh.',
-  )
-  const [attachmentLabel, setAttachmentLabel] = useState(
-    'lich-hen-2010.pdf · 182 KB',
-  )
+  const [workRecordId, setWorkRecordId] = useState('')
+  const [targetShiftNo, setTargetShiftNo] = useState('2')
+  const [replacementEmployeeId, setReplacementEmployeeId] = useState('')
+  const [correctCheckIn, setCorrectCheckIn] = useState('')
+  const [correctCheckOut, setCorrectCheckOut] = useState('')
+  const [reason, setReason] = useState('')
+  const [proofFile, setProofFile] = useState<File | null>(null)
 
-  const [dateError, setDateError] = useState<string | null>(null)
+  const [workRecordError, setWorkRecordError] = useState<string | null>(null)
+  const [replacementError, setReplacementError] = useState<string | null>(null)
   const [timeError, setTimeError] = useState<string | null>(null)
   const [reasonError, setReasonError] = useState<string | null>(null)
   const [generalError, setGeneralError] = useState<string | null>(null)
 
+  const { data: options, isLoading: isLoadingOptions } = useHrRequestOptionsQuery()
   const createMutation = useCreateHrRequestMutation()
 
-  const replacementFirstName = replacementLabel.split('·')[0]?.trim() || 'nhân viên thay thế'
+  const workRecordOptions = options?.workRecords ?? []
+  const employeeOptions = options?.employees ?? []
+  const selectedWorkRecord = workRecordOptions.find((option) => option.value === workRecordId)
+  const applyDate = selectedWorkRecord?.applyDate ?? todayIso()
+  const shiftNo = selectedWorkRecord?.shiftNo ?? 0
+
+  const resetFeedback = () => {
+    setWorkRecordError(null)
+    setReplacementError(null)
+    setTimeError(null)
+    setReasonError(null)
+    setGeneralError(null)
+  }
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
 
-    const nextDateError = applyDate.trim() ? null : 'Vui lòng chọn ngày áp dụng.'
+    const nextWorkRecordError = selectedWorkRecord
+      ? null
+      : 'Vui lòng chọn lượt công cần xử lý.'
+    const nextReplacementError =
+      type === 'attendance_explanation'
+        ? null
+        : replacementEmployeeId
+          ? null
+          : 'Vui lòng chọn nhân viên thay thế.'
     const nextTimeError =
-      type === 'attendance_explanation' && !correctTimeRange.trim()
-        ? 'Vui lòng nhập thời gian làm việc đúng.'
+      type === 'attendance_explanation' && !correctCheckIn && !correctCheckOut
+        ? 'Vui lòng nhập thời gian vào hoặc ra đúng.'
         : null
     const nextReasonError = reason.trim() ? null : 'Vui lòng nhập lý do.'
 
-    setDateError(nextDateError)
+    setWorkRecordError(nextWorkRecordError)
+    setReplacementError(nextReplacementError)
     setTimeError(nextTimeError)
     setReasonError(nextReasonError)
     setGeneralError(null)
 
-    if (nextDateError || nextTimeError || nextReasonError) {
+    if (
+      nextWorkRecordError ||
+      nextReplacementError ||
+      nextTimeError ||
+      nextReasonError ||
+      !selectedWorkRecord
+    ) {
       return
     }
 
     try {
+      const proofUpload = proofFile
+        ? (await uploadImage('HR_REQUEST_PROOF', proofFile)).imageUpload
+        : null
       const created = await createMutation.mutateAsync({
         type,
         applyDate,
-        currentShiftLabel:
-          type === 'attendance_explanation' ? attendanceSlot : currentShiftLabel,
-        targetShiftLabel: type === 'shift_swap' ? targetShiftLabel : undefined,
-        correctTimeRange:
-          type === 'attendance_explanation' ? correctTimeRange : undefined,
-        replacementLabel:
-          type === 'attendance_explanation' ? undefined : replacementLabel,
+        shiftNo,
+        targetShiftNo: type === 'shift_swap' ? Number(targetShiftNo) : null,
+        replacementEmployeeId: type === 'attendance_explanation' ? null : replacementEmployeeId,
+        correctCheckInAt:
+          type === 'attendance_explanation' && correctCheckIn
+            ? `${applyDate}T${correctCheckIn}:00`
+            : null,
+        correctCheckOutAt:
+          type === 'attendance_explanation' && correctCheckOut
+            ? `${applyDate}T${correctCheckOut}:00`
+            : null,
         reason: reason.trim(),
-        attachmentLabel: attachmentLabel.trim() || undefined,
-        requesterName,
-        requesterCode,
+        proofUpload,
       })
       notify.success(`Đã gửi yêu cầu ${created.code} lên Quản lý phê duyệt.`)
       setReason('')
+      setCorrectCheckIn('')
+      setCorrectCheckOut('')
+      setProofFile(null)
+      if (proofInputRef.current) proofInputRef.current.value = ''
       onCreated?.(created)
     } catch (error) {
       setGeneralError(
@@ -121,150 +130,106 @@ export function CreateHrRequestCard({
   }
 
   return (
-    <Card
-      padding="lg"
-      title={FORM_TITLES[type]}
-    >
+    <Card padding="lg" title={HR_REQUEST_FORM_TITLES[type]}>
       <form className="space-y-3.5" noValidate onSubmit={handleSubmit}>
         <SelectBox
           label="Loại yêu cầu *"
           onChange={(nextType) => {
             setType(nextType)
-            setDateError(null)
-            setTimeError(null)
-            setReasonError(null)
+            resetFeedback()
           }}
-          options={REQUEST_TYPE_OPTIONS}
+          options={HR_REQUEST_TYPE_OPTIONS}
           searchable={false}
           value={type}
         />
 
-        <div>
-          <div
-            className={cn(
-              'rounded-xl border bg-white px-3.5 py-2.5 transition-colors focus-within:border-indigo-600 focus-within:ring-3 focus-within:ring-indigo-600/15',
-              dateError ? 'border-rose-500' : 'border-slate-200',
-            )}
-          >
-            <label
-              className="block text-[11px] font-semibold text-slate-500"
-              htmlFor={dateId}
-            >
-              Ngày áp dụng *
-            </label>
-            <input
-              aria-describedby={dateError ? `${dateId}-error` : undefined}
-              aria-invalid={Boolean(dateError) || undefined}
-              className="mt-1 block w-full border-0 bg-transparent text-sm text-slate-900 outline-none"
-              id={dateId}
-              onChange={(event) => {
-                setApplyDate(event.target.value)
-                if (dateError) setDateError(null)
-              }}
-              type="date"
-              value={applyDate}
-            />
-          </div>
-          {dateError && (
-            <p className="mt-1 text-xs text-rose-600" id={`${dateId}-error`}>
-              {dateError}
-            </p>
-          )}
-        </div>
+        <SelectBox
+          disabled={isLoadingOptions || workRecordOptions.length === 0}
+          emptyHint="Chưa có lượt công nào được ghi nhận cho bạn."
+          emptyMessage="Không có lượt công khả dụng."
+          label={type === 'attendance_explanation' ? 'Lượt chấm công thiếu *' : 'Ca hiện tại *'}
+          onChange={(value) => {
+            setWorkRecordId(value)
+            if (workRecordError) setWorkRecordError(null)
+          }}
+          options={workRecordOptions}
+          searchable
+          value={workRecordId}
+        />
+        {workRecordError && <p className="text-xs text-rose-600">{workRecordError}</p>}
 
         {type === 'shift_swap' && (
           <>
             <SelectBox
-              label="Ca hiện tại *"
-              onChange={setCurrentShiftLabel}
-              options={HR_SHIFT_OPTIONS}
-              searchable={false}
-              value={currentShiftLabel}
-            />
-            <SelectBox
               label="Ca muốn đổi *"
-              onChange={setTargetShiftLabel}
-              options={HR_SHIFT_OPTIONS}
+              onChange={setTargetShiftNo}
+              options={HR_REQUEST_SHIFT_OPTIONS}
               searchable={false}
-              value={targetShiftLabel}
+              value={targetShiftNo}
             />
             <SelectBox
+              emptyMessage="Không có nhân viên khả dụng."
               label="Nhân viên thay thế *"
-              onChange={setReplacementLabel}
-              options={HR_REPLACEMENT_STAFF_OPTIONS}
-              searchable={false}
-              value={replacementLabel}
+              onChange={(value) => {
+                setReplacementEmployeeId(value)
+                if (replacementError) setReplacementError(null)
+              }}
+              options={employeeOptions}
+              searchable
+              value={replacementEmployeeId}
             />
           </>
         )}
 
         {type === 'leave' && (
-          <>
-            <SelectBox
-              label="Ca xin nghỉ *"
-              onChange={setCurrentShiftLabel}
-              options={HR_SHIFT_OPTIONS}
-              searchable={false}
-              value={currentShiftLabel}
-            />
-            <SelectBox
-              label="Nhân viên thay thế *"
-              onChange={setReplacementLabel}
-              options={HR_REPLACEMENT_STAFF_OPTIONS}
-              searchable={false}
-              value={replacementLabel}
-            />
-          </>
+          <SelectBox
+            emptyMessage="Không có nhân viên khả dụng."
+            label="Nhân viên thay thế *"
+            onChange={(value) => {
+              setReplacementEmployeeId(value)
+              if (replacementError) setReplacementError(null)
+            }}
+            options={employeeOptions}
+            searchable
+            value={replacementEmployeeId}
+          />
         )}
+        {replacementError && <p className="text-xs text-rose-600">{replacementError}</p>}
 
         {type === 'attendance_explanation' && (
-          <>
-            <SelectBox
-              label="Lượt chấm công thiếu *"
-              onChange={setAttendanceSlot}
-              options={HR_ATTENDANCE_MISSING_OPTIONS}
-              searchable={false}
-              value={attendanceSlot}
-            />
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <div
-                className={cn(
-                  'rounded-xl border bg-white px-3.5 py-2.5 transition-colors focus-within:border-indigo-600 focus-within:ring-3 focus-within:ring-indigo-600/15',
-                  timeError ? 'border-rose-500' : 'border-slate-200',
-                )}
-              >
-                <label
-                  className="block text-[11px] font-semibold text-slate-500"
-                  htmlFor={correctTimeId}
-                >
-                  Thời gian đúng *
-                </label>
-                <input
-                  aria-describedby={
-                    timeError ? `${correctTimeId}-error` : undefined
-                  }
-                  aria-invalid={Boolean(timeError) || undefined}
-                  className="mt-1 block w-full border-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
-                  id={correctTimeId}
-                  onChange={(event) => {
-                    setCorrectTimeRange(event.target.value)
-                    if (timeError) setTimeError(null)
-                  }}
-                  placeholder="08:00 – 13:05"
-                  type="text"
-                  value={correctTimeRange}
-                />
-              </div>
-              {timeError && (
-                <p
-                  className="mt-1 text-xs text-rose-600"
-                  id={`${correctTimeId}-error`}
-                >
-                  {timeError}
-                </p>
-              )}
+              <label className="block text-[11px] font-semibold text-slate-500" htmlFor={`${reasonId}-in`}>
+                Giờ vào đúng
+              </label>
+              <input
+                className="mt-1 min-h-[44px] w-full rounded-xl border border-slate-200 px-3 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-3 focus:ring-indigo-600/15"
+                id={`${reasonId}-in`}
+                onChange={(event) => {
+                  setCorrectCheckIn(event.target.value)
+                  if (timeError) setTimeError(null)
+                }}
+                type="time"
+                value={correctCheckIn}
+              />
             </div>
-          </>
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-500" htmlFor={`${reasonId}-out`}>
+                Giờ ra đúng
+              </label>
+              <input
+                className="mt-1 min-h-[44px] w-full rounded-xl border border-slate-200 px-3 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none focus:ring-3 focus:ring-indigo-600/15"
+                id={`${reasonId}-out`}
+                onChange={(event) => {
+                  setCorrectCheckOut(event.target.value)
+                  if (timeError) setTimeError(null)
+                }}
+                type="time"
+                value={correctCheckOut}
+              />
+            </div>
+            {timeError && <p className="col-span-2 text-xs text-rose-600">{timeError}</p>}
+          </div>
         )}
 
         <div>
@@ -274,10 +239,7 @@ export function CreateHrRequestCard({
               reasonError ? 'border-rose-500' : 'border-slate-200',
             )}
           >
-            <label
-              className="block text-[11px] font-semibold text-slate-500"
-              htmlFor={reasonId}
-            >
+            <label className="block text-[11px] font-semibold text-slate-500" htmlFor={reasonId}>
               Lý do *
             </label>
             <textarea
@@ -308,39 +270,23 @@ export function CreateHrRequestCard({
             </span>
             <button
               className="cursor-pointer text-[11px] font-semibold text-indigo-600 hover:text-indigo-800"
-              onClick={() => attachmentInputRef.current?.click()}
+              onClick={() => proofInputRef.current?.click()}
               type="button"
             >
-              Chọn tệp
+              Chọn ảnh
             </button>
           </div>
           <input
-            aria-label="Chọn tệp đính kèm"
+            accept="image/*"
+            aria-label="Chọn ảnh minh chứng"
             className="sr-only"
-            onChange={(event) => {
-              const file = event.target.files?.[0]
-              if (file) {
-                const kb = Math.max(1, Math.round(file.size / 1024))
-                setAttachmentLabel(`${file.name} · ${kb} KB`)
-              }
-            }}
-            ref={attachmentInputRef}
+            onChange={(event) => setProofFile(event.target.files?.[0] ?? null)}
+            ref={proofInputRef}
             type="file"
           />
           <div className="mt-1 truncate text-sm text-slate-800">
-            {attachmentLabel || 'Chưa đính kèm tệp'}
+            {proofFile ? proofFile.name : 'Chưa đính kèm ảnh minh chứng'}
           </div>
-        </div>
-
-        <div className="flex items-start gap-2 rounded-xl bg-emerald-50 px-3.5 py-3 text-xs text-emerald-700">
-          <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-          <span>
-            {type === 'shift_swap'
-              ? `Ca thay thế không trùng giờ. ${replacementFirstName} đã xác nhận đồng ý.`
-              : type === 'leave'
-                ? `Đã kiểm tra ca trực của ${replacementFirstName}, không trùng lịch.`
-                : 'Đính kèm chứng từ giúp Quản lý đối chiếu nhanh hơn.'}
-          </span>
         </div>
 
         {generalError && (
@@ -363,18 +309,8 @@ export function CreateHrRequestCard({
           Gửi Quản lý phê duyệt
         </Button>
 
-        <Button
-          className="min-h-[44px]"
-          fullWidth
-          onClick={() => notify.success('Đã lưu nháp yêu cầu.')}
-          type="button"
-          variant="secondary"
-        >
-          Lưu nháp
-        </Button>
-
         <p className="text-[11px] leading-relaxed text-slate-500">
-          Xin nghỉ: chọn ngày, ca và người thay. Giải trình: chọn lượt thiếu check-out, thời gian đúng và bằng chứng.
+          Yêu cầu được gửi tới Quản trị viên để xét duyệt. Tệp minh chứng được tải trực tiếp lên kho ảnh.
         </p>
       </form>
     </Card>

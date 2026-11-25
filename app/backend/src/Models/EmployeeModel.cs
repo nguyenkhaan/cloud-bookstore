@@ -22,6 +22,18 @@ public class EmployeeModel
     [MaxLength(12)]
     public string Phone { get; set; } = string.Empty;
     public string? AvatarUrl { get; set; } = null;
+    [MaxLength(20)]
+    public string? EmployeeCode { get; set; }
+    [MaxLength(120)]
+    public string? JobTitle { get; set; }
+    [MaxLength(120)]
+    public string? BranchName { get; set; }
+    public bool IsProtected { get; set; }
+    public decimal? HourlyRate { get; set; }
+    [MaxLength(120)]
+    public string? BankName { get; set; }
+    [MaxLength(80)]
+    public string? BankAccountNumber { get; set; }
     [ConcurrencyCheck]
     public Guid RoleId { get; set; }
     [ForeignKey(nameof(RoleId))]

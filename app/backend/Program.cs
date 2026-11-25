@@ -260,6 +260,7 @@ builder.Services.AddDataProtection().SetApplicationName("CloudBookstore");
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<EmployeeService>();
+builder.Services.AddScoped<HrRequestService>();
 builder.Services.AddScoped<AuditLogService>();
 builder.Services.AddScoped<UploadIntentService>();
 builder.Services.AddScoped<CategoryService>();

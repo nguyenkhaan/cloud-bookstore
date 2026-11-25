@@ -429,10 +429,15 @@ public class AuditLogService(AppDbContext dbContext, IHttpContextAccessor? httpC
                 .Where(c => ids.Contains(c.Id))
                 .ToDictionaryAsync(c => c.Id, c => $"{c.FullName} ({c.Phone})", cancellationToken));
 
-        await LoadAsync<EmployeeModel>(["employee", "employees"], async ids =>
+        await LoadAsync<EmployeeModel>(["employee", "employees", "employeemodel"], async ids =>
             await dbContext.Employees.AsNoTracking()
                 .Where(e => ids.Contains(e.Id))
                 .ToDictionaryAsync(e => e.Id, e => e.FullName, cancellationToken));
+
+        await LoadAsync<HrRequestModel>(["hr_request", "hrrequest"], async ids =>
+            await dbContext.HrRequests.AsNoTracking()
+                .Where(request => ids.Contains(request.Id))
+                .ToDictionaryAsync(request => request.Id, request => request.RequestCode, cancellationToken));
 
         return result;
     }

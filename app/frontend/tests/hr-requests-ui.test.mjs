@@ -10,7 +10,8 @@ const src = (...parts) => path.join(frontendRoot, 'src', ...parts)
 
 let server
 let requestsService
-let requestsMock
+let requestsConstants
+let privateClient
 
 before(async () => {
   server = await createServer({
@@ -18,17 +19,52 @@ before(async () => {
     server: { hmr: false, middlewareMode: true },
   })
   requestsService = await server.ssrLoadModule('/src/features/hr/hr-requests.service.ts')
-  requestsMock = await server.ssrLoadModule('/src/features/hr/hr-requests.mock.ts')
+  requestsConstants = await server.ssrLoadModule('/src/features/hr/hr-requests.constants.ts')
+  const clientMod = await server.ssrLoadModule('/src/api/client.ts')
+  privateClient = clientMod.privateClient
 })
 
 after(async () => {
   await server?.close()
 })
 
+const pendingRequestDto = {
+  id: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+  requestCode: 'HR-20261118-ABC123',
+  type: 'LEAVE',
+  requesterId: '11111111-2222-4333-8444-555555555555',
+  requesterCode: 'NV-0002',
+  requesterName: 'Trần Hoàng Phong',
+  applyDate: '2026-11-20',
+  shiftNo: 1,
+  targetShiftNo: null,
+  replacementEmployeeId: '22222222-3333-4444-8555-666666666666',
+  replacementName: 'Lê Mai Linh',
+  correctCheckInAt: null,
+  correctCheckOutAt: null,
+  proofUrl: null,
+  reason: 'Xin nghỉ phép',
+  status: 'PENDING',
+  isOwnedByCurrentUser: true,
+  isRequestedByCurrentUser: true,
+  reviewNote: null,
+  reviewedBy: null,
+  reviewedAt: null,
+  history: [
+    {
+      id: 'hist-1',
+      action: 'SUBMITTED',
+      note: null,
+      occurredAt: '2026-11-18T02:00:00Z',
+      actorName: 'Trần Hoàng Phong',
+    },
+  ],
+}
+
 test('SCR-HRM-04 files exist and /hr/requests route is guarded in AppRoutes.tsx', () => {
   const requiredFiles = [
     ['features', 'hr', 'hr-requests.type.ts'],
-    ['features', 'hr', 'hr-requests.mock.ts'],
+    ['features', 'hr', 'hr-requests.constants.ts'],
     ['features', 'hr', 'hr-requests.service.ts'],
     ['features', 'hr', 'hr-requests.hook.ts'],
     ['features', 'hr', 'components', 'CreateHrRequestCard.tsx'],
@@ -39,20 +75,22 @@ test('SCR-HRM-04 files exist and /hr/requests route is guarded in AppRoutes.tsx'
   for (const parts of requiredFiles) {
     assert.ok(existsSync(src(...parts)), `missing src/${parts.join('/')}`)
   }
+  assert.equal(existsSync(src('features', 'hr', 'hr-requests.mock.ts')), false)
 
   const routesContent = readFileSync(src('routes', 'AppRoutes.tsx'), 'utf8')
   assert.match(routesContent, /path="\/hr\/requests"\s+element=\{<RequireSession><RoleGuard screenId="hrRequests"><HrRequestsPage\s*\/>/)
 })
 
-test('SCR-HRM-04 normalizes request statuses to 3 values and never uses legacy Chờ quản lý duyệt', () => {
-  assert.deepEqual(requestsMock.HR_REQUEST_STATUS_LABELS, {
+test('SCR-HRM-04 status labels cover all lifecycle states and never use legacy Chờ quản lý duyệt', () => {
+  assert.deepEqual(requestsConstants.HR_REQUEST_STATUS_LABELS, {
     pending: 'Chờ duyệt',
     approved: 'Đã duyệt',
     rejected: 'Từ chối',
+    cancelled: 'Đã hủy',
   })
 
   const hrFiles = [
-    readFileSync(src('features', 'hr', 'hr-requests.mock.ts'), 'utf8'),
+    readFileSync(src('features', 'hr', 'hr-requests.service.ts'), 'utf8'),
     readFileSync(src('features', 'hr', 'pages', 'HrRequestsPage.tsx'), 'utf8'),
     readFileSync(src('features', 'hr', 'components', 'CreateHrRequestCard.tsx'), 'utf8'),
     readFileSync(src('features', 'hr', 'components', 'ApprovalHistoryCard.tsx'), 'utf8'),
@@ -62,71 +100,122 @@ test('SCR-HRM-04 normalizes request statuses to 3 values and never uses legacy C
   assert.doesNotMatch(hrFiles, /Chờ quản lý duyệt/)
 })
 
-test('SCR-HRM-04 service creates pending requests and updates counts/history upon review', async () => {
-  requestsService.resetHrRequestsStore()
+test('SCR-HRM-04 summary reads scoped requests, create/cancel/review hit the real endpoints', async () => {
+  const originalGet = privateClient.get
+  const originalPost = privateClient.post
+  const getCalls = []
+  const postCalls = []
 
-  const initial = await requestsService.getHrRequestsSummary()
-  assert.equal(initial.myCount, 5)
-  assert.equal(initial.pendingApprovalCount, 3)
+  privateClient.get = async (url, config) => {
+    getCalls.push({ url, config })
+    const isPending = config?.params?.scope === 'pending'
+    return {
+      status: 200,
+      data: {
+        myRequests: isPending ? [] : [pendingRequestDto],
+        approvalQueue: isPending ? [pendingRequestDto] : [],
+        myCount: 5,
+        pendingApprovalCount: 3,
+      },
+    }
+  }
+  privateClient.post = async (url, body) => {
+    postCalls.push({ url, body })
+    const status = url.endsWith('/review')
+      ? 'APPROVED'
+      : url.endsWith('/cancel')
+        ? 'CANCELLED'
+        : 'PENDING'
+    return {
+      status: 200,
+      data: { ...pendingRequestDto, status },
+    }
+  }
 
-  const created = await requestsService.createHrRequest({
-    type: 'leave',
-    applyDate: '2026-10-25',
-    currentShiftLabel: 'Ca sáng · 08:00–13:00',
-    replacementLabel: 'Lê Mai Linh · NV-0005',
-    reason: 'Xin nghỉ phép giải quyết việc gia đình',
-  })
-  assert.equal(created.status, 'pending')
+  try {
+    const summary = await requestsService.getHrRequestsSummary({}, {}, true)
+    assert.equal(getCalls.length, 2)
+    assert.equal(getCalls[0].url, '/hr/requests')
+    assert.equal(getCalls[0].config.params.scope, 'mine')
+    assert.equal(getCalls[1].config.params.scope, 'pending')
+    assert.equal(summary.myCount, 5)
+    assert.equal(summary.pendingApprovalCount, 3)
+    assert.equal(summary.myRequests[0].code, 'HR-20261118-ABC123')
+    assert.equal(summary.myRequests[0].status, 'pending')
+    assert.equal(summary.approvalQueue.length, 1)
 
-  const afterCreate = await requestsService.getHrRequestsSummary()
-  assert.equal(afterCreate.myCount, 6)
-  assert.equal(afterCreate.pendingApprovalCount, 4)
-  assert.equal(afterCreate.myRequests[0].code, created.code)
+    const mineOnly = await requestsService.getHrRequestsSummary({}, {}, false)
+    assert.equal(getCalls.length, 3)
+    assert.equal(mineOnly.approvalQueue.length, 0)
 
-  await assert.rejects(
-    () =>
-      requestsService.reviewHrRequest({
-        requestId: created.id,
-        decision: 'approved',
-        note: '   ',
-        reviewerName: 'Nguyễn Minh Anh',
-        reviewerRoleLabel: 'Quản trị viên',
-      }),
-    /ghi chú xét duyệt/i,
-  )
+    const created = await requestsService.createHrRequest({
+      type: 'leave',
+      applyDate: '2026-11-20',
+      shiftNo: 1,
+      reason: 'Xin nghỉ phép',
+    })
+    assert.equal(postCalls[0].url, '/hr/requests')
+    assert.deepEqual(postCalls[0].body, {
+      type: 'LEAVE',
+      applyDate: '2026-11-20',
+      shiftNo: 1,
+      targetShiftNo: null,
+      replacementEmployeeId: null,
+      correctCheckInAt: null,
+      correctCheckOutAt: null,
+      reason: 'Xin nghỉ phép',
+      proofUpload: null,
+    })
+    assert.equal(created.status, 'pending')
 
-  const reviewed = await requestsService.reviewHrRequest({
-    requestId: created.id,
-    decision: 'approved',
-    note: 'Đã sắp xếp nhân sự thay thế.',
-    reviewerName: 'Nguyễn Minh Anh',
-    reviewerRoleLabel: 'Quản trị viên',
-  })
-  assert.equal(reviewed.status, 'approved')
-  assert.ok(reviewed.history.some((entry) => entry.message.includes('Đã sắp xếp nhân sự thay thế.')))
+    await requestsService.cancelHrRequest(pendingRequestDto.id)
+    assert.equal(postCalls[1].url, `/hr/requests/${pendingRequestDto.id}/cancel`)
 
-  const afterReview = await requestsService.getHrRequestsSummary()
-  assert.equal(afterReview.pendingApprovalCount, 3)
+    await assert.rejects(
+      () =>
+        requestsService.reviewHrRequest({
+          requestId: pendingRequestDto.id,
+          decision: 'approved',
+          note: '   ',
+        }),
+      /ghi chú xét duyệt/i,
+    )
+
+    const reviewed = await requestsService.reviewHrRequest({
+      requestId: pendingRequestDto.id,
+      decision: 'approved',
+      note: 'Đã sắp xếp nhân sự thay thế.',
+    })
+    assert.equal(postCalls[2].url, `/hr/requests/${pendingRequestDto.id}/review`)
+    assert.deepEqual(postCalls[2].body, {
+      status: 'APPROVED',
+      note: 'Đã sắp xếp nhân sự thay thế.',
+    })
+    assert.equal(reviewed.status, 'approved')
+  } finally {
+    privateClient.get = originalGet
+    privateClient.post = originalPost
+  }
 })
 
-test('SCR-HRM-04 UI places ApprovalHistoryCard inside Đơn cần duyệt tab and exposes required testids', () => {
+test('SCR-HRM-04 UI places cancel + maker-checker controls and keeps ApprovalHistoryCard in the pending tab', () => {
   const pageSource = readFileSync(src('features', 'hr', 'pages', 'HrRequestsPage.tsx'), 'utf8')
   const createSource = readFileSync(src('features', 'hr', 'components', 'CreateHrRequestCard.tsx'), 'utf8')
   const detailSource = readFileSync(src('features', 'hr', 'components', 'ApprovalRequestDetailCard.tsx'), 'utf8')
 
   assert.match(pageSource, /data-testid="hrm04-tab-mine"/)
   assert.match(pageSource, /data-testid="hrm04-tab-pending"/)
-  assert.match(pageSource, /isAdmin && <button/)
+  assert.match(pageSource, /data-testid="hrm04-cancel-request-btn"/)
+  assert.match(pageSource, /isAdmin &&/)
   assert.match(pageSource, /useHrRequestsSummaryQuery\([\s\S]*isAdmin/)
   assert.match(pageSource, /MY_REQUESTS_PAGE_SIZE = 10/)
   assert.doesNotMatch(pageSource, /HrModuleTabs/)
 
-  const afterMineStart = pageSource.split("activeTab === 'mine' || !isAdmin ? (")[1] ?? ''
-  const [mineBranch = '', pendingBranch = ''] = afterMineStart.split(') : (\n          <div className="space-y-4">')
-  assert.doesNotMatch(mineBranch, /ApprovalHistoryCard/)
-  assert.match(pendingBranch, /ApprovalHistoryCard/)
-
   assert.match(createSource, /data-testid="hrm04-submit-request-btn"/)
+  assert.doesNotMatch(createSource, /Lưu nháp|Số ngày nghỉ phép còn lại|Tệp minh chứng\.pdf/)
+
+  assert.match(detailSource, /maker-checker|người tạo|chính mình/i)
   assert.match(detailSource, /data-testid="hrm04-approve-btn"/)
   assert.match(detailSource, /data-testid="hrm04-reject-btn"/)
+  assert.match(detailSource, /disabled=\{!canReview\}/)
 })

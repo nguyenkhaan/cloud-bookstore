@@ -33,6 +33,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<CashSessionModel> CashSessions => Set<CashSessionModel>();
     public DbSet<PaymentModel> Payments => Set<PaymentModel>();
     public DbSet<EmployeeWorkRecordModel> EmployeeWorkRecords => Set<EmployeeWorkRecordModel>();
+    public DbSet<HrRequestModel> HrRequests => Set<HrRequestModel>();
+    public DbSet<HrRequestHistoryModel> HrRequestHistories => Set<HrRequestHistoryModel>();
     public DbSet<NotificationOutboxModel> NotificationOutbox => Set<NotificationOutboxModel>();
     public DbSet<AuditLogModel> AuditLogs => Set<AuditLogModel>();
     public DbSet<UploadIntentModel> UploadIntents => Set<UploadIntentModel>();
@@ -70,6 +72,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     {
         modelBuilder.Entity<RoleModel>().ToTable("roles");
         modelBuilder.Entity<EmployeeModel>().ToTable("employee");
+        modelBuilder.Entity<HrRequestModel>().ToTable("hr_requests");
+        modelBuilder.Entity<HrRequestHistoryModel>().ToTable("hr_request_history");
         modelBuilder.Entity<MembershipTierModel>().ToTable("membership_tiers");
         modelBuilder.Entity<CustomerModel>().ToTable("customers");
         modelBuilder.Entity<SystemSettingModel>().ToTable("system_settings");
@@ -306,6 +310,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         Reference<PaymentModel, EmployeeModel, Guid>(modelBuilder, x => x.CreatedBy);
         Reference<EmployeeWorkRecordModel, EmployeeModel, Guid>(modelBuilder, x => x.EmployeeId);
         Reference<EmployeeWorkRecordModel, EmployeeModel, Guid?>(modelBuilder, x => x.ApprovedBy, false);
+        Reference<HrRequestModel, EmployeeModel, Guid>(modelBuilder, x => x.RequesterId);
+        Reference<HrRequestModel, EmployeeModel, Guid?>(modelBuilder, x => x.ReplacementEmployeeId, false);
+        Reference<HrRequestModel, EmployeeModel, Guid?>(modelBuilder, x => x.ReviewedBy, false);
+        Reference<HrRequestHistoryModel, HrRequestModel, Guid>(modelBuilder, x => x.RequestId);
+        Reference<HrRequestHistoryModel, EmployeeModel, Guid>(modelBuilder, x => x.ActorId);
         Reference<AuditLogModel, EmployeeModel, Guid?>(modelBuilder, x => x.ActorId, false);
         Reference<UploadIntentModel, EmployeeModel, Guid>(modelBuilder, x => x.CreatedBy);
         Reference<RentalLineImageModel, RentalLineModel, Guid>(modelBuilder, x => x.RentalLineId);
@@ -316,6 +325,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     {
         modelBuilder.Entity<RoleModel>().HasIndex(x => x.RoleName).IsUnique();
         modelBuilder.Entity<EmployeeModel>().HasIndex(x => x.Email).IsUnique();
+        modelBuilder.Entity<EmployeeModel>().HasIndex(x => x.EmployeeCode).IsUnique();
+        modelBuilder.Entity<HrRequestModel>().HasIndex(x => x.RequestCode).IsUnique();
+        modelBuilder.Entity<HrRequestModel>().HasIndex(x => new { x.RequesterId, x.Status, x.CreatedAt });
+        modelBuilder.Entity<HrRequestHistoryModel>().HasIndex(x => new { x.RequestId, x.OccurredAt });
         modelBuilder.Entity<MembershipTierModel>().HasIndex(x => x.Name).IsUnique();
         modelBuilder.Entity<MembershipTierModel>().HasIndex(x => x.RankOrder).IsUnique();
         modelBuilder.Entity<CustomerModel>().HasIndex(x => x.Phone).IsUnique();
@@ -354,6 +367,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     private static void ConfigureEnumConversions(ModelBuilder modelBuilder)
     {
         EnumAsString(modelBuilder.Entity<RoleModel>(), x => x.RoleName); EnumAsString(modelBuilder.Entity<EmployeeModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<MembershipTierModel>(), x => x.Name); EnumAsString(modelBuilder.Entity<DamageLevelModel>(), x => x.Level); EnumAsString(modelBuilder.Entity<DamageLevelModel>(), x => x.CopyStatusAfter); EnumAsString(modelBuilder.Entity<EditionModel>(), x => x.MetadataSource); EnumAsString(modelBuilder.Entity<StockReceiptModel>(), x => x.SourceType); EnumAsString(modelBuilder.Entity<StockReceiptModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<StockReceiptLineModel>(), x => x.Availability); EnumAsString(modelBuilder.Entity<StockReceiptLineModel>(), x => x.ConditionGrade); EnumAsString(modelBuilder.Entity<BookCopyModel>(), x => x.Availability); EnumAsString(modelBuilder.Entity<BookCopyModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<BookCopyModel>(), x => x.ConditionGrade); EnumAsString(modelBuilder.Entity<InventoryCheckModel>(), x => x.ExpectedStatus); EnumAsString(modelBuilder.Entity<InventoryCheckModel>(), x => x.ObservedStatus); EnumAsString(modelBuilder.Entity<InventoryCheckModel>(), x => x.VarianceType); EnumAsString(modelBuilder.Entity<InventoryAdjustmentRequestModel>(), x => x.RequestedStatus); EnumAsString(modelBuilder.Entity<InventoryAdjustmentRequestModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<SaleInvoiceModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<SaleInvoiceLineModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<RentalSlipModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<ReturnModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<RentalLineModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<RentalLineModel>(), x => x.CopyCondition); EnumAsString(modelBuilder.Entity<CashSessionModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<PaymentModel>(), x => x.Direction); EnumAsString(modelBuilder.Entity<PaymentModel>(), x => x.PaymentType); EnumAsString(modelBuilder.Entity<PaymentModel>(), x => x.Method); EnumAsString(modelBuilder.Entity<PaymentModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<EmployeeWorkRecordModel>(), x => x.AttendanceStatus); EnumAsString(modelBuilder.Entity<EmployeeWorkRecordModel>(), x => x.PaymentStatus); EnumAsString(modelBuilder.Entity<NotificationOutboxModel>(), x => x.Channel); EnumAsString(modelBuilder.Entity<NotificationOutboxModel>(), x => x.RecipientType); EnumAsString(modelBuilder.Entity<NotificationOutboxModel>(), x => x.Status);
+        EnumAsString(modelBuilder.Entity<HrRequestModel>(), x => x.Type);
+        EnumAsString(modelBuilder.Entity<HrRequestModel>(), x => x.Status);
         EnumAsString(modelBuilder.Entity<UploadIntentModel>(), x => x.OwnerType);
         EnumAsString(modelBuilder.Entity<UploadIntentModel>(), x => x.Status);
     }

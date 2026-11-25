@@ -6,10 +6,12 @@ const PAGE_SIZE = 3
 
 export interface EmployeeRecentShiftsCardProps {
   shifts: HrEmployeeShiftRecord[]
+  isLoading?: boolean
 }
 
 export function EmployeeRecentShiftsCard({
   shifts,
+  isLoading = false,
 }: EmployeeRecentShiftsCardProps) {
   const [page, setPage] = useState(1)
   const totalCount = shifts.length
@@ -34,7 +36,13 @@ export function EmployeeRecentShiftsCard({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {visibleShifts.length === 0 ? (
+            {isLoading ? (
+              <tr>
+                <td className="py-8 text-center text-xs text-slate-500" colSpan={5}>
+                  Đang tải ca trực gần đây...
+                </td>
+              </tr>
+            ) : visibleShifts.length === 0 ? (
               <tr>
                 <td className="py-8 text-center text-xs text-slate-500" colSpan={5}>
                   Chưa có bản ghi ca trực gần đây.
