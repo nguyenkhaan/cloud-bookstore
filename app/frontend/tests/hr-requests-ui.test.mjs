@@ -142,6 +142,7 @@ test('SCR-HRM-04 summary reads scoped requests, create/cancel/review hit the rea
     assert.equal(summary.pendingApprovalCount, 3)
     assert.equal(summary.myRequests[0].code, 'HR-20261118-ABC123')
     assert.equal(summary.myRequests[0].status, 'pending')
+    assert.equal(summary.myRequests[0].history[0].timestamp, '18/11 · 09:00')
     assert.equal(summary.approvalQueue.length, 1)
 
     const mineOnly = await requestsService.getHrRequestsSummary({}, {}, false)
@@ -192,6 +193,24 @@ test('SCR-HRM-04 summary reads scoped requests, create/cancel/review hit the rea
       note: 'Đã sắp xếp nhân sự thay thế.',
     })
     assert.equal(reviewed.status, 'approved')
+
+    const mapped = requestsService.mapHrRequest({
+      ...pendingRequestDto,
+      type: 'ATTENDANCE_EXPLANATION',
+      correctCheckInAt: '2026-11-20T01:00:00Z',
+      correctCheckOutAt: '2026-11-20T06:00:00Z',
+      history: [
+        {
+          id: 'hist-vn',
+          action: 'SUBMITTED',
+          note: null,
+          occurredAt: '2026-11-25T18:35:00Z',
+          actorName: 'Trần Hoàng Phong',
+        },
+      ],
+    })
+    assert.equal(mapped.correctTimeRange, '08:00 – 13:00')
+    assert.equal(mapped.history[0].timestamp, '26/11 · 01:35')
   } finally {
     privateClient.get = originalGet
     privateClient.post = originalPost

@@ -7,6 +7,7 @@ public sealed record EmployeeListQuery(
     string? Search = null,
     RoleName? RoleName = null,
     EmployeeStatus? Status = null,
+    bool? InShiftOnly = null,
     int Page = 1,
     int PageSize = 10);
 

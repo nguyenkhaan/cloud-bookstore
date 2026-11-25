@@ -3,6 +3,7 @@ using backend.src.Dto.AuditLogDto;
 using backend.src.Dto.HrRequestDto;
 using backend.src.Dto.UploadDto;
 using backend.src.Exceptions;
+using backend.src.Helpers;
 using backend.src.Infrastructure;
 using backend.src.Models;
 using backend.src.Models.Enums;
@@ -31,7 +32,7 @@ public sealed class HrRequestService(AppDbContext dbContext, UploadIntentService
         var employees = await dbContext.Employees.AsNoTracking().Where(employee => employee.Status == EmployeeStatus.ACTIVE && employee.Id != actorId)
             .OrderBy(employee => employee.FullName).Select(employee => new HrRequestOptionDto(employee.Id.ToString(),
                 string.IsNullOrEmpty(employee.EmployeeCode) ? employee.FullName : employee.EmployeeCode + " · " + employee.FullName)).ToListAsync(cancellationToken);
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = VietnamTimeHelper.TodayVietnam(DateTime.UtcNow);
         var workRecords = await dbContext.EmployeeWorkRecords.AsNoTracking().Where(record => record.EmployeeId == actorId && record.WorkDate <= today)
             .OrderByDescending(record => record.WorkDate).ThenByDescending(record => record.ShiftNo).Take(60)
             .Select(record => new HrRequestOptionDto(record.Id.ToString(), record.WorkDate.ToString() + " · Ca " + record.ShiftNo,

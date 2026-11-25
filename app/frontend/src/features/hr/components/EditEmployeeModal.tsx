@@ -135,11 +135,7 @@ function EditEmployeeModalForm({
       })
 
       if (result.roleChanged) {
-        notify.success(
-          result.roleChangeSource === 'api'
-            ? 'Đã lưu thay đổi hồ sơ và cập nhật vai trò qua máy chủ.'
-            : 'Đã lưu thay đổi hồ sơ và vai trò (dữ liệu minh họa).',
-        )
+        notify.success('Đã lưu thay đổi hồ sơ và cập nhật vai trò qua máy chủ.')
       } else {
         notify.success('Đã lưu thay đổi hồ sơ nhân viên.')
       }

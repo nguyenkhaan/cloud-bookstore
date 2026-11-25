@@ -20,7 +20,15 @@ export interface CreateHrRequestCardProps {
 }
 
 function todayIso(): string {
-  return new Date().toISOString().slice(0, 10)
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date())
+  const get = (partType: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === partType)?.value ?? ''
+  return `${get('year')}-${get('month')}-${get('day')}`
 }
 
 export function CreateHrRequestCard({ onCreated }: CreateHrRequestCardProps) {
@@ -37,6 +45,7 @@ export function CreateHrRequestCard({ onCreated }: CreateHrRequestCardProps) {
   const [correctCheckOut, setCorrectCheckOut] = useState('')
   const [reason, setReason] = useState('')
   const [proofFile, setProofFile] = useState<File | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
 
   const [workRecordError, setWorkRecordError] = useState<string | null>(null)
   const [scheduleDateError, setScheduleDateError] = useState<string | null>(null)
@@ -113,9 +122,15 @@ export function CreateHrRequestCard({ onCreated }: CreateHrRequestCardProps) {
     }
 
     try {
-      const proofUpload = proofFile
-        ? (await uploadImage('HR_REQUEST_PROOF', proofFile)).imageUpload
-        : null
+      let proofUpload = null
+      if (proofFile) {
+        setIsUploading(true)
+        try {
+          proofUpload = (await uploadImage('HR_REQUEST_PROOF', proofFile)).imageUpload
+        } finally {
+          setIsUploading(false)
+        }
+      }
       const created = await createMutation.mutateAsync({
         type,
         applyDate,
@@ -364,8 +379,9 @@ export function CreateHrRequestCard({ onCreated }: CreateHrRequestCardProps) {
         <Button
           className="min-h-[44px]"
           data-testid="hrm04-submit-request-btn"
+          disabled={isUploading || createMutation.isPending}
           fullWidth
-          loading={createMutation.isPending}
+          loading={isUploading || createMutation.isPending}
           type="submit"
           variant="primary"
         >

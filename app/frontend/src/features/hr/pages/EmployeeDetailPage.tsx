@@ -26,6 +26,12 @@ export default function EmployeeDetailPage() {
   const location = useLocation()
   const { session, signOut } = useAuth()
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [shiftPageNumber, setShiftPageNumber] = useState(1)
+  const [prevEmployeeId, setPrevEmployeeId] = useState(id)
+  if (prevEmployeeId !== id) {
+    setPrevEmployeeId(id)
+    setShiftPageNumber(1)
+  }
 
   const currentUser = session?.user
   const effectiveRoleCode = resolveHrRoleCode(currentUser)
@@ -34,7 +40,7 @@ export default function EmployeeDetailPage() {
   const { data: employee, isLoading } = useHrEmployeeDetailQuery(id)
   const { data: shiftPage, isLoading: isShiftsLoading } = useHrEmployeeShiftsQuery(
     id,
-    1,
+    shiftPageNumber,
     SHIFT_PAGE_SIZE,
   )
   const resendMutation = useResendSetupEmailMutation()
@@ -230,6 +236,11 @@ export default function EmployeeDetailPage() {
             <EmployeeRecentShiftsCard
               key={employee.id}
               shifts={shiftPage?.items ?? []}
+              page={shiftPage?.page ?? shiftPageNumber}
+              pageSize={shiftPage?.pageSize ?? SHIFT_PAGE_SIZE}
+              totalCount={shiftPage?.totalCount ?? 0}
+              totalPages={shiftPage?.totalPages ?? 1}
+              onPageChange={setShiftPageNumber}
               isLoading={isShiftsLoading}
             />
           </>

@@ -53,10 +53,60 @@ function deriveUsername(email: string): string {
   return localPart || 'staff'
 }
 
+const TZ_OFFSET_SUFFIX = /(?:[Zz]|[+-]\d{2}:?\d{2})$/
+const VN_TIME_FORMATTER = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Asia/Ho_Chi_Minh',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+})
+const VN_DATE_TIME_FORMATTER = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Asia/Ho_Chi_Minh',
+  day: '2-digit',
+  month: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+})
+
+function getPart(
+  parts: Intl.DateTimeFormatPart[],
+  type: Intl.DateTimeFormatPartTypes,
+): string {
+  return parts.find((part) => part.type === type)?.value ?? ''
+}
+
+export function formatVietnamTime(value?: string | null): string {
+  if (!value) return '--:--'
+  if (TZ_OFFSET_SUFFIX.test(value)) {
+    const date = new Date(value)
+    if (!Number.isNaN(date.getTime())) {
+      const parts = VN_TIME_FORMATTER.formatToParts(date)
+      return `${getPart(parts, 'hour')}:${getPart(parts, 'minute')}`
+    }
+  }
+  return value.length >= 16 ? value.slice(11, 16) : value
+}
+
+export function formatVietnamShortDateTime(iso?: string | null): string {
+  if (!iso) return ''
+  if (TZ_OFFSET_SUFFIX.test(iso)) {
+    const date = new Date(iso)
+    if (!Number.isNaN(date.getTime())) {
+      const parts = VN_DATE_TIME_FORMATTER.formatToParts(date)
+      return `${getPart(parts, 'day')}/${getPart(parts, 'month')} · ${getPart(parts, 'hour')}:${getPart(parts, 'minute')}`
+    }
+  }
+  const [datePart, timePart = ''] = iso.split('T')
+  const [, month, day] = datePart.split('-')
+  const shortDate = month && day ? `${day}/${month}` : datePart
+  return `${shortDate} · ${timePart.slice(0, 5)}`
+}
+
 function timeRangeLabel(shift: EmployeeShiftDto): string {
   if (!shift.checkInAt || !shift.checkOutAt) return 'Chưa đủ chấm công'
-  const start = shift.checkInAt.slice(11, 16)
-  const end = shift.checkOutAt.slice(11, 16)
+  const start = formatVietnamTime(shift.checkInAt)
+  const end = formatVietnamTime(shift.checkOutAt)
   return `${start}–${end}`
 }
 
@@ -68,7 +118,7 @@ function mapShift(shift: EmployeeShiftDto): HrEmployeeShiftRecord {
     workDate: shift.workDate.split('-').reverse().join('/'),
     shiftOrder: `Ca ${shift.shiftNo}`,
     timeRange: timeRangeLabel(shift),
-    checkInOut: `${shift.checkInAt?.slice(11, 16) ?? '--:--'} / ${shift.checkOutAt?.slice(11, 16) ?? '--:--'}`,
+    checkInOut: `${formatVietnamTime(shift.checkInAt)} / ${formatVietnamTime(shift.checkOutAt)}`,
     status,
   }
 }
@@ -133,6 +183,7 @@ export async function listHrEmployees(
       search: query.search?.trim() || undefined,
       roleName: query.roleCode || undefined,
       status: query.status ? statusToApi(query.status) : undefined,
+      inShiftOnly: query.status === 'in_shift' ? true : undefined,
       page,
       pageSize,
     },

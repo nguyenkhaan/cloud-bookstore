@@ -186,4 +186,3 @@
 - Tự động chuyển tiền ra hoặc tự động nộp hồ sơ thuế.
 - Đa chi nhánh, điều chuyển liên chi nhánh hoặc SaaS đa tenant.
 - Văn phòng phẩm, F&B và nguyên liệu.
-- Tự động chuyển tiền ra hoặc tự động nộp hồ sơ thuế.

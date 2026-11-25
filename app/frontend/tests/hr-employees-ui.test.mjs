@@ -124,6 +124,55 @@ test('employee list service reads GET /employees and maps filters, pagination an
     assert.equal(result.items[0].code, 'NV-0001')
     assert.equal(result.items[0].isRootAdmin, true)
     assert.equal(result.items[0].status, 'active')
+
+    await employeesService.listHrEmployees({ status: 'in_shift', page: 1, pageSize: 6 })
+    assert.equal(calls.length, 2)
+    assert.equal(calls[1].config.params.status, 'ACTIVE')
+    assert.equal(calls[1].config.params.inShiftOnly, true)
+  } finally {
+    privateClient.get = originalGet
+  }
+})
+
+test('employee shifts format timezone-aware timestamps in Asia/Ho_Chi_Minh and keep offset-less fallback', async () => {
+  const originalGet = privateClient.get
+  privateClient.get = async () => ({
+    status: 200,
+    data: {
+      items: [
+        {
+          id: 'shift-1',
+          workDate: '2026-11-26',
+          shiftNo: 1,
+          checkInAt: '2026-11-26T01:00:00Z',
+          checkOutAt: '2026-11-26T06:00:00Z',
+          attendanceStatus: 'PRESENT',
+          workedMinutes: 300,
+          overtimeMinutes: 0,
+        },
+        {
+          id: 'shift-2',
+          workDate: '2026-11-25',
+          shiftNo: 2,
+          checkInAt: '2026-11-25T13:15:00',
+          checkOutAt: '2026-11-25T18:00:00',
+          attendanceStatus: 'PRESENT',
+          workedMinutes: 285,
+          overtimeMinutes: 0,
+        },
+      ],
+      totalCount: 2,
+      page: 1,
+      pageSize: 5,
+      totalPages: 1,
+    },
+  })
+
+  try {
+    const result = await employeesService.getHrEmployeeShifts('emp-1', 1, 5)
+    assert.equal(result.items[0].timeRange, '08:00–13:00')
+    assert.equal(result.items[0].checkInOut, '08:00 / 13:00')
+    assert.equal(result.items[1].timeRange, '13:15–18:00')
   } finally {
     privateClient.get = originalGet
   }

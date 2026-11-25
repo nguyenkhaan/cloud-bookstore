@@ -1,6 +1,10 @@
 import { privateClient } from '@/api/client'
 import type { components } from '@/contract/api-contract'
-import { extractHrApiErrorMessage } from './hr-employees.service'
+import {
+  extractHrApiErrorMessage,
+  formatVietnamShortDateTime,
+  formatVietnamTime,
+} from './hr-employees.service'
 import { HR_REQUEST_ACTION_LABELS } from './hr-requests.constants'
 import type {
   CreateHrRequestInput,
@@ -59,14 +63,11 @@ function shortDayMonth(iso: string): string {
 }
 
 function timeOf(value?: string | null): string {
-  if (!value) return '--:--'
-  return value.length >= 16 ? value.slice(11, 16) : value
+  return formatVietnamTime(value)
 }
 
 function formatDateTime(iso?: string | null): string {
-  if (!iso) return ''
-  const [datePart, timePart = ''] = iso.split('T')
-  return `${shortDayMonth(datePart)} · ${timePart.slice(0, 5)}`
+  return formatVietnamShortDateTime(iso)
 }
 
 function shiftLabel(shiftNo: number): string {

@@ -2,6 +2,7 @@ using backend.src.Data;
 using backend.src.Dto.AuditLogDto;
 using backend.src.Dto.EmployeeDto;
 using backend.src.Exceptions;
+using backend.src.Helpers;
 using backend.src.Infrastructure;
 using backend.src.Models;
 using backend.src.Models.Enums;
@@ -30,13 +31,21 @@ public class EmployeeService(AppDbContext dbContext, AuditLogService auditLogSer
             employees = employees.Where(employee => employee.Role.RoleName == query.RoleName.Value);
         if (query.Status.HasValue)
             employees = employees.Where(employee => employee.Status == query.Status.Value);
+        var today = VietnamTimeHelper.TodayVietnam(DateTime.UtcNow);
+        if (query.InShiftOnly == true)
+        {
+            var inShiftEmployeeIds = dbContext.EmployeeWorkRecords
+                .Where(record => record.WorkDate == today && record.CheckInAt != null && record.CheckOutAt == null)
+                .Select(record => record.EmployeeId);
+            employees = employees.Where(employee => employee.Status == EmployeeStatus.ACTIVE && inShiftEmployeeIds.Contains(employee.Id));
+        }
 
         var totalCount = await employees.CountAsync(cancellationToken);
         var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
         page = Math.Min(page, totalPages);
-        var items = employees.OrderBy(employee => employee.FullName).ThenBy(employee => employee.Id)
-            .Skip((page - 1) * pageSize).Take(pageSize).Select(ToDto).ToList();
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var pageEmployees = await employees.OrderBy(employee => employee.FullName).ThenBy(employee => employee.Id)
+            .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+        var items = pageEmployees.Select(ToDto).ToArray();
         var activeCount = await dbContext.Employees.CountAsync(employee => employee.Status == EmployeeStatus.ACTIVE, cancellationToken);
         var newAccountsCount = await dbContext.Employees.CountAsync(employee => employee.Status == EmployeeStatus.INVITED || employee.Status == EmployeeStatus.PENDING_OTP, cancellationToken);
         var inShiftCount = await dbContext.EmployeeWorkRecords.Where(record => record.WorkDate == today && record.CheckInAt != null && record.CheckOutAt == null)

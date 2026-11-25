@@ -3,6 +3,7 @@ using backend.src.Data;
 using backend.src.Dto.AuditLogDto;
 using backend.src.Dto.EmployeeDto;
 using backend.src.Exceptions;
+using backend.src.Helpers;
 using backend.src.Infrastructure;
 using backend.src.Models;
 using backend.src.Models.Enums;
@@ -35,7 +36,7 @@ public sealed class EmployeeServiceTests
         db.EmployeeWorkRecords.Add(new EmployeeWorkRecordModel
         {
             EmployeeId = cashier.Id,
-            WorkDate = DateOnly.FromDateTime(DateTime.UtcNow),
+            WorkDate = VietnamTimeHelper.TodayVietnam(DateTime.UtcNow),
             ShiftNo = 1,
             CheckInAt = DateTime.UtcNow.AddHours(-1),
             CheckOutAt = null,
@@ -63,6 +64,65 @@ public sealed class EmployeeServiceTests
         var bySearch = await service.ListAsync(new EmployeeListQuery(Search: "NV-0002"));
         Assert.Single(bySearch.Items);
         Assert.Equal("Trần Hoàng Phong", bySearch.Items[0].FullName);
+    }
+
+    [Fact]
+    public async Task ListAsync_with_in_shift_only_returns_only_active_employees_with_open_shift_today ()
+    {
+        await using var db = CreateDbContext();
+        var roles = SeedRoles(db);
+        var today = VietnamTimeHelper.TodayVietnam(DateTime.UtcNow);
+        var inShiftActive = NewEmployee(roles[RoleName.CASHIER], "Đang Trong Ca", "inshift@comicpos.vn", "NV-0010", status: EmployeeStatus.ACTIVE);
+        var checkedOutActive = NewEmployee(roles[RoleName.CASHIER], "Đã Tan Ca", "checkedout@comicpos.vn", "NV-0011", status: EmployeeStatus.ACTIVE);
+        var yesterdayOpen = NewEmployee(roles[RoleName.CASHIER], "Ca Hôm Qua", "yesterday@comicpos.vn", "NV-0012", status: EmployeeStatus.ACTIVE);
+        var lockedOpen = NewEmployee(roles[RoleName.CASHIER], "Tài Khoản Khóa", "locked@comicpos.vn", "NV-0013", status: EmployeeStatus.LOCKED);
+        db.Employees.AddRange(inShiftActive, checkedOutActive, yesterdayOpen, lockedOpen);
+        db.EmployeeWorkRecords.AddRange(
+            new EmployeeWorkRecordModel
+            {
+                EmployeeId = inShiftActive.Id,
+                WorkDate = today,
+                ShiftNo = 1,
+                CheckInAt = DateTime.UtcNow.AddHours(-2),
+                CheckOutAt = null,
+                AttendanceStatus = AttendanceStatus.PRESENT
+            },
+            new EmployeeWorkRecordModel
+            {
+                EmployeeId = checkedOutActive.Id,
+                WorkDate = today,
+                ShiftNo = 1,
+                CheckInAt = DateTime.UtcNow.AddHours(-5),
+                CheckOutAt = DateTime.UtcNow.AddHours(-1),
+                AttendanceStatus = AttendanceStatus.PRESENT
+            },
+            new EmployeeWorkRecordModel
+            {
+                EmployeeId = yesterdayOpen.Id,
+                WorkDate = today.AddDays(-1),
+                ShiftNo = 1,
+                CheckInAt = DateTime.UtcNow.AddDays(-1),
+                CheckOutAt = null,
+                AttendanceStatus = AttendanceStatus.PRESENT
+            },
+            new EmployeeWorkRecordModel
+            {
+                EmployeeId = lockedOpen.Id,
+                WorkDate = today,
+                ShiftNo = 2,
+                CheckInAt = DateTime.UtcNow.AddHours(-1),
+                CheckOutAt = null,
+                AttendanceStatus = AttendanceStatus.PRESENT
+            });
+        await db.SaveChangesAsync();
+
+        var service = CreateService(db);
+        var result = await service.ListAsync(new EmployeeListQuery(Status: EmployeeStatus.ACTIVE, InShiftOnly: true));
+
+        Assert.Equal(1, result.TotalCount);
+        var item = Assert.Single(result.Items);
+        Assert.Equal(inShiftActive.Id, item.Id);
+        Assert.Equal("NV-0010", item.EmployeeCode);
     }
 
     [Fact]
