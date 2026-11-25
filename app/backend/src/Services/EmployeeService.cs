@@ -93,7 +93,7 @@ public class EmployeeService(AppDbContext dbContext, AuditLogService auditLogSer
         {
             Id = employeeId, Email = email, FullName = request.FullName.Trim(), Phone = request.Phone.Trim(),
             Password = BCryptHasher.HashPassword(Convert.ToHexString(RandomNumberGenerator.GetBytes(32)), workFactor: 12),
-            PasswordResetTokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token))),
+            PasswordResetTokenHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(token))),
             RoleId = role.Id, Role = role, Status = EmployeeStatus.INVITED, EmployeeCode = $"NV-{sequence:0000}",
             JobTitle = string.IsNullOrWhiteSpace(request.JobTitle) ? null : request.JobTitle.Trim(),
             BranchName = "Nhà sách Mây · Cơ sở 01", CreatedAt = DateTime.UtcNow
@@ -138,7 +138,7 @@ public class EmployeeService(AppDbContext dbContext, AuditLogService auditLogSer
             throw new ConflictException("Setup email can only be resent for invited accounts.");
         var token = tokenService.GenerateToken(employee.Id, backend.src.Bases.Enums.TokenType.RESET_PASSWORD,
             [new System.Security.Claims.Claim("email", employee.Email)]);
-        employee.PasswordResetTokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
+        employee.PasswordResetTokenHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
         await dbContext.SaveChangesAsync(cancellationToken);
         await emailService.SendAccountSetupEmailAsync(employee.Email, employee.FullName, token, cancellationToken);
     }

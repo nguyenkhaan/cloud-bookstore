@@ -30,7 +30,7 @@ public sealed class HrRequestService(AppDbContext dbContext, UploadIntentService
     {
         var employees = await dbContext.Employees.AsNoTracking().Where(employee => employee.Status == EmployeeStatus.ACTIVE && employee.Id != actorId)
             .OrderBy(employee => employee.FullName).Select(employee => new HrRequestOptionDto(employee.Id.ToString(),
-                (employee.EmployeeCode ?? "") + " · " + employee.FullName)).ToListAsync(cancellationToken);
+                string.IsNullOrEmpty(employee.EmployeeCode) ? employee.FullName : employee.EmployeeCode + " · " + employee.FullName)).ToListAsync(cancellationToken);
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var workRecords = await dbContext.EmployeeWorkRecords.AsNoTracking().Where(record => record.EmployeeId == actorId && record.WorkDate <= today)
             .OrderByDescending(record => record.WorkDate).ThenByDescending(record => record.ShiftNo).Take(60)
@@ -44,8 +44,12 @@ public sealed class HrRequestService(AppDbContext dbContext, UploadIntentService
         if (!Enum.IsDefined(request.Type)) throw new BadRequestException("Request type is invalid.");
         if (string.IsNullOrWhiteSpace(request.Reason)) throw new BadRequestException("Reason is required.");
         if (request.ShiftNo < 1 || request.TargetShiftNo is < 1) throw new BadRequestException("Shift number is invalid.");
-        if (request.Type == HrRequestType.SHIFT_SWAP && request.TargetShiftNo is null)
-            throw new BadRequestException("Target shift is required for a shift swap.");
+        if (request.Type == HrRequestType.SHIFT_SWAP)
+        {
+            if (request.TargetShiftNo is null) throw new BadRequestException("Target shift is required for a shift swap.");
+            if (request.ReplacementEmployeeId is null) throw new BadRequestException("Replacement employee is required for a shift swap.");
+            if (request.ReplacementEmployeeId == actorId) throw new BadRequestException("Replacement employee must be a different staff member.");
+        }
         if (request.Type != HrRequestType.ATTENDANCE_EXPLANATION && request.ReplacementEmployeeId is { } replacementId
             && !await dbContext.Employees.AnyAsync(employee => employee.Id == replacementId && employee.Status == EmployeeStatus.ACTIVE, cancellationToken))
             throw new BadRequestException("Replacement employee is unavailable.");

@@ -15,6 +15,7 @@ import {
   useResendSetupEmailMutation,
 } from '../hr-employees.hook'
 import { formatHrRoleLabel, isHrAdmin, resolveHrRoleCode } from '../hr-role.util'
+import { formatEmployeeCreatedAt } from '../hr-employees.service'
 import { hrPaths } from '../hr.route'
 
 const SHIFT_PAGE_SIZE = 5
@@ -211,7 +212,7 @@ export default function EmployeeDetailPage() {
                     Ngày tạo tài khoản
                   </div>
                   <div className="mt-1 text-sm font-semibold text-slate-900">
-                    {employee.createdAt}
+                    {formatEmployeeCreatedAt(employee.createdAt)}
                   </div>
                 </div>
 

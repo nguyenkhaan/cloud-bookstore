@@ -2,6 +2,7 @@ import { useId, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
+import { DateInput } from '@/components/common/DateInput'
 import { SelectBox } from '@/components/common/SelectBox'
 import { notify } from '@/components/common/Toast'
 import { uploadImage } from '@/features/uploads/upload.service'
@@ -28,6 +29,8 @@ export function CreateHrRequestCard({ onCreated }: CreateHrRequestCardProps) {
 
   const [type, setType] = useState<HrRequestType>('shift_swap')
   const [workRecordId, setWorkRecordId] = useState('')
+  const [scheduleDate, setScheduleDate] = useState(todayIso())
+  const [scheduleShiftNo, setScheduleShiftNo] = useState('1')
   const [targetShiftNo, setTargetShiftNo] = useState('2')
   const [replacementEmployeeId, setReplacementEmployeeId] = useState('')
   const [correctCheckIn, setCorrectCheckIn] = useState('')
@@ -36,6 +39,8 @@ export function CreateHrRequestCard({ onCreated }: CreateHrRequestCardProps) {
   const [proofFile, setProofFile] = useState<File | null>(null)
 
   const [workRecordError, setWorkRecordError] = useState<string | null>(null)
+  const [scheduleDateError, setScheduleDateError] = useState<string | null>(null)
+  const [scheduleShiftError, setScheduleShiftError] = useState<string | null>(null)
   const [replacementError, setReplacementError] = useState<string | null>(null)
   const [timeError, setTimeError] = useState<string | null>(null)
   const [reasonError, setReasonError] = useState<string | null>(null)
@@ -46,12 +51,15 @@ export function CreateHrRequestCard({ onCreated }: CreateHrRequestCardProps) {
 
   const workRecordOptions = options?.workRecords ?? []
   const employeeOptions = options?.employees ?? []
+  const usesWorkRecord = type === 'attendance_explanation'
   const selectedWorkRecord = workRecordOptions.find((option) => option.value === workRecordId)
-  const applyDate = selectedWorkRecord?.applyDate ?? todayIso()
-  const shiftNo = selectedWorkRecord?.shiftNo ?? 0
+  const applyDate = usesWorkRecord ? (selectedWorkRecord?.applyDate ?? '') : scheduleDate
+  const shiftNo = usesWorkRecord ? (selectedWorkRecord?.shiftNo ?? 0) : Number(scheduleShiftNo)
 
   const resetFeedback = () => {
     setWorkRecordError(null)
+    setScheduleDateError(null)
+    setScheduleShiftError(null)
     setReplacementError(null)
     setTimeError(null)
     setReasonError(null)
@@ -61,9 +69,16 @@ export function CreateHrRequestCard({ onCreated }: CreateHrRequestCardProps) {
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
 
-    const nextWorkRecordError = selectedWorkRecord
-      ? null
-      : 'Vui lòng chọn lượt công cần xử lý.'
+    const nextWorkRecordError =
+      usesWorkRecord && !selectedWorkRecord
+        ? 'Vui lòng chọn lượt công cần xử lý.'
+        : null
+    const nextScheduleDateError =
+      !usesWorkRecord && !scheduleDate ? 'Vui lòng chọn ngày áp dụng.' : null
+    const nextScheduleShiftError =
+      !usesWorkRecord && !(Number(scheduleShiftNo) >= 1)
+        ? 'Vui lòng chọn ca làm việc.'
+        : null
     const nextReplacementError =
       type === 'attendance_explanation'
         ? null
@@ -77,6 +92,8 @@ export function CreateHrRequestCard({ onCreated }: CreateHrRequestCardProps) {
     const nextReasonError = reason.trim() ? null : 'Vui lòng nhập lý do.'
 
     setWorkRecordError(nextWorkRecordError)
+    setScheduleDateError(nextScheduleDateError)
+    setScheduleShiftError(nextScheduleShiftError)
     setReplacementError(nextReplacementError)
     setTimeError(nextTimeError)
     setReasonError(nextReasonError)
@@ -84,10 +101,13 @@ export function CreateHrRequestCard({ onCreated }: CreateHrRequestCardProps) {
 
     if (
       nextWorkRecordError ||
+      nextScheduleDateError ||
+      nextScheduleShiftError ||
       nextReplacementError ||
       nextTimeError ||
       nextReasonError ||
-      !selectedWorkRecord
+      !applyDate ||
+      shiftNo < 1
     ) {
       return
     }
@@ -143,20 +163,63 @@ export function CreateHrRequestCard({ onCreated }: CreateHrRequestCardProps) {
           value={type}
         />
 
-        <SelectBox
-          disabled={isLoadingOptions || workRecordOptions.length === 0}
-          emptyHint="Chưa có lượt công nào được ghi nhận cho bạn."
-          emptyMessage="Không có lượt công khả dụng."
-          label={type === 'attendance_explanation' ? 'Lượt chấm công thiếu *' : 'Ca hiện tại *'}
-          onChange={(value) => {
-            setWorkRecordId(value)
-            if (workRecordError) setWorkRecordError(null)
-          }}
-          options={workRecordOptions}
-          searchable
-          value={workRecordId}
-        />
-        {workRecordError && <p className="text-xs text-rose-600">{workRecordError}</p>}
+        {usesWorkRecord ? (
+          <>
+            <SelectBox
+              disabled={isLoadingOptions || workRecordOptions.length === 0}
+              emptyHint="Chưa có lượt công nào được ghi nhận cho bạn."
+              emptyMessage="Không có lượt công khả dụng."
+              label="Lượt chấm công thiếu *"
+              onChange={(value) => {
+                setWorkRecordId(value)
+                if (workRecordError) setWorkRecordError(null)
+              }}
+              options={workRecordOptions}
+              searchable
+              value={workRecordId}
+            />
+            {workRecordError && <p className="text-xs text-rose-600">{workRecordError}</p>}
+          </>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label
+                  className="block text-[11px] font-semibold text-slate-500"
+                  htmlFor={`${reasonId}-date`}
+                >
+                  Ngày áp dụng *
+                </label>
+                <DateInput
+                  aria-label="Ngày áp dụng"
+                  className="mt-1 min-h-[44px] w-full rounded-xl border border-slate-200 px-3.5 text-sm"
+                  id={`${reasonId}-date`}
+                  onChange={(event) => {
+                    setScheduleDate(event.target.value)
+                    if (scheduleDateError) setScheduleDateError(null)
+                  }}
+                  value={scheduleDate}
+                />
+                {scheduleDateError && (
+                  <p className="mt-1 text-xs text-rose-600">{scheduleDateError}</p>
+                )}
+              </div>
+              <SelectBox
+                label="Ca làm việc *"
+                onChange={(value) => {
+                  setScheduleShiftNo(value)
+                  if (scheduleShiftError) setScheduleShiftError(null)
+                }}
+                options={HR_REQUEST_SHIFT_OPTIONS}
+                searchable={false}
+                value={scheduleShiftNo}
+              />
+            </div>
+            {scheduleShiftError && (
+              <p className="text-xs text-rose-600">{scheduleShiftError}</p>
+            )}
+          </>
+        )}
 
         {type === 'shift_swap' && (
           <>
