@@ -1,4 +1,6 @@
 using System.Reflection;
+using backend.src.Data;
+using backend.src.Models.Enums;
 using backend.src.Services;
 using Xunit;
 
@@ -38,19 +40,36 @@ public sealed class HrmWaveAContractTests
     [Fact]
     public void Employee_and_hr_request_entrypoints_are_present_with_expected_route_families()
     {
-        var employeeRoutes = ControllerRouteTemplates("backend.src.Controllers.EmployeesController");
-        var requestRoutes = ControllerRouteTemplates("backend.src.Controllers.HrRequestsController");
+        var employeeEndpoints = ControllerEndpoints("backend.src.Controllers.EmployeesController");
+        var roleEndpoints = ControllerEndpoints("backend.src.Controllers.EmployeeController");
+        var requestEndpoints = ControllerEndpoints("backend.src.Controllers.HrRequestsController");
 
-        Assert.Contains("api/employees", employeeRoutes.ControllerRoute);
-        Assert.Contains("api/employees", employeeRoutes.ActionRoutes);
-        Assert.Contains("shifts", employeeRoutes.ActionRoutes);
-        Assert.Contains("resend-setup-email", employeeRoutes.ActionRoutes);
-        Assert.Contains("role", ControllerRouteTemplates("backend.src.Controllers.EmployeeController").ActionRoutes);
+        AssertEndpoint(employeeEndpoints, "GET", "api/employees");
+        AssertEndpoint(employeeEndpoints, "POST", "api/employees");
+        AssertEndpoint(employeeEndpoints, "GET", "api/employees/{employeeId:guid}");
+        AssertEndpoint(employeeEndpoints, "GET", "api/employees/{employeeId:guid}/shifts");
+        AssertEndpoint(employeeEndpoints, "PUT", "api/employees/{employeeId:guid}");
+        AssertEndpoint(employeeEndpoints, "PATCH", "api/employees/{employeeId:guid}/role");
+        AssertEndpoint(employeeEndpoints, "POST", "api/employees/{employeeId:guid}/resend-setup-email");
+        AssertEndpoint(roleEndpoints, "PATCH", "api/employee/{employeeId:guid}/role");
 
-        Assert.Contains("api/hr/requests", requestRoutes.ControllerRoute);
-        Assert.Contains("options", requestRoutes.ActionRoutes);
-        Assert.Contains("cancel", requestRoutes.ActionRoutes);
-        Assert.Contains("review", requestRoutes.ActionRoutes);
+        AssertEndpoint(requestEndpoints, "GET", "api/hr/requests");
+        AssertEndpoint(requestEndpoints, "GET", "api/hr/requests/options");
+        AssertEndpoint(requestEndpoints, "POST", "api/hr/requests");
+        AssertEndpoint(requestEndpoints, "POST", "api/hr/requests/{requestId:guid}/cancel");
+        AssertEndpoint(requestEndpoints, "POST", "api/hr/requests/{requestId:guid}/review");
+    }
+
+    [Fact]
+    public void Auth_upload_settings_and_audit_entrypoints_remain_registered()
+    {
+        AssertEndpoint(ControllerEndpoints("backend.src.Controllers.AuthController"), "GET", "api/auth/session");
+        AssertEndpoint(ControllerEndpoints("backend.src.Controllers.AuthController"), "POST", "api/auth/password-resets");
+        AssertEndpoint(ControllerEndpoints("backend.src.Controllers.UploadsController"), "POST", "api/uploads/signature");
+        AssertEndpoint(ControllerEndpoints("backend.src.Controllers.SettingsController"), "GET", "api/settings/my-permissions");
+        AssertEndpoint(ControllerEndpoints("backend.src.Controllers.SettingsController"), "GET", "api/settings/rbac-matrix");
+        AssertEndpoint(ControllerEndpoints("backend.src.Controllers.SettingsController"), "PUT", "api/settings/rbac-matrix");
+        AssertEndpoint(ControllerEndpoints("backend.src.Controllers.AuditLogController"), "GET", "api/audit");
     }
 
     [Fact]
@@ -61,6 +80,45 @@ public sealed class HrmWaveAContractTests
         Assert.Contains(codes, code => code.StartsWith("Employees.", StringComparison.Ordinal));
         Assert.Contains(codes, code => code.StartsWith("HrRequests.", StringComparison.Ordinal));
         Assert.Contains(codes, code => code == "HrRequests.Review");
+    }
+
+    [Fact]
+    public void Hrm_controller_authorization_attributes_keep_role_boundaries()
+    {
+        var employees = ControllerEndpoints("backend.src.Controllers.EmployeesController");
+        var requests = ControllerEndpoints("backend.src.Controllers.HrRequestsController");
+
+        Assert.All(employees, action => AssertAdminOnly(action.Attributes));
+        AssertAdminOnly(ControllerEndpoints("backend.src.Controllers.EmployeeController")
+            .Single(action => action.Method == "PATCH" && action.Route == "api/employee/{employeeId:guid}/role").Attributes);
+
+        foreach (var route in new[] { "api/hr/requests", "api/hr/requests/options" })
+            AssertIncludesRoles(FindEndpoint(requests, "GET", route).Attributes, "ADMIN", "CASHIER", "INVENTORY_MANAGER");
+        foreach (var route in new[] { "api/hr/requests", "api/hr/requests/{requestId:guid}/cancel" })
+            AssertIncludesRoles(FindEndpoint(requests, "POST", route).Attributes, "ADMIN", "CASHIER", "INVENTORY_MANAGER");
+        AssertAdminOnly(FindEndpoint(requests, "POST", "api/hr/requests/{requestId:guid}/review").Attributes);
+    }
+
+    [Fact]
+    public void Employee_and_request_dtos_expose_workflow_fields_not_secret_material()
+    {
+        var employeeDtos = BackendAssembly.GetTypes()
+            .Where(type => type.Namespace == "backend.src.Dto.EmployeeDto")
+            .ToArray();
+        var requestDtos = BackendAssembly.GetTypes()
+            .Where(type => type.Namespace == "backend.src.Dto.HrRequestDto")
+            .ToArray();
+
+        Assert.NotEmpty(employeeDtos);
+        Assert.NotEmpty(requestDtos);
+        var allDtos = employeeDtos.Concat(requestDtos).ToArray();
+        Assert.DoesNotContain(allDtos.SelectMany(type => type.GetProperties()), property =>
+            property.Name is "Password" or "PasswordResetTokenHash");
+
+        var createEmployee = RequiredType("backend.src.Dto.EmployeeDto.CreateEmployeeRequest");
+        AssertProperties(createEmployee, "Email", "FullName", "Phone", "RoleName");
+        var updateEmployee = RequiredType("backend.src.Dto.EmployeeDto.UpdateEmployeeRequest");
+        AssertProperties(updateEmployee, "Email", "FullName", "Phone", "Status");
     }
 
     [Fact]
@@ -80,6 +138,31 @@ public sealed class HrmWaveAContractTests
         Assert.Contains("CANCELLED", Enum.GetNames(requestStatus));
     }
 
+    [Fact]
+    public void Hr_request_persistence_sets_and_wave_a_migration_are_registered()
+    {
+        var properties = typeof(AppDbContext).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Select(property => property.Name)
+            .ToHashSet(StringComparer.Ordinal);
+        var root = FindRepositoryRoot();
+        var migrationDirectory = Path.Combine(root, "app", "backend", "src", "Data", "Migrations");
+
+        Assert.Contains("HrRequests", properties);
+        Assert.Contains("HrRequestHistories", properties);
+        Assert.Contains(Directory.EnumerateFiles(migrationDirectory), file =>
+            Path.GetFileName(file).EndsWith("_AddHrmWaveAEmployeesAndRequests.cs", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Cloudinary_owner_contract_includes_hr_request_and_payroll_proofs()
+    {
+        var ownerNames = Enum.GetNames<UploadOwnerType>();
+
+        Assert.Contains("HR_REQUEST_PROOF", ownerNames);
+        Assert.Contains("PAYSLIP_DISPUTE_PROOF", ownerNames);
+        Assert.Contains("PAYROLL_PAYOUT_PROOF", ownerNames);
+    }
+
     private static Type RequiredType(string fullName) =>
         BackendAssembly.GetType(fullName) ?? throw new Xunit.Sdk.XunitException($"Missing contract type: {fullName}");
 
@@ -90,19 +173,64 @@ public sealed class HrmWaveAContractTests
             Assert.Contains(propertyName, names);
     }
 
-    private static (string ControllerRoute, string ActionRoutes) ControllerRouteTemplates(string typeName)
+    private static IReadOnlyList<(string Method, string Route, IReadOnlyList<object> Attributes)> ControllerEndpoints(string typeName)
     {
         var controller = RequiredType(typeName);
+        var controllerAttributes = controller.GetCustomAttributes(inherit: true).ToArray();
         var controllerRoute = controller.GetCustomAttributes(inherit: true)
             .Where(attribute => attribute.GetType().Name == "RouteAttribute")
             .Select(attribute => ReadStringProperty(attribute, "Template"))
             .FirstOrDefault() ?? string.Empty;
-        var actionRoutes = string.Join(" ", controller.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
-            .SelectMany(method => method.GetCustomAttributes(inherit: true))
-            .Where(attribute => attribute.GetType().Name.StartsWith("Http", StringComparison.Ordinal))
-            .Select(attribute => ReadStringProperty(attribute, "Template")));
-        return (controllerRoute, actionRoutes);
+        return controller.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+            .SelectMany(method => method.GetCustomAttributes(inherit: true)
+                .Where(attribute => attribute.GetType().Name.StartsWith("Http", StringComparison.Ordinal))
+                .SelectMany(attribute => ReadHttpMethods(attribute).Select(httpMethod =>
+                {
+                    var actionRoute = ReadStringProperty(attribute, "Template");
+                    var route = string.Join("/", new[] { controllerRoute.Trim('/'), actionRoute.Trim('/') }
+                        .Where(part => !string.IsNullOrEmpty(part)));
+                    var attributes = controllerAttributes
+                        .Concat(method.GetCustomAttributes(inherit: true))
+                        .Where(item => item.GetType().Name is "AuthorizeAttribute" or "PermissionAttribute")
+                        .ToArray();
+                    return (httpMethod, route, (IReadOnlyList<object>)attributes);
+                })))
+            .ToArray();
     }
+
+    private static (string Method, string Route, IReadOnlyList<object> Attributes) FindEndpoint(
+        IReadOnlyList<(string Method, string Route, IReadOnlyList<object> Attributes)> endpoints,
+        string method,
+        string route) => endpoints.Single(endpoint => endpoint.Method == method && endpoint.Route == route);
+
+    private static void AssertAdminOnly(IReadOnlyList<object> attributes)
+    {
+        Assert.Contains(attributes, attribute =>
+            attribute.GetType().Name == "AuthorizeAttribute" && ReadStringProperty(attribute, "Roles") == "ADMIN" ||
+            attribute.GetType().Name == "PermissionAttribute" && ReadStringProperty(attribute, "DefaultRoles") == "ADMIN");
+    }
+
+    private static void AssertIncludesRoles(IReadOnlyList<object> attributes, params string[] requiredRoles)
+    {
+        var roleStrings = attributes.Select(attribute => attribute.GetType().Name switch
+        {
+            "AuthorizeAttribute" => ReadStringProperty(attribute, "Roles"),
+            "PermissionAttribute" => ReadStringProperty(attribute, "DefaultRoles"),
+            _ => string.Empty
+        }).Where(value => !string.IsNullOrWhiteSpace(value)).ToArray();
+        Assert.Contains(roleStrings, roles => requiredRoles.All(role => roles.Split(',').Contains(role, StringComparer.Ordinal)));
+    }
+
+    private static IEnumerable<string> ReadHttpMethods(object instance) =>
+        instance.GetType().GetProperty("HttpMethods")?.GetValue(instance) is IEnumerable<string> methods
+            ? methods
+            : [];
+
+    private static void AssertEndpoint(
+        IReadOnlyList<(string Method, string Route, IReadOnlyList<object> Attributes)> endpoints,
+        string method,
+        string route) =>
+        Assert.Contains(endpoints, endpoint => endpoint.Method == method && endpoint.Route == route);
 
     private static string ReadStringProperty(object instance, string propertyName) =>
         instance.GetType().GetProperty(propertyName)?.GetValue(instance)?.ToString() ?? string.Empty;
