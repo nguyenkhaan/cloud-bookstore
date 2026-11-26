@@ -382,6 +382,60 @@ export function PayrollTableSection({
         {statusBannerText}
       </div>
 
+      {isDraft && (summary.pendingAdjustments?.length ?? 0) > 0 && (
+        <div
+          className="mt-4 rounded-xl border border-indigo-200/80 bg-indigo-50/50 px-4 py-3 text-xs"
+          data-testid="hrm05-pending-adjustments"
+        >
+          <p className="font-semibold text-indigo-900">
+            Khoản điều chỉnh kỳ sau chờ áp dụng ({summary.pendingAdjustments?.length ?? 0})
+          </p>
+          <p className="mt-0.5 text-indigo-700">
+            Các khoản trạng thái Đã duyệt sẽ tự động áp dụng khi bấm &quot;Khởi tạo bảng lương từ bảng công&quot;.
+          </p>
+          <div className="mt-2.5 space-y-1.5">
+            {summary.pendingAdjustments?.map((adj) => {
+              const isAddition = adj.adjustmentType === 'add_next_period'
+              return (
+                <div
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-indigo-100 bg-white px-3 py-2"
+                  key={adj.id}
+                >
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-900">
+                      {adj.id} · {adj.employeeLabel}
+                    </p>
+                    <p className="text-slate-600">
+                      {adj.category} · {adj.reason}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        'font-bold',
+                        isAddition ? 'text-emerald-700' : 'text-rose-700',
+                      )}
+                    >
+                      {isAddition ? '+' : '-'}{formatVnd(adj.amount)}
+                    </span>
+                    <span
+                      className={cn(
+                        'rounded-full px-2 py-0.5 text-[11px] font-semibold',
+                        adj.status === 'approved'
+                          ? 'bg-emerald-50 text-emerald-700'
+                          : 'bg-amber-50 text-amber-800',
+                      )}
+                    >
+                      {adj.status === 'approved' ? 'Đã duyệt' : 'Bản nháp'}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="mt-4 flex flex-wrap items-center gap-2.5">
         <Button
           className="min-h-[44px]"

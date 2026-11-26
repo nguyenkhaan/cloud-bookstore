@@ -78,6 +78,14 @@ test('SCR-HRM-05 routes, API-backed files, and forbidden card guard exist withou
     src('features', 'hr', 'pages', 'PayrollPage.tsx'),
     'utf8',
   )
+  const tableSectionSource = readFileSync(
+    src('features', 'hr', 'components', 'PayrollTableSection.tsx'),
+    'utf8',
+  )
+  const batchPayoutModalSource = readFileSync(
+    src('features', 'hr', 'components', 'PayrollBatchPayoutModal.tsx'),
+    'utf8',
+  )
   const adjustmentPageSource = readFileSync(
     src('features', 'hr', 'pages', 'PayrollAdjustmentPage.tsx'),
     'utf8',
@@ -85,7 +93,11 @@ test('SCR-HRM-05 routes, API-backed files, and forbidden card guard exist withou
   assert.match(payrollPageSource, /hrm05-forbidden-card/)
   assert.match(payrollPageSource, /Bạn chưa có quyền truy cập bảng lương/)
   assert.match(payrollPageSource, /useHrPayrollPeriodsListQuery/)
+  assert.match(payrollPageSource, /usePayrollBreakdownQuery/)
   assert.match(payrollPageSource, /hrm05-retry-btn/)
+  assert.match(tableSectionSource, /hrm05-pending-adjustments/)
+  assert.match(batchPayoutModalSource, /accept="image\/jpeg,image\/png,image\/webp"/)
+  assert.doesNotMatch(batchPayoutModalSource, /20261003|PC-20261003/)
   assert.doesNotMatch(payrollPageSource, /HrModuleTabs/)
   assert.doesNotMatch(adjustmentPageSource, /HrModuleTabs/)
   assert.doesNotMatch(adjustmentPageSource, /PAY-202609|Trần Hoàng Phong|5\.380\.000đ|DC-0926-003/)
@@ -95,7 +107,9 @@ test('SCR-HRM-05 utils format VND, Vietnamese words, Asia/Ho_Chi_Minh timestamps
   assert.equal(payrollUtils.formatVnd(30850000), '30.850.000đ')
   assert.equal(payrollUtils.formatVnd(-50000), '-50.000đ')
   assert.equal(payrollUtils.numberToVietnameseWords(0), 'Không đồng.')
-  assert.match(payrollUtils.numberToVietnameseWords(5380000), /5\.380\.000 đồng\./)
+  assert.equal(payrollUtils.numberToVietnameseWords(280000), 'Hai trăm tám mươi nghìn đồng.')
+  assert.equal(payrollUtils.numberToVietnameseWords(5380000), 'Năm triệu ba trăm tám mươi nghìn đồng.')
+  assert.match(payrollUtils.getTodayVietnamIsoDate(), /^\d{4}-\d{2}-\d{2}$/)
   assert.equal(payrollUtils.PAYROLL_STATUS_LABELS.draft, 'Bản nháp')
   assert.equal(payrollUtils.PAYROLL_STATUS_LABELS.settled, 'Đã duyệt & Khóa')
   assert.equal(payrollUtils.formatVietnamDateTime(undefined), '-')
@@ -215,6 +229,29 @@ test('SCR-HRM-05 payroll service forwards uppercase enums and maps backend DTO r
         }],
       }
     }
+    if (url.endsWith('/breakdown')) {
+      return {
+        status: 200,
+        data: {
+          entryId: 'entry-2',
+          employeeId: 'emp-2',
+          bonusItems: [{ label: 'Thưởng', amount: 42500, voucherCode: null }],
+          allowanceItems: [],
+          deductionItems: [{ label: 'Tạm ứng', amount: 50000, voucherCode: 'ADV-0301' }],
+          cashVariances: [{
+            cashSessionId: 'cs-1',
+            voucherCode: 'CS-ABCDEF12',
+            openedAt: '2026-03-10T01:00:00Z',
+            closedAt: '2026-03-10T09:00:00Z',
+            expectedAmount: 1000000,
+            countedAmount: 950000,
+            difference: -50000,
+            varianceNote: 'Thiếu quỹ cuối ca',
+            approverName: 'Admin Cloud',
+          }],
+        },
+      }
+    }
     return { status: 200, data: backendSummary }
   }
   privateClient.post = async (url, body) => {
@@ -269,16 +306,38 @@ test('SCR-HRM-05 payroll service forwards uppercase enums and maps backend DTO r
     })
     await payrollService.approveAndLockPayroll('03/2026')
     await payrollService.unlockPayrollPeriod('03/2026', 'Bổ sung thưởng ca tối')
+    const sampleProof = {
+      uploadIntentId: '11111111-2222-3333-4444-555555555555',
+      publicId: 'cloud-bookstore/private/payroll/proof-1',
+      version: 1,
+      signature: 'sig-1',
+      assetId: 'asset-1',
+      format: 'png',
+      bytes: 1234,
+    }
     await payrollService.executeBatchPayout({
       periodKey: '03/2026',
       employeeIds: ['emp-2'],
       method: 'bank_transfer',
       transactionRef: 'BANK-PAY-20261003-002',
       payoutDate: '03/11/2026',
+      proofUpload: sampleProof,
+      actorName: 'Admin',
+    })
+    await payrollService.executeBatchPayout({
+      periodKey: '03/2026',
+      employeeIds: ['emp-3'],
+      method: 'cash',
+      transactionRef: '',
+      payoutDate: '04/11/2026',
       actorName: 'Admin',
     })
     await payrollService.sendPayrollZaloPayslips('03/2026', ['emp-2'])
-    await payrollService.getPayrollBreakdown('03/2026', 'emp-2')
+    const breakdown = await payrollService.getPayrollBreakdown('03/2026', 'emp-2')
+    assert.equal(breakdown.cashVariances.length, 1)
+    assert.equal(breakdown.cashVariances[0].voucherCode, 'CS-ABCDEF12')
+    assert.equal(breakdown.cashVariances[0].difference, -50000)
+
     const adjustments = await payrollService.listNextPeriodAdjustments('04/2026')
     assert.equal(adjustments[0].id, 'ADJ-202603-0001')
     assert.equal(adjustments[0].adjustmentType, 'add_next_period')
@@ -294,6 +353,7 @@ test('SCR-HRM-05 payroll service forwards uppercase enums and maps backend DTO r
       adjustmentType: 'add_next_period',
       amount: 200000,
       reason: 'Bù phụ cấp trách nhiệm',
+      proofUpload: sampleProof,
       mode: 'approved',
     })
 
@@ -301,8 +361,12 @@ test('SCR-HRM-05 payroll service forwards uppercase enums and maps backend DTO r
     assert.equal(calls[1].config.params.status, 'DRAFT')
     assert.equal(calls[6].body.method, 'BANK_TRANSFER')
     assert.equal(calls[6].body.payoutDate, '2026-11-03')
-    assert.equal(calls[10].body.adjustmentType, 'ADD_NEXT_PERIOD')
-    assert.equal(calls[10].body.mode, 'APPROVED')
+    assert.deepEqual(calls[6].body.proofUpload, sampleProof)
+    assert.equal(calls[7].body.method, 'CASH')
+    assert.equal(calls[7].body.transactionRef, undefined)
+    assert.equal(calls[11].body.adjustmentType, 'ADD_NEXT_PERIOD')
+    assert.equal(calls[11].body.mode, 'APPROVED')
+    assert.deepEqual(calls[11].body.proofUpload, sampleProof)
     assert.equal(adj.id, 'ADJ-202603-0002')
     assert.equal(adj.status, 'approved')
   } finally {

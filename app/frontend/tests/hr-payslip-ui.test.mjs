@@ -68,6 +68,8 @@ test('SCR-HRM-06 routes, empty state, labels, and API hook wiring exist without 
   assert.match(payslipPageSource, /useMyPayslipDetailQuery/)
   assert.match(payslipPageSource, /useEmployeePayslipDetailQuery/)
   assert.match(payslipPageSource, /hrm06-empty-state/)
+  assert.match(payslipPageSource, /print:hidden/)
+  assert.match(payslipPageSource, /print:col-span-12/)
   assert.match(payslipPageSource, /window\.print\s*\(/)
 
   const breakdownSource = readFileSync(
@@ -75,6 +77,7 @@ test('SCR-HRM-06 routes, empty state, labels, and API hook wiring exist without 
     'utf8',
   )
   assert.doesNotMatch(breakdownSource, /03\/11\/2026|BANK-PAY-20261003-001/)
+  assert.match(breakdownSource, /formatVnd\(payslip\.mandatoryContribution\)/)
 
   const drawerSource = readFileSync(
     src('features', 'hr', 'components', 'PayslipSourceDrawer.tsx'),
@@ -221,7 +224,7 @@ test('SCR-HRM-06 payslip service maps live backend PayslipDetailDto fields, draw
     assert.equal(mine.zaloStatus, 'sent')
     assert.equal(mine.approvedBy, 'Admin Cloud')
     assert.doesNotMatch(mine.approvedAt, /T02:00:00Z/)
-    assert.match(mine.netPayInWords, /267\.500 đồng\./)
+    assert.equal(mine.netPayInWords, 'Hai trăm sáu mươi bảy nghìn năm trăm đồng.')
     assert.equal(mine.availablePeriods[0].status, 'paid')
     assert.equal(mine.availablePeriods[0].statusShortLabel, 'Đã thanh toán')
     assert.equal(mine.attendanceDays[0].date, '09/01/2026')
@@ -234,16 +237,27 @@ test('SCR-HRM-06 payslip service maps live backend PayslipDetailDto fields, draw
     assert.equal(mine.disputes[0].ownedByActor, false)
 
     await payrollService.getEmployeePayslipDetail('emp-2', '01/2026')
+    const sampleProof = {
+      uploadIntentId: '11111111-2222-3333-4444-555555555555',
+      publicId: 'cloud-bookstore/private/disputes/proof-1',
+      version: 1,
+      signature: 'sig-1',
+      assetId: 'asset-1',
+      format: 'png',
+      bytes: 512,
+    }
     const dispute = await payrollService.createPayslipDispute({
       entryId: 'entry-1',
       employeeId: 'emp-2',
       periodKey: '01/2026',
       category: 'allowance',
       content: 'Kiểm tra phụ cấp ca tối.',
+      proofUpload: sampleProof,
     })
     assert.equal(dispute.status, 'pending_response')
     assert.equal(calls[3].url, '/hr/payslips/entry-1/disputes')
     assert.equal(calls[3].body.category, 'ALLOWANCE')
+    assert.deepEqual(calls[3].body.proofUpload, sampleProof)
 
     const responded = await payrollService.respondPayslipDispute('disp-1', {
       status: 'EXPLAINED',

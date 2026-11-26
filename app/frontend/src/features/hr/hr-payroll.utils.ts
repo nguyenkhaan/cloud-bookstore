@@ -54,9 +54,68 @@ export function formatVnd(amount: number): string {
   return `${safe < 0 ? '-' : ''}${Math.abs(safe).toLocaleString('vi-VN')}đ`
 }
 
+const VN_DIGITS = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín']
+const VN_GROUP_UNITS = ['', 'nghìn', 'triệu', 'tỷ', 'nghìn tỷ', 'triệu tỷ']
+
+function readVietnameseTriple(triple: number, showZeroHundreds: boolean): string {
+  const hundreds = Math.floor(triple / 100)
+  const tens = Math.floor((triple % 100) / 10)
+  const units = triple % 10
+  const parts: string[] = []
+
+  if (hundreds > 0 || showZeroHundreds) {
+    parts.push(`${VN_DIGITS[hundreds]} trăm`)
+  }
+
+  if (tens === 0) {
+    if (units > 0) {
+      if (hundreds > 0 || showZeroHundreds) parts.push('lẻ')
+      parts.push(VN_DIGITS[units])
+    }
+  } else if (tens === 1) {
+    parts.push('mười')
+    if (units === 5) parts.push('lăm')
+    else if (units > 0) parts.push(VN_DIGITS[units])
+  } else {
+    parts.push(`${VN_DIGITS[tens]} mươi`)
+    if (units === 1) parts.push('mốt')
+    else if (units === 4) parts.push('tư')
+    else if (units === 5) parts.push('lăm')
+    else if (units > 0) parts.push(VN_DIGITS[units])
+  }
+
+  return parts.join(' ')
+}
+
 export function numberToVietnameseWords(value: number): string {
-  if (!Number.isFinite(value) || value === 0) return 'Không đồng.'
-  return `${formatVnd(value).replace('đ', '')} đồng.`
+  if (!Number.isFinite(value)) return 'Không đồng.'
+  const rounded = Math.round(value)
+  if (rounded === 0) return 'Không đồng.'
+
+  const isNegative = rounded < 0
+  let remaining = Math.abs(rounded)
+  const triples: number[] = []
+  while (remaining > 0) {
+    triples.push(remaining % 1000)
+    remaining = Math.floor(remaining / 1000)
+  }
+
+  const chunks: string[] = []
+  for (let i = triples.length - 1; i >= 0; i -= 1) {
+    const triple = triples[i]
+    if (triple === 0) continue
+    const showZeroHundreds = i < triples.length - 1
+    const words = readVietnameseTriple(triple, showZeroHundreds)
+    const unit = VN_GROUP_UNITS[i] ?? ''
+    chunks.push(unit ? `${words} ${unit}` : words)
+  }
+
+  const joined = `${isNegative ? 'âm ' : ''}${chunks.join(' ')}`.trim()
+  return `${joined.charAt(0).toUpperCase()}${joined.slice(1)} đồng.`
+}
+
+export function getTodayVietnamIsoDate(date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(date)
 }
 
 export function formatVietnamDateTime(value?: string | Date): string {

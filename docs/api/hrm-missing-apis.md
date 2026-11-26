@@ -1,72 +1,66 @@
-# HRM Wave 1 API Gap Specification (`SCR-HRM-01` & `SCR-HRM-04`)
+# HRM API Specification (`SCR-HRM-01`, `SCR-HRM-04`, `SCR-HRM-05` & `SCR-HRM-06`)
 
-This document tracks existing backend endpoints used by HRM Wave 1 and every missing backend API currently backed by frontend mock stores.
-Wave 2 (`SCR-HRM-05` and `SCR-HRM-06`) will append payroll and payslip contracts to this document.
+All HRM Wave A (`SCR-HRM-01`, `SCR-HRM-04`) and Wave B (`SCR-HRM-05`, `SCR-HRM-06`) backend endpoints are implemented in PostgreSQL and ASP.NET Core 10 with typed OpenAPI DTOs, Cloudinary signed uploads (`proofUpload`), strict `SELF` scope, and Admin maker-checker controls.
 
-## 1. Existing Backend Endpoints Used
+## 1. Shared Authentication & Upload Endpoints
 
-| Screen | Method | Endpoint | Usage & Notes | Frontend Caller |
+| Purpose | Method & Route | Request / Notes | Response DTO | Frontend Caller |
 | :--- | :--- | :--- | :--- | :--- |
-| SCR-HRM-01C | `PATCH` | `/api/employee/{employeeId}/role` | Updates an employee role with `{ roleName, reason }` (`ChangeEmployeeRequest`). Falls back to local mock state when `employeeId` is a mock code (`NV-*`) or backend is unreachable. | `app/frontend/src/features/hr/hr-employees.service.ts` |
-| Shared Auth | `GET` | `/api/auth/session` | Resolves signed-in staff user and `role` (`ADMIN`, `CASHIER`, `INVENTORY_MANAGER`) for Sidebar and HRM permissions. | `app/frontend/src/features/auth/auth.service.ts` |
+| Resolve current session | `GET /api/auth/session` | Cookie JWT + CSRF bootstrap | `SessionUserDto` (`ADMIN`, `CASHIER`, `INVENTORY_MANAGER`) | `app/frontend/src/features/auth/auth.service.ts` |
+| Create Cloudinary upload signature | `POST /api/uploads/signature` | Body: `{ ownerType: 'HR_REQUEST_PROOF' \| 'PAYROLL_PAYOUT_PROOF' \| 'PAYSLIP_DISPUTE_PROOF' }` | `UploadSignatureResponse` (`uploadIntentId`, `publicId`, `signature`, `timestamp`) | `app/frontend/src/features/uploads/upload.service.ts` |
 
-## 2. Missing Backend Endpoints for SCR-HRM-01 (Employee Directory & Profile)
+## 2. Implemented Endpoints for SCR-HRM-01 (Employee Directory & Profile)
 
-| Action / Screen | Suggested Method & Route | Query / Body Schema | Expected Response DTO | Frontend Caller & Current Fallback |
+All endpoints in `EmployeesController` require `ADMIN` role authorization and audit sensitive lifecycle changes.
+
+| Action / Screen | Method & Route | Query / Body Schema | Response DTO | Frontend Caller |
 | :--- | :--- | :--- | :--- | :--- |
-| List employees & KPI summary (`SCR-HRM-01`) | `GET /api/employees` | Query: `search?: string`, `role?: RoleName`, `status?: string`, `page?: number`, `pageSize?: number` | `{ items: EmployeeSummaryDto[], totalCount: number, page: number, pageSize: number, kpi: { activeCount, newAccountsCount, inShiftCount, rootAdminCount } }` | `listHrEmployees` in `hr-employees.service.ts` (uses 14 mock records in `hr-employees.mock.ts`) |
-| Create internal staff account (`SCR-HRM-01A`) | `POST /api/employees` | Body: `{ fullName: string, email: string, phone: string, roleName: RoleName, jobTitle?: string }` | `201 Created` with `EmployeeDetailDto` (`status: 'pending_activation'`) and triggers email setup link | `createHrEmployee` in `hr-employees.service.ts` (appends `NV-00XX` record in memory) |
-| Get employee profile detail (`SCR-HRM-01B`) | `GET /api/employees/{employeeId}` | Path: `employeeId: uuid` | `{ id, code, fullName, email, phone, roleName, jobTitle, status, branchName, createdAt, username, isRootAdmin }` | `getHrEmployeeById` in `hr-employees.service.ts` (resolves from `employeeStore`) |
-| Get employee recent shifts (`SCR-HRM-01B`) | `GET /api/employees/{employeeId}/shifts` | Query: `page?: number`, `pageSize?: number` | `{ items: [{ id, workDate, shiftOrder, timeRange, checkInTime, checkOutTime, status }], totalCount }` | `EmployeeRecentShiftsCard.tsx` (reads `employee.recentShifts` from mock store) |
-| Update employee profile & status (`SCR-HRM-01C`) | `PUT /api/employees/{employeeId}` | Body: `{ fullName: string, email: string, phone: string, jobTitle?: string, status: string }` | `200 OK` with updated `EmployeeDetailDto` (must reject locking/demoting `RootAdmin`) | `updateHrEmployee` in `hr-employees.service.ts` (updates in-memory store and calls `PATCH /api/employee/{id}/role` on role change) |
+| List employees & KPI summary (`SCR-HRM-01`) | `GET /api/employees` | Query: `search?: string`, `roleName?: RoleName`, `status?: string`, `inShiftOnly?: boolean`, `page?: number`, `pageSize?: number` | `EmployeeListResultDto` (`items`, `totalCount`, `page`, `pageSize`, `kpi`) | `listHrEmployees` in `hr-employees.service.ts` |
+| Create internal staff account (`SCR-HRM-01A`) | `POST /api/employees` | Body: `CreateEmployeeRequest` (`fullName`, `email`, `phone`, `roleName`, `jobTitle?`, `branchName?`, `hourlyRate?`, `bankName?`, `bankAccountNumber?`) | `201 Created` with `EmployeeDto` (`status: INVITED`) + setup email | `createHrEmployee` in `hr-employees.service.ts` |
+| Get employee profile detail (`SCR-HRM-01B`) | `GET /api/employees/{employeeId}` | Path: `employeeId: uuid` | `EmployeeDto` (`id`, `employeeCode`, `fullName`, `email`, `phone`, `roleName`, `status`, `isProtected`, `hourlyRate`, `bankName`, `bankAccountNumber`) | `getHrEmployeeById` in `hr-employees.service.ts` |
+| Get employee recent shifts (`SCR-HRM-01B`) | `GET /api/employees/{employeeId}/shifts` | Query: `page?: number`, `pageSize?: number` | `EmployeeShiftListDto` (`items`, `totalCount`, `page`, `pageSize`) | `listEmployeeShifts` in `hr-employees.service.ts` |
+| Update employee profile & status (`SCR-HRM-01C`) | `PUT /api/employees/{employeeId}` | Body: `UpdateEmployeeRequest` (`email`, `fullName`, `phone`, `jobTitle?`, `status`, `reason?`) | `200 OK` with `EmployeeDto` (protects `RootAdmin` and self-lock) | `updateHrEmployee` in `hr-employees.service.ts` |
+| Resend setup email (`SCR-HRM-01B`) | `POST /api/employees/{employeeId}/resend-setup-email` | Path: `employeeId: uuid` (allowed when `INVITED`) | `200 OK` | `resendEmployeeSetupEmail` in `hr-employees.service.ts` |
+| Change employee role (`SCR-HRM-01C`) | `PATCH /api/employees/{employeeId}/role` | Body: `ChangeEmployeeRequest` (`roleName`, `reason`) | `200 OK` with `EmployeeRoleResponse` | `updateHrEmployee` in `hr-employees.service.ts` |
 
-## 3. Missing Backend Endpoints for SCR-HRM-04 (Requests & Approvals)
+## 3. Implemented Endpoints for SCR-HRM-04 (Requests & Approvals)
 
-| Action / Screen | Suggested Method & Route | Query / Body Schema | Expected Response DTO | Frontend Caller & Current Fallback |
+`HrRequestsController` derives the requester strictly from JWT `Sub`, enforces `ADMIN` + maker-checker on `review`, and updates `EmployeeWorkRecordModel` atomically when approving attendance explanations.
+
+| Action / Screen | Method & Route | Query / Body Schema | Response DTO | Frontend Caller |
 | :--- | :--- | :--- | :--- | :--- |
-| List personal & pending requests (`SCR-HRM-04A/B`) | `GET /api/hr/requests` | Query: `scope: 'mine' \| 'pending'`, `search?: string`, `month?: string`, `status?: 'pending' \| 'approved' \| 'rejected'` | `{ items: HrRequestDto[], myCount: number, pendingApprovalCount: number }` | `getHrRequestsSummary` in `hr-requests.service.ts` (uses mock dataset in `hr-requests.mock.ts`) |
-| Submit leave / shift-swap / attendance explanation (`SCR-HRM-04A`) | `POST /api/hr/requests` | Body: `{ type: 'shift_swap' \| 'leave' \| 'attendance_explanation', applyDate: string, currentShiftId?: string, targetShiftId?: string, correctTimeRange?: string, replacementEmployeeId?: string, reason: string, attachmentUrl?: string }` | `201 Created` with `HrRequestDto` (`status: 'pending'`) | `createHrRequest` in `hr-requests.service.ts` (prepends pending request to local store) |
-| Approve or reject HR request (`SCR-HRM-04B`) | `POST /api/hr/requests/{requestId}/review` | Body: `{ decision: 'approved' \| 'rejected', note: string }` (Admin role required, non-empty `note`) | `200 OK` with updated `HrRequestDto` and appended `history` entry | `reviewHrRequest` in `hr-requests.service.ts` (mutates local store and appends approval history) |
+| List personal & pending requests (`SCR-HRM-04A/B`) | `GET /api/hr/requests` | Query: `scope: 'mine' \| 'pending'`, `search?: string`, `month?: string`, `status?: HrRequestStatus` (`pending` requires `ADMIN`) | `HrRequestListDto` (`myRequests`, `approvalQueue`, `myCount`, `pendingApprovalCount`) | `getHrRequestsSummary` in `hr-requests.service.ts` |
+| Load request form options (`SCR-HRM-04A`) | `GET /api/hr/requests/options` | Authenticated staff actor (`SELF`) | `HrRequestOptionsDto` (`employees`, `workRecords`) | `getHrRequestOptions` in `hr-requests.service.ts` |
+| Submit leave / shift-swap / attendance explanation (`SCR-HRM-04A`) | `POST /api/hr/requests` | Body: `CreateHrRequestRequest` (`type`, `applyDate`, `shiftNo?`, `targetShiftNo?`, `replacementEmployeeId?`, `correctCheckInAt?`, `correctCheckOutAt?`, `reason`, `proofUpload?`) | `201 Created` with `HrRequestDto` (`status: PENDING`) | `createHrRequest` in `hr-requests.service.ts` |
+| Cancel own pending request (`SCR-HRM-04A`) | `POST /api/hr/requests/{requestId}/cancel` | Path: `requestId: uuid` (requester only, `PENDING` only) | `200 OK` with updated `HrRequestDto` (`status: CANCELLED`) | `cancelHrRequest` in `hr-requests.service.ts` |
+| Approve or reject HR request (`SCR-HRM-04B`) | `POST /api/hr/requests/{requestId}/review` | Body: `HrRequestReviewRequest` (`decision: APPROVED \| REJECTED`, `note`) (`ADMIN` only, maker-checker) | `200 OK` with updated `HrRequestDto` & `history` | `reviewHrRequest` in `hr-requests.service.ts` |
 
-## 4. Missing Backend Endpoints for SCR-HRM-05 (Bảng thanh toán lương & Điều chỉnh kỳ sau)
+## 4. Implemented Endpoints for SCR-HRM-05 (Payroll & Next-Period Adjustments)
 
-| Action / Screen | Suggested Method & Route | Query / Body Schema | Expected Response DTO | Frontend Caller & Current Fallback |
+All endpoints in `HrPayrollController` require `ADMIN` role authorization, normalize dates to UTC, and persist real `PaymentModel`, `EmployeeWorkRecordModel`, `NotificationOutboxModel`, and `AuditLogModel` records.
+
+| Action / Screen | Method & Route | Query / Body Schema | Response DTO | Frontend Caller |
 | :--- | :--- | :--- | :--- | :--- |
-| Get payroll period summary & rows (`SCR-HRM-05A/B/C`) | `GET /api/hr/payroll/periods/{periodKey}` | Query: `search?: string`, `status?: 'draft' \| 'approved_unpaid' \| 'partially_paid' \| 'settled'`, `payoutFilter?: 'paid' \| 'unpaid' \| 'partial'` | `PayrollPeriodSummary` (`kpi`, `rows[]`, `batches[]`, `history[]`) | `listPayrollPeriod` in `hr-payroll.service.ts` (uses the payroll API and period data for initial UI state) |
-| Initialize payroll from locked attendance (`SCR-HRM-05B`) | `POST /api/hr/payroll/periods/{periodKey}/initialize` | Body: `{ attendanceSourceCode: string }` (Admin only, draft state) | `200 OK` with recalculated `PayrollPeriodSummary` | `initializePayrollFromAttendance` in `hr-payroll.service.ts` (appends history entry on draft mock store) |
-| Manual draft adjustment (`SCR-HRM-05B`) | `PATCH /api/hr/payroll/periods/{periodKey}/employees/{employeeId}` | Body: `{ bonus: number, allowance: number, deduction: number, note?: string }` (Admin only, draft state) | `200 OK` with updated `PayrollPeriodSummary` | `adjustDraftPayrollEmployee` in `hr-payroll.service.ts` (recalculates row net pay in memory) |
-| Approve and lock payroll (`SCR-HRM-05B -> 05C`) | `POST /api/hr/payroll/periods/{periodKey}/approve` | Body: `{ note?: string }` (Admin only) | `200 OK` with `status: 'approved_unpaid'` & audit entry | `approveAndLockPayroll` in `hr-payroll.service.ts` (transitions mock period to `approved_unpaid`) |
-| Unlock unpaid payroll (`SCR-HRM-05E/M`) | `POST /api/hr/payroll/periods/{periodKey}/unlock` | Body: `{ reason: string }` (Admin only; must reject if any payout exists) | `200 OK` with `status: 'draft'` & audit entry | `unlockPayrollPeriod` in `hr-payroll.service.ts` (requires non-empty `reason` & zero paid rows) |
-| Execute batch payout via Bank or Cash (`SCR-HRM-05F/G/K/N`) | `POST /api/hr/payroll/periods/{periodKey}/payouts` | Body: `{ employeeIds: string[], method: 'bank_transfer' \| 'cash', transactionRef?: string, payoutDate: string, note?: string, attachmentUrl?: string }` | `200 OK` with updated `PayrollPeriodSummary` (`partially_paid` or `settled`) | `executeBatchPayout` in `hr-payroll.service.ts` (updates selected rows, generates `PC-*` for cash, updates KPI) |
-| Send payslips via Zalo OA (`SCR-HRM-05H/L`) | `POST /api/hr/payroll/periods/{periodKey}/send-zalo` | Body: `{ employeeIds: string[] }` (Admin only, non-draft) | `200 OK` with per-row `zaloStatus` updates | `sendPayrollZaloPayslips` in `hr-payroll.service.ts` (marks recipients `sent` in local store) |
-| Get income/deduction breakdown & cash variance report (`SCR-HRM-05I/O`) | `GET /api/hr/payroll/periods/{periodKey}/employees/{employeeId}/breakdown` | Path: `periodKey`, `employeeId` | `{ bonusItems, allowanceItems, deductionItems, cashVarianceReport }` | Payroll breakdown API response consumed by the payroll detail drawer |
-| Create/approve next-period adjustment (`SCR-HRM-05J`) | `POST /api/hr/payroll/adjustments` | Body: `{ sourcePayrollCode, sourcePeriodKey, employeeId, targetPeriodKey, category, adjustmentType, amount, referenceCode?, reason, attachmentUrl?, mode: 'draft' \| 'approved' }` | `201 Created` with `NextPeriodAdjustmentRecord` (`ADJ-*`) | `createNextPeriodAdjustment` in `hr-payroll.service.ts` (stores `ADJ-*` record in memory) |
+| List available payroll periods (`SCR-HRM-05`) | `GET /api/hr/payroll/periods` | None | `PayrollPeriodListItemDto[]` (`periodKey`, `payrollCode`, `status`, `exists`, `employeeCount`, `totalNetPay`, `paidAmount`) | `listPayrollPeriods` in `hr-payroll.service.ts` |
+| Get payroll period summary & rows (`SCR-HRM-05A/B/C`) | `GET /api/hr/payroll/periods/{periodKey}` | Query: `search?`, `status?: PayrollPeriodStatus`, `payoutFilter?: paid \| unpaid \| partial`, `page?`, `pageSize?` | `PayrollPeriodDetailDto` (`kpi`, `rows`, `batches`, `history`, `pendingAdjustments`) | `listPayrollPeriod` in `hr-payroll.service.ts` |
+| Initialize draft payroll from work records (`SCR-HRM-05B`) | `POST /api/hr/payroll/periods/{periodKey}/initialize` | Path: `periodKey` (`MM/YYYY` or `YYYY-MM`; draft only) | `200 OK` with `PayrollPeriodDetailDto` | `initializePayrollFromAttendance` in `hr-payroll.service.ts` |
+| Manual draft adjustment (`SCR-HRM-05B`) | `PATCH /api/hr/payroll/periods/{periodKey}/employees/{employeeId}` | Body: `PatchPayrollEmployeeRequest` (`bonus`, `allowance`, `deduction`, `note?`) | `200 OK` with `PayrollPeriodDetailDto` | `adjustDraftPayrollEmployee` in `hr-payroll.service.ts` |
+| Approve & lock payroll (`SCR-HRM-05B -> 05C`) | `POST /api/hr/payroll/periods/{periodKey}/approve` | Path: `periodKey` | `200 OK` with `PayrollPeriodDetailDto` (`APPROVED_UNPAID`) | `approveAndLockPayroll` in `hr-payroll.service.ts` |
+| Unlock unpaid payroll (`SCR-HRM-05E/M`) | `POST /api/hr/payroll/periods/{periodKey}/unlock` | Body: `UnlockPayrollRequest` (`reason`; returns `409` if any entry is `PAID`) | `200 OK` with `PayrollPeriodDetailDto` (`DRAFT`) | `unlockPayrollPeriod` in `hr-payroll.service.ts` |
+| Execute batch payout via Bank or Cash (`SCR-HRM-05F/G/K/N`) | `POST /api/hr/payroll/periods/{periodKey}/payouts` | Body: `BatchPayoutRequest` (`employeeIds`, `method: BANK_TRANSFER \| CASH`, `transactionRef?`, `payoutDate`, `note?`, `proofUpload?`) | `200 OK` with `PayrollPeriodDetailDto` (`PARTIALLY_PAID` or `SETTLED`) | `executeBatchPayout` in `hr-payroll.service.ts` |
+| Send payslips via Zalo outbox (`SCR-HRM-05H/L`) | `POST /api/hr/payroll/periods/{periodKey}/send-zalo` | Body: `SendPayrollZaloRequest` (`employeeIds?`) | `200 OK` with `SendPayrollZaloResultDto` | `sendPayrollZaloPayslips` in `hr-payroll.service.ts` |
+| Get breakdown & cash variances (`SCR-HRM-05I/O`) | `GET /api/hr/payroll/periods/{periodKey}/employees/{employeeId}/breakdown` | Path: `periodKey`, `employeeId` | `PayrollBreakdownDto` (`entryId`, `employeeId`, `bonusItems`, `allowanceItems`, `deductionItems`, `cashVariances`) | `getPayrollBreakdown` in `hr-payroll.service.ts` |
+| List next-period adjustments (`SCR-HRM-05J`) | `GET /api/hr/payroll/adjustments` | Query: `periodKey?: string` | `PayrollAdjustmentDto[]` | `listNextPeriodAdjustments` in `hr-payroll.service.ts` |
+| Create/approve next-period adjustment (`SCR-HRM-05J`) | `POST /api/hr/payroll/adjustments` | Body: `CreatePayrollAdjustmentRequest` (`employeeId`, `sourcePeriodKey?`, `sourceVoucherRef?`, `targetPeriodKey`, `category`, `adjustmentType: ADD_NEXT_PERIOD \| DEDUCT_NEXT_PERIOD`, `amount`, `reason`, `mode: DRAFT \| APPROVED`, `referenceCode?`, `proofUpload?`) | `201 Created` with `PayrollAdjustmentDto` | `createNextPeriodAdjustment` in `hr-payroll.service.ts` |
 
-## 5. Missing Backend Endpoints for SCR-HRM-06 (Phiếu lương cá nhân & Đối chiếu)
+## 5. Implemented Endpoints for SCR-HRM-06 (Payslips & Disputes)
 
-| Action / Screen | Suggested Method & Route | Query / Body Schema | Expected Response DTO | Frontend Caller & Current Fallback |
+`HrPayslipsController` enforces strict `SELF` scope on `/me` and `disputes` via JWT `Sub`, restricts `{employeeId}`, `respond`, and `resend-zalo` to `ADMIN`, and enforces maker-checker on dispute responses.
+
+| Action / Screen | Method & Route | Query / Body Schema | Response DTO | Frontend Caller |
 | :--- | :--- | :--- | :--- | :--- |
-| Get personal or employee payslip detail (`SCR-HRM-06A/B/C`) | `GET /api/hr/payslips/{employeeId}` | Query: `periodKey?: string` | `PayslipDetailDto` (earnings, deductions, `availablePeriods`, `attendanceDays`, `overtimeEntries`, `advanceVoucher`, `disputes`) | `getPayslipDetail` in `hr-payroll.service.ts` (returns Figma `06A`/`06B`/`06C` mock data) |
-| Submit payslip reconciliation dispute (`SCR-HRM-06A/D`) | `POST /api/hr/payslips/{payslipCode}/disputes` | Body: `{ category: 'base_salary' \| 'overtime' \| 'bonus' \| 'allowance' \| 'deduction', content: string, attachmentUrl?: string }` | `201 Created` with `PayslipDisputeRecord` (`status: 'pending_response'`) | `createPayslipDispute` in `hr-payroll.service.ts` (prepends `DC-0926-*` record in memory) |
-| Resend single employee payslip via Zalo (`SCR-HRM-06C/L/M`) | `POST /api/hr/payslips/{payslipCode}/resend-zalo` | Path: `payslipCode` (Admin only) | `200 OK` with `{ sentAt: string, status: 'sent' }` | `resendSinglePayslipZalo` in `hr-payroll.service.ts` (updates row `zaloStatus` & timestamp) |
-
-## 6. Wave B implemented routes
-
-The following routes are implemented by `HrPayrollController` and `HrPayslipsController` with typed DTOs, PostgreSQL persistence, strict self scope, and Admin maker-checker authorization:
-
-- `GET /api/hr/payroll/periods`
-- `GET /api/hr/payroll/periods/{periodKey}`
-- `POST /api/hr/payroll/periods/{periodKey}/initialize`
-- `PATCH /api/hr/payroll/periods/{periodKey}/employees/{employeeId}`
-- `POST /api/hr/payroll/periods/{periodKey}/approve`
-- `POST /api/hr/payroll/periods/{periodKey}/unlock`
-- `POST /api/hr/payroll/periods/{periodKey}/payouts`
-- `POST /api/hr/payroll/periods/{periodKey}/send-zalo`
-- `GET /api/hr/payroll/periods/{periodKey}/employees/{employeeId}/breakdown`
-- `GET /api/hr/payroll/adjustments`
-- `POST /api/hr/payroll/adjustments`
-- `GET /api/hr/payslips/me`
-- `GET /api/hr/payslips/{employeeId}`
-- `POST /api/hr/payslips/{entryId}/disputes`
-- `POST /api/hr/payslips/disputes/{disputeId}/respond`
-- `POST /api/hr/payslips/{entryId}/resend-zalo`
+| Get personal payslip (`SCR-HRM-06A/B`) | `GET /api/hr/payslips/me` | Query: `periodKey?: string` (`SELF` via JWT `Sub`) | `PayslipDetailDto` (`hasPayslip`, `entryId`, `availablePeriods`, `attendanceDays`, `overtimeEntries`, `advanceVouchers`, `disputes`) | `getMyPayslipDetail` in `hr-payroll.service.ts` |
+| Get employee payslip (`SCR-HRM-06C`) | `GET /api/hr/payslips/{employeeId}` | Path: `employeeId: uuid`, Query: `periodKey?: string` (`ADMIN` only) | `PayslipDetailDto` | `getEmployeePayslipDetail` in `hr-payroll.service.ts` |
+| Submit payslip reconciliation dispute (`SCR-HRM-06A/D`) | `POST /api/hr/payslips/{entryId}/disputes` | Path: `entryId: uuid`, Body: `CreatePayslipDisputeRequest` (`category: BASE_SALARY \| OVERTIME \| BONUS \| ALLOWANCE \| DEDUCTION`, `content`, `proofUpload?`) | `201 Created` with `PayslipDisputeDto` (`PENDING_RESPONSE`) | `createPayslipDispute` in `hr-payroll.service.ts` |
+| Respond to payslip dispute (`SCR-HRM-06C`) | `POST /api/hr/payslips/disputes/{disputeId}/respond` | Path: `disputeId: uuid`, Body: `RespondPayslipDisputeRequest` (`status`, `adminResponse`, `calculationNote?`, `adjustmentNote?`, `adjustmentAmount?`, `adjustmentType?`) (`ADMIN`, maker-checker) | `200 OK` with `PayslipDisputeDto` | `respondPayslipDispute` in `hr-payroll.service.ts` |
+| Resend single employee payslip via Zalo (`SCR-HRM-06C/L/M`) | `POST /api/hr/payslips/{entryId}/resend-zalo` | Path: `entryId: uuid` (`ADMIN` only) | `200 OK` with `ZaloSendResultDto` | `resendSinglePayslipZalo` in `hr-payroll.service.ts` |

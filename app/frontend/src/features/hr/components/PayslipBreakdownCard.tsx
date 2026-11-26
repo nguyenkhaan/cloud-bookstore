@@ -132,7 +132,7 @@ export function PayslipBreakdownCard({
                 Trích nộp bắt buộc
               </td>
               <td className="px-3 py-3.5 text-slate-600">
-                <p>BHXH / BHYT / BHTN: 0đ</p>
+                <p>BHXH / BHYT / BHTN: {formatVnd(payslip.mandatoryContribution)}</p>
                 <p className="mt-0.5 text-[11px] text-slate-500">
                   {payslip.mandatoryContributionNote}
                 </p>

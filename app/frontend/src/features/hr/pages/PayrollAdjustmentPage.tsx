@@ -2,6 +2,7 @@ import { useId, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { uploadImage } from '@/features/uploads/upload.service'
+import type { CloudinaryUploadResultRequest } from '@/features/uploads/upload.type'
 import { Paperclip } from 'lucide-react'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
@@ -79,6 +80,7 @@ export default function PayrollAdjustmentPage() {
   const [referenceCode, setReferenceCode] = useState('')
   const [reason, setReason] = useState('')
   const [attachmentName, setAttachmentName] = useState('')
+  const [proofUpload, setProofUpload] = useState<CloudinaryUploadResultRequest | undefined>(undefined)
   const [isUploading, setIsUploading] = useState(false)
   const [reasonError, setReasonError] = useState<string | null>(null)
   const [amountError, setAmountError] = useState<string | null>(null)
@@ -149,6 +151,7 @@ export default function PayrollAdjustmentPage() {
           trimmedReason ||
           'Lưu bản nháp điều chỉnh bù trừ kỳ sau.',
         attachmentName: attachmentName || undefined,
+        proofUpload,
         mode,
       })
 
@@ -392,6 +395,7 @@ export default function PayrollAdjustmentPage() {
                     </span>
                   </button>
                   <input
+                    accept="image/jpeg,image/png,image/webp"
                     className="hidden"
                     disabled={isUploading}
                     onChange={async (event) => {
@@ -399,7 +403,8 @@ export default function PayrollAdjustmentPage() {
                       if (!file) return
                       setIsUploading(true)
                       try {
-                        await uploadImage('PAYROLL_PAYOUT_PROOF', file)
+                        const uploaded = await uploadImage('PAYROLL_PAYOUT_PROOF', file)
+                        setProofUpload(uploaded.imageUpload)
                         setAttachmentName(file.name)
                       } catch (error) {
                         notify.error(

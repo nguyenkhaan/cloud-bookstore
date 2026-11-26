@@ -7,6 +7,7 @@ import { SelectBox } from '@/components/common/SelectBox'
 import { notify } from '@/components/common/Toast'
 import { cn } from '@/lib/cn'
 import { uploadImage } from '@/features/uploads/upload.service'
+import type { CloudinaryUploadResultRequest } from '@/features/uploads/upload.type'
 import { useCreatePayslipDisputeMutation } from '../hr-payroll.hook'
 import { PAYSLIP_DISPUTE_CATEGORY_OPTIONS } from '../hr-payroll.utils'
 import type {
@@ -35,6 +36,7 @@ export function PayslipDisputePanel({
   const [content, setContent] = useState('')
   const [attachmentName, setAttachmentName] = useState('')
   const [attachmentSize, setAttachmentSize] = useState('')
+  const [proofUpload, setProofUpload] = useState<CloudinaryUploadResultRequest | undefined>(undefined)
   const [isUploading, setIsUploading] = useState(false)
   const [contentError, setContentError] = useState<string | null>(null)
   const [selectedDispute, setSelectedDispute] =
@@ -60,11 +62,13 @@ export function PayslipDisputePanel({
         content: trimmed,
         attachmentName: attachmentName || undefined,
         attachmentSize: attachmentSize || undefined,
+        proofUpload,
       })
       notify.success(`Đã gửi yêu cầu đối chiếu ${created.disputeCode ?? created.id}.`)
       setContent('')
       setAttachmentName('')
       setAttachmentSize('')
+      setProofUpload(undefined)
     } catch (error) {
       setContentError(
         error instanceof Error
@@ -150,7 +154,8 @@ export function PayslipDisputePanel({
                 if (!file) return
                 setIsUploading(true)
                 try {
-                  await uploadImage('PAYSLIP_DISPUTE_PROOF', file)
+                  const uploaded = await uploadImage('PAYSLIP_DISPUTE_PROOF', file)
+                  setProofUpload(uploaded.imageUpload)
                   setAttachmentName(file.name)
                   setAttachmentSize(`${Math.max(1, Math.round(file.size / 1024))} KB`)
                 } catch (error) { notify.error(error instanceof Error ? error.message : 'Không thể tải minh chứng.') }

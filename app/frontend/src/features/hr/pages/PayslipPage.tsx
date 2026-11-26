@@ -52,7 +52,7 @@ export default function PayslipPage() {
     <MainLayout
       actionButton={
         hasPayslip ? (
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5 print:hidden">
             <Button
               className="min-h-[44px]"
               onClick={() => window.print()}
@@ -139,14 +139,14 @@ export default function PayslipPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-              <div className="min-w-0 lg:col-span-8">
+              <div className="min-w-0 lg:col-span-8 print:col-span-12">
                 <PayslipBreakdownCard
                   onOpenDrawer={(type) => setDrawerType(type)}
                   payslip={payslip}
                 />
               </div>
 
-              <div className="min-w-0 space-y-6 lg:col-span-4">
+              <div className="min-w-0 space-y-6 lg:col-span-4 print:hidden">
                 <Card padding="lg" title="Kỳ lương">
                   <SelectBox
                     label="Tháng / Năm"

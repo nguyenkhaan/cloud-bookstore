@@ -20,7 +20,9 @@ import type {
   NextPeriodAdjustmentRecord,
   PayrollAuditHistoryItem,
   PayrollBatchPayoutRecord,
+  PayrollBreakdownData,
   PayrollBreakdownLine,
+  PayrollCashVarianceItem,
   PayrollEmployeeRow,
   PayrollPeriodListItem,
   PayrollPeriodStatus,
@@ -483,6 +485,34 @@ export function mapPayslipDetail(raw: unknown): PayslipDetailDto {
   }
 }
 
+export function mapPayrollBreakdown(raw: unknown): PayrollBreakdownData {
+  const data = (raw ?? {}) as RawRecord
+  const rawVariances = Array.isArray(data.cashVariances) ? data.cashVariances : []
+  const cashVariances: PayrollCashVarianceItem[] = rawVariances.map((rawVar) => {
+    const v = (rawVar ?? {}) as RawRecord
+    return {
+      cashSessionId: String(v.cashSessionId ?? ''),
+      voucherCode: String(v.voucherCode ?? ''),
+      openedAt: v.openedAt ? formatVietnamDateTime(String(v.openedAt)) : '-',
+      closedAt: v.closedAt ? formatVietnamDateTime(String(v.closedAt)) : undefined,
+      expectedAmount: v.expectedAmount != null ? Number(v.expectedAmount) : undefined,
+      countedAmount: v.countedAmount != null ? Number(v.countedAmount) : undefined,
+      difference: Number(v.difference ?? 0),
+      varianceNote: v.varianceNote ? String(v.varianceNote) : undefined,
+      approverName: v.approverName ? String(v.approverName) : undefined,
+    }
+  })
+
+  return {
+    entryId: String(data.entryId ?? ''),
+    employeeId: String(data.employeeId ?? ''),
+    bonusItems: mapLines(data.bonusItems),
+    allowanceItems: mapLines(data.allowanceItems),
+    deductionItems: mapLines(data.deductionItems),
+    cashVariances,
+  }
+}
+
 export async function listPayrollPeriods(): Promise<PayrollPeriodListItem[]> {
   const { data } = await privateClient.get<unknown[]>('/hr/payroll/periods')
   return Array.isArray(data) ? data.map(mapPayrollPeriodListItem) : []
@@ -525,12 +555,15 @@ export async function unlockPayrollPeriod(periodKey: string, reason: string, _ac
 }
 
 export async function executeBatchPayout(input: BatchPayoutInput): Promise<PayrollPeriodSummary> {
+  const transactionRef =
+    input.method === 'cash' ? undefined : input.transactionRef.trim() || undefined
   const { data } = await privateClient.post<unknown>(`/hr/payroll/periods/${encodeURIComponent(input.periodKey)}/payouts`, {
     employeeIds: input.employeeIds,
     method: input.method.toUpperCase(),
-    transactionRef: input.transactionRef || undefined,
+    transactionRef,
     payoutDate: toIsoDateOnly(input.payoutDate),
     note: input.note,
+    proofUpload: input.proofUpload ?? undefined,
   })
   return mapPayrollPeriodDetail(data)
 }
@@ -557,13 +590,14 @@ export async function createNextPeriodAdjustment(input: CreateNextAdjustmentInpu
     referenceCode: input.referenceCode || undefined,
     reason: input.reason,
     mode: input.mode.toUpperCase(),
+    proofUpload: input.proofUpload ?? undefined,
   })
   return mapPayrollAdjustment(data)
 }
 
-export async function getPayrollBreakdown(periodKey: string, employeeId: string): Promise<unknown> {
-  const { data } = await privateClient.get(`/hr/payroll/periods/${encodeURIComponent(periodKey)}/employees/${employeeId}/breakdown`)
-  return data
+export async function getPayrollBreakdown(periodKey: string, employeeId: string): Promise<PayrollBreakdownData> {
+  const { data } = await privateClient.get<unknown>(`/hr/payroll/periods/${encodeURIComponent(periodKey)}/employees/${employeeId}/breakdown`)
+  return mapPayrollBreakdown(data)
 }
 
 export async function getMyPayslipDetail(periodKey?: string): Promise<PayslipDetailDto> {
@@ -589,6 +623,7 @@ export async function createPayslipDispute(input: CreatePayslipDisputeInput): Pr
   const { data } = await privateClient.post<unknown>(`/hr/payslips/${targetEntryId}/disputes`, {
     category: input.category.toUpperCase(),
     content: input.content,
+    proofUpload: input.proofUpload ?? undefined,
   })
   return mapPayslipDispute(data)
 }
