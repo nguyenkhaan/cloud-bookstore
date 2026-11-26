@@ -103,5 +103,9 @@ export function useRespondPayslipDisputeMutation() {
 
 export function useResendSinglePayslipZaloMutation() {
   const queryClient = useQueryClient()
-  return useMutation({ mutationFn: ({ employeeId, periodKey }: { employeeId: string; periodKey: string }) => resendSinglePayslipZalo(employeeId, periodKey), onSuccess: invalidate(queryClient) })
+  return useMutation({
+    mutationFn: ({ entryId, employeeId, periodKey }: { entryId?: string; employeeId: string; periodKey: string }) =>
+      resendSinglePayslipZalo(entryId || employeeId, periodKey),
+    onSuccess: invalidate(queryClient),
+  })
 }

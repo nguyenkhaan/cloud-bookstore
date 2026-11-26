@@ -43,6 +43,7 @@ export interface CashVarianceReport {
 
 export interface PayrollEmployeeRow {
   id: string
+  entryId?: string
   employeeCode: string
   fullName: string
   roleLabel: string
@@ -113,12 +114,24 @@ export interface PayrollPeriodRecord {
   history: PayrollAuditHistoryItem[]
 }
 
+export interface PayrollPeriodListItem {
+  periodKey: string
+  payrollCode: string
+  periodRangeLabel: string
+  status: PayrollPeriodStatus
+  exists: boolean
+  employeeCount: number
+  totalNetPay: number
+  paidAmount: number
+}
+
 export interface PayrollPeriodSummary {
   periodKey: string
   payrollCode: string
   periodRangeLabel: string
   attendanceSourceCode: string
   status: PayrollPeriodStatus
+  exists?: boolean
   approvedDate?: string
   approvedAt?: string
   approvedBy?: string
@@ -141,6 +154,7 @@ export interface PayrollPeriodSummary {
   paidRowsCount: number
   batches: PayrollBatchPayoutRecord[]
   history: PayrollAuditHistoryItem[]
+  pendingAdjustments?: NextPeriodAdjustmentRecord[]
 }
 
 export interface ListPayrollParams {
@@ -231,12 +245,16 @@ export interface PayslipAdvanceVoucher {
 
 export interface PayslipDisputeRecord {
   id: string
+  disputeCode?: string
   payslipCode: string
+  employeeId?: string
+  employeeName?: string
   category: PayslipDisputeCategory
   categoryLabel: string
   status: PayslipDisputeStatus
   statusLabel: string
   content: string
+  proofUrl?: string
   attachmentName?: string
   attachmentSize?: string
   submittedAt: string
@@ -246,6 +264,8 @@ export interface PayslipDisputeRecord {
   adminResponse?: string
   calculationNote?: string
   adjustmentNote?: string
+  linkedAdjustmentCode?: string
+  ownedByActor?: boolean
 }
 
 export interface PayslipPeriodOption {
@@ -255,6 +275,8 @@ export interface PayslipPeriodOption {
 }
 
 export interface PayslipDetailDto {
+  hasPayslip: boolean
+  entryId?: string | null
   payslipCode: string
   periodKey: string
   periodRange: string
@@ -298,11 +320,12 @@ export interface PayslipDetailDto {
   availablePeriods: PayslipPeriodOption[]
   attendanceDays: PayslipAttendanceDay[]
   overtimeEntries: PayslipOvertimeEntry[]
-  advanceVoucher: PayslipAdvanceVoucher
+  advanceVoucher?: PayslipAdvanceVoucher
   disputes: PayslipDisputeRecord[]
 }
 
 export interface CreatePayslipDisputeInput {
+  entryId?: string
   employeeId: string
   periodKey: string
   category: PayslipDisputeCategory

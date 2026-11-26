@@ -23,13 +23,29 @@ public static partial class PayrollHelper
     [GeneratedRegex(@"^(0[1-9]|1[0-2])/(20\d{2})$")]
     private static partial Regex PeriodKeyRegex();
 
+    [GeneratedRegex(@"^(20\d{2})-(0[1-9]|1[0-2])$")]
+    private static partial Regex IsoPeriodKeyRegex();
+
     public static (int Year, int Month, string Key) ParsePeriodKey(string? periodKey)
     {
-        var trimmed = periodKey?.Trim() ?? string.Empty;
-        var match = PeriodKeyRegex().Match(trimmed);
-        if (!match.Success) throw new BadRequestException("Kỳ lương phải có định dạng MM/YYYY.");
-        return (int.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture),
-            int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture), trimmed);
+        var decoded = Uri.UnescapeDataString(periodKey ?? string.Empty).Trim();
+        var match = PeriodKeyRegex().Match(decoded);
+        if (match.Success)
+        {
+            var year = int.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture);
+            var month = int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
+            return (year, month, BuildPeriodKey(year, month));
+        }
+
+        var isoMatch = IsoPeriodKeyRegex().Match(decoded);
+        if (isoMatch.Success)
+        {
+            var year = int.Parse(isoMatch.Groups[1].Value, CultureInfo.InvariantCulture);
+            var month = int.Parse(isoMatch.Groups[2].Value, CultureInfo.InvariantCulture);
+            return (year, month, BuildPeriodKey(year, month));
+        }
+
+        throw new BadRequestException("Kỳ lương phải có định dạng MM/YYYY.");
     }
 
     public static string BuildPeriodKey(int year, int month) => $"{month:00}/{year}";

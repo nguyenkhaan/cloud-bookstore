@@ -44,7 +44,7 @@ export function PayslipBreakdownCard({
             )}
           >
             {isPaid
-              ? `Đã thanh toán · ${payslip.payoutDate ?? '03/10/2026'}`
+              ? `Đã thanh toán${payslip.payoutDate ? ` · ${payslip.payoutDate}` : ''}`
               : 'Đã duyệt · Chờ thanh toán'}
           </span>
           <p className="mt-2 text-xs text-slate-500">
@@ -163,7 +163,9 @@ export function PayslipBreakdownCard({
                   onClick={() => onOpenDrawer('advance')}
                   type="button"
                 >
-                  Tạm ứng {payslip.advanceVoucherCode} · Xem chứng từ
+                  {payslip.advanceVoucherCode
+                    ? `Tạm ứng ${payslip.advanceVoucherCode} · Xem chứng từ`
+                    : 'Xem chứng từ tạm ứng'}
                 </button>
               </td>
               <td className="px-3 py-3.5 text-right font-semibold text-slate-900">
@@ -216,19 +218,21 @@ export function PayslipBreakdownCard({
         {isPaid ? (
           <>
             <p>
-              Đã chuyển khoản {formatVnd(payslip.netPay)} · {payslip.bankAccount}
+              Đã chi trả {formatVnd(payslip.netPay)}
+              {payslip.bankAccount ? ` · ${payslip.bankAccount}` : ''}
             </p>
             <p className="mt-0.5">
-              {payslip.payoutDate ?? '03/10/2026'} ·{' '}
-              {payslip.transactionRef ?? 'BANK-PAY-20261003-001'}
+              {payslip.payoutDate ?? '-'}
+              {payslip.transactionRef ? ` · ${payslip.transactionRef}` : ''}
             </p>
           </>
         ) : (
           <>
             <p>Đã duyệt · Chờ thanh toán</p>
             <p className="mt-0.5">
-              Dự kiến chi trả ngày {payslip.expectedPayoutDate ?? '03/11/2026'}{' '}
-              · {payslip.bankAccount}
+              {payslip.bankAccount
+                ? `Tài khoản nhận lương: ${payslip.bankAccount}`
+                : 'Chờ Admin xác nhận đợt chi trả.'}
             </p>
           </>
         )}

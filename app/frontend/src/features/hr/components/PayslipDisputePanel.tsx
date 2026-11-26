@@ -15,12 +15,14 @@ import type {
 } from '../hr-payroll.type'
 
 export interface PayslipDisputePanelProps {
+  entryId?: string
   employeeId: string
   periodKey: string
   disputes: PayslipDisputeRecord[]
 }
 
 export function PayslipDisputePanel({
+  entryId,
   employeeId,
   periodKey,
   disputes,
@@ -51,6 +53,7 @@ export function PayslipDisputePanel({
 
     try {
       const created = await createDisputeMutation.mutateAsync({
+        entryId,
         employeeId,
         periodKey,
         category,
@@ -58,7 +61,7 @@ export function PayslipDisputePanel({
         attachmentName: attachmentName || undefined,
         attachmentSize: attachmentSize || undefined,
       })
-      notify.success(`Đã gửi yêu cầu đối chiếu ${created.id}.`)
+      notify.success(`Đã gửi yêu cầu đối chiếu ${created.disputeCode ?? created.id}.`)
       setContent('')
       setAttachmentName('')
       setAttachmentSize('')
@@ -186,7 +189,7 @@ export function PayslipDisputePanel({
                   key={dispute.id}
                 >
                   <p className="font-semibold text-slate-900">
-                    {dispute.id} · {dispute.categoryLabel}
+                    {dispute.disputeCode ?? dispute.id} · {dispute.categoryLabel}
                   </p>
                   <p
                     className={cn(
@@ -265,7 +268,7 @@ export function PayslipDisputeDetailModal({
               Chi tiết phản hồi đối chiếu
             </h2>
             <p className="mt-0.5 text-xs text-slate-500">
-              {dispute.id} · {dispute.categoryLabel} · {dispute.payslipCode}
+              {dispute.disputeCode ?? dispute.id} · {dispute.categoryLabel} · {dispute.payslipCode}
             </p>
           </div>
           <button

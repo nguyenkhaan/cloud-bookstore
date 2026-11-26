@@ -72,3 +72,47 @@ export function formatVietnamDate(value?: string | Date): string {
   if (Number.isNaN(date.getTime())) return '-'
   return new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', dateStyle: 'short' }).format(date)
 }
+
+export function formatVietnamTime(value?: string | Date): string {
+  if (!value) return '-'
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) return '-'
+  return new Intl.DateTimeFormat('vi-VN', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(date)
+}
+
+export function formatIsoDateOnly(value?: string | null): string {
+  if (!value) return '-'
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim())
+  if (match) return `${match[3]}/${match[2]}/${match[1]}`
+  return formatVietnamDate(value)
+}
+
+export function toIsoDateOnly(value: string): string {
+  const trimmed = value.trim()
+  const vnMatch = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(trimmed)
+  if (vnMatch) return `${vnMatch[3]}-${vnMatch[2]}-${vnMatch[1]}`
+  return trimmed
+}
+
+export function getNextPeriodKeys(sourcePeriodKey: string, count = 3): { value: string; label: string }[] {
+  const match = /^(\d{2})\/(\d{4})$/.exec(sourcePeriodKey.trim())
+  const now = new Date()
+  let month = match ? Number(match[1]) : now.getMonth() + 1
+  let year = match ? Number(match[2]) : now.getFullYear()
+  const options: { value: string; label: string }[] = []
+  for (let i = 0; i < count; i += 1) {
+    month += 1
+    if (month > 12) {
+      month = 1
+      year += 1
+    }
+    const key = `${String(month).padStart(2, '0')}/${year}`
+    options.push({ value: key, label: `Kỳ ${key}` })
+  }
+  return options
+}

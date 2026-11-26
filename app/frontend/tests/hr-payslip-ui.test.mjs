@@ -33,7 +33,7 @@ after(async () => {
   await server?.close()
 })
 
-test('SCR-HRM-06 routes, components, and API hook wiring exist without inline MOCK_PAYSLIP', () => {
+test('SCR-HRM-06 routes, empty state, labels, and API hook wiring exist without demo placeholders', () => {
   const requiredFiles = [
     ['features', 'hr', 'components', 'PayslipBreakdownCard.tsx'],
     ['features', 'hr', 'components', 'PayslipDisputePanel.tsx'],
@@ -67,7 +67,27 @@ test('SCR-HRM-06 routes, components, and API hook wiring exist without inline MO
   assert.doesNotMatch(payslipPageSource, /MOCK_PAYSLIP/)
   assert.match(payslipPageSource, /useMyPayslipDetailQuery/)
   assert.match(payslipPageSource, /useEmployeePayslipDetailQuery/)
+  assert.match(payslipPageSource, /hrm06-empty-state/)
   assert.match(payslipPageSource, /window\.print\s*\(/)
+
+  const breakdownSource = readFileSync(
+    src('features', 'hr', 'components', 'PayslipBreakdownCard.tsx'),
+    'utf8',
+  )
+  assert.doesNotMatch(breakdownSource, /03\/11\/2026|BANK-PAY-20261003-001/)
+
+  const drawerSource = readFileSync(
+    src('features', 'hr', 'components', 'PayslipSourceDrawer.tsx'),
+    'utf8',
+  )
+  assert.doesNotMatch(drawerSource, /Bảng minh họa|Trần Hoàng Phong|Nguyễn Minh Anh|ADV-0921/)
+
+  const adminPanelSource = readFileSync(
+    src('features', 'hr', 'components', 'PayslipAdminReconcilePanel.tsx'),
+    'utf8',
+  )
+  assert.match(adminPanelSource, /htmlFor=\{responseTextId\}/)
+  assert.match(adminPanelSource, /\{isOwnDispute && \(/)
 
   const disputePanelSource = readFileSync(
     src('features', 'hr', 'components', 'PayslipDisputePanel.tsx'),
@@ -79,59 +99,161 @@ test('SCR-HRM-06 routes, components, and API hook wiring exist without inline MO
   assert.doesNotMatch(disputePanelSource, /Gửi yêu cầu giải thích/)
 })
 
-test('SCR-HRM-06 payslip service calls SELF /me, admin employee endpoint, dispute create/respond, and Zalo resend', async () => {
+test('SCR-HRM-06 payslip service maps live backend PayslipDetailDto fields, drawers, disputes, and empty states accurately', async () => {
   const originalGet = privateClient.get
   const originalPost = privateClient.post
   const calls = []
 
-  const samplePayslip = {
-    payslipCode: 'PAY-202609-NV0002',
-    periodKey: '09/2026',
-    payoutStatus: 'paid',
-    totalIncome: 5480000,
-    totalDeduction: 100000,
-    netPay: 5380000,
-    disputes: [],
+  const backendSettledPayslip = {
+    hasPayslip: true,
+    entryId: 'entry-1',
+    payslipCode: 'PAY-202601-NV0002',
+    periodKey: '01/2026',
+    periodRange: '01/01–31/01/2026',
+    payrollCode: 'PAY-202601',
+    attendanceSourceCode: 'ATT-202601',
+    payrollStatus: 'SETTLED',
+    paid: true,
+    payoutAt: '2026-02-01T03:00:00Z',
+    approvedByName: 'Admin Cloud',
+    approvedAt: '2026-02-01T02:00:00Z',
+    employeeId: 'emp-2',
+    employeeCode: 'NV-0002',
+    employeeName: 'Nhân viên B',
+    employeeRoleLabel: 'Thu ngân',
+    storeName: 'Nhà sách Mây',
+    bankAccount: 'VCB · 123456',
+    transactionRef: 'PAY-202601-001',
+    standardHours: 8,
+    hourlyRate: 25000,
+    baseSalary: 200000,
+    overtimeHours: 1,
+    overtimeAmount: 37500,
+    bonus: 80000,
+    bonusNote: 'Thưởng doanh số',
+    allowance: 0,
+    allowanceNote: '',
+    mandatoryContribution: 0,
+    mandatoryContributionNote: '',
+    taxAmount: 0,
+    deduction: 50000,
+    totalIncome: 317500,
+    totalDeduction: 50000,
+    netPay: 267500,
+    zaloStatus: 'SENT',
+    zaloSentAt: '2026-02-01T04:00:00Z',
+    zaloLinked: true,
+    availablePeriods: [{ periodKey: '01/2026', paid: true }],
+    attendanceDays: [
+      {
+        workDate: '2026-01-09',
+        shiftNo: 1,
+        checkInAt: '2026-01-09T01:00:00Z',
+        checkOutAt: '2026-01-09T10:30:00Z',
+        standardHours: 8,
+        overtimeHours: 0.5,
+      },
+    ],
+    overtimeEntries: [
+      {
+        workDate: '2026-01-09',
+        startAt: '2026-01-09T10:00:00Z',
+        endAt: '2026-01-09T10:30:00Z',
+        hours: 0.5,
+        amount: 18750,
+      },
+    ],
+    advanceVouchers: [
+      {
+        voucherCode: 'ADV-0109',
+        content: 'Tạm ứng tháng 01',
+        amount: 50000,
+        createdAt: '2026-01-15T03:00:00Z',
+      },
+    ],
+    disputes: [
+      {
+        id: 'disp-1',
+        disputeCode: 'DC-202601-0001',
+        payslipCode: 'PAY-202601-NV0002',
+        employeeId: 'emp-2',
+        employeeName: 'Nhân viên B',
+        category: 'BASE_SALARY',
+        status: 'PENDING_RESPONSE',
+        content: 'Đề nghị kiểm tra lại phiếu lương.',
+        submittedAt: '2026-02-02T03:00:00Z',
+        ownedByActor: false,
+      },
+    ],
   }
 
   privateClient.get = async (url, config) => {
     calls.push({ method: 'GET', url, config })
-    return { status: 200, data: samplePayslip }
+    if (config?.params?.periodKey === 'empty') {
+      return { status: 200, data: { hasPayslip: false, entryId: null, availablePeriods: [] } }
+    }
+    return { status: 200, data: backendSettledPayslip }
   }
   privateClient.post = async (url, body) => {
     calls.push({ method: 'POST', url, body })
-    if (url.endsWith('/resend-zalo')) return { status: 200, data: { sentAt: '2026-10-03T05:00:00Z' } }
-    if (url.endsWith('/respond')) return { status: 200, data: { id: 'disp-1', status: 'EXPLAINED' } }
-    return { status: 201, data: { id: 'disp-1', status: 'pending_response' } }
+    if (url.endsWith('/resend-zalo')) return { status: 200, data: { sentAt: '2026-02-01T05:00:00Z' } }
+    if (url.endsWith('/respond')) {
+      return {
+        status: 200,
+        data: { id: 'disp-1', disputeCode: 'DC-202601-0001', category: 'BASE_SALARY', status: 'EXPLAINED', submittedAt: '2026-02-02T03:00:00Z' },
+      }
+    }
+    return {
+      status: 201,
+      data: { id: 'disp-2', disputeCode: 'DC-202601-0002', category: body.category, status: 'PENDING_RESPONSE', submittedAt: '2026-02-03T03:00:00Z' },
+    }
   }
 
   try {
-    const mine = await payrollService.getMyPayslipDetail('09/2026')
-    assert.equal(mine.netPay, 5380000)
+    const empty = await payrollService.getMyPayslipDetail('empty')
+    assert.equal(empty.hasPayslip, false)
+    assert.equal(empty.entryId, null)
 
-    await payrollService.getEmployeePayslipDetail('emp-2', '09/2026')
+    const mine = await payrollService.getMyPayslipDetail('01/2026')
+    assert.equal(mine.hasPayslip, true)
+    assert.equal(mine.payrollStatus, 'settled')
+    assert.equal(mine.payoutStatus, 'paid')
+    assert.equal(mine.zaloStatus, 'sent')
+    assert.equal(mine.approvedBy, 'Admin Cloud')
+    assert.doesNotMatch(mine.approvedAt, /T02:00:00Z/)
+    assert.match(mine.netPayInWords, /267\.500 đồng\./)
+    assert.equal(mine.availablePeriods[0].status, 'paid')
+    assert.equal(mine.availablePeriods[0].statusShortLabel, 'Đã thanh toán')
+    assert.equal(mine.attendanceDays[0].date, '09/01/2026')
+    assert.equal(mine.attendanceDays[0].otHours, 0.5)
+    assert.match(mine.attendanceDays[0].checkInOut, /08:00 - 17:30/)
+    assert.equal(mine.overtimeEntries[0].date, '09/01/2026')
+    assert.equal(mine.advanceVoucherCode, 'ADV-0109')
+    assert.equal(mine.advanceVoucher?.amount, 50000)
+    assert.equal(mine.disputes[0].status, 'pending_response')
+    assert.equal(mine.disputes[0].ownedByActor, false)
+
+    await payrollService.getEmployeePayslipDetail('emp-2', '01/2026')
     const dispute = await payrollService.createPayslipDispute({
-      employeeId: 'entry-2',
-      periodKey: '09/2026',
+      entryId: 'entry-1',
+      employeeId: 'emp-2',
+      periodKey: '01/2026',
       category: 'allowance',
-      content: 'Kiểm tra phụ cấp ca tối ngày 28/09.',
+      content: 'Kiểm tra phụ cấp ca tối.',
     })
     assert.equal(dispute.status, 'pending_response')
+    assert.equal(calls[3].url, '/hr/payslips/entry-1/disputes')
+    assert.equal(calls[3].body.category, 'ALLOWANCE')
 
-    await payrollService.respondPayslipDispute('disp-1', {
+    const responded = await payrollService.respondPayslipDispute('disp-1', {
       status: 'EXPLAINED',
       adminResponse: 'Đã kiểm tra chấm công.',
     })
+    assert.equal(responded.status, 'explained')
 
-    const resend = await payrollService.resendSinglePayslipZalo('entry-2', '09/2026')
+    const resend = await payrollService.resendSinglePayslipZalo('entry-1', '01/2026')
     assert.ok(resend.sentAt)
-
-    assert.equal(calls[0].url, '/hr/payslips/me')
-    assert.equal(calls[0].config.params.periodKey, '09/2026')
-    assert.equal(calls[1].url, '/hr/payslips/emp-2')
-    assert.equal(calls[2].url, '/hr/payslips/entry-2/disputes')
-    assert.equal(calls[3].url, '/hr/payslips/disputes/disp-1/respond')
-    assert.equal(calls[4].url, '/hr/payslips/entry-2/resend-zalo')
+    assert.doesNotMatch(resend.sentAt, /T05:00:00Z/)
   } finally {
     privateClient.get = originalGet
     privateClient.post = originalPost

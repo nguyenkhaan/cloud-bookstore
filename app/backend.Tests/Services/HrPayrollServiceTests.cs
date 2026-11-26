@@ -404,6 +404,21 @@ public sealed class HrPayrollServiceTests
     }
 
     [Fact]
+    public void ParsePeriodKey_decodes_percent_encoded_slash_and_accepts_iso_format()
+    {
+        var canonical = PayrollHelper.ParsePeriodKey("03/2026");
+        var encoded = PayrollHelper.ParsePeriodKey("03%2F2026");
+        var iso = PayrollHelper.ParsePeriodKey("2026-03");
+
+        Assert.Equal((2026, 3, "03/2026"), canonical);
+        Assert.Equal(canonical, encoded);
+        Assert.Equal(canonical, iso);
+
+        Assert.Throws<BadRequestException>(() => PayrollHelper.ParsePeriodKey("13%2F2026"));
+        Assert.Throws<BadRequestException>(() => PayrollHelper.ParsePeriodKey("invalid"));
+    }
+
+    [Fact]
     public void NormalizeToUtc_converts_local_and_unspecified_instants_to_utc()
     {
         var utc = new DateTime(2026, 11, 20, 5, 0, 0, DateTimeKind.Utc);

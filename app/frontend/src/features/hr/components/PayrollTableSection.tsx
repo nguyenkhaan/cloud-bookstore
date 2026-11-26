@@ -20,6 +20,7 @@ import type {
 export interface PayrollTableSectionProps {
   summary: PayrollPeriodSummary
   periodKey: string
+  periodOptions?: { value: string; label: string }[]
   search: string
   statusFilter: PayrollPeriodStatus | ''
   payoutFilter: EmployeePayoutStatus | 'partial' | ''
@@ -45,6 +46,7 @@ const PAGE_SIZE = 10
 export function PayrollTableSection({
   summary,
   periodKey,
+  periodOptions,
   search,
   statusFilter,
   payoutFilter,
@@ -128,7 +130,13 @@ export function PayrollTableSection({
               hideLabel
               label="Kỳ lương"
               onChange={onPeriodChange}
-              options={PAYROLL_PERIOD_OPTIONS}
+              options={
+                periodOptions && periodOptions.length > 0
+                  ? periodOptions
+                  : periodKey
+                    ? [{ value: periodKey, label: periodKey }]
+                    : PAYROLL_PERIOD_OPTIONS
+              }
               searchable={false}
               testId="hrm05-period-select"
               value={periodKey}
@@ -144,10 +152,7 @@ export function PayrollTableSection({
               }
               options={PAYROLL_STATUS_FILTER_OPTIONS}
               searchable={false}
-              value={
-                statusFilter ||
-                (summary.status === 'draft' ? 'draft' : 'approved_unpaid')
-              }
+              value={statusFilter}
             />
           </div>
 

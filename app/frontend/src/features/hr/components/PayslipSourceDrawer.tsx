@@ -31,17 +31,17 @@ export interface PayslipSourceDrawerProps {
 
 export function PayslipSourceDrawer({
   drawerType,
-  employeeName = 'Trần Hoàng Phong',
-  employeeCode = 'NV-0002',
-  attendanceSourceCode = 'ATT-202609',
-  periodRange = '01-30/09/2026',
-  periodKey = '09/2026',
-  payslipCode = 'PAY-202609-NV0002',
-  standardHours = 160,
-  overtimeHours = 4,
-  hourlyRate = 30000,
-  overtimeAmount = 180000,
-  approvedBy = 'Nguyễn Minh Anh',
+  employeeName = '',
+  employeeCode = '',
+  attendanceSourceCode = '',
+  periodRange = '',
+  periodKey = '',
+  payslipCode = '',
+  standardHours = 0,
+  overtimeHours = 0,
+  hourlyRate = 0,
+  overtimeAmount = 0,
+  approvedBy = '',
   attendanceDays = [],
   overtimeEntries = [],
   advanceVoucher,
@@ -65,7 +65,9 @@ export function PayslipSourceDrawer({
   const titleMap: Record<PayslipSourceDrawerType, string> = {
     attendance: 'Bảng kê giờ công từng ngày',
     overtime: 'Chi tiết giờ làm thêm',
-    advance: `Chứng từ tạm ứng ${advanceVoucher?.voucherCode ?? 'ADV-0921'}`,
+    advance: advanceVoucher?.voucherCode
+      ? `Chứng từ tạm ứng ${advanceVoucher.voucherCode}`
+      : 'Chứng từ tạm ứng',
   }
 
   const closeLabelMap: Record<PayslipSourceDrawerType, string> = {
@@ -138,22 +140,30 @@ export function PayslipSourceDrawer({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {attendanceDays.map((day) => (
-                      <tr key={day.date}>
-                        <td className="px-3 py-2 font-semibold text-slate-800">
-                          {day.date}
-                        </td>
-                        <td className="px-3 py-2 text-slate-600">
-                          {day.checkInOut}
-                        </td>
-                        <td className="px-3 py-2 text-slate-700">
-                          {day.standardHours} giờ
-                        </td>
-                        <td className="px-3 py-2 text-slate-700">
-                          {day.otHours} giờ
+                    {attendanceDays.length === 0 ? (
+                      <tr>
+                        <td className="px-3 py-4 text-center text-slate-500" colSpan={4}>
+                          Chưa có dữ liệu chấm công trong kỳ này.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      attendanceDays.map((day, index) => (
+                        <tr key={`${day.date}-${index}`}>
+                          <td className="px-3 py-2 font-semibold text-slate-800">
+                            {day.date}
+                          </td>
+                          <td className="px-3 py-2 text-slate-600">
+                            {day.checkInOut}
+                          </td>
+                          <td className="px-3 py-2 text-slate-700">
+                            {day.standardHours} giờ
+                          </td>
+                          <td className="px-3 py-2 text-slate-700">
+                            {day.otHours} giờ
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -163,8 +173,7 @@ export function PayslipSourceDrawer({
                 được duyệt
               </p>
               <p className="text-xs text-slate-500">
-                Bảng minh họa có nghỉ giữa ca 1 giờ/ngày. Phiếu lương sử dụng số
-                giờ đã được Admin duyệt.
+                Phiếu lương sử dụng số giờ công đã được Admin duyệt từ bảng chấm công.
               </p>
             </>
           )}
@@ -182,22 +191,30 @@ export function PayslipSourceDrawer({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {overtimeEntries.map((entry) => (
-                      <tr key={entry.date}>
-                        <td className="px-3 py-2.5 font-semibold text-slate-800">
-                          {entry.date}
-                        </td>
-                        <td className="px-3 py-2.5 text-slate-600">
-                          {entry.timeRange}
-                        </td>
-                        <td className="px-3 py-2.5 text-slate-700">
-                          {entry.hours} giờ
-                        </td>
-                        <td className="px-3 py-2.5 font-medium text-slate-900">
-                          {formatVnd(entry.amount)}
+                    {overtimeEntries.length === 0 ? (
+                      <tr>
+                        <td className="px-3 py-4 text-center text-slate-500" colSpan={4}>
+                          Không có giờ làm thêm trong kỳ này.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      overtimeEntries.map((entry, index) => (
+                        <tr key={`${entry.date}-${index}`}>
+                          <td className="px-3 py-2.5 font-semibold text-slate-800">
+                            {entry.date}
+                          </td>
+                          <td className="px-3 py-2.5 text-slate-600">
+                            {entry.timeRange}
+                          </td>
+                          <td className="px-3 py-2.5 text-slate-700">
+                            {entry.hours} giờ
+                          </td>
+                          <td className="px-3 py-2.5 font-medium text-slate-900">
+                            {formatVnd(entry.amount)}
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -207,14 +224,15 @@ export function PayslipSourceDrawer({
                 {formatVnd(overtimeAmount)}
               </p>
               <div className="space-y-0.5 text-xs text-slate-600">
-                <p>{approvedBy} · Quản trị viên</p>
+                <p>{approvedBy || 'Admin'} · Quản trị viên</p>
                 <p>Đã đối chiếu và duyệt cùng bảng công {attendanceSourceCode}.</p>
               </div>
             </>
           )}
 
-          {drawerType === 'advance' && advanceVoucher && (
-            <div className="space-y-4">
+          {drawerType === 'advance' && (
+            advanceVoucher ? (
+              <div className="space-y-4">
               <div>
                 <p className="text-[11px] text-slate-500">Nhân viên</p>
                 <p className="mt-1 text-sm font-semibold text-slate-900">
@@ -263,6 +281,11 @@ export function PayslipSourceDrawer({
                 chi lần hai.
               </p>
             </div>
+            ) : (
+              <p className="text-xs text-slate-500">
+                Không có chứng từ tạm ứng phát sinh trong kỳ {periodKey}.
+              </p>
+            )
           )}
         </div>
 

@@ -29,9 +29,10 @@ export default function PayslipPage() {
   const [drawerType, setDrawerType] = useState<PayslipSourceDrawerType | null>(null)
   const payslipQuery = useEmployeePayslipDetailQuery(routeEmployeeId ?? '', periodKey, Boolean(routeEmployeeId))
   const myPayslipQuery = useMyPayslipDetailQuery(periodKey, !routeEmployeeId)
-  const payslip = routeEmployeeId ? payslipQuery.data : myPayslipQuery.data
+  const activeQuery = routeEmployeeId ? payslipQuery : myPayslipQuery
+  const payslip = activeQuery.data
 
-  if (!currentUser || !payslip) return null
+  if (!currentUser) return null
 
   const navigateFromSidebar = (id: string) => {
     const targetPath = workspacePathFor(id)
@@ -39,98 +40,159 @@ export default function PayslipPage() {
   }
 
   const headerUser = currentUser
+  const hasPayslip = Boolean(payslip?.hasPayslip)
 
-  const pageSubtitle = isAdmin
-    ? `Góc nhìn Admin · Đối soát phiếu lương của ${payslip.employeeName}`
-    : `Phiếu lương của bạn · ${payslip.employeeCode} · ${effectiveRoleLabel}`
+  const pageSubtitle = !hasPayslip
+    ? `${currentUser.name} · ${effectiveRoleLabel}`
+    : isAdmin && routeEmployeeId
+      ? `Góc nhìn Admin · Đối soát phiếu lương của ${payslip?.employeeName ?? ''}`
+      : `Phiếu lương của bạn · ${payslip?.employeeCode ?? ''} · ${effectiveRoleLabel}`
 
   return (
     <MainLayout
       actionButton={
-        <div className="flex flex-wrap items-center gap-2.5">
-          <Button
-            className="min-h-[44px]"
-            onClick={() => window.print()}
-            type="button"
-            variant="secondary"
-          >
-            Tải PDF
-          </Button>
-          <Button
-            className="min-h-[44px]"
-            onClick={() => window.print()}
-            type="button"
-            variant="primary"
-          >
-            In phiếu lương
-          </Button>
-        </div>
+        hasPayslip ? (
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Button
+              className="min-h-[44px]"
+              onClick={() => window.print()}
+              type="button"
+              variant="secondary"
+            >
+              Tải PDF
+            </Button>
+            <Button
+              className="min-h-[44px]"
+              onClick={() => window.print()}
+              type="button"
+              variant="primary"
+            >
+              In phiếu lương
+            </Button>
+          </div>
+        ) : undefined
       }
       breadcrumbs={[
         { label: 'Không gian làm việc' },
         { label: 'Nhân sự & tiền lương', to: '/hr' },
-        { label: 'Phiếu lương cá nhân' },
+        { label: routeEmployeeId ? 'Đối soát phiếu lương' : 'Phiếu lương cá nhân' },
       ]}
       currentPath="hr"
       onNavigate={navigateFromSidebar}
       onSignOut={signOut}
       pageSubtitle={pageSubtitle}
-      pageTitle="Phiếu lương cá nhân"
+      pageTitle={routeEmployeeId ? 'Chi tiết phiếu lương' : 'Phiếu lương cá nhân'}
       user={headerUser}
     >
       <div className="space-y-6">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-            <div className="min-w-0 lg:col-span-8">
-              <PayslipBreakdownCard
-                onOpenDrawer={(type) => setDrawerType(type)}
-                payslip={payslip}
-              />
+        {activeQuery.isLoading ? (
+          <Card padding="lg" title="Đang tải phiếu lương">
+            <p className="text-sm text-slate-600">
+              Đang tải thông tin phiếu lương từ hệ thống...
+            </p>
+          </Card>
+        ) : activeQuery.isError ? (
+          <Card padding="lg" title="Không thể tải phiếu lương">
+            <div className="space-y-3">
+              <p className="text-sm text-slate-600">
+                Đã xảy ra lỗi khi tải phiếu lương. Vui lòng thử lại.
+              </p>
+              <Button
+                className="min-h-[44px]"
+                data-testid="hrm06-retry-btn"
+                onClick={() => void activeQuery.refetch()}
+                type="button"
+                variant="primary"
+              >
+                Thử lại
+              </Button>
             </div>
-
-            <div className="min-w-0 space-y-6 lg:col-span-4">
-              <Card padding="lg" title="Kỳ lương">
-                <SelectBox
-                  label="Tháng / Năm"
-                  onChange={setPeriodKey}
-                  options={payslip.availablePeriods.map((item) => ({
-                    value: item.periodKey,
-                    label: item.periodKey,
-                  }))}
-                  searchable={false}
-                  value={periodKey}
-                />
-              </Card>
-
-              {isAdmin ? (
-                <PayslipAdminReconcilePanel payslip={payslip} />
-              ) : (
-                <PayslipDisputePanel
-                  disputes={payslip.disputes}
-                  employeeId={payslip.employeeId}
-                  periodKey={payslip.periodKey}
-                />
+          </Card>
+        ) : !payslip || !payslip.hasPayslip ? (
+          <Card
+            data-testid="hrm06-empty-state"
+            padding="lg"
+            title="Chưa có phiếu lương được công bố"
+          >
+            <div className="space-y-4">
+              <p className="text-sm text-slate-600">
+                {payslip?.employeeName
+                  ? `${payslip.employeeName} hiện chưa có phiếu lương nào đã được Admin duyệt và công bố.`
+                  : 'Bạn hiện chưa có phiếu lương nào đã được Admin duyệt và công bố.'}
+              </p>
+              {payslip && payslip.availablePeriods.length > 0 && (
+                <div className="max-w-xs">
+                  <SelectBox
+                    label="Chọn kỳ lương đã công bố"
+                    onChange={setPeriodKey}
+                    options={payslip.availablePeriods.map((item) => ({
+                      value: item.periodKey,
+                      label: `${item.periodKey} · ${item.statusShortLabel}`,
+                    }))}
+                    searchable={false}
+                    value={periodKey}
+                  />
+                </div>
               )}
             </div>
-        </div>
+          </Card>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+              <div className="min-w-0 lg:col-span-8">
+                <PayslipBreakdownCard
+                  onOpenDrawer={(type) => setDrawerType(type)}
+                  payslip={payslip}
+                />
+              </div>
 
-        <PayslipSourceDrawer
-            advanceVoucher={payslip.advanceVoucher}
-            approvedBy={payslip.approvedBy}
-            attendanceDays={payslip.attendanceDays}
-            attendanceSourceCode={payslip.attendanceSourceCode}
-            drawerType={drawerType}
-            employeeCode={payslip.employeeCode}
-            employeeName={payslip.employeeName}
-            hourlyRate={payslip.hourlyRate}
-            onClose={() => setDrawerType(null)}
-            overtimeAmount={payslip.overtimeAmount}
-            overtimeEntries={payslip.overtimeEntries}
-            overtimeHours={payslip.overtimeHours}
-            payslipCode={payslip.payslipCode}
-            periodKey={payslip.periodKey}
-            periodRange={payslip.periodRange}
-            standardHours={payslip.standardHours}
-        />
+              <div className="min-w-0 space-y-6 lg:col-span-4">
+                <Card padding="lg" title="Kỳ lương">
+                  <SelectBox
+                    label="Tháng / Năm"
+                    onChange={setPeriodKey}
+                    options={payslip.availablePeriods.map((item) => ({
+                      value: item.periodKey,
+                      label: `${item.periodKey} · ${item.statusShortLabel}`,
+                    }))}
+                    searchable={false}
+                    value={periodKey || payslip.periodKey}
+                  />
+                </Card>
+
+                {isAdmin && routeEmployeeId ? (
+                  <PayslipAdminReconcilePanel payslip={payslip} />
+                ) : (
+                  <PayslipDisputePanel
+                    disputes={payslip.disputes}
+                    employeeId={payslip.employeeId}
+                    entryId={payslip.entryId ?? ''}
+                    periodKey={payslip.periodKey}
+                  />
+                )}
+              </div>
+            </div>
+
+            <PayslipSourceDrawer
+              advanceVoucher={payslip.advanceVoucher}
+              approvedBy={payslip.approvedBy}
+              attendanceDays={payslip.attendanceDays}
+              attendanceSourceCode={payslip.attendanceSourceCode}
+              drawerType={drawerType}
+              employeeCode={payslip.employeeCode}
+              employeeName={payslip.employeeName}
+              hourlyRate={payslip.hourlyRate}
+              onClose={() => setDrawerType(null)}
+              overtimeAmount={payslip.overtimeAmount}
+              overtimeEntries={payslip.overtimeEntries}
+              overtimeHours={payslip.overtimeHours}
+              payslipCode={payslip.payslipCode}
+              periodKey={payslip.periodKey}
+              periodRange={payslip.periodRange}
+              standardHours={payslip.standardHours}
+            />
+          </>
+        )}
       </div>
     </MainLayout>
   )
