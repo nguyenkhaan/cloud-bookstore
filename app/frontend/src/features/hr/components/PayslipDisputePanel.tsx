@@ -6,6 +6,7 @@ import { Card } from '@/components/common/Card'
 import { SelectBox } from '@/components/common/SelectBox'
 import { notify } from '@/components/common/Toast'
 import { cn } from '@/lib/cn'
+import { uploadImage } from '@/features/uploads/upload.service'
 import { useCreatePayslipDisputeMutation } from '../hr-payroll.hook'
 import { PAYSLIP_DISPUTE_CATEGORY_OPTIONS } from '../hr-payroll.utils'
 import type {
@@ -32,6 +33,7 @@ export function PayslipDisputePanel({
   const [content, setContent] = useState('')
   const [attachmentName, setAttachmentName] = useState('')
   const [attachmentSize, setAttachmentSize] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
   const [contentError, setContentError] = useState<string | null>(null)
   const [selectedDispute, setSelectedDispute] =
     useState<PayslipDisputeRecord | null>(null)
@@ -140,12 +142,18 @@ export function PayslipDisputePanel({
             <input
               accept="image/jpeg,image/png,.jpg,.jpeg,.png"
               className="hidden"
-              onChange={(event) => {
+              onChange={async (event) => {
                 const file = event.target.files?.[0]
                 if (!file) return
-                setAttachmentName(file.name)
-                setAttachmentSize(`${Math.max(1, Math.round(file.size / 1024))} KB`)
+                setIsUploading(true)
+                try {
+                  await uploadImage('PAYSLIP_DISPUTE_PROOF', file)
+                  setAttachmentName(file.name)
+                  setAttachmentSize(`${Math.max(1, Math.round(file.size / 1024))} KB`)
+                } catch (error) { notify.error(error instanceof Error ? error.message : 'Không thể tải minh chứng.') }
+                finally { setIsUploading(false) }
               }}
+              disabled={isUploading}
               ref={fileInputRef}
               type="file"
             />

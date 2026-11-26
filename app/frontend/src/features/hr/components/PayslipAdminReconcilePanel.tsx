@@ -4,9 +4,8 @@ import { Card } from '@/components/common/Card'
 import { notify } from '@/components/common/Toast'
 import { useResendSinglePayslipZaloMutation, useRespondPayslipDisputeMutation } from '../hr-payroll.hook'
 import { formatVnd } from '../hr-payroll.utils'
-import type { PayslipDetailDto, PayslipDisputeRecord } from '../hr-payroll.type'
+import type { PayslipDetailDto } from '../hr-payroll.type'
 import { PayrollZaloPreviewModal } from './PayrollZaloPreviewModal'
-import { PayslipDisputeDetailModal } from './PayslipDisputePanel'
 
 export interface PayslipAdminReconcilePanelProps {
   payslip: PayslipDetailDto
@@ -16,9 +15,10 @@ export function PayslipAdminReconcilePanel({
   payslip,
 }: PayslipAdminReconcilePanelProps) {
   const [isZaloModalOpen, setIsZaloModalOpen] = useState(false)
-  const [activeDispute, setActiveDispute] =
-    useState<PayslipDisputeRecord | null>(null)
+  const [isResponseOpen, setIsResponseOpen] = useState(false)
   const [lastResentAt, setLastResentAt] = useState<string | null>(null)
+  const [responseStatus, setResponseStatus] = useState<'EXPLAINED' | 'APPROVED_NEXT_PERIOD_ADJUSTMENT'>('EXPLAINED')
+  const [responseText, setResponseText] = useState('')
 
   const resendMutation = useResendSinglePayslipZaloMutation()
   const respondMutation = useRespondPayslipDisputeMutation()
@@ -26,10 +26,8 @@ export function PayslipAdminReconcilePanel({
   const zaloStatusText = lastResentAt
     ? `Đã gửi lại · ${lastResentAt}`
     : payslip.zaloStatus === 'sent'
-      ? `Đã gửi · ${payslip.zaloSentAt ?? '03/10/2026, 09:35'}`
-      : payslip.zaloStatus === 'failed'
-        ? 'Lỗi gửi'
-        : 'Chưa gửi'
+      ? `Đã gửi · ${payslip.zaloSentAt ?? '-'}`
+      : payslip.zaloStatus === 'failed' ? 'Lỗi gửi' : 'Chưa gửi'
 
   return (
     <>
@@ -65,10 +63,7 @@ export function PayslipAdminReconcilePanel({
             className="min-h-[44px] w-full"
             data-testid="hrm06-admin-respond-dispute-btn"
             disabled={payslip.disputes.length === 0 || respondMutation.isPending}
-            onClick={() => {
-              const dispute = payslip.disputes[0]
-              if (dispute) setActiveDispute(dispute)
-            }}
+            onClick={() => setIsResponseOpen(true)}
             type="button"
             variant="secondary"
           >
@@ -137,10 +132,27 @@ export function PayslipAdminReconcilePanel({
         ]}
       />
 
-      <PayslipDisputeDetailModal
-        dispute={activeDispute}
-        onClose={() => setActiveDispute(null)}
-      />
+      {isResponseOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4" role="dialog" aria-modal="true">
+          <form className="w-full max-w-md space-y-3 rounded-xl bg-white p-5" onSubmit={async (event) => {
+            event.preventDefault()
+            const dispute = payslip.disputes[0]
+            if (!dispute || !responseText.trim()) return
+            await respondMutation.mutateAsync({ disputeId: dispute.id, input: { status: responseStatus, adminResponse: responseText.trim() } })
+            setResponseText('')
+            setIsResponseOpen(false)
+          }}>
+            <h2 className="font-semibold">Phản hồi đối chiếu</h2>
+            <select className="w-full rounded border p-2" value={responseStatus} onChange={(event) => setResponseStatus(event.target.value as typeof responseStatus)}>
+              <option value="EXPLAINED">Đã giải trình</option>
+              <option value="APPROVED_NEXT_PERIOD_ADJUSTMENT">Duyệt bù trừ kỳ sau</option>
+            </select>
+            <textarea className="min-h-24 w-full rounded border p-2" required value={responseText} onChange={(event) => setResponseText(event.target.value)} />
+            <div className="flex justify-end gap-2"><Button type="button" variant="secondary" onClick={() => setIsResponseOpen(false)}>Hủy</Button><Button type="submit" variant="primary" disabled={respondMutation.isPending}>Lưu phản hồi</Button></div>
+          </form>
+        </div>
+      )}
+
     </>
   )
 }

@@ -4,6 +4,7 @@ import { Upload, X } from 'lucide-react'
 import { Button } from '@/components/common/Button'
 import { notify } from '@/components/common/Toast'
 import { cn } from '@/lib/cn'
+import { uploadImage } from '@/features/uploads/upload.service'
 import { useBatchPayoutMutation } from '../hr-payroll.hook'
 import { formatVnd } from '../hr-payroll.utils'
 import type { PayrollEmployeeRow, PayoutMethod } from '../hr-payroll.type'
@@ -85,6 +86,7 @@ function PayrollBatchPayoutModalForm({
     `Chi tiền mặt đợt ${nextBatchNumber} cho ${shortNames}.`,
   )
   const [attachmentName, setAttachmentName] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
   const [txError, setTxError] = useState<string | null>(null)
   const [dateError, setDateError] = useState<string | null>(null)
 
@@ -328,10 +330,20 @@ function PayrollBatchPayoutModalForm({
                   <input
                     accept="image/*,.pdf"
                     className="hidden"
-                    onChange={(event) => {
+                    onChange={async (event) => {
                       const file = event.target.files?.[0]
-                      setAttachmentName(file ? file.name : '')
+                      if (!file) return
+                      setIsUploading(true)
+                      try {
+                        await uploadImage('PAYROLL_PAYOUT_PROOF', file)
+                        setAttachmentName(file.name)
+                      } catch (error) {
+                        notify.error(error instanceof Error ? error.message : 'Không thể tải chứng từ.')
+                      } finally {
+                        setIsUploading(false)
+                      }
                     }}
+                    disabled={isUploading}
                     ref={fileInputRef}
                     type="file"
                   />

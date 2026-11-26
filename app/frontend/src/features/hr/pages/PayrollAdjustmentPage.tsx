@@ -1,6 +1,7 @@
 import { useId, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { uploadImage } from '@/features/uploads/upload.service'
 import { Paperclip } from 'lucide-react'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
@@ -61,6 +62,7 @@ export default function PayrollAdjustmentPage() {
   )
   const [reason, setReason] = useState('')
   const [attachmentName, setAttachmentName] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
   const [reasonError, setReasonError] = useState<string | null>(null)
   const [amountError, setAmountError] = useState<string | null>(null)
 
@@ -324,10 +326,15 @@ export default function PayrollAdjustmentPage() {
                   </button>
                   <input
                     className="hidden"
-                    onChange={(event) => {
+                    onChange={async (event) => {
                       const file = event.target.files?.[0]
-                      setAttachmentName(file ? file.name : '')
+                      if (!file) return
+                      setIsUploading(true)
+                      try { await uploadImage('PAYROLL_PAYOUT_PROOF', file); setAttachmentName(file.name) }
+                      catch (error) { notify.error(error instanceof Error ? error.message : 'Không thể tải chứng từ.') }
+                      finally { setIsUploading(false) }
                     }}
+                    disabled={isUploading}
                     ref={fileInputRef}
                     type="file"
                   />

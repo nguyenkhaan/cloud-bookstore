@@ -21,7 +21,7 @@ import {
   useInitializePayrollMutation,
   useSendPayrollZaloMutation,
 } from '../hr-payroll.hook'
-import { PHONG_ADVANCE_VOUCHER_092026, formatVnd } from '../hr-payroll.utils'
+import { formatVnd } from '../hr-payroll.utils'
 import type {
   EmployeePayoutStatus,
   PayrollEmployeeRow,
@@ -460,18 +460,7 @@ export default function PayrollPage() {
             />
 
             <PayslipSourceDrawer
-              advanceVoucher={
-                advanceDrawerRow
-                  ? {
-                      ...PHONG_ADVANCE_VOUCHER_092026,
-                      voucherCode:
-                        advanceDrawerRow.deductionItems[0]?.voucherCode ??
-                        'ADV-0921',
-                      employeeLabel: `${advanceDrawerRow.fullName} · ${advanceDrawerRow.employeeCode}`,
-                      amount: advanceDrawerRow.deduction || 100000,
-                    }
-                  : undefined
-              }
+              advanceVoucher={undefined}
               drawerType={advanceDrawerRow ? 'advance' : null}
               onClose={() => setAdvanceDrawerRow(null)}
               periodRange={summary.periodRangeLabel}
