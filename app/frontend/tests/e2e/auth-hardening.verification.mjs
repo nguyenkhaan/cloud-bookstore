@@ -1,12 +1,19 @@
 import assert from 'node:assert/strict'
+import { createHash, createHmac, randomUUID } from 'node:crypto'
+import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { after, before, test } from 'node:test'
-import { auth, chromium, client, createActiveEmployee, expectStatus, stack } from './auth-fixture.mjs'
+import {
+  auditRows, auth, chromium, client, createActiveEmployee, employee, employeeRow, expectStatus, requireMailLink, stack,
+} from './auth-fixture.mjs'
 
 const profilePath = `${auth}/profile`
 const profileUrl = `${stack.beUrl}${profilePath}`
 const desktop = { width: 1440, height: 900 }
+const tablet = { width: 768, height: 1024 }
 const mobile = { width: 390, height: 844 }
+const verifyJwtSecret = 'verify-only-verify-secret-key-at-least-32-chars'
+const cloudinaryApiSecret = 'verify-secret'
 const picture = {
   name: 'avatar.png',
   mimeType: 'image/png',
@@ -39,6 +46,7 @@ async function signIn(page, testCase) {
 
 async function capture(page, name) {
   if (!process.env.AUTH_SCREENSHOTS_DIR) return
+  mkdirSync(process.env.AUTH_SCREENSHOTS_DIR, { recursive: true })
   await page.waitForLoadState('networkidle')
   await page.evaluate(() => document.fonts.ready)
   await page.screenshot({ path: join(process.env.AUTH_SCREENSHOTS_DIR, `${name}.png`), fullPage: true, animations: 'disabled' })
@@ -182,3 +190,153 @@ test('AC7 mobile primary auth controls have at least a 44 x 44 touch target', as
   await measure('profile-change-password-btn')
   assert.deepEqual(dimensions, [], 'Undersized touch targets')
 })
+
+function formField(body, name) {
+  const match = body.match(new RegExp(`name="${name}"\\r\\n\\r\\n([^\\r\\n]+)`))
+  assert.ok(match, `Missing multipart field ${name}`)
+  return match[1]
+}
+
+test('AC2 expired verification JWT scrubs token, leaves account PENDING_OTP, and recovers via resend', async (testCase) => {
+  const guest = await client(testCase)
+  const staff = employee()
+  expectStatus(await guest.post(`${auth}/register`, { data: staff }), 201)
+  const original = await requireMailLink(staff.email, '/verify-register')
+
+  const [rawHeader, rawPayload, rawSig] = original.token.split('.')
+  const expectedSig = createHmac('sha256', verifyJwtSecret).update(`${rawHeader}.${rawPayload}`).digest('base64url')
+  assert.equal(rawSig, expectedSig, 'Verification JWT signature matches isolated verify secret')
+  const claims = JSON.parse(Buffer.from(rawPayload, 'base64url').toString('utf8'))
+  const pastExp = Math.floor(Date.now() / 1000) - 300
+  const expiredPayload = Buffer.from(JSON.stringify({
+    ...claims,
+    nbf: pastExp - 600,
+    iat: pastExp - 600,
+    exp: pastExp,
+  })).toString('base64url')
+  const expiredSig = createHmac('sha256', verifyJwtSecret).update(`${rawHeader}.${expiredPayload}`).digest('base64url')
+  const expiredToken = `${rawHeader}.${expiredPayload}.${expiredSig}`
+
+  const page = await openPage(testCase)
+  const rejectedVerify = responseFor(page, 'POST', `${auth}/verify`)
+  await page.goto(`/verify-register?token=${encodeURIComponent(expiredToken)}`)
+  const verifyRes = await rejectedVerify
+  assert.ok([400, 401].includes(verifyRes.status()), `Expected 400/401 for expired JWT, got ${verifyRes.status()}`)
+  await page.waitForURL((url) => url.pathname === '/verify-register' && url.search === '')
+  assert.equal(new URL(page.url()).search, '')
+  assert.equal(employeeRow(staff.email).Status, 'PENDING_OTP')
+
+  const emailInput = page.getByRole('textbox', { name: /email/i })
+  await emailInput.fill(staff.email)
+  const resendResponse = responseFor(page, 'POST', `${auth}/verification-resends`)
+  await page.getByRole('button', { name: /gửi lại/i }).click()
+  const resend = await resendResponse
+  assert.ok(resend.ok(), `Resend failed with HTTP ${resend.status()}`)
+
+  const replacement = await requireMailLink(staff.email, '/verify-register', { exclude: [original.id] })
+  const acceptedVerify = responseFor(page, 'POST', `${auth}/verify`)
+  await page.goto(replacement.url)
+  expectStatus(await acceptedVerify, 204)
+  await page.waitForURL((url) => url.pathname === '/verify-register' && url.search === '')
+  await page.getByRole('heading', { name: /xác minh thành công/i }).waitFor()
+  assert.equal(employeeRow(staff.email).Status, 'ACTIVE')
+
+  await page.getByRole('link', { name: /đăng nhập ngay/i }).or(page.getByRole('button', { name: /đăng nhập ngay/i })).click()
+  await page.waitForURL('**/login?activated=1')
+  await page.getByLabel('Email nội bộ', { exact: true }).fill(staff.email)
+  await page.getByLabel('Mật khẩu', { exact: true }).fill(staff.password)
+  await page.getByTestId('auth-login-submit').click()
+  await page.waitForURL('**/dashboard')
+})
+
+test('AC5 /profile signed Cloudinary avatar upload updates Header immediately, persists on reload, and audits', async (testCase) => {
+  const page = await openPage(testCase)
+  const staff = await signIn(page, testCase)
+  const staffRow = employeeRow(staff.email)
+
+  await page.route('https://api.cloudinary.com/**', async (route) => {
+    const body = route.request().postDataBuffer()?.toString('latin1') ?? ''
+    const publicId = formField(body, 'public_id')
+    const version = Number(formField(body, 'timestamp'))
+    const signature = createHash('sha1').update(`public_id=${publicId}&version=${version}${cloudinaryApiSecret}`).digest('hex')
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        public_id: publicId,
+        version,
+        signature,
+        asset_id: `verify-${randomUUID()}`,
+        format: 'png',
+        bytes: picture.buffer.length,
+        secure_url: `https://res.cloudinary.com/verify-cloud/image/upload/v${version}/${publicId}.png`,
+      }),
+    })
+  })
+
+  const profileLoad = responseFor(page, 'GET', profilePath)
+  await page.goto('/profile')
+  expectStatus(await profileLoad, 200)
+  await profileName(page).waitFor()
+
+  const intent = responseFor(page, 'POST', '/api/uploads/signature')
+  const avatarPut = responseFor(page, 'PUT', `${profilePath}/avatar`)
+  await page.locator('main input[type=file]').setInputFiles(picture)
+  expectStatus(await intent, 200)
+  const putRes = await avatarPut
+  expectStatus(putRes, 200)
+  const updatedProfile = await putRes.json()
+  assert.ok(updatedProfile.avatarUrl, 'PUT /api/auth/profile/avatar returns persisted avatarUrl')
+
+  const headerAvatar = page.locator('header img[src]')
+  await headerAvatar.waitFor({ state: 'visible' })
+  assert.equal(await headerAvatar.getAttribute('src'), updatedProfile.avatarUrl)
+
+  const reloadedProfile = responseFor(page, 'GET', profilePath)
+  await page.reload()
+  expectStatus(await reloadedProfile, 200)
+  await headerAvatar.waitFor({ state: 'visible' })
+  assert.equal(await headerAvatar.getAttribute('src'), updatedProfile.avatarUrl)
+  assert.equal(employeeRow(staff.email).AvatarUrl, updatedProfile.avatarUrl)
+
+  const events = auditRows(staffRow.Id, 'UPDATE_PROFILE_AVATAR')
+  assert.equal(events.length, 1, 'Exactly one UPDATE_PROFILE_AVATAR audit log row')
+  assert.equal(events[0].EntityType, 'Employee')
+})
+
+for (const [size, viewport] of [['mobile', mobile], ['tablet', tablet]]) {
+  test(`AC5-7 /profile wraps long email cleanly without clipping on ${size}`, async (testCase) => {
+    const longEmail = `nhan.vien.kiem.thu.ho.so.dia.chi.email.rat.dai.${randomUUID().slice(0, 8)}@cloud.bookstore.io`
+    const guest = await client(testCase)
+    const staff = employee({ email: longEmail })
+    expectStatus(await guest.post(`${auth}/register`, { data: staff }), 201)
+    const { token } = await requireMailLink(staff.email, '/verify-register')
+    expectStatus(await guest.post(`${auth}/verify`, { data: { token } }), 204)
+
+    const page = await openPage(testCase, viewport)
+    await page.goto('/login')
+    await page.getByLabel('Email nội bộ', { exact: true }).fill(staff.email)
+    await page.getByLabel('Mật khẩu', { exact: true }).fill(staff.password)
+    await page.getByTestId('auth-login-submit').click()
+    await page.waitForURL('**/dashboard')
+
+    const profileRes = responseFor(page, 'GET', profilePath)
+    await page.goto('/profile')
+    expectStatus(await profileRes, 200)
+    await profileName(page).waitFor()
+    await page.getByText('Phiên này', { exact: true }).first().waitFor()
+
+    const emailDisplay = page.locator('[aria-labelledby="profile-email-label"] [role="textbox"]')
+    await emailDisplay.waitFor({ state: 'visible' })
+    assert.equal((await emailDisplay.innerText()).trim(), longEmail)
+    const metrics = await emailDisplay.evaluate((el) => ({
+      elScrollWidth: el.scrollWidth,
+      elClientWidth: el.clientWidth,
+      docScrollWidth: document.documentElement.scrollWidth,
+      docClientWidth: document.documentElement.clientWidth,
+    }))
+    assert.ok(metrics.elScrollWidth <= metrics.elClientWidth, `Long email clipped on ${size}: ${JSON.stringify(metrics)}`)
+    assert.ok(metrics.docScrollWidth <= metrics.docClientWidth, `Viewport overflow on ${size}: ${JSON.stringify(metrics)}`)
+    await capture(page, `03-profile-${size}`)
+  })
+}
