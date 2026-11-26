@@ -18,7 +18,7 @@ export function getPasswordChecks(password: unknown): PasswordChecks {
   }
 
   return {
-    length: password.length >= PASSWORD_MIN_LENGTH && password.length <= PASSWORD_MAX_LENGTH,
+    length: [...password].length >= PASSWORD_MIN_LENGTH && [...password].length <= PASSWORD_MAX_LENGTH,
     upper: /\p{Lu}/u.test(password),
     digit: /\p{Nd}/u.test(password),
     special: /[^\p{L}\p{Nd}\s]/u.test(password),

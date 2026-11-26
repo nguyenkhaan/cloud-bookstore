@@ -154,10 +154,9 @@ describe('AUTH screens QA single-fault isolation & entrypoint parity', { concurr
     ])
   })
 
-  test('registration reads server-approved email domains on the public client', async () => {
-    nextData = ['@cloud.io', '@cloud.bookstore.io']
-    assert.deepEqual(await authApi.getRegistrationDomains(), nextData)
-    assert.deepEqual(requests.map(({ method, url }) => [method, url]), [['get', '/auth/register']])
+  test('registration submits directly to the public register endpoint', async () => {
+    await authApi.register({ email: 'nv.phong@nhasachmay.vn', fullName: 'Nguyễn Minh Phong', phone: '0903123456', password: ['MayBook', '2026', '!'].join('') })
+    assert.deepEqual(requests.map(({ method, url }) => [method, url]), [['post', '/auth/register']])
   })
 
   test('auth.service preserves 401/409 ApiError status for resetPassword and register failures', async () => {

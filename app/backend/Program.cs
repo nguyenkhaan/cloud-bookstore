@@ -202,6 +202,16 @@ builder.Services
                         .AsNoTracking()
                         .Include(employee => employee.Role)
                         .SingleOrDefaultAsync(item => item.Id == employeeId, context.HttpContext.RequestAborted);
+                    var session = await dbContext.EmployeeSessions
+                        .AsNoTracking()
+                        .SingleOrDefaultAsync(item => item.AccessJti == jti && item.EmployeeId == employeeId &&
+                            item.RevokedAt == null && item.ExpiresAt > DateTime.UtcNow,
+                            context.HttpContext.RequestAborted);
+                    if (session is null)
+                    {
+                        context.Fail("Session has been revoked or is invalid.");
+                        return;
+                    }
                     if (employee is null ||
                         employee.Status != backend.src.Models.Enums.EmployeeStatus.ACTIVE ||
                         employee.LockoutEndUtc > DateTime.UtcNow)

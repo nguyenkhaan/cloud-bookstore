@@ -140,10 +140,6 @@ export async function register(request: RegisterRequest): Promise<void> {
   await requestData(() => publicClient.post<void>(AUTH_ENDPOINTS.register, request))
 }
 
-export function getRegistrationDomains(): Promise<string[]> {
-  return requestData(() => publicClient.get<string[]>(AUTH_ENDPOINTS.register))
-}
-
 export async function verify(request: VerifyRequest): Promise<void> {
   await requestData(() => publicClient.post<void>(AUTH_ENDPOINTS.verify, request))
 }

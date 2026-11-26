@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using backend.src.Exceptions;
 using BCryptHasher = BCrypt.Net.BCrypt;
@@ -10,8 +11,12 @@ internal static class PasswordPolicy
 
     public static void Validate(string password)
     {
-        if (password.Length is < 12 or > 128 || !password.Any(char.IsUpper) ||
-            !password.Any(char.IsDigit) || !password.Any(character => !char.IsLetterOrDigit(character) && !char.IsWhiteSpace(character)))
+        var runes = password.EnumerateRunes().ToArray();
+        if (runes.Length is < 12 or > 128 || !runes.Any(Rune.IsUpper) ||
+            !runes.Any(rune => Rune.GetUnicodeCategory(rune) == UnicodeCategory.DecimalDigitNumber) ||
+            !runes.Any(rune => !Rune.IsLetter(rune) &&
+                Rune.GetUnicodeCategory(rune) != UnicodeCategory.DecimalDigitNumber &&
+                !Rune.IsWhiteSpace(rune)))
         {
             throw new BadRequestException("Password must be 12 to 128 characters and include an uppercase letter, a digit, and a special character.");
         }

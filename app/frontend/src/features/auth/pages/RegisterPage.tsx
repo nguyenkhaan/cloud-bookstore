@@ -16,7 +16,7 @@ import {
   useRegisterMutation,
   useResendVerificationMutation,
 } from '@/features/auth/auth.hook'
-import { ApiError, getRegistrationDomains, isValidAuthEmail, localizeAuthError } from '@/features/auth/auth.service'
+import { ApiError, isValidAuthEmail, localizeAuthError } from '@/features/auth/auth.service'
 import type { Notice } from '@/features/auth/auth.type'
 
 const PHONE_REGEX = /^0\d{9}$/
@@ -105,12 +105,6 @@ export function RegisterPage() {
 
     setIsRegistering(true)
     try {
-      const domain = normalizedEmail.slice(normalizedEmail.lastIndexOf('@')).toLowerCase()
-      const allowedDomains = await getRegistrationDomains()
-      if (!allowedDomains.some((allowed) => allowed.toLowerCase() === domain)) {
-        setFieldErrors({ email: 'Tên miền email này không được phép đăng ký.' })
-        return
-      }
       await registerAccount({
         fullName: fullName.trim(),
         email: normalizedEmail,

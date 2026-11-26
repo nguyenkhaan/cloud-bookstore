@@ -14,8 +14,7 @@ namespace backend.src.Controllers;
 public class AuthController(
     AuthService authService,
     AuthCookieService authCookieService,
-    AuthCookieSettings authCookieSettings,
-    SettingService settingService) : ControllerBase
+    AuthCookieSettings authCookieSettings) : ControllerBase
 {
     // [AllowAnonymous]
     [HttpPost("login")]
@@ -33,11 +32,6 @@ public class AuthController(
             session.User));
     }
     [AllowAnonymous]
-    [HttpGet("register")]
-    [ProducesResponseType<List<string>>(StatusCodes.Status200OK)]
-    public ActionResult<List<string>> GetRegistrationDomains() => Ok(settingService.GetEmailDomains());
-
-    // [AllowAnonymous]
     [HttpPost("register")]
     public async Task<IActionResult> Register(
         [FromBody] RegisterRequest request 

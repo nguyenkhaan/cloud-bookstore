@@ -3,7 +3,7 @@ import type { ChangeEvent, FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ImagePlus, KeyRound, Laptop, Monitor, Smartphone } from 'lucide-react'
 import { MainLayout } from '@/components/layout'
-import { Avatar, Badge, Button, Card, ConfirmationDialog, notify, TextField } from '@/components/common'
+import { Avatar, Badge, Button, Card, notify, TextField } from '@/components/common'
 import { Banner } from '@/features/auth/components/Banner'
 import { ChangePasswordModal } from '@/features/auth/components/ChangePasswordModal'
 import { LogoutDeviceModal } from '@/features/auth/components/LogoutDeviceModal'
@@ -151,8 +151,14 @@ function ProfileDetails({ profile }: { profile: EmployeeProfileResponse }) {
             setDraft({ ...draft, phone: event.target.value })
             setErrors({ ...errors, phone: undefined })
           }} required type="tel" value={phone} variant="outlined" />
-          <TextField label="Email nội bộ" name="email" readOnly value={profile.email} variant="outlined" />
-          <TextField label="Vai trò" name="role" readOnly value={getRolePermissionLabel(profile.role)} variant="outlined" />
+          <div aria-labelledby="profile-email-label" className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+            <span className="block text-sm font-medium text-slate-700" id="profile-email-label">Email nội bộ</span>
+            <p className="break-all select-text text-sm text-slate-900" role="textbox" aria-readonly="true">{profile.email}</p>
+          </div>
+          <div aria-labelledby="profile-role-label" className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+            <span className="block text-sm font-medium text-slate-700" id="profile-role-label">Vai trò</span>
+            <p className="break-words select-text text-sm text-slate-900" role="textbox" aria-readonly="true">{getRolePermissionLabel(profile.role)}</p>
+          </div>
           <div className="flex flex-wrap justify-end gap-2 sm:col-span-2">
             <Button className="min-h-11" disabled={busy || !dirty} onClick={resetDraft} type="button" variant="ghost">Hủy thay đổi</Button>
             <Button className="min-h-11" data-testid="profile-save-btn" disabled={busy || !dirty} loading={updateProfile.isPending} type="submit" variant="primary">
@@ -184,25 +190,29 @@ function DeviceSessions() {
   const revokeSession = useRevokeSessionMutation()
   const revokeOthers = useRevokeOtherSessionsMutation()
   const [device, setDevice] = useState<EmployeeSessionResponse | null>(null)
-  const [showBulk, setShowBulk] = useState(false)
-  const [actionError, setActionError] = useState<string | null>(null)
   const bulkTrigger = useRef<HTMLButtonElement>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
   const isRevoking = revokeSession.isPending || revokeOthers.isPending
 
   async function confirmRevoke() {
-    if (isRevoking || (!device && !showBulk)) return
+    if (isRevoking || !device) return
     setActionError(null)
     try {
-      if (device) {
-        await revokeSession.mutateAsync(device.id)
-        setDevice(null)
-        notify.success('Đã đăng xuất khỏi thiết bị.')
-        bulkTrigger.current?.focus()
-      } else {
-        const { revokedCount } = await revokeOthers.mutateAsync()
-        setShowBulk(false)
-        notify.success(revokedCount > 0 ? `Đã đăng xuất ${revokedCount} thiết bị khác.` : 'Không có thiết bị khác đang hoạt động.')
-      }
+      await revokeSession.mutateAsync(device.id)
+      setDevice(null)
+      notify.success('Đã đăng xuất khỏi thiết bị.')
+      bulkTrigger.current?.focus()
+    } catch {
+      setActionError('Không thể đăng xuất thiết bị. Vui lòng thử lại.')
+    }
+  }
+
+  async function revokeOtherDevices() {
+    if (isRevoking) return
+    setActionError(null)
+    try {
+      const { revokedCount } = await revokeOthers.mutateAsync()
+      notify.success(revokedCount > 0 ? `Đã đăng xuất ${revokedCount} thiết bị khác.` : 'Không có thiết bị khác đang hoạt động.')
     } catch {
       setActionError('Không thể đăng xuất thiết bị. Vui lòng thử lại.')
     }
@@ -212,10 +222,7 @@ function DeviceSessions() {
     <Card aria-labelledby="profile-sessions-title" className="p-4 sm:p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-bold text-slate-900" id="profile-sessions-title">Thiết bị &amp; Phiên đăng nhập</h2>
-        <Button className="min-h-11" disabled={isRevoking || !devices.some((item) => !item.isCurrent && item.status === 'ACTIVE')} onClick={() => {
-          setActionError(null)
-          setShowBulk(true)
-        }} ref={bulkTrigger} type="button" variant="outline">Đăng xuất tất cả thiết bị khác</Button>
+        <Button className="min-h-11" disabled={isRevoking || !devices.some((item) => !item.isCurrent && item.status === 'ACTIVE')} onClick={() => void revokeOtherDevices()} ref={bulkTrigger} type="button" variant="outline">Đăng xuất tất cả thiết bị khác</Button>
       </div>
       {isPending && <p className="py-3 text-sm text-slate-600" role="status">Đang tải phiên đăng nhập…</p>}
       {isError && (
@@ -261,19 +268,6 @@ function DeviceSessions() {
         </div>
       )}
       {device && <LogoutDeviceModal device={device} error={actionError} isPending={revokeSession.isPending} onClose={() => setDevice(null)} onConfirm={() => void confirmRevoke()} />}
-      {showBulk && (
-        <ConfirmationDialog
-          actions={<>
-            <Button className="min-h-11" disabled={isRevoking} onClick={() => setShowBulk(false)} type="button" variant="outline">Hủy</Button>
-            <Button className="min-h-11" loading={isRevoking} onClick={() => void confirmRevoke()} type="button" variant="danger">Đăng xuất</Button>
-          </>}
-          error={actionError ?? undefined}
-          message="Phiên bạn đang dùng vẫn hoạt động. Các thiết bị khác sẽ phải đăng nhập lại."
-          onClose={() => { if (!isRevoking) setShowBulk(false) }}
-          title="Đăng xuất tất cả thiết bị khác?"
-          triggerRef={bulkTrigger}
-        />
-      )}
     </Card>
   )
 }
