@@ -4639,6 +4639,7 @@ export interface paths {
                     Search?: string;
                     RoleName?: components["schemas"]["RoleName"];
                     Status?: components["schemas"]["EmployeeStatus"];
+                    InShiftOnly?: boolean;
                     Page?: number;
                     PageSize?: number;
                 };
@@ -5070,6 +5071,662 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payroll/periods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayrollPeriodListItemDto"][];
+                        "application/json": components["schemas"]["PayrollPeriodListItemDto"][];
+                        "text/json": components["schemas"]["PayrollPeriodListItemDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payroll/periods/{periodKey}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Search?: string;
+                    Status?: components["schemas"]["PayrollPeriodStatus"];
+                    PayoutFilter?: string;
+                    Page?: number;
+                    PageSize?: number;
+                };
+                header?: never;
+                path: {
+                    periodKey: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayrollPeriodDetailDto"];
+                        "application/json": components["schemas"]["PayrollPeriodDetailDto"];
+                        "text/json": components["schemas"]["PayrollPeriodDetailDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payroll/periods/{periodKey}/initialize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    periodKey: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayrollPeriodDetailDto"];
+                        "application/json": components["schemas"]["PayrollPeriodDetailDto"];
+                        "text/json": components["schemas"]["PayrollPeriodDetailDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payroll/periods/{periodKey}/employees/{employeeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    periodKey: string;
+                    employeeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PatchPayrollEmployeeRequest"];
+                    "text/json": components["schemas"]["PatchPayrollEmployeeRequest"];
+                    "application/*+json": components["schemas"]["PatchPayrollEmployeeRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayrollPeriodDetailDto"];
+                        "application/json": components["schemas"]["PayrollPeriodDetailDto"];
+                        "text/json": components["schemas"]["PayrollPeriodDetailDto"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/hr/payroll/periods/{periodKey}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    periodKey: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayrollPeriodDetailDto"];
+                        "application/json": components["schemas"]["PayrollPeriodDetailDto"];
+                        "text/json": components["schemas"]["PayrollPeriodDetailDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payroll/periods/{periodKey}/unlock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    periodKey: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UnlockPayrollRequest"];
+                    "text/json": components["schemas"]["UnlockPayrollRequest"];
+                    "application/*+json": components["schemas"]["UnlockPayrollRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayrollPeriodDetailDto"];
+                        "application/json": components["schemas"]["PayrollPeriodDetailDto"];
+                        "text/json": components["schemas"]["PayrollPeriodDetailDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payroll/periods/{periodKey}/payouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    periodKey: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["BatchPayoutRequest"];
+                    "text/json": components["schemas"]["BatchPayoutRequest"];
+                    "application/*+json": components["schemas"]["BatchPayoutRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayrollPeriodDetailDto"];
+                        "application/json": components["schemas"]["PayrollPeriodDetailDto"];
+                        "text/json": components["schemas"]["PayrollPeriodDetailDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payroll/periods/{periodKey}/send-zalo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    periodKey: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SendPayrollZaloRequest"];
+                    "text/json": components["schemas"]["SendPayrollZaloRequest"];
+                    "application/*+json": components["schemas"]["SendPayrollZaloRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SendPayrollZaloResultDto"];
+                        "application/json": components["schemas"]["SendPayrollZaloResultDto"];
+                        "text/json": components["schemas"]["SendPayrollZaloResultDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payroll/periods/{periodKey}/employees/{employeeId}/breakdown": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    periodKey: string;
+                    employeeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayrollBreakdownDto"];
+                        "application/json": components["schemas"]["PayrollBreakdownDto"];
+                        "text/json": components["schemas"]["PayrollBreakdownDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payroll/adjustments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    periodKey?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayrollAdjustmentDto"][];
+                        "application/json": components["schemas"]["PayrollAdjustmentDto"][];
+                        "text/json": components["schemas"]["PayrollAdjustmentDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreatePayrollAdjustmentRequest"];
+                    "text/json": components["schemas"]["CreatePayrollAdjustmentRequest"];
+                    "application/*+json": components["schemas"]["CreatePayrollAdjustmentRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayrollAdjustmentDto"];
+                        "application/json": components["schemas"]["PayrollAdjustmentDto"];
+                        "text/json": components["schemas"]["PayrollAdjustmentDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payslips/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    periodKey?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayslipDetailDto"];
+                        "application/json": components["schemas"]["PayslipDetailDto"];
+                        "text/json": components["schemas"]["PayslipDetailDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payslips/{employeeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    periodKey?: string;
+                };
+                header?: never;
+                path: {
+                    employeeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayslipDetailDto"];
+                        "application/json": components["schemas"]["PayslipDetailDto"];
+                        "text/json": components["schemas"]["PayslipDetailDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payslips/{entryId}/disputes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    entryId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreatePayslipDisputeRequest"];
+                    "text/json": components["schemas"]["CreatePayslipDisputeRequest"];
+                    "application/*+json": components["schemas"]["CreatePayslipDisputeRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayslipDisputeDto"];
+                        "application/json": components["schemas"]["PayslipDisputeDto"];
+                        "text/json": components["schemas"]["PayslipDisputeDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payslips/disputes/{disputeId}/respond": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    disputeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RespondPayslipDisputeRequest"];
+                    "text/json": components["schemas"]["RespondPayslipDisputeRequest"];
+                    "application/*+json": components["schemas"]["RespondPayslipDisputeRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayslipDisputeDto"];
+                        "application/json": components["schemas"]["PayslipDisputeDto"];
+                        "text/json": components["schemas"]["PayslipDisputeDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payslips/{entryId}/resend-zalo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    entryId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ZaloSendResultDto"];
+                        "application/json": components["schemas"]["ZaloSendResultDto"];
+                        "text/json": components["schemas"]["ZaloSendResultDto"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -7523,6 +8180,15 @@ export interface components {
             conditionGrade: components["schemas"]["ConditionGrade"];
             availability: components["schemas"]["BookChannelAvailability"];
         };
+        BatchPayoutRequest: {
+            employeeIds: string[];
+            method: components["schemas"]["PaymentMethod"];
+            transactionRef: null | string;
+            /** Format: date */
+            payoutDate: string;
+            note?: null | string;
+            proofUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
+        };
         /** @enum {unknown} */
         BookChannelAvailability: "BOTH" | "SALE_ONLY" | "RENTAL_ONLY";
         BookCopyDetailResponse: {
@@ -7843,6 +8509,23 @@ export interface components {
         CancelInventoryAdjustmentRequestDto: {
             reason?: null | string;
         };
+        CashVarianceDto: {
+            /** Format: uuid */
+            cashSessionId: string;
+            voucherCode: string;
+            /** Format: date-time */
+            openedAt: string;
+            /** Format: date-time */
+            closedAt: null | string;
+            /** Format: int64 */
+            expectedAmount: null | number;
+            /** Format: int64 */
+            countedAmount: null | number;
+            /** Format: int64 */
+            difference: number;
+            varianceNote: null | string;
+            approverName: null | string;
+        };
         CategoryDetailResponse: {
             /** Format: uuid */
             id: string;
@@ -8087,6 +8770,26 @@ export interface components {
             isFound?: null | boolean;
             checkCode?: null | string;
             checkNote?: null | string;
+        };
+        CreatePayrollAdjustmentRequest: {
+            /** Format: uuid */
+            employeeId: string;
+            sourcePeriodKey: null | string;
+            sourceVoucherRef: null | string;
+            targetPeriodKey: string;
+            category: string;
+            adjustmentType: components["schemas"]["PayrollAdjustmentType"];
+            /** Format: int64 */
+            amount: number;
+            reason: string;
+            mode?: components["schemas"]["PayrollAdjustmentStatus"];
+            referenceCode?: null | string;
+            proofUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
+        };
+        CreatePayslipDisputeRequest: {
+            category: components["schemas"]["PayslipDisputeCategory"];
+            content: string;
+            proofUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
         };
         CreateStockOutRequest: {
             stockOutType: string;
@@ -9417,8 +10120,322 @@ export interface components {
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
+        PatchPayrollEmployeeRequest: {
+            /** Format: int64 */
+            bonus: number;
+            /** Format: int64 */
+            allowance: number;
+            /** Format: int64 */
+            deduction: number;
+            note?: null | string;
+        };
         /** @enum {unknown} */
         PaymentMethod: "CASH" | "BANK_TRANSFER";
+        PayrollAdjustmentDto: {
+            /** Format: uuid */
+            id: string;
+            adjustmentCode: string;
+            sourcePayrollCode: null | string;
+            sourcePeriodKey: null | string;
+            sourceVoucherRef: null | string;
+            /** Format: uuid */
+            employeeId: string;
+            employeeLabel: string;
+            targetPeriodKey: string;
+            category: string;
+            adjustmentType: components["schemas"]["PayrollAdjustmentType"];
+            /** Format: int64 */
+            amount: number;
+            referenceCode: null | string;
+            reason: string;
+            proofUrl: null | string;
+            status: components["schemas"]["PayrollAdjustmentStatus"];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /** @enum {unknown} */
+        PayrollAdjustmentStatus: "DRAFT" | "APPROVED" | "APPLIED";
+        /** @enum {unknown} */
+        PayrollAdjustmentType: "ADD_NEXT_PERIOD" | "DEDUCT_NEXT_PERIOD";
+        PayrollAuditHistoryDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            occurredAt: string;
+            actorName: string;
+            event: string;
+            result: null | string;
+        };
+        PayrollBatchDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            batchNumber: number;
+            method: components["schemas"]["PaymentMethod"];
+            transactionRef: string;
+            /** Format: date-time */
+            payoutAt: string;
+            /** Format: int64 */
+            amount: number;
+            employeeNames: string[];
+            note: null | string;
+            proofUrl: null | string;
+            confirmedByName: string;
+        };
+        PayrollBreakdownDto: {
+            /** Format: uuid */
+            entryId: string;
+            /** Format: uuid */
+            employeeId: string;
+            bonusItems: components["schemas"]["PayrollLineDto"][];
+            allowanceItems: components["schemas"]["PayrollLineDto"][];
+            deductionItems: components["schemas"]["PayrollLineDto"][];
+            cashVariances: components["schemas"]["CashVarianceDto"][];
+        };
+        PayrollEmployeeRowDto: {
+            /** Format: uuid */
+            employeeId: string;
+            /** Format: uuid */
+            entryId: string;
+            employeeCode: string;
+            fullName: string;
+            roleLabel: string;
+            /** Format: double */
+            standardHours: number;
+            /** Format: double */
+            hourlyRate: number;
+            /** Format: int64 */
+            baseSalary: number;
+            /** Format: double */
+            overtimeHours: number;
+            /** Format: int64 */
+            overtimeAmount: number;
+            /** Format: int64 */
+            bonus: number;
+            /** Format: int64 */
+            allowance: number;
+            /** Format: int64 */
+            deduction: number;
+            /** Format: int64 */
+            mandatoryContribution: number;
+            /** Format: int64 */
+            taxAmount: number;
+            /** Format: int64 */
+            netPay: number;
+            payoutStatus: components["schemas"]["WorkRecordPaymentStatus"];
+            zaloStatus: components["schemas"]["ZaloDeliveryStatus"];
+            /** Format: date-time */
+            zaloSentAt: null | string;
+            zaloErrorReason: null | string;
+            zaloLinked: boolean;
+            bankAccount: string;
+            /** Format: date-time */
+            payoutAt: null | string;
+            payoutMethod: null | components["schemas"]["PaymentMethod"];
+            transactionRef: null | string;
+            contributionNote: null | string;
+            bonusItems: components["schemas"]["PayrollLineDto"][];
+            allowanceItems: components["schemas"]["PayrollLineDto"][];
+            deductionItems: components["schemas"]["PayrollLineDto"][];
+        };
+        PayrollKpiDto: {
+            /** Format: int64 */
+            totalNetPay: number;
+            /** Format: int64 */
+            paidAmount: number;
+            /** Format: int64 */
+            remainingAmount: number;
+            /** Format: double */
+            approvedOtHours: number;
+            /** Format: int32 */
+            totalEmployees: number;
+            /** Format: int32 */
+            zaloSentCount: number;
+            /** Format: int32 */
+            zaloUnsentCount: number;
+            /** Format: int32 */
+            zaloFailedCount: number;
+        };
+        PayrollLineDto: {
+            label: string;
+            /** Format: int64 */
+            amount: number;
+            voucherCode: null | string;
+        };
+        PayrollPeriodDetailDto: {
+            periodKey: string;
+            payrollCode: string;
+            periodRangeLabel: string;
+            attendanceSourceCode: string;
+            status: components["schemas"]["PayrollPeriodStatus"];
+            exists: boolean;
+            /** Format: date-time */
+            approvedAt: null | string;
+            approvedByName: null | string;
+            /** Format: date-time */
+            payoutAt: null | string;
+            payoutMethod: null | components["schemas"]["PaymentMethod"];
+            transactionRef: null | string;
+            payoutConfirmedByName: null | string;
+            kpi: components["schemas"]["PayrollKpiDto"];
+            rows: components["schemas"]["PayrollEmployeeRowDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            filteredRowsCount: number;
+            /** Format: int32 */
+            allRowsCount: number;
+            /** Format: int32 */
+            paidRowsCount: number;
+            batches: components["schemas"]["PayrollBatchDto"][];
+            history: components["schemas"]["PayrollAuditHistoryDto"][];
+            pendingAdjustments: components["schemas"]["PayrollAdjustmentDto"][];
+        };
+        PayrollPeriodListItemDto: {
+            periodKey: string;
+            payrollCode: string;
+            periodRangeLabel: string;
+            status: components["schemas"]["PayrollPeriodStatus"];
+            exists: boolean;
+            /** Format: int32 */
+            employeeCount: number;
+            /** Format: int64 */
+            totalNetPay: number;
+            /** Format: int64 */
+            paidAmount: number;
+        };
+        /** @enum {unknown} */
+        PayrollPeriodStatus: "DRAFT" | "APPROVED_UNPAID" | "PARTIALLY_PAID" | "SETTLED";
+        PayslipAdvanceVoucherDto: {
+            voucherCode: string;
+            content: string;
+            /** Format: int64 */
+            amount: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        PayslipAttendanceDayDto: {
+            /** Format: date */
+            workDate: string;
+            /** Format: int16 */
+            shiftNo: number;
+            /** Format: date-time */
+            checkInAt: null | string;
+            /** Format: date-time */
+            checkOutAt: null | string;
+            /** Format: double */
+            standardHours: number;
+            /** Format: double */
+            overtimeHours: number;
+        };
+        PayslipDetailDto: {
+            hasPayslip: boolean;
+            /** Format: uuid */
+            entryId: null | string;
+            payslipCode: string;
+            periodKey: string;
+            periodRange: string;
+            payrollCode: string;
+            attendanceSourceCode: string;
+            payrollStatus: null | components["schemas"]["PayrollPeriodStatus"];
+            paid: boolean;
+            /** Format: date-time */
+            payoutAt: null | string;
+            approvedByName: string;
+            /** Format: date-time */
+            approvedAt: null | string;
+            /** Format: uuid */
+            employeeId: string;
+            employeeCode: string;
+            employeeName: string;
+            employeeRoleLabel: string;
+            storeName: string;
+            bankAccount: string;
+            transactionRef: null | string;
+            /** Format: double */
+            standardHours: number;
+            /** Format: double */
+            hourlyRate: number;
+            /** Format: int64 */
+            baseSalary: number;
+            /** Format: double */
+            overtimeHours: number;
+            /** Format: int64 */
+            overtimeAmount: number;
+            /** Format: int64 */
+            bonus: number;
+            bonusNote: string;
+            /** Format: int64 */
+            allowance: number;
+            allowanceNote: string;
+            /** Format: int64 */
+            mandatoryContribution: number;
+            mandatoryContributionNote: string;
+            /** Format: int64 */
+            taxAmount: number;
+            /** Format: int64 */
+            deduction: number;
+            /** Format: int64 */
+            totalIncome: number;
+            /** Format: int64 */
+            totalDeduction: number;
+            /** Format: int64 */
+            netPay: number;
+            zaloStatus: components["schemas"]["ZaloDeliveryStatus"];
+            /** Format: date-time */
+            zaloSentAt: null | string;
+            zaloLinked: boolean;
+            availablePeriods: components["schemas"]["PayslipPeriodOptionDto"][];
+            attendanceDays: components["schemas"]["PayslipAttendanceDayDto"][];
+            overtimeEntries: components["schemas"]["PayslipOvertimeEntryDto"][];
+            advanceVouchers: components["schemas"]["PayslipAdvanceVoucherDto"][];
+            disputes: components["schemas"]["PayslipDisputeDto"][];
+        };
+        /** @enum {unknown} */
+        PayslipDisputeCategory: "BASE_SALARY" | "OVERTIME" | "BONUS" | "ALLOWANCE" | "DEDUCTION";
+        PayslipDisputeDto: {
+            /** Format: uuid */
+            id: string;
+            disputeCode: string;
+            payslipCode: string;
+            /** Format: uuid */
+            employeeId: string;
+            employeeName: string;
+            category: components["schemas"]["PayslipDisputeCategory"];
+            status: components["schemas"]["PayslipDisputeStatus"];
+            content: string;
+            proofUrl: null | string;
+            /** Format: date-time */
+            submittedAt: string;
+            adminName: null | string;
+            /** Format: date-time */
+            respondedAt: null | string;
+            adminResponse: null | string;
+            calculationNote: null | string;
+            adjustmentNote: null | string;
+            linkedAdjustmentCode: null | string;
+            ownedByActor: boolean;
+        };
+        /** @enum {unknown} */
+        PayslipDisputeStatus: "PENDING_RESPONSE" | "EXPLAINED" | "APPROVED_NEXT_PERIOD_ADJUSTMENT";
+        PayslipOvertimeEntryDto: {
+            /** Format: date */
+            workDate: string;
+            /** Format: date-time */
+            startAt: null | string;
+            /** Format: date-time */
+            endAt: null | string;
+            /** Format: double */
+            hours: number;
+            /** Format: int64 */
+            amount: number;
+        };
+        PayslipPeriodOptionDto: {
+            periodKey: string;
+            paid: boolean;
+        };
         ProblemDetails: {
             type?: null | string;
             title?: null | string;
@@ -9487,6 +10504,15 @@ export interface components {
         ResetPasswordRequest: {
             token: string;
             newPassword: string;
+        };
+        RespondPayslipDisputeRequest: {
+            status: components["schemas"]["PayslipDisputeStatus"];
+            adminResponse: string;
+            calculationNote?: null | string;
+            adjustmentNote?: null | string;
+            /** Format: int64 */
+            adjustmentAmount?: null | number;
+            adjustmentType?: null | components["schemas"]["PayrollAdjustmentType"];
         };
         RevenueBreakdownDto: {
             /** Format: int64 */
@@ -9571,6 +10597,16 @@ export interface components {
             /** Format: int64 */
             finalPrice: number;
             status: string;
+        };
+        SendPayrollZaloRequest: {
+            employeeIds?: null | string[];
+        };
+        SendPayrollZaloResultDto: {
+            /** Format: int32 */
+            sentCount: number;
+            /** Format: int32 */
+            failedCount: number;
+            results: components["schemas"]["ZaloSendResultDto"][];
         };
         SendTestEmailRequest: {
             recipientEmail: string;
@@ -9897,6 +10933,9 @@ export interface components {
             /** Format: int32 */
             rentalCount: number;
         };
+        UnlockPayrollRequest: {
+            reason: string;
+        };
         UpdateApprovalStatusRequestDto: {
             status: components["schemas"]["ApprovalStatus"];
             reason: null | string;
@@ -10094,6 +11133,10 @@ export interface components {
             webhookUrl: string;
             status: string;
         };
+        /** @enum {unknown} */
+        WorkRecordPaymentStatus: "UNPAID" | "PAID";
+        /** @enum {unknown} */
+        ZaloDeliveryStatus: "UNSENT" | "SENT" | "FAILED";
         ZaloOaIntegrationDto: {
             appId: string;
             oaId: string;
@@ -10105,6 +11148,14 @@ export interface components {
             templateDepositSettled: string;
             reminderSchedule: string;
             status: string;
+        };
+        ZaloSendResultDto: {
+            /** Format: uuid */
+            entryId: string;
+            status: components["schemas"]["ZaloDeliveryStatus"];
+            /** Format: date-time */
+            sentAt: null | string;
+            errorReason: null | string;
         };
     };
     responses: never;

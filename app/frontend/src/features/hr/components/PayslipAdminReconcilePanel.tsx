@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
+import { SelectBox } from '@/components/common/SelectBox'
 import { notify } from '@/components/common/Toast'
 import { useResendSinglePayslipZaloMutation, useRespondPayslipDisputeMutation } from '../hr-payroll.hook'
 import { formatVnd } from '../hr-payroll.utils'
@@ -143,10 +144,16 @@ export function PayslipAdminReconcilePanel({
             setIsResponseOpen(false)
           }}>
             <h2 className="font-semibold">Phản hồi đối chiếu</h2>
-            <select className="w-full rounded border p-2" value={responseStatus} onChange={(event) => setResponseStatus(event.target.value as typeof responseStatus)}>
-              <option value="EXPLAINED">Đã giải trình</option>
-              <option value="APPROVED_NEXT_PERIOD_ADJUSTMENT">Duyệt bù trừ kỳ sau</option>
-            </select>
+            <SelectBox
+              label="Kết quả đối chiếu"
+              onChange={(value) => setResponseStatus(value)}
+              options={[
+                { value: 'EXPLAINED', label: 'Đã giải trình' },
+                { value: 'APPROVED_NEXT_PERIOD_ADJUSTMENT', label: 'Duyệt bù trừ kỳ sau' },
+              ]}
+              searchable={false}
+              value={responseStatus}
+            />
             <textarea className="min-h-24 w-full rounded border p-2" required value={responseText} onChange={(event) => setResponseText(event.target.value)} />
             <div className="flex justify-end gap-2"><Button type="button" variant="secondary" onClick={() => setIsResponseOpen(false)}>Hủy</Button><Button type="submit" variant="primary" disabled={respondMutation.isPending}>Lưu phản hồi</Button></div>
           </form>

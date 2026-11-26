@@ -15,6 +15,7 @@ let server
 let payrollService
 let hrRoutes
 let roleUtil
+let privateClient
 
 before(async () => {
   server = await createServer({
@@ -26,195 +27,173 @@ before(async () => {
   )
   hrRoutes = await server.ssrLoadModule('/src/features/hr/hr.route.ts')
   roleUtil = await server.ssrLoadModule('/src/features/hr/hr-role.util.ts')
+  const clientMod = await server.ssrLoadModule('/src/api/client.ts')
+  privateClient = clientMod.privateClient
 })
 
 after(async () => {
   await server?.close()
 })
 
-test('Phase 2: SCR-HRM-05 single-fault isolation on batch payout, unlock, draft adjustment, and Zalo send', async () => {
-  payrollService.resetHrPayrollStore()
+test('Phase 2: SCR-HRM-05 real service propagates backend validation/conflict errors without mock store', async () => {
+  const originalPost = privateClient.post
+  const originalPatch = privateClient.patch
+  const calls = []
 
-  // Single fault 1: empty employeeIds with all other payout fields valid
-  await assert.rejects(
-    () =>
-      payrollService.executeBatchPayout({
-        periodKey: '08/2026',
-        employeeIds: [],
-        method: 'bank_transfer',
-        transactionRef: 'BANK-PAY-20260903-001',
-        payoutDate: '03/09/2026',
-        actorName: 'Nguyễn Minh Anh',
-      }),
-    /nhân viên/i,
-  )
+  privateClient.post = async (url, body) => {
+    calls.push({ method: 'POST', url, body })
+    if (url.endsWith('/payouts') && !body.transactionRef && body.method === 'bank_transfer') {
+      throw new Error('Vui lòng nhập mã giao dịch ngân hàng.')
+    }
+    if (url.endsWith('/adjustments') && body.amount <= 0) {
+      throw new Error('Số tiền điều chỉnh phải lớn hơn 0.')
+    }
+    return { status: 200, data: { periodKey: '10/2026', status: 'draft' } }
+  }
+  privateClient.patch = async (url, body) => {
+    calls.push({ method: 'PATCH', url, body })
+    if (url.includes('09%2F2026')) {
+      throw new Error('Chỉ có thể điều chỉnh thủ công khi bảng lương đang ở Bản nháp.')
+    }
+    return { status: 200, data: { periodKey: '10/2026', status: 'draft' } }
+  }
 
-  // Single fault 2: empty transactionRef for bank_transfer with valid employeeIds & payoutDate
-  await assert.rejects(
-    () =>
-      payrollService.executeBatchPayout({
-        periodKey: '08/2026',
-        employeeIds: ['NV-0002'],
-        method: 'bank_transfer',
-        transactionRef: '   ',
-        payoutDate: '03/09/2026',
-        actorName: 'Nguyễn Minh Anh',
-      }),
-    /mã giao dịch/i,
-  )
+  try {
+    await assert.rejects(
+      () =>
+        payrollService.executeBatchPayout({
+          periodKey: '08/2026',
+          employeeIds: ['emp-2'],
+          method: 'bank_transfer',
+          transactionRef: '',
+          payoutDate: '2026-09-03',
+          actorName: 'Admin',
+        }),
+      /mã giao dịch/i,
+    )
 
-  // Single fault 3: empty payoutDate with valid employeeIds & transactionRef
-  await assert.rejects(
-    () =>
-      payrollService.executeBatchPayout({
-        periodKey: '08/2026',
-        employeeIds: ['NV-0002'],
-        method: 'bank_transfer',
-        transactionRef: 'BANK-PAY-20260903-001',
-        payoutDate: '   ',
-        actorName: 'Nguyễn Minh Anh',
-      }),
-    /ngày chi trả/i,
-  )
+    await assert.rejects(
+      () =>
+        payrollService.adjustDraftPayrollEmployee({
+          periodKey: '09/2026',
+          employeeId: 'emp-2',
+          bonus: 500000,
+          allowance: 200000,
+          deduction: 100000,
+        }),
+      /bản nháp/i,
+    )
 
-  // Single fault 4: batch payout on draft period rejected
-  await assert.rejects(
-    () =>
-      payrollService.executeBatchPayout({
-        periodKey: '10/2026',
-        employeeIds: ['NV-0002'],
-        method: 'cash',
-        transactionRef: '',
-        payoutDate: '03/11/2026',
-        actorName: 'Nguyễn Minh Anh',
-      }),
-    /duyệt/i,
-  )
+    await assert.rejects(
+      () =>
+        payrollService.createNextPeriodAdjustment({
+          sourcePayrollCode: 'PAY-202609',
+          sourcePeriodKey: '09/2026',
+          sourceVoucherRef: 'BANK-PAY-20261003-001',
+          employeeId: 'emp-2',
+          targetPeriodKey: '10/2026',
+          category: 'Phụ cấp',
+          adjustmentType: 'add_next_period',
+          amount: 0,
+          reason: 'Kiểm tra số tiền hợp lệ',
+          mode: 'approved',
+        }),
+      /số tiền/i,
+    )
 
-  // Single fault 5: Zalo send on draft period rejected
-  await assert.rejects(
-    () => payrollService.sendPayrollZaloPayslips('10/2026', ['NV-0002']),
-    /duyệt/i,
-  )
-
-  // Single fault 6: Zalo send with empty employeeIds performs zero unintended sends
-  const noOpZalo = await payrollService.sendPayrollZaloPayslips('09/2026', [])
-  assert.equal(noOpZalo.kpi.zaloSentCount, 2)
-
-  // Draft period 10/2026 allows initialize & manual adjustment and recalculates netPay
-  const initialized = await payrollService.initializePayrollFromAttendance(
-    '10/2026',
-    'Nguyễn Thanh Tâm',
-  )
-  assert.ok(
-    initialized.history.some((h) => h.event.includes('Đồng bộ lại từ ATT-202610')),
-  )
-
-  const adjusted = await payrollService.adjustDraftPayrollEmployee({
-    periodKey: '10/2026',
-    employeeId: 'NV-0002',
-    bonus: 500000,
-    allowance: 200000,
-    deduction: 100000,
-    note: 'Thưởng thêm dự án',
-  })
-  const phong = adjusted.rows.find((r) => r.id === 'NV-0002')
-  assert.equal(phong?.netPay, 5580000)
-  assert.equal(adjusted.kpi.totalNetPay, 31050000)
-
-  // Single fault 7: manual adjustment on settled period rejected
-  await assert.rejects(
-    () =>
-      payrollService.adjustDraftPayrollEmployee({
-        periodKey: '09/2026',
-        employeeId: 'NV-0002',
-        bonus: 500000,
-        allowance: 200000,
-        deduction: 100000,
-      }),
-    /bản nháp/i,
-  )
+    await payrollService.initializePayrollFromAttendance('10/2026')
+    await payrollService.sendPayrollZaloPayslips('09/2026', ['emp-2'])
+    assert.ok(calls.some((c) => c.url === '/hr/payroll/periods/10%2F2026/initialize'))
+    assert.ok(calls.some((c) => c.url === '/hr/payroll/periods/09%2F2026/send-zalo'))
+  } finally {
+    privateClient.post = originalPost
+    privateClient.patch = originalPatch
+  }
 })
 
-test('Phase 2: SCR-HRM-05 search/filters preserve KPI totals and next-period adjustment validates amount & draft mode', async () => {
-  payrollService.resetHrPayrollStore()
+test('Phase 2: SCR-HRM-05 search/filters forward params and next-period adjustment posts draft mode', async () => {
+  const originalGet = privateClient.get
+  const originalPost = privateClient.post
+  const getCalls = []
+  const postCalls = []
 
-  const filtered = await payrollService.listPayrollPeriod({
-    periodKey: '09/2026',
-    search: 'NV-0002',
-  })
-  assert.equal(filtered.rows.length, 1)
-  assert.equal(filtered.rows[0].fullName, 'Trần Hoàng Phong')
-  assert.equal(filtered.allRowsCount, 4)
-  assert.equal(filtered.kpi.totalNetPay, 30850000)
+  privateClient.get = async (url, config) => {
+    getCalls.push({ url, config })
+    return { status: 200, data: { rows: [], allRowsCount: 4, kpi: { totalNetPay: 30850000 } } }
+  }
+  privateClient.post = async (url, body) => {
+    postCalls.push({ url, body })
+    return { status: 201, data: { id: 'ADJ-202610-0001', status: body.mode, amount: body.amount } }
+  }
 
-  // Single fault: amount <= 0 rejected while reason & other fields are valid
-  await assert.rejects(
-    () =>
-      payrollService.createNextPeriodAdjustment({
-        sourcePayrollCode: 'PAY-202609',
-        sourcePeriodKey: '09/2026',
-        sourceVoucherRef: 'BANK-PAY-20261003-001',
-        employeeId: 'NV-0002',
-        targetPeriodKey: '10/2026',
-        category: 'Phụ cấp',
-        adjustmentType: 'add_next_period',
-        amount: 0,
-        reason: 'Kiểm tra số tiền hợp lệ',
-        mode: 'approved',
-      }),
-    /số tiền/i,
-  )
+  try {
+    const filtered = await payrollService.listPayrollPeriod({
+      periodKey: '09/2026',
+      search: 'NV-0002',
+    })
+    assert.equal(filtered.allRowsCount, 4)
+    assert.equal(getCalls[0].config.params.search, 'NV-0002')
 
-  const draftAdj = await payrollService.createNextPeriodAdjustment({
-    sourcePayrollCode: 'PAY-202609',
-    sourcePeriodKey: '09/2026',
-    sourceVoucherRef: 'BANK-PAY-20261003-001',
-    employeeId: 'NV-0003',
-    targetPeriodKey: '10/2026',
-    category: 'OT',
-    adjustmentType: 'add_next_period',
-    amount: 105000,
-    reason: 'Lưu nháp bù trừ 2 giờ OT',
-    mode: 'draft',
-  })
-  assert.equal(draftAdj.status, 'draft')
-  assert.match(draftAdj.id, /^ADJ-/)
+    const draftAdj = await payrollService.createNextPeriodAdjustment({
+      sourcePayrollCode: 'PAY-202609',
+      sourcePeriodKey: '09/2026',
+      sourceVoucherRef: 'BANK-PAY-20261003-001',
+      employeeId: 'emp-3',
+      targetPeriodKey: '10/2026',
+      category: 'OT',
+      adjustmentType: 'add_next_period',
+      amount: 105000,
+      reason: 'Lưu nháp bù trừ 2 giờ OT',
+      mode: 'draft',
+    })
+    assert.equal(draftAdj.status, 'draft')
+    assert.match(draftAdj.id, /^ADJ-/)
+    assert.equal(postCalls[0].body.mode, 'draft')
+  } finally {
+    privateClient.get = originalGet
+    privateClient.post = originalPost
+  }
 })
 
-test('Phase 2: SCR-HRM-06 entrypoint parity across employees, periods, dispute categories, and Zalo resend', async () => {
-  payrollService.resetHrPayrollStore()
+test('Phase 2: SCR-HRM-06 entrypoint parity hits /me, /{employeeId}, disputes, and resend-zalo', async () => {
+  const originalGet = privateClient.get
+  const originalPost = privateClient.post
+  const calls = []
 
-  const khoaPayslip = await payrollService.getPayslipDetail('NV-0003', '09/2026')
-  assert.equal(khoaPayslip.employeeCode, 'NV-0003')
-  assert.equal(khoaPayslip.netPay, 6365000)
+  privateClient.get = async (url) => {
+    calls.push({ method: 'GET', url })
+    return { status: 200, data: { employeeCode: 'NV-0003', netPay: 6365000 } }
+  }
+  privateClient.post = async (url, body) => {
+    calls.push({ method: 'POST', url, body })
+    if (url.endsWith('/resend-zalo')) return { status: 200, data: { sentAt: '2026-10-03T06:00:00Z' } }
+    return { status: 201, data: { id: 'DC-202610-0001', status: 'pending_response', categoryLabel: 'Khấu trừ' } }
+  }
 
-  const linhPayslip = await payrollService.getPayslipDetail('NV-0005', '09/2026')
-  assert.equal(linhPayslip.zaloStatus, 'failed')
+  try {
+    const myPayslip = await payrollService.getMyPayslipDetail('09/2026')
+    assert.equal(myPayslip.netPay, 6365000)
 
-  const resendLinh = await payrollService.resendSinglePayslipZalo(
-    'NV-0005',
-    '09/2026',
-  )
-  assert.ok(resendLinh.sentAt.length > 0)
+    await payrollService.getEmployeePayslipDetail('emp-3', '09/2026')
+    const resend = await payrollService.resendSinglePayslipZalo('entry-5', '09/2026')
+    assert.ok(resend.sentAt.length > 0)
 
-  const linhAfterResend = await payrollService.getPayslipDetail(
-    'NV-0005',
-    '09/2026',
-  )
-  assert.equal(linhAfterResend.zaloStatus, 'sent')
+    const dispute = await payrollService.createPayslipDispute({
+      employeeId: 'entry-2',
+      periodKey: '09/2026',
+      category: 'deduction',
+      content: 'Đối chiếu phiếu tạm ứng ADV-0921.',
+    })
+    assert.equal(dispute.status, 'pending_response')
 
-  const dispute = await payrollService.createPayslipDispute({
-    employeeId: 'NV-0002',
-    periodKey: '09/2026',
-    category: 'deduction',
-    content: 'Đối chiếu phiếu tạm ứng ADV-0921.',
-    attachmentName: 'adv-0921.png',
-    attachmentSize: '120 KB',
-  })
-  assert.equal(dispute.categoryLabel, 'Khấu trừ')
-  assert.equal(dispute.attachmentName, 'adv-0921.png')
-  assert.equal(dispute.status, 'pending_response')
+    assert.equal(calls[0].url, '/hr/payslips/me')
+    assert.equal(calls[1].url, '/hr/payslips/emp-3')
+    assert.equal(calls[2].url, '/hr/payslips/entry-5/resend-zalo')
+    assert.equal(calls[3].url, '/hr/payslips/entry-2/disputes')
+  } finally {
+    privateClient.get = originalGet
+    privateClient.post = originalPost
+  }
 })
 
 test('Phase 2: Refinement verification (no modal info notices, requests pageSize=10, no HrModuleTabs, Sidebar submenu & HRM routes intact)', () => {

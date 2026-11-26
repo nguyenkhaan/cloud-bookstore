@@ -14,6 +14,7 @@ const src = (...parts) => path.join(frontendRoot, 'src', ...parts)
 let server
 let hrRoutes
 let payrollService
+let privateClient
 
 before(async () => {
   server = await createServer({
@@ -24,13 +25,15 @@ before(async () => {
   payrollService = await server.ssrLoadModule(
     '/src/features/hr/hr-payroll.service.ts',
   )
+  const clientMod = await server.ssrLoadModule('/src/api/client.ts')
+  privateClient = clientMod.privateClient
 })
 
 after(async () => {
   await server?.close()
 })
 
-test('SCR-HRM-06 routes, components, and unified terminology exist without forbidden copy', () => {
+test('SCR-HRM-06 routes, components, and API hook wiring exist without inline MOCK_PAYSLIP', () => {
   const requiredFiles = [
     ['features', 'hr', 'components', 'PayslipBreakdownCard.tsx'],
     ['features', 'hr', 'components', 'PayslipDisputePanel.tsx'],
@@ -61,8 +64,10 @@ test('SCR-HRM-06 routes, components, and unified terminology exist without forbi
     'utf8',
   )
   assert.doesNotMatch(payslipPageSource, /HrModuleTabs/)
-  assert.match(payslipPageSource, /const MOCK_PAYSLIP: PayslipDetailDto/)
-  assert.doesNotMatch(payslipPageSource, /usePayslipDetailQuery|hr-payroll\.hook/)
+  assert.doesNotMatch(payslipPageSource, /MOCK_PAYSLIP/)
+  assert.match(payslipPageSource, /useMyPayslipDetailQuery/)
+  assert.match(payslipPageSource, /useEmployeePayslipDetailQuery/)
+  assert.match(payslipPageSource, /window\.print\s*\(/)
 
   const disputePanelSource = readFileSync(
     src('features', 'hr', 'components', 'PayslipDisputePanel.tsx'),
@@ -74,57 +79,61 @@ test('SCR-HRM-06 routes, components, and unified terminology exist without forbi
   assert.doesNotMatch(disputePanelSource, /Gửi yêu cầu giải thích/)
 })
 
-test('SCR-HRM-06 payslip detail supports paid (06A), pending payout (06B), 3 drawers, and disputes', async () => {
-  payrollService.resetHrPayrollStore()
+test('SCR-HRM-06 payslip service calls SELF /me, admin employee endpoint, dispute create/respond, and Zalo resend', async () => {
+  const originalGet = privateClient.get
+  const originalPost = privateClient.post
+  const calls = []
 
-  const paid = await payrollService.getPayslipDetail('NV-0002', '09/2026')
-  assert.equal(paid.payslipCode, 'PAY-202609-NV0002')
-  assert.equal(paid.payoutStatus, 'paid')
-  assert.equal(paid.totalIncome, 5480000)
-  assert.equal(paid.totalDeduction, 100000)
-  assert.equal(paid.netPay, 5380000)
-  assert.equal(paid.attendanceDays.length, 20)
-  assert.equal(paid.overtimeEntries.length, 2)
-  assert.equal(paid.advanceVoucher.voucherCode, 'ADV-0921')
-  assert.equal(paid.disputes.length, 3)
-
-  const statuses = new Set(paid.disputes.map((d) => d.status))
-  assert.ok(statuses.has('pending_response'))
-  assert.ok(statuses.has('explained'))
-  assert.ok(statuses.has('approved_next_period'))
-
-  const pending = await payrollService.getPayslipDetail('NV-0002', '10/2026')
-  assert.equal(pending.payoutStatus, 'pending_payout')
-  assert.equal(pending.netPay, 5380000)
-
-  await assert.rejects(
-    () =>
-      payrollService.createPayslipDispute({
-        employeeId: 'NV-0002',
-        periodKey: '09/2026',
-        category: 'allowance',
-        content: '   ',
-      }),
-    /nội dung đối chiếu/,
-  )
-
-  const created = await payrollService.createPayslipDispute({
-    employeeId: 'NV-0002',
+  const samplePayslip = {
+    payslipCode: 'PAY-202609-NV0002',
     periodKey: '09/2026',
-    category: 'allowance',
-    content: 'Kiểm tra phụ cấp ca tối ngày 28/09.',
-  })
-  assert.equal(created.status, 'pending_response')
+    payoutStatus: 'paid',
+    totalIncome: 5480000,
+    totalDeduction: 100000,
+    netPay: 5380000,
+    disputes: [],
+  }
 
-  const afterDispute = await payrollService.getPayslipDetail(
-    'NV-0002',
-    '09/2026',
-  )
-  assert.equal(afterDispute.disputes.length, 4)
+  privateClient.get = async (url, config) => {
+    calls.push({ method: 'GET', url, config })
+    return { status: 200, data: samplePayslip }
+  }
+  privateClient.post = async (url, body) => {
+    calls.push({ method: 'POST', url, body })
+    if (url.endsWith('/resend-zalo')) return { status: 200, data: { sentAt: '2026-10-03T05:00:00Z' } }
+    if (url.endsWith('/respond')) return { status: 200, data: { id: 'disp-1', status: 'EXPLAINED' } }
+    return { status: 201, data: { id: 'disp-1', status: 'pending_response' } }
+  }
 
-  const resend = await payrollService.resendSinglePayslipZalo(
-    'NV-0002',
-    '09/2026',
-  )
-  assert.ok(resend.sentAt.length > 0)
+  try {
+    const mine = await payrollService.getMyPayslipDetail('09/2026')
+    assert.equal(mine.netPay, 5380000)
+
+    await payrollService.getEmployeePayslipDetail('emp-2', '09/2026')
+    const dispute = await payrollService.createPayslipDispute({
+      employeeId: 'entry-2',
+      periodKey: '09/2026',
+      category: 'allowance',
+      content: 'Kiểm tra phụ cấp ca tối ngày 28/09.',
+    })
+    assert.equal(dispute.status, 'pending_response')
+
+    await payrollService.respondPayslipDispute('disp-1', {
+      status: 'EXPLAINED',
+      adminResponse: 'Đã kiểm tra chấm công.',
+    })
+
+    const resend = await payrollService.resendSinglePayslipZalo('entry-2', '09/2026')
+    assert.ok(resend.sentAt)
+
+    assert.equal(calls[0].url, '/hr/payslips/me')
+    assert.equal(calls[0].config.params.periodKey, '09/2026')
+    assert.equal(calls[1].url, '/hr/payslips/emp-2')
+    assert.equal(calls[2].url, '/hr/payslips/entry-2/disputes')
+    assert.equal(calls[3].url, '/hr/payslips/disputes/disp-1/respond')
+    assert.equal(calls[4].url, '/hr/payslips/entry-2/resend-zalo')
+  } finally {
+    privateClient.get = originalGet
+    privateClient.post = originalPost
+  }
 })

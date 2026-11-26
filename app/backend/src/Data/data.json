@@ -1034,11 +1034,11 @@
       "SourcePayrollCode": "PAY-202601",
       "TargetPeriodKey": "03/2026",
       "Category": "Thưởng bổ sung",
-      "AdjustmentType": "BONUS",
+      "AdjustmentType": "ADD_NEXT_PERIOD",
       "Amount": 50000,
       "ReferenceCode": "ADJ-REF-001",
       "Reason": "Bổ sung thưởng doanh số",
-      "status": "APPROVED",
+      "Status": "APPROVED",
       "CreatedBy": "00000000-0000-0000-0000-000000000010",
       "CreatedAt": "2026-03-01T03:00:00Z"
     }
@@ -1060,9 +1060,9 @@
       "DisputeCode": "DC-202601-0001",
       "PayrollEntryId": "00000000-0000-0000-0000-000000002521",
       "EmployeeId": "00000000-0000-0000-0000-000000000011",
-      "Category": "OTHER",
+      "Category": "BASE_SALARY",
       "Content": "Đề nghị kiểm tra lại phiếu lương.",
-      "status": "PENDING_RESPONSE",
+      "Status": "PENDING_RESPONSE",
       "CreatedAt": "2026-02-02T03:00:00Z"
     }
   ],

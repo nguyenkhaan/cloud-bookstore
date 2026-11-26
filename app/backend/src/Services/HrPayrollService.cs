@@ -134,12 +134,13 @@ public sealed class HrPayrollService(AppDbContext dbContext, UploadIntentService
         // Rebuild automatically applied adjustment lines; manual and voucher lines survive a re-initialization.
         var staleAdjustmentItems = existingItems.Where(item => item.SourceType == PayrollEntryItemModel.AdjustmentSource).ToList();
         var staleAdjustmentIds = staleAdjustmentItems.Where(item => item.SourceId.HasValue).Select(item => item.SourceId!.Value).ToArray();
+        var revertedAdjustments = new List<PayrollAdjustmentModel>();
         if (staleAdjustmentIds.Length > 0)
         {
-            var applied = await dbContext.PayrollAdjustments
+            revertedAdjustments = await dbContext.PayrollAdjustments
                 .Where(adjustment => staleAdjustmentIds.Contains(adjustment.Id) && adjustment.Status == PayrollAdjustmentStatus.APPLIED)
                 .ToListAsync(cancellationToken);
-            foreach (var adjustment in applied)
+            foreach (var adjustment in revertedAdjustments)
             {
                 adjustment.Status = PayrollAdjustmentStatus.APPROVED;
                 adjustment.AppliedAt = null;
@@ -157,9 +158,14 @@ public sealed class HrPayrollService(AppDbContext dbContext, UploadIntentService
             .ToListAsync(cancellationToken);
         var minutesByEmployee = minutes.ToDictionary(item => item.EmployeeId);
 
-        var approvedAdjustments = await dbContext.PayrollAdjustments
+        var dbApprovedAdjustments = await dbContext.PayrollAdjustments
             .Where(adjustment => adjustment.TargetPeriodKey == key && adjustment.Status == PayrollAdjustmentStatus.APPROVED)
             .ToListAsync(cancellationToken);
+        var approvedAdjustments = revertedAdjustments
+            .Where(adjustment => adjustment.TargetPeriodKey == key)
+            .Concat(dbApprovedAdjustments)
+            .DistinctBy(adjustment => adjustment.Id)
+            .ToList();
 
         var employeeIds = minutesByEmployee.Keys
             .Concat(existingEntries.Select(entry => entry.EmployeeId))
