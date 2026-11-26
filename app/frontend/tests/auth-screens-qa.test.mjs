@@ -159,6 +159,15 @@ describe('AUTH screens QA single-fault isolation & entrypoint parity', { concurr
     assert.deepEqual(requests.map(({ method, url }) => [method, url]), [['post', '/auth/register']])
   })
 
+  test('registration rejects domains outside the configured client allowlist', async () => {
+    const registerPage = await server.ssrLoadModule('/src/features/auth/pages/RegisterPage.tsx')
+
+    assert.equal(registerPage.isAllowedRegistrationEmail('staff@cloud.io'), true)
+    assert.equal(registerPage.isAllowedRegistrationEmail('staff@cloud.bookstore.io'), true)
+    assert.equal(registerPage.isAllowedRegistrationEmail('staff@example.org'), false)
+    assert.equal(registerPage.isAllowedRegistrationEmail('staff@cloud.io.example.org'), false)
+  })
+
   test('auth.service preserves 401/409 ApiError status for resetPassword and register failures', async () => {
     nextError = { status: 401, message: 'Token expired' }
     await assert.rejects(

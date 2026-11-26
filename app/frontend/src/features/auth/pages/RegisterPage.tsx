@@ -20,6 +20,17 @@ import { ApiError, isValidAuthEmail, localizeAuthError } from '@/features/auth/a
 import type { Notice } from '@/features/auth/auth.type'
 
 const PHONE_REGEX = /^0\d{9}$/
+const DEFAULT_ALLOWED_EMAIL_DOMAINS = '@cloud.io,@cloud.bookstore.io'
+const allowedEmailDomains = (import.meta.env.VITE_ALLOWED_EMAIL_DOMAINS ?? DEFAULT_ALLOWED_EMAIL_DOMAINS)
+  .split(',')
+  .map((domain) => domain.trim().toLowerCase())
+  .filter(Boolean)
+
+export function isAllowedRegistrationEmail(email: string): boolean {
+  const atIndex = email.lastIndexOf('@')
+  if (atIndex < 0) return false
+  return allowedEmailDomains.includes(email.slice(atIndex).toLowerCase())
+}
 
 type FieldErrors = {
   fullName?: string
@@ -78,6 +89,8 @@ export function RegisterPage() {
     }
     if (!isValidAuthEmail(normalizedEmail)) {
       errors.email = 'Vui lòng nhập địa chỉ email nội bộ hợp lệ.'
+    } else if (!isAllowedRegistrationEmail(normalizedEmail)) {
+      errors.email = 'Tên miền email này không được phép đăng ký.'
     }
     if (!PHONE_REGEX.test(normalizedPhone)) {
       errors.phone = 'Số điện thoại phải gồm đúng 10 chữ số và bắt đầu bằng số 0.'
