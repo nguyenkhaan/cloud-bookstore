@@ -1,246 +1,130 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Check, Circle, KeyRound, X } from 'lucide-react'
-import { Button } from '@/components/common'
-import { cn } from '@/lib/cn'
+import { X } from 'lucide-react'
+import { Button, notify } from '@/components/common'
+import { useChangePasswordMutation } from '../auth.hook'
+import { localizeAuthError } from '../auth.service'
+import { Banner } from './Banner'
 import { PasswordField } from './PasswordField'
-import {
-  getPasswordChecks,
-  isPasswordAcceptable,
-  PASSWORD_MAX_LENGTH,
-} from './PasswordRules'
+import { isPasswordAcceptable, PASSWORD_MAX_LENGTH, PasswordRules } from './PasswordRules'
 import { PasswordStrengthBar } from './PasswordStrengthBar'
 
-type ChangePasswordModalProps = {
-  open: boolean
-  onClose: () => void
+type PasswordValues = { currentPassword: string; newPassword: string; confirmPassword: string }
+type PasswordErrors = Partial<Record<keyof PasswordValues, string>>
+
+type ChangePasswordFormProps = {
+  onSuccess: () => void
+  onCancel?: () => void
+  submitTestId?: string
+  onPendingChange?: (pending: boolean) => void
 }
 
-const checklistItems = [
-  { key: 'length', label: 'Tối thiểu 12-128 ký tự' },
-  { key: 'upper', label: 'Bao gồm ít nhất 1 chữ hoa (A-Z)' },
-  { key: 'digit', label: 'Bao gồm ít nhất 1 chữ số (0-9)' },
-  { key: 'special', label: 'Bao gồm ít nhất 1 ký tự đặc biệt' },
-] as const
+export function ChangePasswordForm({ onSuccess, onCancel, onPendingChange, submitTestId }: ChangePasswordFormProps) {
+  const { mutateAsync, isPending } = useChangePasswordMutation()
+  const [values, setValues] = useState<PasswordValues>({ currentPassword: '', newPassword: '', confirmPassword: '' })
+  const [errors, setErrors] = useState<PasswordErrors>({})
+  const [requestError, setRequestError] = useState<string | null>(null)
+  const { currentPassword, newPassword, confirmPassword } = values
 
-export function ChangePasswordModal({ open, onClose }: ChangePasswordModalProps) {
-  const [currentPassword, setCurrentPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [currentError, setCurrentError] = useState<string | null>(null)
-  const [newError, setNewError] = useState<string | null>(null)
-  const [confirmError, setConfirmError] = useState<string | null>(null)
-  const [submitError, setSubmitError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!open) return
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose()
-      }
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (isPending) return
+    const nextErrors: PasswordErrors = {}
+    if (!currentPassword) nextErrors.currentPassword = 'Vui lòng nhập mật khẩu hiện tại.'
+    if (!isPasswordAcceptable(newPassword)) {
+      nextErrors.newPassword = 'Mật khẩu mới cần 12-128 ký tự, gồm chữ hoa, chữ số và ký tự đặc biệt.'
+    } else if (newPassword === currentPassword) {
+      nextErrors.newPassword = 'Mật khẩu mới phải khác mật khẩu hiện tại.'
     }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [open, onClose])
+    if (!confirmPassword || confirmPassword !== newPassword) {
+      nextErrors.confirmPassword = 'Mật khẩu xác nhận không khớp.'
+    }
+    setErrors(nextErrors)
+    setRequestError(null)
+    if (Object.keys(nextErrors).length) return
 
-  if (!open) return null
-
-  const checks = getPasswordChecks(newPassword)
-  const isNewValid = isPasswordAcceptable(newPassword)
-  const isConfirmValid = Boolean(confirmPassword) && confirmPassword === newPassword && isNewValid
-
-  const resetAndClose = () => {
-    setCurrentPassword('')
-    setNewPassword('')
-    setConfirmPassword('')
-    setCurrentError(null)
-    setNewError(null)
-    setConfirmError(null)
-    setSubmitError(null)
-    onClose()
+    onPendingChange?.(true)
+    try {
+      await mutateAsync({ currentPassword, newPassword })
+      onSuccess()
+    } catch (error) {
+      const message = localizeAuthError(error, 'Không thể cập nhật mật khẩu lúc này. Vui lòng thử lại.')
+      if (message === 'Mật khẩu hiện tại không chính xác.') {
+        setErrors({ currentPassword: message })
+      } else {
+        setRequestError(message)
+      }
+    } finally {
+      onPendingChange?.(false)
+    }
   }
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-
-    let hasError = false
-    if (!currentPassword.trim()) {
-      setCurrentError('Vui lòng nhập mật khẩu hiện tại.')
-      hasError = true
-    } else {
-      setCurrentError(null)
-    }
-
-    if (!isNewValid) {
-      setNewError('Mật khẩu mới cần 12-128 ký tự, gồm chữ hoa, chữ số và ký tự đặc biệt.')
-      hasError = true
-    } else if (newPassword === currentPassword) {
-      setNewError('Mật khẩu mới không được trùng với mật khẩu hiện tại.')
-      hasError = true
-    } else {
-      setNewError(null)
-    }
-
-    if (confirmPassword !== newPassword) {
-      setConfirmError('Mật khẩu xác nhận không khớp.')
-      hasError = true
-    } else {
-      setConfirmError(null)
-    }
-
-    if (hasError) return
-
-    setSubmitError('Chưa thể cập nhật mật khẩu vì máy chủ chưa hỗ trợ thao tác này. Mật khẩu đã nhập chưa được lưu.')
+  function setField(field: keyof PasswordValues, value: string) {
+    setValues((current) => ({ ...current, [field]: value }))
+    setErrors((current) => ({ ...current, [field]: undefined }))
+    setRequestError(null)
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
-          resetAndClose()
-        }
-      }}
-    >
-      <div
-        aria-labelledby="change-password-modal-title"
-        aria-modal="true"
-        className="w-full max-w-[540px] max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-xl"
-        data-testid="change-password-modal"
-        role="dialog"
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-              <KeyRound aria-hidden="true" className="size-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-slate-900" id="change-password-modal-title">
-                Đổi mật khẩu tài khoản
-              </h2>
-              <p className="mt-0.5 text-xs text-slate-500">
-                Tạo mật khẩu mạnh để bảo vệ tài khoản nhân viên của bạn.
-              </p>
-            </div>
-          </div>
-
-          <button
-            aria-label="Đóng hộp thoại đổi mật khẩu"
-            className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
-            onClick={resetAndClose}
-            type="button"
-          >
-            <X aria-hidden="true" className="size-4" />
-          </button>
-        </div>
-
-        <form className="mt-5 flex flex-col gap-4" noValidate onSubmit={(event) => void handleSubmit(event)}>
-          <PasswordField
-            autoComplete="current-password"
-            hint={currentError}
-            invalid={Boolean(currentError)}
-            label="Mật khẩu hiện tại *"
-            name="currentPassword"
-            onChange={(event) => {
-              setCurrentPassword(event.target.value)
-              setCurrentError(null)
-              setSubmitError(null)
-            }}
-            placeholder="Nhập mật khẩu hiện tại"
-            required
-            value={currentPassword}
-            variant="outlined"
-          />
-
-          <div className="space-y-2.5">
-            <PasswordField
-              autoComplete="new-password"
-              hint={newError}
-              invalid={Boolean(newError)}
-              label="Mật khẩu mới *"
-              maxLength={PASSWORD_MAX_LENGTH}
-              name="newPassword"
-              onChange={(event) => {
-                setNewPassword(event.target.value)
-                setNewError(null)
-                setSubmitError(null)
-              }}
-              placeholder="Nhập mật khẩu mới"
-              required
-              valid={isNewValid}
-              value={newPassword}
-              variant="outlined"
-            />
-            <PasswordStrengthBar password={newPassword} variant="split" />
-            <ul aria-label="Tiêu chí mật khẩu" className="space-y-1.5 pt-0.5">
-              {checklistItems.map((item) => {
-                const met = checks[item.key]
-                return (
-                  <li
-                    className={cn(
-                      'flex items-center gap-2 text-xs',
-                      met ? 'font-medium text-emerald-700' : 'text-slate-500',
-                    )}
-                    key={item.key}
-                  >
-                    {met ? (
-                      <Check aria-hidden="true" className="size-3.5 shrink-0 text-emerald-600" />
-                    ) : (
-                      <Circle aria-hidden="true" className="size-3 shrink-0 text-slate-300" />
-                    )}
-                    <span>{item.label}</span>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-
-          <PasswordField
-            autoComplete="new-password"
-            hint={confirmError}
-            invalid={Boolean(confirmError)}
-            label="Xác nhận mật khẩu mới *"
-            maxLength={PASSWORD_MAX_LENGTH}
-            name="confirmPassword"
-            onChange={(event) => {
-              setConfirmPassword(event.target.value)
-              setConfirmError(null)
-              setSubmitError(null)
-            }}
-            placeholder="Nhập lại mật khẩu mới"
-            required
-            valid={isConfirmValid}
-            value={confirmPassword}
-            variant="outlined"
-          />
-
-          {submitError && (
-            <div className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-xs leading-5 text-rose-700" role="alert">
-              {submitError}
-            </div>
-          )}
-
-          <div className="mt-2 flex flex-wrap items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
-            <Button
-              className="min-h-11 px-4"
-              onClick={resetAndClose}
-              size="md"
-              type="button"
-              variant="secondary"
-            >
-              Hủy bỏ
-            </Button>
-            <Button
-              className="min-h-11 px-5"
-              size="md"
-              type="submit"
-              variant="primary"
-            >
-              Cập nhật mật khẩu
-            </Button>
-          </div>
-        </form>
+    <form className="mt-6 flex flex-col gap-4" noValidate onSubmit={(event) => void handleSubmit(event)}>
+      <PasswordField
+        autoComplete="current-password" hint={errors.currentPassword} invalid={Boolean(errors.currentPassword)}
+        label="Mật khẩu hiện tại" name="currentPassword" onChange={(event) => setField('currentPassword', event.target.value)}
+        required value={currentPassword} variant="outlined"
+      />
+      <div className="space-y-2.5">
+        <PasswordField
+          autoComplete="new-password" hint={errors.newPassword} invalid={Boolean(errors.newPassword)}
+          label="Mật khẩu mới" maxLength={PASSWORD_MAX_LENGTH} name="newPassword"
+          onChange={(event) => setField('newPassword', event.target.value)} required value={newPassword} variant="outlined"
+        />
+        <PasswordStrengthBar password={newPassword} />
+        <PasswordRules password={newPassword} />
       </div>
-    </div>
+      <PasswordField
+        autoComplete="new-password" hint={errors.confirmPassword} invalid={Boolean(errors.confirmPassword)}
+        label="Xác nhận mật khẩu mới" maxLength={PASSWORD_MAX_LENGTH} name="confirmPassword"
+        onChange={(event) => setField('confirmPassword', event.target.value)} required value={confirmPassword} variant="outlined"
+      />
+      {requestError && <Banner tone="error">{requestError}</Banner>}
+      <div className={onCancel ? 'flex flex-wrap justify-end gap-2' : undefined}>
+        {onCancel && <Button className="min-h-11" disabled={isPending} onClick={onCancel} type="button" variant="outline">Hủy</Button>}
+        <Button className="min-h-11" data-testid={submitTestId} fullWidth={!onCancel} loading={isPending} type="submit" variant="primary">
+          {isPending ? 'Đang cập nhật…' : 'Cập nhật mật khẩu'}
+        </Button>
+      </div>
+    </form>
   )
+}
+
+function OpenChangePasswordModal({ onClose }: { onClose: () => void }) {
+  const dialog = useRef<HTMLDialogElement>(null)
+  const [isPending, setIsPending] = useState(false)
+  useEffect(() => {
+    const element = dialog.current
+    element?.showModal()
+    return () => element?.close()
+  }, [])
+
+  return (
+    <dialog aria-labelledby="change-password-modal-title" className="fixed inset-0 m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[540px] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-xl backdrop:bg-slate-900/50" data-testid="change-password-modal" ref={dialog} onCancel={(event) => {
+      event.preventDefault()
+      if (!isPending) onClose()
+    }}>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-xl font-bold text-slate-900" id="change-password-modal-title">Đổi mật khẩu tài khoản</h2>
+        <Button aria-label="Đóng" className="min-h-11 min-w-11" disabled={isPending} onClick={onClose} type="button" variant="ghost">
+          <X aria-hidden="true" className="size-5" />
+        </Button>
+      </div>
+      <ChangePasswordForm onCancel={onClose} onPendingChange={setIsPending} onSuccess={() => {
+        notify.success('Đổi mật khẩu thành công.')
+        onClose()
+      }} />
+    </dialog>
+  )
+}
+
+export function ChangePasswordModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  return open ? <OpenChangePasswordModal onClose={onClose} /> : null
 }

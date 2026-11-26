@@ -69,18 +69,21 @@ test('barcode label CSV treats formula prefixes as literal text', () => {
   assert.match(csv, /'@danger/)
 })
 
-test('unsupported account actions preserve input instead of reporting fake completion', () => {
+test('account forms and device actions use live mutations instead of mock state', () => {
   const firstChange = readSource('features', 'auth', 'pages', 'FirstChangePasswordPage.tsx')
   const changeModal = readSource('features', 'auth', 'components', 'ChangePasswordModal.tsx')
   const profile = readSource('features', 'auth', 'pages', 'ProfileSecurityPage.tsx')
 
-  assert.doesNotMatch(firstChange, /setTimeout|notify\.success|to="\/dashboard"/)
-  assert.match(firstChange, /setSubmitError\(/)
+  assert.doesNotMatch(firstChange, /setTimeout|mật khẩu tạm/i)
+  assert.match(firstChange, /<ChangePasswordForm/)
+  assert.match(firstChange, /to="\/dashboard"/)
 
-  assert.doesNotMatch(changeModal, /setTimeout|onSuccess\(/)
-  assert.match(changeModal, /role="alert"/)
+  assert.match(changeModal, /useChangePasswordMutation\(/)
+  assert.match(changeModal, /await mutateAsync\(\{ currentPassword, newPassword \}\)/)
+  assert.match(changeModal, /localizeAuthError\(/)
 
-  assert.doesNotMatch(profile, /setSavedProfile\(\{|setDevices\(|setLastPasswordChangedLabel\(/)
-  assert.doesNotMatch(profile, /Đã lưu thông tin hồ sơ cá nhân|Đã đăng xuất phiên làm việc|Đã đăng xuất tất cả các thiết bị khác/)
-  assert.match(profile, /notify\.error\(/)
+  assert.doesNotMatch(profile, /auth\.mock|setDevices\(|Tên đăng nhập|Ca làm việc mặc định|Tùy chọn thông báo/)
+  assert.match(profile, /useUpdateProfileMutation\(/)
+  assert.match(profile, /uploadImage\('EMPLOYEE_AVATAR', file\)/)
+  assert.match(profile, /useRevokeOtherSessionsMutation\(/)
 })

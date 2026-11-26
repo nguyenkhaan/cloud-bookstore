@@ -2,16 +2,20 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
+using System.Text.RegularExpressions;
 using backend.src.Bases.Enums;
 using backend.src.Configurations;
 using backend.src.Data;
 using backend.src.Dto.AuthDto;
+using backend.src.Dto.AuditLogDto;
+using backend.src.Dto.UploadDto;
 using backend.src.Exceptions;
+using backend.src.Helpers;
 using backend.src.Infrastructure;
 using backend.src.Models.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.IdentityModel.Tokens;
-using BCryptHasher = BCrypt.Net.BCrypt;
 using backend.src.Models;
 
 namespace backend.src.Services;
@@ -23,21 +27,27 @@ public class AuthService(
     EmailService emailService,
     TokenJtiStore tokenJtiStore,
     CsrfTokenService csrfTokenService,
+    AuditLogService auditLogService,
+    UploadIntentService uploadIntentService,
+    ICloudinaryService cloudinaryService,
     IConfiguration configuration)
 {
     private readonly AuthSecuritySettings securitySettings = AuthSecuritySettings.FromConfiguration(configuration);
 
-    public async Task<BrowserAuthenticationSession> Login(LoginRequest request)
+    public async Task<BrowserAuthenticationSession> Login(LoginRequest request, string userAgent)
     {
-        var email = request.Email.Trim();
-        var normalizedEmail = email.ToLowerInvariant();
-        var employee = await dbContext.Employees
-            .Include(employee => employee.Role)
-            .FirstOrDefaultAsync(user => user.Email.ToLower() == normalizedEmail);
-        if (employee is null)
+        var normalizedEmail = NormalizeEmail(request.Email);
+        var employeeId = await dbContext.Employees
+            .Where(user => user.Email.ToLower() == normalizedEmail)
+            .Select(user => (Guid?)user.Id)
+            .FirstOrDefaultAsync();
+        if (employeeId is null)
             throw new UnauthorizedException("Invalid email or password");
+        await using var transaction = await BeginEmployeeMutationAsync(employeeId.Value);
+        var employee = await GetEmployeeAsync(employeeId.Value);
 
         var now = DateTime.UtcNow;
+        var resetFailures = employee.LockoutEndUtc is not null || employee.FailedLoginAttempts != 0;
         if (employee.LockoutEndUtc is { } lockoutEndUtc)
         {
             if (lockoutEndUtc > now)
@@ -47,7 +57,7 @@ public class AuthService(
             employee.FailedLoginAttempts = 0;
         }
 
-        var passwordIsValid = BCryptHasher.Verify(request.Password, employee.Password);
+        var passwordIsValid = PasswordPolicy.Verify(request.Password, employee.Password);
         if (!passwordIsValid)
         {
             employee.FailedLoginAttempts++;
@@ -57,6 +67,7 @@ public class AuthService(
             }
 
             await dbContext.SaveChangesAsync();
+            await transaction.CommitAsync();
             if (employee.LockoutEndUtc is not null)
                 throw new ForbiddenException("Account is temporarily locked. Try again later.");
 
@@ -65,36 +76,19 @@ public class AuthService(
         if (employee.Status != EmployeeStatus.ACTIVE)
             throw new ForbiddenException("Account is not verified or is unavailable");
 
-        if (employee.FailedLoginAttempts != 0 || employee.LockoutEndUtc is not null)
+        if (resetFailures)
         {
             employee.FailedLoginAttempts = 0;
             employee.LockoutEndUtc = null;
-            await dbContext.SaveChangesAsync();
         }
 
-        var claims = new List<Claim>
-        {
-            new ("role" , employee.Role.RoleName.ToString())
-        };
-        var accessToken = tokenService.GenerateToken(employee.Id, TokenType.ACCESS, claims);
-        var refreshToken = tokenService.GenerateToken(employee.Id, TokenType.REFRESH, claims);
-        var accessJti = await tokenJtiStore.StoreLoginAsync(accessToken, refreshToken);
-        var csrfToken = await csrfTokenService.IssueAsync(
-            accessJti,
-            TimeSpan.FromMinutes(securitySettings.RefreshTokenLifetimeMinutes));
-        var user = new BrowserSessionUser(
-            employee.Id,
-            employee.Email,
-            employee.FullName,
-            employee.Role.RoleName.ToString(),
-            employee.AvatarUrl);
-        return new BrowserAuthenticationSession(accessToken, refreshToken, csrfToken, user);
+        return await IssueBrowserSessionAsync(employee, userAgent, null, transaction);
     }
     public async Task<RegisterResponse> Register(RegisterRequest request)
     {
-        var email = request.Email.Trim();
+        var email = NormalizeEmail(request.Email);
         var atIndex = email.LastIndexOf('@');
-        if (atIndex <= 0 || atIndex == email.Length - 1)
+        if (email.Length > 200 || !Regex.IsMatch(email, @"\A[^@\s]+@[^@\s.]+(?:\.[^@\s.]+)+\z"))
         {
             throw new BadRequestException("Invalid email address");
         }
@@ -106,7 +100,8 @@ public class AuthService(
         {
             throw new BadRequestException("Email domain is not allowed");
         }
-        var employee = await dbContext.Employees.FirstOrDefaultAsync(em => em.Email == email);
+        PasswordPolicy.Validate(request.Password);
+        var employee = await dbContext.Employees.FirstOrDefaultAsync(em => em.Email.ToLower() == email);
         if (employee != null)
         {
             if (employee.Status == EmployeeStatus.PENDING_OTP)
@@ -121,10 +116,10 @@ public class AuthService(
         var employeeRole = await dbContext.Roles.FirstOrDefaultAsync(r => r.RoleName == RoleName.CASHIER);
         var newEmployee = new EmployeeModel
         {
-            Email = request.Email,
-            Password = BCryptHasher.HashPassword(request.Password, workFactor: 12),
-            FullName = request.FullName,
-            Phone = request.Phone,
+            Email = email,
+            Password = PasswordPolicy.Hash(request.Password),
+            FullName = request.FullName.Trim(),
+            Phone = request.Phone.Trim(),
             Status = EmployeeStatus.PENDING_OTP,
             Role = employeeRole!
         };
@@ -152,7 +147,7 @@ public class AuthService(
 
     public async Task ResendVerificationAsync(string email)
     {
-        var normalizedEmail = email.Trim().ToLowerInvariant();
+        var normalizedEmail = NormalizeEmail(email);
         var employee = await dbContext.Employees
             .SingleOrDefaultAsync(item => item.Email.ToLower() == normalizedEmail);
         if (employee is null || employee.Status != EmployeeStatus.PENDING_OTP)
@@ -216,7 +211,7 @@ public class AuthService(
         await tokenJtiStore.RevokeRegistrationVerificationAsync(employeeId, jti);
     }
 
-    public async Task<BrowserAuthenticationSession> Refresh(string refreshToken, string? csrfToken)
+    public async Task<BrowserAuthenticationSession> Refresh(string refreshToken, string? csrfToken, string userAgent)
     {
         var refreshPrincipal = ValidateRefreshToken(refreshToken);
         var refreshJti = refreshPrincipal.FindFirstValue(JwtRegisteredClaimNames.Jti)!;
@@ -231,6 +226,7 @@ public class AuthService(
         if (!Guid.TryParse(subject, out var employeeId))
             throw new UnauthorizedException("Invalid or expired refresh token");
 
+        await using var transaction = await BeginEmployeeMutationAsync(employeeId);
         var employee = await dbContext.Employees
             .Include(item => item.Role)
             .SingleOrDefaultAsync(item => item.Id == employeeId);
@@ -241,32 +237,21 @@ public class AuthService(
             throw new UnauthorizedException("Account is unavailable.");
         }
 
+        var device = await dbContext.EmployeeSessions.SingleOrDefaultAsync(item =>
+            item.EmployeeId == employeeId && item.RefreshJti == refreshJti);
+        if (device is not null && (device.RevokedAt is not null || device.ExpiresAt <= DateTime.UtcNow))
+            throw new UnauthorizedException("Invalid or expired refresh token");
+
         if (!await tokenJtiStore.ConsumeRefreshAsync(refreshJti))
             throw new UnauthorizedException("Invalid or expired refresh token");
 
         await tokenJtiStore.RevokeAccessAsync(accessJti);
         await csrfTokenService.RevokeAsync(accessJti);
 
-        var claims = new List<Claim>
-        {
-            new("role", employee.Role.RoleName.ToString())
-        };
-        var accessToken = tokenService.GenerateToken(employee.Id, TokenType.ACCESS, claims);
-        var nextRefreshToken = tokenService.GenerateToken(employee.Id, TokenType.REFRESH, claims);
-        var nextAccessJti = await tokenJtiStore.StoreLoginAsync(accessToken, nextRefreshToken);
-        var nextCsrfToken = await csrfTokenService.IssueAsync(
-            nextAccessJti,
-            TimeSpan.FromMinutes(securitySettings.RefreshTokenLifetimeMinutes));
-        var user = new BrowserSessionUser(
-            employee.Id,
-            employee.Email,
-            employee.FullName,
-            employee.Role.RoleName.ToString(),
-            employee.AvatarUrl);
-        return new BrowserAuthenticationSession(accessToken, nextRefreshToken, nextCsrfToken, user);
+        return await IssueBrowserSessionAsync(employee, userAgent, device, transaction);
     }
 
-    public async Task LogoutByRefreshTokenAsync(string refreshToken, string authenticatedAccessJti)
+    public async Task LogoutByRefreshTokenAsync(Guid employeeId, string refreshToken, string authenticatedAccessJti)
     {
         var refreshPrincipal = ValidateRefreshToken(refreshToken);
         var refreshJti = refreshPrincipal.FindFirstValue(JwtRegisteredClaimNames.Jti)!;
@@ -275,50 +260,68 @@ public class AuthService(
         if (!string.Equals(accessJti, authenticatedAccessJti, StringComparison.Ordinal))
             throw new UnauthorizedException("Invalid or expired refresh token");
 
-        await tokenJtiStore.RevokeLoginAsync(authenticatedAccessJti, refreshJti);
-        await csrfTokenService.RevokeAsync(authenticatedAccessJti);
+        await LogoutByAccessTokenAsync(employeeId, authenticatedAccessJti);
     }
 
-    public async Task LogoutByAccessTokenAsync(string accessJti)
+    public async Task LogoutByAccessTokenAsync(Guid employeeId, string accessJti)
     {
-        await tokenJtiStore.RevokeLoginByAccessAsync(accessJti);
-        await csrfTokenService.RevokeAsync(accessJti);
+        await using var transaction = await BeginEmployeeMutationAsync(employeeId);
+        var device = await dbContext.EmployeeSessions.SingleOrDefaultAsync(item =>
+            item.EmployeeId == employeeId && item.AccessJti == accessJti);
+        if (device is null)
+        {
+            await tokenJtiStore.RevokeLoginByAccessAsync(accessJti);
+            await csrfTokenService.RevokeAsync(accessJti);
+        }
+        else if (device.RevokedAt is null)
+        {
+            await RevokeDeviceAsync(device, DateTime.UtcNow);
+            await dbContext.SaveChangesAsync();
+        }
+        await transaction.CommitAsync();
     }
 
-    public async Task<BrowserSessionResponse> GetBrowserSessionAsync(string accessJti, Guid? userId = null)
+    public async Task<BrowserSessionResponse> GetBrowserSessionAsync(string accessJti, Guid employeeId)
     {
+        await using var transaction = await BeginEmployeeMutationAsync(employeeId);
+        if (!await tokenJtiStore.IsActiveAsync(accessJti, TokenType.ACCESS))
+            throw new UnauthorizedException("Invalid or expired access token");
+
+        var device = await dbContext.EmployeeSessions.SingleOrDefaultAsync(item =>
+            item.EmployeeId == employeeId && item.AccessJti == accessJti && item.RevokedAt == null);
+        if (device is not null)
+        {
+            device.LastActiveAt = DateTime.UtcNow;
+            await dbContext.SaveChangesAsync();
+        }
         var csrfToken = await csrfTokenService.IssueAsync(
             accessJti,
             TimeSpan.FromMinutes(securitySettings.RefreshTokenLifetimeMinutes));
+        var employee = await GetEmployeeAsync(employeeId);
+        await transaction.CommitAsync();
 
-        BrowserSessionUser? user = null;
-        if (userId.HasValue)
-        {
-            var employee = await dbContext.Employees.Include(e => e.Role).FirstOrDefaultAsync(e => e.Id == userId.Value);
-            if (employee is not null)
-            {
-                user = new BrowserSessionUser(
-                    employee.Id,
-                    employee.Email,
-                    employee.FullName,
-                    employee.Role.RoleName.ToString(),
-                    employee.AvatarUrl);
-            }
-        }
-
-        return new BrowserSessionResponse(csrfToken, user);
+        return new BrowserSessionResponse(csrfToken, ToSessionUser(employee));
     }
 
     public async Task RequestPasswordReset(ForgotPasswordRequest request)
     {
-        var email = request.Email.Trim();
-        var employee = await dbContext.Employees.FirstOrDefaultAsync(employee => employee.Email == email);
+        var email = NormalizeEmail(request.Email);
+        var employeeId = await dbContext.Employees
+            .Where(item => item.Email.ToLower() == email && item.Status == EmployeeStatus.ACTIVE)
+            .Select(item => (Guid?)item.Id)
+            .FirstOrDefaultAsync();
+        if (employeeId is null)
+            return;
+
+        await using var transaction = await BeginEmployeeMutationAsync(employeeId.Value);
+        var employee = await dbContext.Employees.FindAsync(employeeId.Value);
         if (employee is null || employee.Status != EmployeeStatus.ACTIVE)
             return;
 
         var resetToken = GenerateEmailToken(employee.Id, employee.Email, TokenType.RESET_PASSWORD);
         employee.PasswordResetTokenHash = HashToken(resetToken);
         await dbContext.SaveChangesAsync();
+        await transaction.CommitAsync();
 
         await emailService.SendPasswordResetEmailAsync(employee.Email, employee.FullName, resetToken);
     }
@@ -340,6 +343,7 @@ public class AuthService(
         if (!Guid.TryParse(subject, out var employeeId) || string.IsNullOrWhiteSpace(email))
             throw new UnauthorizedException("Invalid or expired password reset token");
 
+        await using var transaction = await BeginEmployeeMutationAsync(employeeId);
         var employee = await dbContext.Employees.FindAsync(employeeId);
         if (employee is null ||
             employee.Status != EmployeeStatus.ACTIVE ||
@@ -349,10 +353,212 @@ public class AuthService(
             throw new UnauthorizedException("Invalid or expired password reset token");
         }
 
-        employee.Password = BCryptHasher.HashPassword(request.NewPassword, workFactor: 12);
+        PasswordPolicy.Validate(request.NewPassword);
+        var now = DateTime.UtcNow;
+        employee.Password = PasswordPolicy.Hash(request.NewPassword);
+        employee.PasswordChangedAt = now;
+        employee.FailedLoginAttempts = 0;
+        employee.LockoutEndUtc = null;
         employee.PasswordResetTokenHash = null;
-        await dbContext.SaveChangesAsync();
+        await RevokeActiveDevicesAsync(employeeId, null, now);
+        await AppendAuditAsync("RESET_PASSWORD", employeeId, employeeId, "Password reset by email verification.");
+        await transaction.CommitAsync();
     }
+
+    public async Task<EmployeeProfileResponse> GetProfileAsync(Guid employeeId) =>
+        ToProfile(await GetEmployeeAsync(employeeId, asNoTracking: true));
+
+    public async Task<EmployeeProfileResponse> UpdateProfileAsync(Guid employeeId, UpdateProfileRequest request)
+    {
+        var fullName = request.FullName.Trim();
+        if (fullName.Length < 2)
+            throw new BadRequestException("Họ và tên phải có ít nhất 2 ký tự.");
+
+        var employee = await GetEmployeeAsync(employeeId);
+        var before = new { employee.FullName, employee.Phone };
+        employee.FullName = fullName;
+        employee.Phone = request.Phone;
+        await AppendAuditAsync("UPDATE_PROFILE", employeeId, employeeId, "Updated account profile.", before,
+            new { employee.FullName, employee.Phone });
+        return ToProfile(employee);
+    }
+
+    public async Task<EmployeeProfileResponse> UpdateProfileAvatarAsync(Guid employeeId, CloudinaryUploadResultRequest request)
+    {
+        await using var transaction = await BeginEmployeeMutationAsync(employeeId);
+        var employee = await GetEmployeeAsync(employeeId);
+        var before = new { employee.AvatarUrl };
+        var publicId = await uploadIntentService.ConsumeAsync(employeeId, UploadOwnerType.EMPLOYEE_AVATAR, request);
+        employee.AvatarUrl = cloudinaryService.BuildImageUrl(publicId, UploadOwnerType.EMPLOYEE_AVATAR);
+        await AppendAuditAsync("UPDATE_PROFILE_AVATAR", employeeId, employeeId, "Updated account avatar.", before,
+            new { employee.AvatarUrl });
+        await transaction.CommitAsync();
+        return ToProfile(employee);
+    }
+
+    public async Task ChangePasswordAsync(Guid employeeId, string accessJti, ChangePasswordRequest request)
+    {
+        await using var transaction = await BeginEmployeeMutationAsync(employeeId);
+        await EnsureActiveAccessAsync(accessJti);
+        var employee = await GetEmployeeAsync(employeeId);
+        if (!PasswordPolicy.Verify(request.CurrentPassword, employee.Password))
+            throw new BadRequestException("Current password is incorrect.");
+        if (request.NewPassword == request.CurrentPassword)
+            throw new BadRequestException("New password must be different from current password.");
+
+        PasswordPolicy.Validate(request.NewPassword);
+        var now = DateTime.UtcNow;
+        employee.Password = PasswordPolicy.Hash(request.NewPassword);
+        employee.PasswordChangedAt = now;
+        employee.PasswordResetTokenHash = null;
+        await RevokeActiveDevicesAsync(employeeId, accessJti, now);
+        await AppendAuditAsync("CHANGE_PASSWORD", employeeId, employeeId, "Changed account password.");
+        await transaction.CommitAsync();
+    }
+
+    public async Task<List<EmployeeSessionResponse>> GetSessionsAsync(Guid employeeId, string accessJti)
+    {
+        var now = DateTime.UtcNow;
+        var historyStart = now.AddDays(-7);
+        return await dbContext.EmployeeSessions.AsNoTracking()
+            .Where(device => device.EmployeeId == employeeId &&
+                (device.RevokedAt >= historyStart || (device.RevokedAt == null && device.ExpiresAt > now)))
+            .OrderByDescending(device => device.AccessJti == accessJti)
+            .ThenByDescending(device => device.RevokedAt == null)
+            .ThenByDescending(device => device.RevokedAt ?? device.LastActiveAt)
+            .ThenBy(device => device.Id)
+            .Take(20)
+            .Select(device => new EmployeeSessionResponse(device.Id, device.DeviceName, device.DeviceType,
+                device.AccessJti == accessJti && device.RevokedAt == null, device.CreatedAt, device.LastActiveAt,
+                device.ExpiresAt, device.RevokedAt == null ? "ACTIVE" : "REVOKED"))
+            .ToListAsync();
+    }
+
+    public async Task RevokeSessionAsync(Guid employeeId, string accessJti, Guid sessionId)
+    {
+        await using var transaction = await BeginEmployeeMutationAsync(employeeId);
+        await EnsureActiveAccessAsync(accessJti);
+        var device = await dbContext.EmployeeSessions.SingleOrDefaultAsync(item => item.Id == sessionId && item.EmployeeId == employeeId)
+            ?? throw new NotFoundException("Session was not found.");
+        if (device.AccessJti == accessJti)
+            throw new BadRequestException("Use logout to end the current session.");
+        var now = DateTime.UtcNow;
+        if (device.RevokedAt is null && device.ExpiresAt > now)
+        {
+            await RevokeDeviceAsync(device, now);
+            await AppendAuditAsync("REVOKE_SESSION", employeeId, employeeId, "Revoked account device session.",
+                after: new { SessionId = device.Id });
+        }
+        await transaction.CommitAsync();
+    }
+
+    public async Task<RevokeOtherSessionsResponse> RevokeOtherSessionsAsync(Guid employeeId, string accessJti)
+    {
+        await using var transaction = await BeginEmployeeMutationAsync(employeeId);
+        await EnsureActiveAccessAsync(accessJti);
+        var revokedCount = await RevokeActiveDevicesAsync(employeeId, accessJti, DateTime.UtcNow);
+        await AppendAuditAsync("REVOKE_OTHER_SESSIONS", employeeId, employeeId, "Revoked other account device sessions.",
+            after: new { RevokedCount = revokedCount });
+        await transaction.CommitAsync();
+        return new RevokeOtherSessionsResponse(revokedCount);
+    }
+
+    private async Task<BrowserAuthenticationSession> IssueBrowserSessionAsync(
+        EmployeeModel employee, string userAgent, EmployeeSessionModel? device, IDbContextTransaction transaction)
+    {
+        Claim[] claims = [new("role", employee.Role.RoleName.ToString())];
+        var accessToken = tokenService.GenerateToken(employee.Id, TokenType.ACCESS, claims);
+        var refreshToken = tokenService.GenerateToken(employee.Id, TokenType.REFRESH, claims);
+        var handler = new JwtSecurityTokenHandler();
+        var accessJti = handler.ReadJwtToken(accessToken).Id;
+        var refreshJwt = handler.ReadJwtToken(refreshToken);
+        var now = DateTime.UtcNow;
+        if (device is null)
+        {
+            device = new EmployeeSessionModel { EmployeeId = employee.Id, CreatedAt = now };
+            dbContext.EmployeeSessions.Add(device);
+        }
+        if (!string.IsNullOrEmpty(userAgent) || string.IsNullOrEmpty(device.DeviceName))
+            (device.DeviceName, device.DeviceType) = UserAgentParser.Parse(userAgent);
+        device.AccessJti = accessJti;
+        device.RefreshJti = refreshJwt.Id;
+        device.LastActiveAt = now;
+        device.ExpiresAt = refreshJwt.ValidTo;
+        await dbContext.SaveChangesAsync();
+
+        try
+        {
+            await tokenJtiStore.StoreLoginAsync(accessToken, refreshToken);
+            var csrfToken = await csrfTokenService.IssueAsync(accessJti, TimeSpan.FromMinutes(securitySettings.RefreshTokenLifetimeMinutes));
+            await transaction.CommitAsync();
+            return new BrowserAuthenticationSession(accessToken, refreshToken, csrfToken, ToSessionUser(employee));
+        }
+        catch
+        {
+            await tokenJtiStore.RevokeLoginAsync(accessJti, refreshJwt.Id);
+            await csrfTokenService.RevokeAsync(accessJti);
+            throw;
+        }
+    }
+
+    private async Task<IDbContextTransaction> BeginEmployeeMutationAsync(Guid employeeId)
+    {
+        var transaction = await dbContext.Database.BeginTransactionAsync();
+        try
+        {
+            await dbContext.Database.ExecuteSqlInterpolatedAsync($"SELECT \"Id\" FROM employee WHERE \"Id\" = {employeeId} FOR UPDATE");
+            return transaction;
+        }
+        catch
+        {
+            await transaction.DisposeAsync();
+            throw;
+        }
+    }
+
+    private async Task EnsureActiveAccessAsync(string accessJti)
+    {
+        if (!await tokenJtiStore.IsActiveAsync(accessJti, TokenType.ACCESS))
+            throw new UnauthorizedException("Invalid or expired access token");
+    }
+
+    private async Task<int> RevokeActiveDevicesAsync(Guid employeeId, string? preservedAccessJti, DateTime now)
+    {
+        var devices = await dbContext.EmployeeSessions.Where(item => item.EmployeeId == employeeId &&
+            item.RevokedAt == null && item.ExpiresAt > now && item.AccessJti != preservedAccessJti).ToListAsync();
+        foreach (var device in devices)
+            await RevokeDeviceAsync(device, now);
+        return devices.Count;
+    }
+
+    private async Task RevokeDeviceAsync(EmployeeSessionModel device, DateTime now)
+    {
+        await tokenJtiStore.RevokeLoginAsync(device.AccessJti, device.RefreshJti);
+        await csrfTokenService.RevokeAsync(device.AccessJti);
+        device.RevokedAt = now;
+    }
+
+    private async Task<EmployeeModel> GetEmployeeAsync(Guid employeeId, bool asNoTracking = false)
+    {
+        IQueryable<EmployeeModel> employees = dbContext.Employees.Include(item => item.Role);
+        if (asNoTracking)
+            employees = employees.AsNoTracking();
+        return await employees.SingleOrDefaultAsync(item => item.Id == employeeId)
+            ?? throw new UnauthorizedException("Account is unavailable.");
+    }
+
+    private Task AppendAuditAsync(string action, Guid employeeId, Guid actorId, string reason, object? before = null, object? after = null) =>
+        auditLogService.CreateAuditLogEntryAsync(new CreateAuditLogEntry(action, "Employee", employeeId, before,
+            after, reason, new AuditLogContext(actorId, null)));
+
+    private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
+
+    private static EmployeeProfileResponse ToProfile(EmployeeModel employee) => new(employee.Id,
+        employee.Email, employee.FullName, employee.Phone, employee.Role.RoleName.ToString(), employee.Status.ToString(),
+        employee.AvatarUrl, employee.CreatedAt, employee.PasswordChangedAt);
+
+    private static BrowserSessionUser ToSessionUser(EmployeeModel employee) => new(employee.Id,
+        employee.Email, employee.FullName, employee.Role.RoleName.ToString(), employee.AvatarUrl);
 
     private string GenerateEmailToken(Guid employeeId, string email, TokenType type)
     {

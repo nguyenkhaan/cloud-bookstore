@@ -44,6 +44,7 @@ export function LoginPage({ search }: { search: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const params = new URLSearchParams(search)
   const justActivated = params.get('activated') === '1'
+  const justReset = params.get('reset') === '1'
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -80,6 +81,9 @@ export function LoginPage({ search }: { search: string }) {
           <form className="mt-6 flex flex-col gap-4" onSubmit={submit}>
             {justActivated && !notice && (
               <Banner tone="success">Tài khoản đã được kích hoạt. Hãy đăng nhập để bắt đầu.</Banner>
+            )}
+            {justReset && !notice && (
+              <Banner tone="success">Đặt lại mật khẩu thành công. Hãy đăng nhập bằng mật khẩu mới.</Banner>
             )}
 
             <TextField

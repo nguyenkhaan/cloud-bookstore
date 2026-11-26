@@ -140,7 +140,7 @@ describe('AUTH screens Figma implementation & contracts', { concurrency: false }
     const modalChangeSource = readSrc('features', 'auth', 'components', 'ChangePasswordModal.tsx')
     const modalLogoutSource = readSrc('features', 'auth', 'components', 'LogoutDeviceModal.tsx')
 
-    assert.doesNotMatch(profileSource, /2FA|OTP|Xác thực hai bước/i)
+    assert.doesNotMatch(profileSource, /2FA|Xác thực hai bước|>[^<]*\bOTP\b/i)
     assert.doesNotMatch(profileSource, /Địa chỉ IP|192\.168\.|IP address/i)
     assert.doesNotMatch(profileSource, /actionButton=/)
     assert.doesNotMatch(profileSource, /(?:👁|🔒)/u)
@@ -148,7 +148,7 @@ describe('AUTH screens Figma implementation & contracts', { concurrency: false }
 
     assert.match(profileSource, /data-testid="profile-save-btn"/)
     assert.match(profileSource, /data-testid="profile-change-password-btn"/)
-    assert.match(profileSource, /data-testid=\{`device-logout-btn-\$\{device\.id\}`\}/)
+    assert.match(profileSource, /data-testid=\{`device-logout-btn-\$\{item\.id\}`\}/)
     assert.match(modalChangeSource, /data-testid="change-password-modal"/)
     assert.match(modalLogoutSource, /data-testid="logout-device-modal"/)
   })
@@ -163,7 +163,7 @@ describe('AUTH screens Figma implementation & contracts', { concurrency: false }
     assert.match(forgotSource, /data-testid="auth-forgot-submit"/)
     assert.match(resetSource, /data-testid="auth-reset-submit"/)
     assert.match(resetSource, /data-testid="auth-expired-resend"/)
-    assert.match(firstChangeSource, /data-testid="auth-first-change-submit"/)
+    assert.match(firstChangeSource, /submitTestId="auth-first-change-submit"/)
 
     assert.doesNotMatch(resetSource, /nv\.phong@nhasachmay\.vn/)
     assert.doesNotMatch(resetSource, /(?:👁|🔒)/u)

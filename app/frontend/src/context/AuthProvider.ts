@@ -57,6 +57,7 @@ export type AuthContextValue = {
   isInitializing: boolean
   login: (email: string, password: string) => Promise<void>
   signOut: () => void
+  updateSessionUser: (user: AuthUser) => void
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null)

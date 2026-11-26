@@ -8,9 +8,10 @@ describe('AUTH screens QA single-fault isolation & entrypoint parity', { concurr
   let apiClient
   let strengthBar
   let passwordRules
-  let authMock
+  let roles
   const requests = []
   let nextError = null
+  let nextData
 
   before(async () => {
     server = await createServer({
@@ -21,9 +22,9 @@ describe('AUTH screens QA single-fault isolation & entrypoint parity', { concurr
     apiClient = await server.ssrLoadModule('/src/api/client.ts')
     strengthBar = await server.ssrLoadModule('/src/features/auth/components/PasswordStrengthBar.tsx')
     passwordRules = await server.ssrLoadModule('/src/features/auth/components/PasswordRules.tsx')
-    authMock = await server.ssrLoadModule('/src/features/auth/auth.mock.ts')
+    roles = await server.ssrLoadModule('/src/features/auth/role.ts')
 
-    apiClient.publicClient.defaults.adapter = async (config) => {
+    const adapter = async (config) => {
       requests.push({
         method: config.method,
         url: config.url,
@@ -40,7 +41,7 @@ describe('AUTH screens QA single-fault isolation & entrypoint parity', { concurr
           status: nextError.status,
           statusText: 'Error',
           headers: {},
-          data: { message: nextError.message },
+          data: nextError.data ?? { message: nextError.message },
         }
         nextError = null
         throw err
@@ -48,17 +49,20 @@ describe('AUTH screens QA single-fault isolation & entrypoint parity', { concurr
 
       return {
         config,
-        data: undefined,
+        data: nextData,
         headers: {},
         status: 204,
         statusText: 'No Content',
       }
     }
+    apiClient.publicClient.defaults.adapter = adapter
+    apiClient.privateClient.defaults.adapter = adapter
   })
 
   beforeEach(() => {
     requests.length = 0
     nextError = null
+    nextData = undefined
   })
 
   after(async () => {
@@ -150,6 +154,12 @@ describe('AUTH screens QA single-fault isolation & entrypoint parity', { concurr
     ])
   })
 
+  test('registration reads server-approved email domains on the public client', async () => {
+    nextData = ['@cloud.io', '@cloud.bookstore.io']
+    assert.deepEqual(await authApi.getRegistrationDomains(), nextData)
+    assert.deepEqual(requests.map(({ method, url }) => [method, url]), [['get', '/auth/register']])
+  })
+
   test('auth.service preserves 401/409 ApiError status for resetPassword and register failures', async () => {
     nextError = { status: 401, message: 'Token expired' }
     await assert.rejects(
@@ -169,37 +179,47 @@ describe('AUTH screens QA single-fault isolation & entrypoint parity', { concurr
     )
   })
 
-  test('auth.mock provides deterministic role mappings, devices, and notification defaults', () => {
-    assert.equal(authMock.getRoleBadgeLabel('ADMIN'), 'Quản trị viên (Admin)')
-    assert.equal(authMock.getRoleBadgeLabel('CASHIER'), 'Thu ngân (Cashier)')
-    assert.equal(authMock.getRoleBadgeLabel('INVENTORY_MANAGER'), 'Quản lý kho (Inventory)')
-    assert.equal(authMock.getRoleBadgeLabel(undefined, 'Khách'), 'Khách')
-    assert.equal(authMock.getRoleBadgeLabel(undefined), 'Người dùng nội bộ')
+  test('auth service calls authenticated profile, password and device endpoints', async () => {
+    const profile = { id: 'profile-id', fullName: 'Nguyễn Minh Phong', phone: '0903123456' }
+    nextData = profile
+    assert.equal(await authApi.getProfile(), profile)
+    assert.equal(await authApi.updateProfile({ fullName: profile.fullName, phone: profile.phone }), profile)
+    const receipt = { uploadIntentId: 'intent-id', publicId: 'avatars/id', signature: 'signature', version: 123 }
+    assert.equal(await authApi.updateProfileAvatar(receipt), profile)
+    await authApi.changePassword({ currentPassword: 'OldAccount1!', newPassword: 'NewAccount2!' })
+    nextData = [{ id: 'device-id', isCurrent: false }]
+    assert.deepEqual(await authApi.getSessions(), nextData)
+    await authApi.revokeSession('device-id')
+    nextData = { revokedCount: 2 }
+    assert.deepEqual(await authApi.revokeOtherSessions(), { revokedCount: 2 })
+    assert.deepEqual(requests.map(({ method, url }) => [method, url]), [
+      ['get', '/auth/profile'], ['put', '/auth/profile'], ['put', '/auth/profile/avatar'],
+      ['post', '/auth/change-password'], ['get', '/auth/sessions'],
+      ['delete', '/auth/sessions/device-id'], ['post', '/auth/sessions/revoke-others'],
+    ])
+    assert.ok(requests.every(({ withCredentials }) => withCredentials))
+  })
 
-    assert.equal(authMock.getRolePermissionLabel('ADMIN'), 'Quản trị viên (Toàn quyền)')
-    assert.equal(authMock.getRolePermissionLabel('CASHIER'), 'Thu ngân (Quầy giao dịch)')
-    assert.equal(authMock.getRolePermissionLabel('INVENTORY_MANAGER'), 'Quản lý kho (Kho & đầu sách)')
-    assert.equal(authMock.getRolePermissionLabel(undefined), 'Người dùng nội bộ')
-
-    const adminMock = authMock.getMockProfileForUser({
-      id: '1',
-      email: 'minhanh@nhasachmay.vn',
-      name: 'Nguyễn Minh Anh',
-      role: 'Quản trị viên',
-      roleCode: 'ADMIN',
+  test('auth service reads and localizes problem details without exposing unrelated errors', async () => {
+    nextError = { status: 400, data: { detail: 'Current password is incorrect.' } }
+    await assert.rejects(authApi.changePassword({ currentPassword: 'wrong', newPassword: 'NewAccount1!' }), (error) => {
+      assert.equal(error.status, 400)
+      assert.equal(authApi.localizeAuthError(error, 'Lỗi'), 'Mật khẩu hiện tại không chính xác.')
+      return true
     })
-    assert.equal(adminMock.username, 'admin_minhanh')
-    assert.equal(adminMock.employeeCode, 'NV-001')
+    nextError = { status: 400, data: { errors: { Email: ['The Email field is not valid.'] } } }
+    await assert.rejects(authApi.register({ email: 'bad', fullName: 'Nguyễn Minh Phong', phone: '0903123456', password: 'AccountPass1!' }),
+      (error) => authApi.localizeAuthError(error, 'Lỗi') === 'Địa chỉ email không hợp lệ.')
+  })
 
-    assert.equal(authMock.INITIAL_MOCK_DEVICES.length, 3)
-    assert.equal(authMock.INITIAL_MOCK_DEVICES.filter((d) => d.isCurrent).length, 1)
-    assert.equal(authMock.INITIAL_MOCK_DEVICES.filter((d) => d.status === 'active').length, 2)
-    assert.equal(authMock.INITIAL_MOCK_DEVICES.filter((d) => d.status === 'logged_out').length, 1)
-
-    assert.deepEqual(authMock.INITIAL_MOCK_NOTIFICATION_PREFS, {
-      systemSecurity: true,
-      shiftAndPos: true,
-      weeklyEmailDigest: false,
-    })
+  test('role labels match canonical role identifiers without profile fixtures', () => {
+    assert.equal(roles.getRoleBadgeLabel('ADMIN'), 'Quản trị viên (Admin)')
+    assert.equal(roles.getRoleBadgeLabel('CASHIER'), 'Thu ngân (Cashier)')
+    assert.equal(roles.getRoleBadgeLabel('INVENTORY_MANAGER'), 'Quản lý kho (Inventory)')
+    assert.equal(roles.getRoleBadgeLabel(undefined, 'Khách'), 'Khách')
+    assert.equal(roles.getRolePermissionLabel('ADMIN'), 'Quản trị viên (Toàn quyền)')
+    assert.equal(roles.getRolePermissionLabel('CASHIER'), 'Thu ngân (Quầy giao dịch)')
+    assert.equal(roles.getRolePermissionLabel('INVENTORY_MANAGER'), 'Quản lý kho (Kho & đầu sách)')
+    assert.equal(roles.getRolePermissionLabel(undefined), 'Người dùng nội bộ')
   })
 })

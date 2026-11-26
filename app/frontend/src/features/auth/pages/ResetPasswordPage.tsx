@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useLayoutEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AlertCircle, ArrowLeft, Check, Info } from 'lucide-react'
+import { AlertCircle, ArrowLeft, Info } from 'lucide-react'
 import { Button, Card } from '@/components/common'
 import { Banner } from '@/features/auth/components/Banner'
 import { CenterLayout } from '@/features/auth/components/CenterLayout'
@@ -13,22 +13,26 @@ import {
 } from '@/features/auth/components/PasswordRules'
 import { PasswordStrengthBar } from '@/features/auth/components/PasswordStrengthBar'
 import { useResetPasswordMutation } from '@/features/auth/auth.hook'
-import { ApiError } from '@/features/auth/auth.service'
+import { ApiError, localizeAuthError } from '@/features/auth/auth.service'
 import type { Notice } from '@/features/auth/auth.type'
-
-type ResetViewState = 'form' | 'success' | 'expired'
 
 export function ResetPasswordPage({ search }: { search: string }) {
   const navigate = useNavigate()
-  const token = new URLSearchParams(search).get('token')?.trim() ?? ''
+  const [token] = useState(() => new URLSearchParams(search).get('token')?.trim() ?? '')
   const { isPending, mutateAsync: resetPassword } = useResetPasswordMutation()
 
-  const [viewState, setViewState] = useState<ResetViewState>(token ? 'form' : 'expired')
+  const [expired, setExpired] = useState(!token)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [confirmError, setConfirmError] = useState<string | null>(null)
   const [notice, setNotice] = useState<Notice | null>(null)
+
+  useLayoutEffect(() => {
+    if (new URLSearchParams(window.location.search).has('token')) {
+      window.history.replaceState(null, '', '/reset-password')
+    }
+  }, [])
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -54,10 +58,10 @@ export function ResetPasswordPage({ search }: { search: string }) {
 
     try {
       await resetPassword({ token, newPassword })
-      setViewState('success')
+      navigate('/login?reset=1', { replace: true })
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
-        setViewState('expired')
+        setExpired(true)
         return
       }
       if (error instanceof ApiError && error.status === 0) {
@@ -69,47 +73,12 @@ export function ResetPasswordPage({ search }: { search: string }) {
       }
       setNotice({
         tone: 'error',
-        message: 'Không thể đặt lại mật khẩu lúc này. Vui lòng thử lại sau.',
+        message: localizeAuthError(error, 'Không thể đặt lại mật khẩu lúc này. Vui lòng thử lại sau.'),
       })
     }
   }
 
-  if (viewState === 'success') {
-    return (
-      <CenterLayout>
-        <Card
-          aria-labelledby="reset-success-title"
-          className="mx-auto w-full max-w-[520px] rounded-3xl border-slate-200/70 p-6 text-center shadow-[0_10px_32px_rgba(30,27,75,0.06)] sm:p-10"
-          padding="none"
-          role="region"
-        >
-          <div className="mx-auto flex h-[68px] w-[68px] items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600">
-            <Check aria-hidden="true" className="size-8 stroke-[2.5]" />
-          </div>
-
-          <h1 className="mt-5 text-2xl font-bold tracking-tight text-slate-900" id="reset-success-title">
-            Đặt lại mật khẩu thành công!
-          </h1>
-          <p className="mt-2.5 text-sm leading-6 text-slate-500">
-            Mật khẩu tài khoản của bạn đã được cập nhật an toàn.
-          </p>
-
-          <Button
-            className="mt-7 min-h-12 text-[15px]"
-            fullWidth
-            onClick={() => navigate('/login', { replace: true })}
-            size="lg"
-            type="button"
-            variant="primary"
-          >
-            Đăng nhập ngay
-          </Button>
-        </Card>
-      </CenterLayout>
-    )
-  }
-
-  if (viewState === 'expired') {
+  if (expired) {
     return (
       <CenterLayout>
         <Card

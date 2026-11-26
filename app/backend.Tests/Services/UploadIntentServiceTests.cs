@@ -13,8 +13,10 @@ namespace backend.Tests.Services;
 
 public sealed class UploadIntentServiceTests
 {
-    [Fact]
-    public async Task CreateSignature_persists_pending_intent_for_a_book_owner()
+    [Theory]
+    [InlineData(UploadOwnerType.BOOK_SERIES_IMAGE)]
+    [InlineData(UploadOwnerType.EMPLOYEE_AVATAR)]
+    public async Task CreateSignature_persists_pending_intent_for_a_supported_owner(UploadOwnerType ownerType)
     {
         await using var dbContext = CreateDbContext();
         var actorId = Guid.NewGuid();
@@ -22,12 +24,12 @@ public sealed class UploadIntentServiceTests
 
         var response = await service.CreateSignatureAsync(
             actorId,
-            new UploadSignatureRequest(UploadOwnerType.BOOK_SERIES_IMAGE),
+            new UploadSignatureRequest(ownerType),
             new AuditLogContext(actorId, null));
 
         var intent = await dbContext.UploadIntents.SingleAsync();
         Assert.Equal(response.UploadIntentId, intent.Id);
-        Assert.Equal(UploadOwnerType.BOOK_SERIES_IMAGE, intent.OwnerType);
+        Assert.Equal(ownerType, intent.OwnerType);
         Assert.Equal(UploadIntentStatus.PENDING, intent.Status);
         Assert.Equal(actorId, intent.CreatedBy);
         Assert.Equal(intent.PublicImageId, response.PublicId);

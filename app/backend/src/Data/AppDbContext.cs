@@ -9,6 +9,7 @@ namespace backend.src.Data;
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
     public DbSet<EmployeeModel> Employees => Set<EmployeeModel>();
+    public DbSet<EmployeeSessionModel> EmployeeSessions => Set<EmployeeSessionModel>();
     public DbSet<RoleModel> Roles => Set<RoleModel>();
     public DbSet<MembershipTierModel> MembershipTiers => Set<MembershipTierModel>();
     public DbSet<CustomerModel> Customers => Set<CustomerModel>();
@@ -70,6 +71,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     {
         modelBuilder.Entity<RoleModel>().ToTable("roles");
         modelBuilder.Entity<EmployeeModel>().ToTable("employee");
+        modelBuilder.Entity<EmployeeSessionModel>().ToTable("employee_sessions");
         modelBuilder.Entity<MembershipTierModel>().ToTable("membership_tiers");
         modelBuilder.Entity<CustomerModel>().ToTable("customers");
         modelBuilder.Entity<SystemSettingModel>().ToTable("system_settings");
@@ -102,6 +104,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     private static void ConfigureProperties(ModelBuilder modelBuilder)
     {
+        var employeeSession = modelBuilder.Entity<EmployeeSessionModel>();
+        employeeSession.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+        employeeSession.Property(x => x.LastActiveAt).HasDefaultValueSql("now()");
+        employeeSession.Property(x => x.AccessJti).HasMaxLength(64);
+        employeeSession.Property(x => x.RefreshJti).HasMaxLength(64);
+        employeeSession.Property(x => x.DeviceName).HasMaxLength(100);
+        employeeSession.Property(x => x.DeviceType).HasMaxLength(16);
         modelBuilder.Entity<RoleModel>().Property(x => x.IsActive).HasDefaultValue(true);
 
         var membershipTier = modelBuilder.Entity<MembershipTierModel>();
@@ -246,6 +255,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     private static void ConfigureRelationships(ModelBuilder modelBuilder)
     {
+        Reference<EmployeeSessionModel, EmployeeModel, Guid>(modelBuilder, x => x.EmployeeId);
         modelBuilder.Entity<EmployeeModel>()
             .HasOne(x => x.Role)
             .WithMany()
@@ -316,6 +326,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     {
         modelBuilder.Entity<RoleModel>().HasIndex(x => x.RoleName).IsUnique();
         modelBuilder.Entity<EmployeeModel>().HasIndex(x => x.Email).IsUnique();
+        var employeeSession = modelBuilder.Entity<EmployeeSessionModel>();
+        employeeSession.HasIndex(x => x.AccessJti).IsUnique();
+        employeeSession.HasIndex(x => x.RefreshJti).IsUnique();
+        employeeSession.HasIndex(x => new { x.EmployeeId, x.RevokedAt, x.ExpiresAt });
         modelBuilder.Entity<MembershipTierModel>().HasIndex(x => x.Name).IsUnique();
         modelBuilder.Entity<MembershipTierModel>().HasIndex(x => x.RankOrder).IsUnique();
         modelBuilder.Entity<CustomerModel>().HasIndex(x => x.Phone).IsUnique();

@@ -16,7 +16,7 @@ import {
   useRegisterMutation,
   useResendVerificationMutation,
 } from '@/features/auth/auth.hook'
-import { ApiError } from '@/features/auth/auth.service'
+import { ApiError, getRegistrationDomains, isValidAuthEmail, localizeAuthError } from '@/features/auth/auth.service'
 import type { Notice } from '@/features/auth/auth.type'
 
 const PHONE_REGEX = /^0\d{9}$/
@@ -40,10 +40,7 @@ function describeRegisterError(error: unknown): Notice {
     case 400:
       return {
         tone: 'error',
-        message:
-          error.message && error.message.length < 180
-            ? error.message
-            : 'Thông tin đăng ký chưa hợp lệ hoặc tên miền email chưa được cửa hàng cho phép.',
+        message: localizeAuthError(error, 'Thông tin đăng ký chưa hợp lệ. Vui lòng kiểm tra lại.'),
       }
     case 409:
       return {
@@ -56,7 +53,7 @@ function describeRegisterError(error: unknown): Notice {
 }
 
 export function RegisterPage() {
-  const { isPending: isRegistering, mutateAsync: registerAccount } = useRegisterMutation()
+  const { mutateAsync: registerAccount } = useRegisterMutation()
   const { isPending: isResending, mutateAsync: resendVerification } = useResendVerificationMutation()
 
   const [fullName, setFullName] = useState('')
@@ -68,6 +65,7 @@ export function RegisterPage() {
   const [notice, setNotice] = useState<Notice | null>(null)
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null)
   const [resendNotice, setResendNotice] = useState<string | null>(null)
+  const [isRegistering, setIsRegistering] = useState(false)
 
   const validate = (): FieldErrors => {
     const errors: FieldErrors = {}
@@ -75,10 +73,10 @@ export function RegisterPage() {
     const normalizedEmail = email.trim()
     const normalizedPhone = phone.replace(/\s+/g, '')
 
-    if (normalizedName.length < 2) {
+    if (normalizedName.length < 2 || normalizedName.length > 200) {
       errors.fullName = 'Vui lòng nhập họ và tên đầy đủ.'
     }
-    if (!normalizedEmail || !normalizedEmail.includes('@')) {
+    if (!isValidAuthEmail(normalizedEmail)) {
       errors.email = 'Vui lòng nhập địa chỉ email nội bộ hợp lệ.'
     }
     if (!PHONE_REGEX.test(normalizedPhone)) {
@@ -105,7 +103,14 @@ export function RegisterPage() {
     const normalizedEmail = email.trim()
     const normalizedPhone = phone.replace(/\s+/g, '')
 
+    setIsRegistering(true)
     try {
+      const domain = normalizedEmail.slice(normalizedEmail.lastIndexOf('@')).toLowerCase()
+      const allowedDomains = await getRegistrationDomains()
+      if (!allowedDomains.some((allowed) => allowed.toLowerCase() === domain)) {
+        setFieldErrors({ email: 'Tên miền email này không được phép đăng ký.' })
+        return
+      }
       await registerAccount({
         fullName: fullName.trim(),
         email: normalizedEmail,
@@ -115,6 +120,8 @@ export function RegisterPage() {
       setSubmittedEmail(normalizedEmail)
     } catch (error) {
       setNotice(describeRegisterError(error))
+    } finally {
+      setIsRegistering(false)
     }
   }
 

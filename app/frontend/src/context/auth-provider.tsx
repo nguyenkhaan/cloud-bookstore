@@ -92,9 +92,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
   }, [clearSession, navigate, requestLogout])
 
+  const updateSessionUser = useCallback<AuthContextValue['updateSessionUser']>((user) => {
+    if (!user.id || user.id !== session?.user?.id) return
+    if (user.roleCode) persistStoredUser({ ...user, roleCode: user.roleCode })
+    setSession((current) => current?.user?.id === user.id ? { authenticated: true, user } : current)
+  }, [session?.user?.id])
+
   const value = useMemo<AuthContextValue>(
-    () => ({ session, isInitializing, login, signOut }),
-    [session, isInitializing, login, signOut],
+    () => ({ session, isInitializing, login, signOut, updateSessionUser }),
+    [session, isInitializing, login, signOut, updateSessionUser],
   )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
