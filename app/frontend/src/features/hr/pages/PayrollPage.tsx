@@ -21,7 +21,7 @@ import {
   useInitializePayrollMutation,
   useSendPayrollZaloMutation,
 } from '../hr-payroll.hook'
-import { PHONG_ADVANCE_VOUCHER_092026, formatVnd } from '../hr-payroll.mock'
+import { PHONG_ADVANCE_VOUCHER_092026, formatVnd } from '../hr-payroll.utils'
 import type {
   EmployeePayoutStatus,
   PayrollEmployeeRow,
@@ -40,11 +40,7 @@ export default function PayrollPage() {
   const location = useLocation()
   const { session, signOut } = useAuth()
 
-  const currentUser = session?.user ?? {
-    name: 'Nguyễn Minh Anh',
-    role: 'Quản trị viên',
-    roleCode: 'ADMIN',
-  }
+  const currentUser = session?.user
   const effectiveRoleCode = resolveHrRoleCode(currentUser)
   const isAdmin = isHrAdmin(effectiveRoleCode)
   const effectiveRoleLabel = formatHrRoleLabel(effectiveRoleCode)
@@ -83,6 +79,8 @@ export default function PayrollPage() {
   const initializeMutation = useInitializePayrollMutation()
   const approveMutation = useApprovePayrollMutation()
   const sendZaloMutation = useSendPayrollZaloMutation()
+
+  if (!currentUser) return null
 
   const navigateFromSidebar = (id: string) => {
     const targetPath = workspacePathFor(id)

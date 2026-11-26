@@ -1,7 +1,7 @@
 import { useEffect, useId } from 'react'
 import { X } from 'lucide-react'
 import { Button } from '@/components/common/Button'
-import { formatVnd } from '../hr-payroll.mock'
+import { formatVnd } from '../hr-payroll.utils'
 import type {
   PayslipAdvanceVoucher,
   PayslipAttendanceDay,

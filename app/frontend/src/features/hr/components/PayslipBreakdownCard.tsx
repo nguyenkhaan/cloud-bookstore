@@ -1,6 +1,6 @@
 import { Card } from '@/components/common/Card'
 import { cn } from '@/lib/cn'
-import { formatVnd } from '../hr-payroll.mock'
+import { formatVnd } from '../hr-payroll.utils'
 import type { PayslipDetailDto } from '../hr-payroll.type'
 import type { PayslipSourceDrawerType } from './PayslipSourceDrawer'
 

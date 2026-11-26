@@ -439,6 +439,21 @@ public class AuditLogService(AppDbContext dbContext, IHttpContextAccessor? httpC
                 .Where(request => ids.Contains(request.Id))
                 .ToDictionaryAsync(request => request.Id, request => request.RequestCode, cancellationToken));
 
+        await LoadAsync<PayrollPeriodModel>(["payroll_period", "payrollperiod"], async ids =>
+            await dbContext.PayrollPeriods.AsNoTracking()
+                .Where(period => ids.Contains(period.Id))
+                .ToDictionaryAsync(period => period.Id, period => $"{period.PayrollCode} · {period.PeriodKey}", cancellationToken));
+
+        await LoadAsync<PayrollAdjustmentModel>(["payroll_adjustment", "payrolladjustment"], async ids =>
+            await dbContext.PayrollAdjustments.AsNoTracking()
+                .Where(adjustment => ids.Contains(adjustment.Id))
+                .ToDictionaryAsync(adjustment => adjustment.Id, adjustment => adjustment.AdjustmentCode, cancellationToken));
+
+        await LoadAsync<PayslipDisputeModel>(["payslip_dispute", "payslipdispute"], async ids =>
+            await dbContext.PayslipDisputes.AsNoTracking()
+                .Where(dispute => ids.Contains(dispute.Id))
+                .ToDictionaryAsync(dispute => dispute.Id, dispute => dispute.DisputeCode, cancellationToken));
+
         return result;
     }
 

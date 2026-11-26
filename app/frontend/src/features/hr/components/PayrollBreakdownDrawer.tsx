@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from 'react'
 import { X } from 'lucide-react'
 import { Button } from '@/components/common/Button'
-import { formatVnd } from '../hr-payroll.mock'
+import { formatVnd } from '../hr-payroll.utils'
 import type { PayrollEmployeeRow } from '../hr-payroll.type'
 
 export interface PayrollBreakdownDrawerProps {

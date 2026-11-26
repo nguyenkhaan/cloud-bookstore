@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { notify } from '@/components/common/Toast'
-import { useResendSinglePayslipZaloMutation } from '../hr-payroll.hook'
-import { formatVnd } from '../hr-payroll.mock'
+import { useResendSinglePayslipZaloMutation, useRespondPayslipDisputeMutation } from '../hr-payroll.hook'
+import { formatVnd } from '../hr-payroll.utils'
 import type { PayslipDetailDto, PayslipDisputeRecord } from '../hr-payroll.type'
 import { PayrollZaloPreviewModal } from './PayrollZaloPreviewModal'
 import { PayslipDisputeDetailModal } from './PayslipDisputePanel'
@@ -21,6 +21,7 @@ export function PayslipAdminReconcilePanel({
   const [lastResentAt, setLastResentAt] = useState<string | null>(null)
 
   const resendMutation = useResendSinglePayslipZaloMutation()
+  const respondMutation = useRespondPayslipDisputeMutation()
 
   const zaloStatusText = lastResentAt
     ? `Đã gửi lại · ${lastResentAt}`
@@ -62,12 +63,18 @@ export function PayslipAdminReconcilePanel({
 
           <Button
             className="min-h-[44px] w-full"
-            onClick={() => setActiveDispute(payslip.disputes[0] ?? null)}
+            data-testid="hrm06-admin-respond-dispute-btn"
+            disabled={payslip.disputes.length === 0 || respondMutation.isPending}
+            onClick={() => {
+              const dispute = payslip.disputes[0]
+              if (dispute) setActiveDispute(dispute)
+            }}
             type="button"
             variant="secondary"
           >
-            Xem yêu cầu đối chiếu ({payslip.disputes.length})
+            Phản hồi đối chiếu
           </Button>
+          <p className="text-xs text-slate-500">Admin không được tự phản hồi đối chiếu của chính mình.</p>
 
           <Button
             className="min-h-[44px] w-full"
@@ -98,7 +105,7 @@ export function PayslipAdminReconcilePanel({
               employeeId: payslip.employeeId,
               periodKey: payslip.periodKey,
             })
-            setLastResentAt(res.sentAt)
+            setLastResentAt(res.sentAt ?? new Date().toISOString())
             notify.success(
               `Đã gửi lại phiếu lương qua Zalo cho ${payslip.employeeName}.`,
             )

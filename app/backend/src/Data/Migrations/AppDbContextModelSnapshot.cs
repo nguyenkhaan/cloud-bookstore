@@ -1029,6 +1029,434 @@ namespace backend.src.Data.Migrations
                     b.ToTable("payments", (string)null);
                 });
 
+            modelBuilder.Entity("backend.src.Models.PayrollAdjustmentModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AdjustmentCode")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)");
+
+                    b.Property<string>("AdjustmentType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long>("Amount")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("AppliedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ProofPublicId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("ReferenceCode")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("SourcePayrollCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("SourcePeriodKey")
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)");
+
+                    b.Property<string>("SourceVoucherRef")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("DRAFT");
+
+                    b.Property<string>("TargetPeriodKey")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdjustmentCode")
+                        .IsUnique();
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("TargetPeriodKey", "Status");
+
+                    b.ToTable("payroll_adjustments", (string)null);
+                });
+
+            modelBuilder.Entity("backend.src.Models.PayrollEntryItemModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Amount")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Guid>("PayrollEntryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("SourceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SourceType")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("VoucherCode")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PayrollEntryId");
+
+                    b.ToTable("payroll_entry_items", (string)null);
+                });
+
+            modelBuilder.Entity("backend.src.Models.PayrollEntryModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Allowance")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("BaseSalary")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("Bonus")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ContributionNote")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<long>("Deduction")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("HourlyRate")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<long>("MandatoryContribution")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("NetPay")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("OvertimeAmount")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("OvertimeHours")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("PaymentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("PayoutBatchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PayoutStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("UNPAID");
+
+                    b.Property<Guid>("PayrollPeriodId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("StandardHours")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<long>("Tax")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("ZaloErrorReason")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTime?>("ZaloSentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ZaloStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("UNSENT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("PaymentId");
+
+                    b.HasIndex("PayoutBatchId");
+
+                    b.HasIndex("PayrollPeriodId", "EmployeeId")
+                        .IsUnique();
+
+                    b.ToTable("payroll_entries", (string)null);
+                });
+
+            modelBuilder.Entity("backend.src.Models.PayrollPayoutBatchModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Amount")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("BatchNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ConfirmedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("PayoutAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PayrollPeriodId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ProofPublicId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("TransactionRef")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConfirmedBy");
+
+                    b.HasIndex("PayrollPeriodId", "BatchNumber")
+                        .IsUnique();
+
+                    b.ToTable("payroll_payout_batches", (string)null);
+                });
+
+            modelBuilder.Entity("backend.src.Models.PayrollPeriodModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ApprovedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AttendanceSourceCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PayrollCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("PeriodKey")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("DRAFT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedBy");
+
+                    b.HasIndex("PayrollCode")
+                        .IsUnique();
+
+                    b.HasIndex("PeriodKey")
+                        .IsUnique();
+
+                    b.ToTable("payroll_periods", (string)null);
+                });
+
+            modelBuilder.Entity("backend.src.Models.PayslipDisputeModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AdjustmentNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("AdminResponse")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("CalculationNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("DisputeCode")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("LinkedAdjustmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PayrollEntryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ProofPublicId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTime?>("RespondedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("RespondedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("PENDING_RESPONSE");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DisputeCode")
+                        .IsUnique();
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("LinkedAdjustmentId");
+
+                    b.HasIndex("PayrollEntryId");
+
+                    b.HasIndex("RespondedBy");
+
+                    b.ToTable("payslip_disputes", (string)null);
+                });
+
             modelBuilder.Entity("backend.src.Models.RentalExtensionModel", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2020,6 +2448,103 @@ namespace backend.src.Data.Migrations
                     b.HasOne("backend.src.Models.EmployeeWorkRecordModel", null)
                         .WithMany()
                         .HasForeignKey("WorkRecordId")
+                        .OnDelete(DeleteBehavior.NoAction);
+                });
+
+            modelBuilder.Entity("backend.src.Models.PayrollAdjustmentModel", b =>
+                {
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("backend.src.Models.PayrollEntryItemModel", b =>
+                {
+                    b.HasOne("backend.src.Models.PayrollEntryModel", null)
+                        .WithMany()
+                        .HasForeignKey("PayrollEntryId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("backend.src.Models.PayrollEntryModel", b =>
+                {
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("backend.src.Models.PaymentModel", null)
+                        .WithMany()
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("backend.src.Models.PayrollPayoutBatchModel", null)
+                        .WithMany()
+                        .HasForeignKey("PayoutBatchId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("backend.src.Models.PayrollPeriodModel", null)
+                        .WithMany()
+                        .HasForeignKey("PayrollPeriodId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("backend.src.Models.PayrollPayoutBatchModel", b =>
+                {
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("ConfirmedBy")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("backend.src.Models.PayrollPeriodModel", null)
+                        .WithMany()
+                        .HasForeignKey("PayrollPeriodId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("backend.src.Models.PayrollPeriodModel", b =>
+                {
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("ApprovedBy")
+                        .OnDelete(DeleteBehavior.NoAction);
+                });
+
+            modelBuilder.Entity("backend.src.Models.PayslipDisputeModel", b =>
+                {
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("backend.src.Models.PayrollAdjustmentModel", null)
+                        .WithMany()
+                        .HasForeignKey("LinkedAdjustmentId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("backend.src.Models.PayrollEntryModel", null)
+                        .WithMany()
+                        .HasForeignKey("PayrollEntryId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("backend.src.Models.EmployeeModel", null)
+                        .WithMany()
+                        .HasForeignKey("RespondedBy")
                         .OnDelete(DeleteBehavior.NoAction);
                 });
 

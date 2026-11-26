@@ -7,7 +7,7 @@ import { SelectBox } from '@/components/common/SelectBox'
 import { notify } from '@/components/common/Toast'
 import { cn } from '@/lib/cn'
 import { useCreatePayslipDisputeMutation } from '../hr-payroll.hook'
-import { PAYSLIP_DISPUTE_CATEGORY_OPTIONS } from '../hr-payroll.mock'
+import { PAYSLIP_DISPUTE_CATEGORY_OPTIONS } from '../hr-payroll.utils'
 import type {
   PayslipDisputeCategory,
   PayslipDisputeRecord,

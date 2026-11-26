@@ -19,7 +19,7 @@ import {
   ADJUSTMENT_TARGET_PERIOD_OPTIONS,
   ADJUSTMENT_TYPE_OPTIONS,
   formatVnd,
-} from '../hr-payroll.mock'
+} from '../hr-payroll.utils'
 import { isHrAdmin, resolveHrRoleCode } from '../hr-role.util'
 import { hrPaths } from '../hr.route'
 
@@ -39,11 +39,7 @@ export default function PayrollAdjustmentPage() {
   const sourcePeriod = searchParams.get('period') || '09/2026'
   const sourceCode = searchParams.get('source') || 'PAY-202609'
 
-  const currentUser = session?.user ?? {
-    name: 'Nguyễn Minh Anh',
-    role: 'Quản trị viên',
-    roleCode: 'ADMIN',
-  }
+  const currentUser = session?.user
   const effectiveRoleCode = resolveHrRoleCode(currentUser)
   const isAdmin = isHrAdmin(effectiveRoleCode)
 
@@ -53,7 +49,6 @@ export default function PayrollAdjustmentPage() {
   )
   const createAdjustmentMutation = useCreateNextPeriodAdjustmentMutation()
 
-  const employees = summary?.rows ?? []
   const [employeeId, setEmployeeId] = useState('NV-0002')
   const [targetPeriodKey, setTargetPeriodKey] = useState('10/2026')
   const [category, setCategory] = useState('Phụ cấp')
@@ -68,6 +63,10 @@ export default function PayrollAdjustmentPage() {
   const [attachmentName, setAttachmentName] = useState('')
   const [reasonError, setReasonError] = useState<string | null>(null)
   const [amountError, setAmountError] = useState<string | null>(null)
+
+  if (!currentUser) return null
+
+  const employees = summary?.rows ?? []
 
   const selectedEmployee =
     employees.find((e) => e.id === employeeId) ?? employees[0]

@@ -127,10 +127,33 @@ export const SCREEN_POLICIES = {
     readPermissions: ['HrRequests.List'],
     updatePermissions: ['HrRequests.Create', 'HrRequests.Cancel'],
   }),
-  hrPayroll: policy('/hr/payroll', access('N', 'U', 'N'), { navId: 'hr.payroll' }),
-  hrPayrollAdjustment: policy('/hr/payroll/adjustments/new', access('N', 'U', 'N'), { navId: 'hr.payroll-adjustment' }),
-  hrPayslip: policy('/hr/payslip', access('R', 'R', 'R'), { navId: 'hr.payslip', dataScope: 'SELF' }),
-  hrEmployeePayslip: policy('/hr/payslip/:employeeId', access('N', 'U', 'N'), { navId: 'hr.employee-payslip' }),
+  hrPayroll: policy('/hr/payroll', access('N', 'U', 'N'), {
+    navId: 'hr.payroll',
+    permissionMode: 'api',
+    readPermissions: ['HrPayroll.ListPeriods', 'HrPayroll.GetPeriod'],
+    updatePermissions: ['HrPayroll.Initialize', 'HrPayroll.Approve', 'HrPayroll.Payout'],
+    protectedRoles: ['ADMIN'],
+  }),
+  hrPayrollAdjustment: policy('/hr/payroll/adjustments/new', access('N', 'U', 'N'), {
+    navId: 'hr.payroll-adjustment',
+    permissionMode: 'api',
+    readPermissions: ['HrPayroll.ListAdjustments'],
+    updatePermissions: ['HrPayroll.CreateAdjustment'],
+    protectedRoles: ['ADMIN'],
+  }),
+  hrPayslip: policy('/hr/payslip', access('R', 'R', 'R'), {
+    navId: 'hr.payslip',
+    dataScope: 'SELF',
+    permissionMode: 'api',
+    readPermissions: ['HrPayslips.GetMyPayslip'],
+    updatePermissions: ['HrPayslips.CreateDispute'],
+  }),
+  hrEmployeePayslip: policy('/hr/payslip/:employeeId', access('N', 'U', 'N'), {
+    navId: 'hr.employee-payslip',
+    permissionMode: 'api',
+    readPermissions: ['HrPayslips.GetEmployeePayslip'],
+    protectedRoles: ['ADMIN'],
+  }),
 
   approvals: policy('/approvals', access('U', 'U', 'U'), {
     navId: 'approvals',

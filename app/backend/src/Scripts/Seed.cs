@@ -39,6 +39,12 @@ public static class Seed
         "employee_work_records",
         "payments",
         "notification_outbox",
+        "payroll_periods",
+        "payroll_payout_batches",
+        "payroll_entries",
+        "payroll_adjustments",
+        "payroll_entry_items",
+        "payslip_disputes",
         "audit_logs"
     ];
 

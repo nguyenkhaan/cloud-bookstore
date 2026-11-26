@@ -5,7 +5,7 @@ import { Button } from '@/components/common/Button'
 import { notify } from '@/components/common/Toast'
 import { cn } from '@/lib/cn'
 import { useBatchPayoutMutation } from '../hr-payroll.hook'
-import { formatVnd } from '../hr-payroll.mock'
+import { formatVnd } from '../hr-payroll.utils'
 import type { PayrollEmployeeRow, PayoutMethod } from '../hr-payroll.type'
 
 export interface PayrollBatchPayoutModalProps {

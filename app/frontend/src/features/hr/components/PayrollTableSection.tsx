@@ -9,7 +9,7 @@ import {
   PAYROLL_STATUS_FILTER_OPTIONS,
   ZALO_STATUS_LABELS,
   formatVnd,
-} from '../hr-payroll.mock'
+} from '../hr-payroll.utils'
 import type {
   EmployeePayoutStatus,
   PayrollEmployeeRow,
@@ -98,7 +98,7 @@ export function PayrollTableSection({
       const remainingCount = summary.allRowsCount - summary.paidRowsCount
       return `Đã ghi nhận đợt chi ${formatVnd(summary.kpi.paidAmount)} cho ${paidShort}. ${remainingCount} nhân viên còn lại chưa được chi trả.`
     }
-    return `Đã tất toán ${summary.paidRowsCount}/${summary.allRowsCount} nhân viên. Chứng từ đã đối chiếu; không thể sửa hoặc thanh toán lần hai. Trích nộp 0đ là dữ liệu minh họa cần kiểm tra hồ sơ.`
+    return `Đã tất toán ${summary.paidRowsCount}/${summary.allRowsCount} nhân viên. Chứng từ đã đối chiếu; không thể sửa hoặc thanh toán lần hai. Trích nộp 0đ cần kiểm tra hồ sơ.`
   })()
 
   return (

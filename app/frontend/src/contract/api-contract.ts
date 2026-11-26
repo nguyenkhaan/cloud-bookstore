@@ -4639,7 +4639,6 @@ export interface paths {
                     Search?: string;
                     RoleName?: components["schemas"]["RoleName"];
                     Status?: components["schemas"]["EmployeeStatus"];
-                    InShiftOnly?: boolean;
                     Page?: number;
                     PageSize?: number;
                 };

@@ -35,6 +35,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<EmployeeWorkRecordModel> EmployeeWorkRecords => Set<EmployeeWorkRecordModel>();
     public DbSet<HrRequestModel> HrRequests => Set<HrRequestModel>();
     public DbSet<HrRequestHistoryModel> HrRequestHistories => Set<HrRequestHistoryModel>();
+    public DbSet<PayrollPeriodModel> PayrollPeriods => Set<PayrollPeriodModel>();
+    public DbSet<PayrollPayoutBatchModel> PayrollPayoutBatches => Set<PayrollPayoutBatchModel>();
+    public DbSet<PayrollEntryModel> PayrollEntries => Set<PayrollEntryModel>();
+    public DbSet<PayrollAdjustmentModel> PayrollAdjustments => Set<PayrollAdjustmentModel>();
+    public DbSet<PayrollEntryItemModel> PayrollEntryItems => Set<PayrollEntryItemModel>();
+    public DbSet<PayslipDisputeModel> PayslipDisputes => Set<PayslipDisputeModel>();
     public DbSet<NotificationOutboxModel> NotificationOutbox => Set<NotificationOutboxModel>();
     public DbSet<AuditLogModel> AuditLogs => Set<AuditLogModel>();
     public DbSet<UploadIntentModel> UploadIntents => Set<UploadIntentModel>();
@@ -97,6 +103,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<CashSessionModel>().ToTable("cash_sessions");
         modelBuilder.Entity<PaymentModel>().ToTable("payments");
         modelBuilder.Entity<EmployeeWorkRecordModel>().ToTable("employee_work_records");
+        modelBuilder.Entity<PayrollPeriodModel>().ToTable("payroll_periods");
+        modelBuilder.Entity<PayrollEntryModel>().ToTable("payroll_entries");
+        modelBuilder.Entity<PayrollEntryItemModel>().ToTable("payroll_entry_items");
+        modelBuilder.Entity<PayrollPayoutBatchModel>().ToTable("payroll_payout_batches");
+        modelBuilder.Entity<PayrollAdjustmentModel>().ToTable("payroll_adjustments");
+        modelBuilder.Entity<PayslipDisputeModel>().ToTable("payslip_disputes");
         modelBuilder.Entity<NotificationOutboxModel>().ToTable("notification_outbox");
         modelBuilder.Entity<AuditLogModel>().ToTable("audit_logs");
         modelBuilder.Entity<UploadIntentModel>().ToTable("upload_intents");
@@ -226,6 +238,31 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         workRecord.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
         workRecord.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
 
+        var payrollPeriod = modelBuilder.Entity<PayrollPeriodModel>();
+        payrollPeriod.Property(x => x.Status).HasDefaultValue(PayrollPeriodStatus.DRAFT);
+        payrollPeriod.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+        payrollPeriod.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
+
+        var payrollEntry = modelBuilder.Entity<PayrollEntryModel>();
+        payrollEntry.Property(x => x.StandardHours).HasPrecision(10, 2);
+        payrollEntry.Property(x => x.OvertimeHours).HasPrecision(10, 2);
+        payrollEntry.Property(x => x.HourlyRate).HasPrecision(18, 2);
+        payrollEntry.Property(x => x.PayoutStatus).HasDefaultValue(WorkRecordPaymentStatus.UNPAID);
+        payrollEntry.Property(x => x.ZaloStatus).HasDefaultValue(ZaloDeliveryStatus.UNSENT);
+        payrollEntry.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+        payrollEntry.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
+
+        modelBuilder.Entity<PayrollEntryItemModel>().Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+        modelBuilder.Entity<PayrollPayoutBatchModel>().Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+
+        var payrollAdjustment = modelBuilder.Entity<PayrollAdjustmentModel>();
+        payrollAdjustment.Property(x => x.Status).HasDefaultValue(PayrollAdjustmentStatus.DRAFT);
+        payrollAdjustment.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+
+        var payslipDispute = modelBuilder.Entity<PayslipDisputeModel>();
+        payslipDispute.Property(x => x.Status).HasDefaultValue(PayslipDisputeStatus.PENDING_RESPONSE);
+        payslipDispute.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+
         var notification = modelBuilder.Entity<NotificationOutboxModel>();
         notification.Property(x => x.Content).HasColumnType("jsonb");
         notification.Property(x => x.Status).HasDefaultValue(NotificationStatus.PENDING);
@@ -315,6 +352,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         Reference<HrRequestModel, EmployeeModel, Guid?>(modelBuilder, x => x.ReviewedBy, false);
         Reference<HrRequestHistoryModel, HrRequestModel, Guid>(modelBuilder, x => x.RequestId);
         Reference<HrRequestHistoryModel, EmployeeModel, Guid>(modelBuilder, x => x.ActorId);
+        Reference<PayrollPeriodModel, EmployeeModel, Guid?>(modelBuilder, x => x.ApprovedBy, false);
+        Reference<PayrollPayoutBatchModel, PayrollPeriodModel, Guid>(modelBuilder, x => x.PayrollPeriodId);
+        Reference<PayrollPayoutBatchModel, EmployeeModel, Guid>(modelBuilder, x => x.ConfirmedBy);
+        Reference<PayrollEntryModel, PayrollPeriodModel, Guid>(modelBuilder, x => x.PayrollPeriodId);
+        Reference<PayrollEntryModel, EmployeeModel, Guid>(modelBuilder, x => x.EmployeeId);
+        Reference<PayrollEntryModel, PayrollPayoutBatchModel, Guid?>(modelBuilder, x => x.PayoutBatchId, false);
+        Reference<PayrollEntryModel, PaymentModel, Guid?>(modelBuilder, x => x.PaymentId, false);
+        Reference<PayrollEntryItemModel, PayrollEntryModel, Guid>(modelBuilder, x => x.PayrollEntryId);
+        Reference<PayrollAdjustmentModel, EmployeeModel, Guid>(modelBuilder, x => x.EmployeeId);
+        Reference<PayrollAdjustmentModel, EmployeeModel, Guid>(modelBuilder, x => x.CreatedBy);
+        Reference<PayslipDisputeModel, PayrollEntryModel, Guid>(modelBuilder, x => x.PayrollEntryId);
+        Reference<PayslipDisputeModel, EmployeeModel, Guid>(modelBuilder, x => x.EmployeeId);
+        Reference<PayslipDisputeModel, EmployeeModel, Guid?>(modelBuilder, x => x.RespondedBy, false);
+        Reference<PayslipDisputeModel, PayrollAdjustmentModel, Guid?>(modelBuilder, x => x.LinkedAdjustmentId, false);
         Reference<AuditLogModel, EmployeeModel, Guid?>(modelBuilder, x => x.ActorId, false);
         Reference<UploadIntentModel, EmployeeModel, Guid>(modelBuilder, x => x.CreatedBy);
         Reference<RentalLineImageModel, RentalLineModel, Guid>(modelBuilder, x => x.RentalLineId);
@@ -359,6 +410,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<PaymentModel>().HasIndex(x => x.IdempotencyKey).IsUnique();
         modelBuilder.Entity<PaymentModel>().HasIndex(x => x.QrReference).IsUnique();
         modelBuilder.Entity<EmployeeWorkRecordModel>().HasIndex(x => new { x.EmployeeId, x.WorkDate, x.ShiftNo }).IsUnique();
+        modelBuilder.Entity<PayrollPeriodModel>().HasIndex(x => x.PeriodKey).IsUnique();
+        modelBuilder.Entity<PayrollPeriodModel>().HasIndex(x => x.PayrollCode).IsUnique();
+        modelBuilder.Entity<PayrollEntryModel>().HasIndex(x => new { x.PayrollPeriodId, x.EmployeeId }).IsUnique();
+        modelBuilder.Entity<PayrollEntryModel>().HasIndex(x => x.EmployeeId);
+        modelBuilder.Entity<PayrollEntryItemModel>().HasIndex(x => x.PayrollEntryId);
+        modelBuilder.Entity<PayrollPayoutBatchModel>().HasIndex(x => new { x.PayrollPeriodId, x.BatchNumber }).IsUnique();
+        modelBuilder.Entity<PayrollAdjustmentModel>().HasIndex(x => x.AdjustmentCode).IsUnique();
+        modelBuilder.Entity<PayrollAdjustmentModel>().HasIndex(x => new { x.TargetPeriodKey, x.Status });
+        modelBuilder.Entity<PayslipDisputeModel>().HasIndex(x => x.DisputeCode).IsUnique();
+        modelBuilder.Entity<PayslipDisputeModel>().HasIndex(x => x.PayrollEntryId);
         modelBuilder.Entity<UploadIntentModel>().HasIndex(x => x.PublicImageId).IsUnique();
         modelBuilder.Entity<RentalLineImageModel>().HasIndex(x => x.PublicImageId).IsUnique();
         modelBuilder.Entity<StockReceiptImageModel>().HasIndex(x => x.PublicImageId).IsUnique();
@@ -369,6 +430,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         EnumAsString(modelBuilder.Entity<RoleModel>(), x => x.RoleName); EnumAsString(modelBuilder.Entity<EmployeeModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<MembershipTierModel>(), x => x.Name); EnumAsString(modelBuilder.Entity<DamageLevelModel>(), x => x.Level); EnumAsString(modelBuilder.Entity<DamageLevelModel>(), x => x.CopyStatusAfter); EnumAsString(modelBuilder.Entity<EditionModel>(), x => x.MetadataSource); EnumAsString(modelBuilder.Entity<StockReceiptModel>(), x => x.SourceType); EnumAsString(modelBuilder.Entity<StockReceiptModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<StockReceiptLineModel>(), x => x.Availability); EnumAsString(modelBuilder.Entity<StockReceiptLineModel>(), x => x.ConditionGrade); EnumAsString(modelBuilder.Entity<BookCopyModel>(), x => x.Availability); EnumAsString(modelBuilder.Entity<BookCopyModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<BookCopyModel>(), x => x.ConditionGrade); EnumAsString(modelBuilder.Entity<InventoryCheckModel>(), x => x.ExpectedStatus); EnumAsString(modelBuilder.Entity<InventoryCheckModel>(), x => x.ObservedStatus); EnumAsString(modelBuilder.Entity<InventoryCheckModel>(), x => x.VarianceType); EnumAsString(modelBuilder.Entity<InventoryAdjustmentRequestModel>(), x => x.RequestedStatus); EnumAsString(modelBuilder.Entity<InventoryAdjustmentRequestModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<SaleInvoiceModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<SaleInvoiceLineModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<RentalSlipModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<ReturnModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<RentalLineModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<RentalLineModel>(), x => x.CopyCondition); EnumAsString(modelBuilder.Entity<CashSessionModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<PaymentModel>(), x => x.Direction); EnumAsString(modelBuilder.Entity<PaymentModel>(), x => x.PaymentType); EnumAsString(modelBuilder.Entity<PaymentModel>(), x => x.Method); EnumAsString(modelBuilder.Entity<PaymentModel>(), x => x.Status); EnumAsString(modelBuilder.Entity<EmployeeWorkRecordModel>(), x => x.AttendanceStatus); EnumAsString(modelBuilder.Entity<EmployeeWorkRecordModel>(), x => x.PaymentStatus); EnumAsString(modelBuilder.Entity<NotificationOutboxModel>(), x => x.Channel); EnumAsString(modelBuilder.Entity<NotificationOutboxModel>(), x => x.RecipientType); EnumAsString(modelBuilder.Entity<NotificationOutboxModel>(), x => x.Status);
         EnumAsString(modelBuilder.Entity<HrRequestModel>(), x => x.Type);
         EnumAsString(modelBuilder.Entity<HrRequestModel>(), x => x.Status);
+        EnumAsString(modelBuilder.Entity<PayrollPeriodModel>(), x => x.Status);
+        EnumAsString(modelBuilder.Entity<PayrollEntryModel>(), x => x.PayoutStatus);
+        EnumAsString(modelBuilder.Entity<PayrollEntryModel>(), x => x.ZaloStatus);
+        EnumAsString(modelBuilder.Entity<PayrollEntryItemModel>(), x => x.Category);
+        EnumAsString(modelBuilder.Entity<PayrollPayoutBatchModel>(), x => x.Method);
+        EnumAsString(modelBuilder.Entity<PayrollAdjustmentModel>(), x => x.AdjustmentType);
+        EnumAsString(modelBuilder.Entity<PayrollAdjustmentModel>(), x => x.Status);
+        EnumAsString(modelBuilder.Entity<PayslipDisputeModel>(), x => x.Category);
+        EnumAsString(modelBuilder.Entity<PayslipDisputeModel>(), x => x.Status);
         EnumAsString(modelBuilder.Entity<UploadIntentModel>(), x => x.OwnerType);
         EnumAsString(modelBuilder.Entity<UploadIntentModel>(), x => x.Status);
     }

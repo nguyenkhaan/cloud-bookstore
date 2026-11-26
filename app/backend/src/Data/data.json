@@ -907,6 +907,165 @@
       "UpdatedAt": "2026-01-10T00:00:00Z"
     }
   ],
+  "payroll_periods": [
+    {
+      "Id": "00000000-0000-0000-0000-000000002501",
+      "PeriodKey": "01/2026",
+      "Year": 2026,
+      "Month": 1,
+      "PayrollCode": "PAY-202601",
+      "AttendanceSourceCode": "ATT-202601",
+      "status": "SETTLED",
+      "ApprovedBy": "00000000-0000-0000-0000-000000000010",
+      "ApprovedAt": "2026-02-01T02:00:00Z",
+      "CreatedAt": "2026-01-31T02:00:00Z",
+      "UpdatedAt": "2026-02-01T02:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000002502",
+      "PeriodKey": "02/2026",
+      "Year": 2026,
+      "Month": 2,
+      "PayrollCode": "PAY-202602",
+      "AttendanceSourceCode": "ATT-202602",
+      "status": "APPROVED_UNPAID",
+      "ApprovedBy": "00000000-0000-0000-0000-000000000010",
+      "ApprovedAt": "2026-03-01T02:00:00Z",
+      "CreatedAt": "2026-02-28T02:00:00Z",
+      "UpdatedAt": "2026-03-01T02:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000002503",
+      "PeriodKey": "03/2026",
+      "Year": 2026,
+      "Month": 3,
+      "PayrollCode": "PAY-202603",
+      "AttendanceSourceCode": "ATT-202603",
+      "status": "DRAFT",
+      "CreatedAt": "2026-03-01T02:00:00Z",
+      "UpdatedAt": "2026-03-01T02:00:00Z"
+    }
+  ],
+  "payroll_payout_batches": [
+    {
+      "Id": "00000000-0000-0000-0000-000000002511",
+      "PayrollPeriodId": "00000000-0000-0000-0000-000000002501",
+      "BatchNumber": 1,
+      "Method": "BANK_TRANSFER",
+      "TransactionRef": "PAY-202601-001",
+      "PayoutAt": "2026-02-01T03:00:00Z",
+      "Amount": 280000,
+      "ConfirmedBy": "00000000-0000-0000-0000-000000000010",
+      "CreatedAt": "2026-02-01T03:00:00Z"
+    }
+  ],
+  "payroll_entries": [
+    {
+      "Id": "00000000-0000-0000-0000-000000002521",
+      "PayrollPeriodId": "00000000-0000-0000-0000-000000002501",
+      "EmployeeId": "00000000-0000-0000-0000-000000000011",
+      "StandardHours": 8,
+      "HourlyRate": 25000,
+      "BaseSalary": 200000,
+      "OvertimeHours": 0,
+      "OvertimeAmount": 0,
+      "Bonus": 80000,
+      "Allowance": 0,
+      "Deduction": 0,
+      "MandatoryContribution": 0,
+      "Tax": 0,
+      "NetPay": 280000,
+      "PayoutStatus": "PAID",
+      "PayoutBatchId": "00000000-0000-0000-0000-000000002511",
+      "PaymentId": "00000000-0000-0000-0000-000000002101",
+      "PaidAt": "2026-02-01T03:00:00Z",
+      "ZaloStatus": "SENT",
+      "ZaloSentAt": "2026-02-01T04:00:00Z",
+      "CreatedAt": "2026-01-31T02:00:00Z",
+      "UpdatedAt": "2026-02-01T03:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000002522",
+      "PayrollPeriodId": "00000000-0000-0000-0000-000000002502",
+      "EmployeeId": "00000000-0000-0000-0000-000000000012",
+      "StandardHours": 8,
+      "HourlyRate": 25000,
+      "BaseSalary": 200000,
+      "OvertimeHours": 0,
+      "OvertimeAmount": 0,
+      "Bonus": 0,
+      "Allowance": 0,
+      "Deduction": 0,
+      "MandatoryContribution": 0,
+      "Tax": 0,
+      "NetPay": 200000,
+      "PayoutStatus": "UNPAID",
+      "ZaloStatus": "UNSENT",
+      "CreatedAt": "2026-02-28T02:00:00Z",
+      "UpdatedAt": "2026-02-28T02:00:00Z"
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000002523",
+      "PayrollPeriodId": "00000000-0000-0000-0000-000000002503",
+      "EmployeeId": "00000000-0000-0000-0000-000000000011",
+      "StandardHours": 0,
+      "HourlyRate": 25000,
+      "BaseSalary": 0,
+      "OvertimeHours": 0,
+      "OvertimeAmount": 0,
+      "Bonus": 0,
+      "Allowance": 0,
+      "Deduction": 0,
+      "MandatoryContribution": 0,
+      "Tax": 0,
+      "NetPay": 0,
+      "PayoutStatus": "UNPAID",
+      "ZaloStatus": "UNSENT",
+      "CreatedAt": "2026-03-01T02:00:00Z",
+      "UpdatedAt": "2026-03-01T02:00:00Z"
+    }
+  ],
+  "payroll_adjustments": [
+    {
+      "Id": "00000000-0000-0000-0000-000000002531",
+      "AdjustmentCode": "ADJ-202603-0001",
+      "EmployeeId": "00000000-0000-0000-0000-000000000011",
+      "SourcePeriodKey": "01/2026",
+      "SourcePayrollCode": "PAY-202601",
+      "TargetPeriodKey": "03/2026",
+      "Category": "Thưởng bổ sung",
+      "AdjustmentType": "BONUS",
+      "Amount": 50000,
+      "ReferenceCode": "ADJ-REF-001",
+      "Reason": "Bổ sung thưởng doanh số",
+      "status": "APPROVED",
+      "CreatedBy": "00000000-0000-0000-0000-000000000010",
+      "CreatedAt": "2026-03-01T03:00:00Z"
+    }
+  ],
+  "payroll_entry_items": [
+    {
+      "Id": "00000000-0000-0000-0000-000000002541",
+      "PayrollEntryId": "00000000-0000-0000-0000-000000002521",
+      "Category": "BONUS",
+      "Label": "Thưởng doanh số",
+      "Amount": 80000,
+      "SourceType": "MANUAL",
+      "CreatedAt": "2026-01-31T02:00:00Z"
+    }
+  ],
+  "payslip_disputes": [
+    {
+      "Id": "00000000-0000-0000-0000-000000002551",
+      "DisputeCode": "DC-202601-0001",
+      "PayrollEntryId": "00000000-0000-0000-0000-000000002521",
+      "EmployeeId": "00000000-0000-0000-0000-000000000011",
+      "Category": "OTHER",
+      "Content": "Đề nghị kiểm tra lại phiếu lương.",
+      "status": "PENDING_RESPONSE",
+      "CreatedAt": "2026-02-02T03:00:00Z"
+    }
+  ],
   "notification_outbox": [
     {
       "Id": "00000000-0000-0000-0000-000000002301",

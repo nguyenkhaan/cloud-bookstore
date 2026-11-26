@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { SelectBox } from '@/components/common/SelectBox'
-import { formatVnd } from '../hr-payroll.mock'
+import { formatVnd } from '../hr-payroll.utils'
 import type { PayrollPeriodSummary, PayoutMethod } from '../hr-payroll.type'
 import { hrPaths } from '../hr.route'
 
