@@ -197,6 +197,7 @@ public sealed class HrPayslipServiceTests
 
         var audit = await db.AuditLogs.SingleAsync(a => a.Action == "CREATE_PAYSLIP_DISPUTE");
         Assert.Equal("payslip_dispute", audit.EntityType);
+        Assert.Contains("\"Category\":\"ALLOWANCE\"", audit.AfterData);
     }
 
     [Fact]
@@ -285,6 +286,13 @@ public sealed class HrPayslipServiceTests
         Assert.Equal("11/2026", adj.TargetPeriodKey);
         Assert.Equal(PayrollAdjustmentStatus.APPROVED, adj.Status);
         Assert.Equal(90_000, adj.Amount);
+
+        var respondAudit = await db.AuditLogs.AsNoTracking().SingleAsync(a => a.Action == "RESPOND_PAYSLIP_DISPUTE");
+        Assert.Contains("\"Status\":\"PENDING_RESPONSE\"", respondAudit.BeforeData);
+        Assert.Contains("\"Status\":\"APPROVED_NEXT_PERIOD_ADJUSTMENT\"", respondAudit.AfterData);
+
+        var adjAudit = await db.AuditLogs.AsNoTracking().SingleAsync(a => a.Action == "CREATE_PAYROLL_ADJUSTMENT");
+        Assert.Contains("\"AdjustmentType\":\"ADD_NEXT_PERIOD\"", adjAudit.AfterData);
 
         // Second response fails with 409 Conflict
         await Assert.ThrowsAsync<ConflictException>(() => service.RespondDisputeAsync(

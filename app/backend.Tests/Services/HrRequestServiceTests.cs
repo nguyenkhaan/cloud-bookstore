@@ -71,6 +71,7 @@ public sealed class HrRequestServiceTests
         Assert.Equal(peer.Id.ToString(), options.Employees[0].Value);
         Assert.Contains("NV-0002", options.Employees[0].Label);
         Assert.Single(options.WorkRecords);
+        Assert.Equal("20/11/2026 · Ca 2", options.WorkRecords[0].Label);
         Assert.Equal(ApplyDate, options.WorkRecords[0].ApplyDate);
         Assert.Equal(2, (int)(options.WorkRecords[0].ShiftNo ?? 0));
     }
@@ -101,6 +102,7 @@ public sealed class HrRequestServiceTests
         var audit = await db.AuditLogs.SingleAsync();
         Assert.Equal("CREATE_HR_REQUEST", audit.Action);
         Assert.Equal("hr_request", audit.EntityType);
+        Assert.Contains("\"Type\":\"LEAVE\"", audit.AfterData);
     }
 
     [Fact]
@@ -144,6 +146,10 @@ public sealed class HrRequestServiceTests
 
         var cancelled = await service.CancelAsync(requester.Id, pending.Id, new AuditLogContext(requester.Id, null));
         Assert.Equal(HrRequestStatus.CANCELLED, cancelled.Status);
+
+        var cancelAudit = await db.AuditLogs.SingleAsync(log => log.Action == "CANCEL_HR_REQUEST");
+        Assert.Equal("\"PENDING\"", cancelAudit.BeforeData);
+        Assert.Equal("\"CANCELLED\"", cancelAudit.AfterData);
     }
 
     [Fact]
@@ -228,8 +234,11 @@ public sealed class HrRequestServiceTests
         Assert.Equal("Đã đối chiếu camera quầy.", updatedRecord.AdjustmentReason);
 
         var audits = await db.AuditLogs.ToListAsync();
-        Assert.Contains(audits, audit => audit.Action == "APPROVE_ATTENDANCE_ADJUSTMENT");
-        Assert.Contains(audits, audit => audit.Action == "REVIEW_HR_REQUEST" && audit.EntityType == "hr_request");
+        var attendanceAudit = Assert.Single(audits, audit => audit.Action == "APPROVE_ATTENDANCE_ADJUSTMENT");
+        Assert.Contains("\"AttendanceStatus\":\"PRESENT\"", attendanceAudit.AfterData);
+        var reviewAudit = Assert.Single(audits, audit => audit.Action == "REVIEW_HR_REQUEST" && audit.EntityType == "hr_request");
+        Assert.Equal("\"PENDING\"", reviewAudit.BeforeData);
+        Assert.Equal("\"APPROVED\"", reviewAudit.AfterData);
     }
 
     [Fact]

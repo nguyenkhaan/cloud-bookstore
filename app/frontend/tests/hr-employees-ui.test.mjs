@@ -41,6 +41,9 @@ const adminEmployeeDto = {
   isProtected: true,
   avatarUrl: null,
   createdAt: '2026-01-02T03:04:05Z',
+  hourlyRate: 45000,
+  bankName: 'Vietcombank',
+  bankAccountNumber: '0123456789',
 }
 
 const invitedEmployeeDto = {
@@ -53,6 +56,9 @@ const invitedEmployeeDto = {
   roleName: 'CASHIER',
   status: 'INVITED',
   isProtected: false,
+  hourlyRate: 28000,
+  bankName: 'Techcombank',
+  bankAccountNumber: '9876543210',
 }
 
 test('SCR-HRM-01 routes and feature files exist and are guarded in AppRoutes.tsx', () => {
@@ -275,4 +281,99 @@ test('SCR-HRM-01 UI includes required data-testid hooks and excludes whitelist/r
   assert.match(editModalSource, /data-testid="hrm01-edit-submit-btn"/)
   assert.match(editModalSource, /Lý do đổi vai trò/)
   assert.doesNotMatch(editModalSource, /Chỉ Admin được thay đổi vai trò hoặc trạng thái/)
+
+  assert.match(addModalSource, /Lương theo giờ \(VNĐ\/giờ\)/)
+  assert.match(addModalSource, /Ngân hàng/)
+  assert.match(addModalSource, /Số tài khoản ngân hàng/)
+  assert.match(addModalSource, /parsedHourlyRate < 0/)
+
+  assert.match(editModalSource, /Lương theo giờ \(VNĐ\/giờ\)/)
+  assert.match(editModalSource, /Ngân hàng/)
+  assert.match(editModalSource, /Số tài khoản ngân hàng/)
+  assert.match(editModalSource, /employee\.hourlyRate/)
+  assert.match(editModalSource, /employee\.bankName/)
+  assert.match(editModalSource, /employee\.bankAccountNumber/)
+
+  assert.match(detailSource, /Lương theo giờ/)
+  assert.match(detailSource, /Tài khoản ngân hàng/)
+  assert.match(detailSource, /Chưa thiết lập/)
+  assert.match(detailSource, /Chưa cập nhật/)
+  assert.match(detailSource, /formatVnd\(employee\.hourlyRate\)/)
+})
+
+test('employee mapping, create, and update forward hourlyRate and bank fields', async () => {
+  const mapped = employeesService.mapEmployee(adminEmployeeDto)
+  assert.equal(mapped.hourlyRate, 45000)
+  assert.equal(mapped.bankName, 'Vietcombank')
+  assert.equal(mapped.bankAccountNumber, '0123456789')
+
+  const originalPost = privateClient.post
+  const originalPut = privateClient.put
+  const calls = []
+
+  privateClient.post = async (url, body) => {
+    calls.push({ method: 'POST', url, body })
+    return { status: 201, data: invitedEmployeeDto }
+  }
+  privateClient.put = async (url, body) => {
+    calls.push({ method: 'PUT', url, body })
+    return {
+      status: 200,
+      data: {
+        ...adminEmployeeDto,
+        hourlyRate: body.hourlyRate ?? adminEmployeeDto.hourlyRate,
+        bankName: body.bankName,
+        bankAccountNumber: body.bankAccountNumber,
+      },
+    }
+  }
+
+  try {
+    const created = await employeesService.createHrEmployee({
+      fullName: 'Nguyễn Hoài An Mới',
+      email: 'nv.an.moi@comicpos.vn',
+      phone: '0908 123 456',
+      roleCode: 'CASHIER',
+      jobTitle: 'Thu ngân',
+      hourlyRate: 28000,
+      bankName: 'Techcombank',
+      bankAccountNumber: '9876543210',
+    })
+    assert.deepEqual(calls[0].body, {
+      email: 'nv.an.moi@comicpos.vn',
+      fullName: 'Nguyễn Hoài An Mới',
+      phone: '0908 123 456',
+      roleName: 'CASHIER',
+      jobTitle: 'Thu ngân',
+      hourlyRate: 28000,
+      bankName: 'Techcombank',
+      bankAccountNumber: '9876543210',
+    })
+    assert.equal(created.hourlyRate, 28000)
+    assert.equal(created.bankName, 'Techcombank')
+    assert.equal(created.bankAccountNumber, '9876543210')
+
+    const updated = await employeesService.updateHrEmployee({
+      id: adminEmployeeDto.id,
+      fullName: adminEmployeeDto.fullName,
+      email: adminEmployeeDto.email,
+      phone: adminEmployeeDto.phone,
+      roleCode: 'ADMIN',
+      jobTitle: adminEmployeeDto.jobTitle,
+      hourlyRate: 50000,
+      bankName: 'ACB',
+      bankAccountNumber: '555666777',
+      status: 'active',
+    })
+    assert.equal(calls[1].method, 'PUT')
+    assert.equal(calls[1].body.hourlyRate, 50000)
+    assert.equal(calls[1].body.bankName, 'ACB')
+    assert.equal(calls[1].body.bankAccountNumber, '555666777')
+    assert.equal(updated.employee.hourlyRate, 50000)
+    assert.equal(updated.employee.bankName, 'ACB')
+    assert.equal(updated.employee.bankAccountNumber, '555666777')
+  } finally {
+    privateClient.post = originalPost
+    privateClient.put = originalPut
+  }
 })

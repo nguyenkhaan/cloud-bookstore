@@ -59,6 +59,9 @@ function EditEmployeeModalForm({
   const emailId = useId()
   const phoneId = useId()
   const jobTitleId = useId()
+  const hourlyRateId = useId()
+  const bankNameId = useId()
+  const bankAccountNumberId = useId()
   const reasonId = useId()
 
   const [fullName, setFullName] = useState(employee.fullName)
@@ -66,12 +69,20 @@ function EditEmployeeModalForm({
   const [phone, setPhone] = useState(employee.phone)
   const [roleCode, setRoleCode] = useState<BackendRoleName>(employee.roleCode)
   const [jobTitle, setJobTitle] = useState(employee.jobTitle ?? '')
+  const [hourlyRateInput, setHourlyRateInput] = useState(
+    employee.hourlyRate > 0 ? String(employee.hourlyRate) : '',
+  )
+  const [bankName, setBankName] = useState(employee.bankName ?? '')
+  const [bankAccountNumber, setBankAccountNumber] = useState(
+    employee.bankAccountNumber ?? '',
+  )
   const [status, setStatus] = useState<HrEmployeeStatus>(employee.status)
   const [roleChangeReason, setRoleChangeReason] = useState('')
 
   const [nameError, setNameError] = useState<string | null>(null)
   const [emailError, setEmailError] = useState<string | null>(null)
   const [phoneError, setPhoneError] = useState<string | null>(null)
+  const [hourlyRateError, setHourlyRateError] = useState<string | null>(null)
   const [reasonError, setReasonError] = useState<string | null>(null)
   const [generalError, setGeneralError] = useState<string | null>(null)
 
@@ -107,6 +118,16 @@ function EditEmployeeModalForm({
       : !isValidPhone(trimmedPhone)
         ? 'Số điện thoại phải gồm 9–11 chữ số.'
         : null
+    const trimmedHourlyRate = hourlyRateInput.trim()
+    const parsedHourlyRate =
+      trimmedHourlyRate === '' ? undefined : Number(trimmedHourlyRate)
+    const nextHourlyRateError =
+      trimmedHourlyRate !== '' &&
+      (parsedHourlyRate === undefined ||
+        !Number.isFinite(parsedHourlyRate) ||
+        parsedHourlyRate < 0)
+        ? 'Lương theo giờ phải lớn hơn hoặc bằng 0.'
+        : null
     const nextReasonError =
       isRoleChanged && !trimmedReason
         ? 'Vui lòng nhập lý do đổi vai trò.'
@@ -115,10 +136,17 @@ function EditEmployeeModalForm({
     setNameError(nextNameError)
     setEmailError(nextEmailError)
     setPhoneError(nextPhoneError)
+    setHourlyRateError(nextHourlyRateError)
     setReasonError(nextReasonError)
     setGeneralError(null)
 
-    if (nextNameError || nextEmailError || nextPhoneError || nextReasonError) {
+    if (
+      nextNameError ||
+      nextEmailError ||
+      nextPhoneError ||
+      nextHourlyRateError ||
+      nextReasonError
+    ) {
       return
     }
 
@@ -130,6 +158,9 @@ function EditEmployeeModalForm({
         phone: trimmedPhone,
         roleCode: employee.isRootAdmin ? employee.roleCode : roleCode,
         jobTitle: jobTitle.trim() || undefined,
+        hourlyRate: parsedHourlyRate ?? 0,
+        bankName: bankName.trim() || undefined,
+        bankAccountNumber: bankAccountNumber.trim() || undefined,
         status: employee.isRootAdmin ? employee.status : status,
         roleChangeReason: isRoleChanged ? trimmedReason : undefined,
       })
@@ -260,6 +291,45 @@ function EditEmployeeModalForm({
               placeholder="Thu ngân"
               type="text"
               value={jobTitle}
+              variant="outlined"
+            />
+
+            <TextField
+              hint={hourlyRateError}
+              id={hourlyRateId}
+              invalid={Boolean(hourlyRateError)}
+              label="Lương theo giờ (VNĐ/giờ)"
+              min={0}
+              onChange={(event) => {
+                setHourlyRateInput(event.target.value)
+                if (hourlyRateError) setHourlyRateError(null)
+              }}
+              placeholder="25000"
+              step="any"
+              type="number"
+              value={hourlyRateInput}
+              variant="outlined"
+            />
+
+            <TextField
+              id={bankNameId}
+              label="Ngân hàng"
+              maxLength={100}
+              onChange={(event) => setBankName(event.target.value)}
+              placeholder="Vietcombank"
+              type="text"
+              value={bankName}
+              variant="outlined"
+            />
+
+            <TextField
+              id={bankAccountNumberId}
+              label="Số tài khoản ngân hàng"
+              maxLength={50}
+              onChange={(event) => setBankAccountNumber(event.target.value)}
+              placeholder="0123456789"
+              type="text"
+              value={bankAccountNumber}
               variant="outlined"
             />
 

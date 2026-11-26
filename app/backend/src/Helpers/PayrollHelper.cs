@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using backend.src.Data;
 using backend.src.Dto.AuditLogDto;
@@ -19,6 +20,11 @@ public static partial class PayrollHelper
     public const string DisputeEntityType = "payslip_dispute";
     public const string ZaloTemplateCode = "PAYSLIP_READY";
     public const string ZaloUnlinkedReason = "Nhân viên chưa liên kết Zalo hoặc số điện thoại không hợp lệ.";
+
+    internal static readonly JsonSerializerOptions AuditJsonOptions = new()
+    {
+        Converters = { new JsonStringEnumConverter() }
+    };
 
     [GeneratedRegex(@"^(0[1-9]|1[0-2])/(20\d{2})$")]
     private static partial Regex PeriodKeyRegex();
@@ -126,8 +132,8 @@ public static partial class PayrollHelper
         {
             ActorId = context.ActorId, IpAddress = context.IpAddress, UserAgent = context.UserAgent,
             CorrelationId = context.CorrelationId, Action = action, EntityType = entityType, EntityId = entityId,
-            BeforeData = before is null ? null : JsonSerializer.Serialize(before),
-            AfterData = after is null ? null : JsonSerializer.Serialize(after),
+            BeforeData = before is null ? null : JsonSerializer.Serialize(before, AuditJsonOptions),
+            AfterData = after is null ? null : JsonSerializer.Serialize(after, AuditJsonOptions),
             Reason = reason, OccurredAt = DateTime.UtcNow
         });
 

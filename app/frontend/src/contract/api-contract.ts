@@ -8740,6 +8740,10 @@ export interface components {
             phone: string;
             roleName: components["schemas"]["RoleName"];
             jobTitle?: null | string;
+            /** Format: double */
+            hourlyRate?: null | number;
+            bankName?: null | string;
+            bankAccountNumber?: null | string;
         };
         CreateHrRequestRequest: {
             type: components["schemas"]["HrRequestType"];
@@ -9402,6 +9406,10 @@ export interface components {
             avatarUrl: null | string;
             /** Format: date-time */
             createdAt: string;
+            /** Format: double */
+            hourlyRate: number;
+            bankName: null | string;
+            bankAccountNumber: null | string;
         };
         EmployeeListKpiDto: {
             /** Format: int32 */
@@ -11034,6 +11042,10 @@ export interface components {
             jobTitle: null | string;
             status: components["schemas"]["EmployeeStatus"];
             reason?: null | string;
+            /** Format: double */
+            hourlyRate?: null | number;
+            bankName?: null | string;
+            bankAccountNumber?: null | string;
         };
         UpdateIntegrationsRequest: {
             vietQr?: null | components["schemas"]["VietQrIntegrationDto"];

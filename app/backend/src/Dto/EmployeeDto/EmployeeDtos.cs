@@ -16,7 +16,10 @@ public sealed record CreateEmployeeRequest(
     [Required, MaxLength(200)] string FullName,
     [Required, MaxLength(12)] string Phone,
     RoleName RoleName,
-    [MaxLength(120)] string? JobTitle = null);
+    [MaxLength(120)] string? JobTitle = null,
+    decimal? HourlyRate = null,
+    [MaxLength(100)] string? BankName = null,
+    [MaxLength(50)] string? BankAccountNumber = null);
 
 public sealed record UpdateEmployeeRequest(
     [Required, EmailAddress, MaxLength(200)] string Email,
@@ -24,7 +27,10 @@ public sealed record UpdateEmployeeRequest(
     [Required, MaxLength(12)] string Phone,
     [MaxLength(120)] string? JobTitle,
     EmployeeStatus Status,
-    string? Reason = null);
+    string? Reason = null,
+    decimal? HourlyRate = null,
+    [MaxLength(100)] string? BankName = null,
+    [MaxLength(50)] string? BankAccountNumber = null);
 
 public sealed record EmployeeDto(
     Guid Id,
@@ -38,7 +44,10 @@ public sealed record EmployeeDto(
     string? BranchName,
     bool IsProtected,
     string? AvatarUrl,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    decimal HourlyRate,
+    string? BankName,
+    string? BankAccountNumber);
 
 public sealed record EmployeeListKpiDto(int ActiveCount, int NewAccountsCount, int InShiftCount, int RootAdminCount);
 

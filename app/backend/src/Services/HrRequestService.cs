@@ -1,3 +1,4 @@
+using System.Globalization;
 using backend.src.Data;
 using backend.src.Dto.AuditLogDto;
 using backend.src.Dto.HrRequestDto;
@@ -33,10 +34,18 @@ public sealed class HrRequestService(AppDbContext dbContext, UploadIntentService
             .OrderBy(employee => employee.FullName).Select(employee => new HrRequestOptionDto(employee.Id.ToString(),
                 string.IsNullOrEmpty(employee.EmployeeCode) ? employee.FullName : employee.EmployeeCode + " · " + employee.FullName)).ToListAsync(cancellationToken);
         var today = VietnamTimeHelper.TodayVietnam(DateTime.UtcNow);
-        var workRecords = await dbContext.EmployeeWorkRecords.AsNoTracking().Where(record => record.EmployeeId == actorId && record.WorkDate <= today)
+        var rawWorkRecords = await dbContext.EmployeeWorkRecords.AsNoTracking()
+            .Where(record => record.EmployeeId == actorId && record.WorkDate <= today)
             .OrderByDescending(record => record.WorkDate).ThenByDescending(record => record.ShiftNo).Take(60)
-            .Select(record => new HrRequestOptionDto(record.Id.ToString(), record.WorkDate.ToString() + " · Ca " + record.ShiftNo,
-                record.WorkDate, record.ShiftNo)).ToListAsync(cancellationToken);
+            .Select(record => new { record.Id, record.WorkDate, record.ShiftNo })
+            .ToListAsync(cancellationToken);
+        var workRecords = rawWorkRecords
+            .Select(record => new HrRequestOptionDto(
+                record.Id.ToString(),
+                record.WorkDate.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture) + " · Ca " + record.ShiftNo,
+                record.WorkDate,
+                record.ShiftNo))
+            .ToList();
         return new HrRequestOptionsDto(employees, workRecords);
     }
 
@@ -202,7 +211,7 @@ public sealed class HrRequestService(AppDbContext dbContext, UploadIntentService
         dbContext.AuditLogs.Add(new AuditLogModel { ActorId = context.ActorId, IpAddress = context.IpAddress,
             UserAgent = context.UserAgent, CorrelationId = context.CorrelationId, Action = action,
             EntityType = "hr_request", EntityId = entityId,
-            BeforeData = before is null ? null : System.Text.Json.JsonSerializer.Serialize(before),
-            AfterData = after is null ? null : System.Text.Json.JsonSerializer.Serialize(after), Reason = reason, OccurredAt = DateTime.UtcNow });
+            BeforeData = before is null ? null : System.Text.Json.JsonSerializer.Serialize(before, PayrollHelper.AuditJsonOptions),
+            AfterData = after is null ? null : System.Text.Json.JsonSerializer.Serialize(after, PayrollHelper.AuditJsonOptions), Reason = reason, OccurredAt = DateTime.UtcNow });
     }
 }

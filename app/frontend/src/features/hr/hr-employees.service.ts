@@ -5,6 +5,7 @@ import type {
   BackendEmployeeStatus,
   ChangeEmployeeRolePayload,
   ChangeRoleResult,
+  CreateEmployeeRequest,
   CreateHrEmployeeInput,
   HrEmployee,
   HrEmployeeListQuery,
@@ -13,6 +14,7 @@ import type {
   HrEmployeeShiftRecord,
   HrEmployeeShiftStatus,
   HrEmployeeStatus,
+  UpdateEmployeeRequest,
   UpdateHrEmployeeInput,
   UpdateHrEmployeeResult,
 } from './hr-employees.type'
@@ -132,6 +134,9 @@ export function mapEmployee(dto: EmployeeDto): HrEmployee {
     phone: dto.phone,
     roleCode: dto.roleName,
     jobTitle: dto.jobTitle ?? undefined,
+    hourlyRate: dto.hourlyRate ?? 0,
+    bankName: dto.bankName ?? undefined,
+    bankAccountNumber: dto.bankAccountNumber ?? undefined,
     status: STATUS_FROM_API[dto.status],
     branchName: dto.branchName ?? 'Nhà sách Mây · Cơ sở 01',
     createdAt: dto.createdAt,
@@ -241,13 +246,19 @@ export async function createHrEmployee(
   input: CreateHrEmployeeInput,
 ): Promise<HrEmployee> {
   try {
-    const response = await privateClient.post<EmployeeDto>('/employees', {
+    const payload: CreateEmployeeRequest = {
       email: input.email.trim(),
       fullName: input.fullName.trim(),
       phone: input.phone.trim(),
       roleName: input.roleCode,
       jobTitle: input.jobTitle?.trim() || undefined,
-    })
+      ...(input.hourlyRate !== undefined ? { hourlyRate: input.hourlyRate } : {}),
+      ...(input.bankName?.trim() ? { bankName: input.bankName.trim() } : {}),
+      ...(input.bankAccountNumber?.trim()
+        ? { bankAccountNumber: input.bankAccountNumber.trim() }
+        : {}),
+    }
+    const response = await privateClient.post<EmployeeDto>('/employees', payload)
     return mapEmployee(response.data)
   } catch (error) {
     throw new Error(
@@ -289,16 +300,20 @@ export async function updateHrEmployee(
   input: UpdateHrEmployeeInput,
 ): Promise<UpdateHrEmployeeResult> {
   try {
+    const payload: UpdateEmployeeRequest = {
+      email: input.email.trim(),
+      fullName: input.fullName.trim(),
+      phone: input.phone.trim(),
+      jobTitle: input.jobTitle?.trim() || null,
+      status: statusToApi(input.status),
+      reason: input.roleChangeReason?.trim() || undefined,
+      ...(input.hourlyRate !== undefined ? { hourlyRate: input.hourlyRate } : {}),
+      bankName: input.bankName?.trim() || null,
+      bankAccountNumber: input.bankAccountNumber?.trim() || null,
+    }
     const response = await privateClient.put<EmployeeDto>(
       `/employees/${encodeURIComponent(input.id)}`,
-      {
-        email: input.email.trim(),
-        fullName: input.fullName.trim(),
-        phone: input.phone.trim(),
-        jobTitle: input.jobTitle?.trim() || null,
-        status: statusToApi(input.status),
-        reason: input.roleChangeReason?.trim() || undefined,
-      },
+      payload,
     )
     let employee = mapEmployee(response.data)
     let roleChanged = false

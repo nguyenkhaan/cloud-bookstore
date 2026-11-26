@@ -33,6 +33,9 @@ export interface HrEmployee {
   phone: string
   roleCode: BackendRoleName
   jobTitle?: string
+  hourlyRate: number
+  bankName?: string
+  bankAccountNumber?: string
   status: HrEmployeeStatus
   branchName: string
   createdAt: string
@@ -79,6 +82,9 @@ export interface CreateHrEmployeeInput {
   phone: string
   roleCode: BackendRoleName
   jobTitle?: string
+  hourlyRate?: number
+  bankName?: string
+  bankAccountNumber?: string
 }
 
 export interface UpdateHrEmployeeInput {
@@ -88,6 +94,9 @@ export interface UpdateHrEmployeeInput {
   phone: string
   roleCode: BackendRoleName
   jobTitle?: string
+  hourlyRate?: number
+  bankName?: string
+  bankAccountNumber?: string
   status: HrEmployeeStatus
   roleChangeReason?: string
 }

@@ -84,6 +84,8 @@ public class EmployeeService(AppDbContext dbContext, AuditLogService auditLogSer
 
     public async Task<EmployeeDto> CreateAsync(Guid actorId, CreateEmployeeRequest request, AuditLogContext context, CancellationToken cancellationToken = default)
     {
+        if (request.HourlyRate < 0)
+            throw new BadRequestException("Hourly rate cannot be negative.");
         var email = request.Email.Trim();
         if (await dbContext.Employees.AnyAsync(item => item.Email.ToLower() == email.ToLower(), cancellationToken))
             throw new ConflictException("An employee with this email already exists.");
@@ -105,11 +107,14 @@ public class EmployeeService(AppDbContext dbContext, AuditLogService auditLogSer
             PasswordResetTokenHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(token))),
             RoleId = role.Id, Role = role, Status = EmployeeStatus.INVITED, EmployeeCode = $"NV-{sequence:0000}",
             JobTitle = string.IsNullOrWhiteSpace(request.JobTitle) ? null : request.JobTitle.Trim(),
+            HourlyRate = request.HourlyRate ?? 0m,
+            BankName = string.IsNullOrWhiteSpace(request.BankName) ? null : request.BankName.Trim(),
+            BankAccountNumber = string.IsNullOrWhiteSpace(request.BankAccountNumber) ? null : request.BankAccountNumber.Trim(),
             BranchName = "Nhà sách Mây · Cơ sở 01", CreatedAt = DateTime.UtcNow
         };
         dbContext.Employees.Add(employee);
         AddAudit("CREATE_EMPLOYEE", employee, null,
-            new { employee.EmployeeCode, employee.Email, employee.FullName, Role = role.RoleName, employee.Status }, "Create employee account.", context);
+            new { employee.EmployeeCode, employee.Email, employee.FullName, Role = role.RoleName, employee.Status, employee.HourlyRate, employee.BankName, employee.BankAccountNumber }, "Create employee account.", context);
         await dbContext.SaveChangesAsync(cancellationToken);
         await emailService.SendAccountSetupEmailAsync(employee.Email, employee.FullName, token, cancellationToken);
         return ToDto(employee);
@@ -117,6 +122,8 @@ public class EmployeeService(AppDbContext dbContext, AuditLogService auditLogSer
 
     public async Task<EmployeeDto> UpdateAsync(Guid actorId, Guid employeeId, UpdateEmployeeRequest request, AuditLogContext context, CancellationToken cancellationToken = default)
     {
+        if (request.HourlyRate < 0)
+            throw new BadRequestException("Hourly rate cannot be negative.");
         var employee = await dbContext.Employees.Include(item => item.Role).SingleOrDefaultAsync(item => item.Id == employeeId, cancellationToken)
             ?? throw new NotFoundException("Employee was not found.");
         if (employee.IsProtected && request.Status != employee.Status)
@@ -126,14 +133,18 @@ public class EmployeeService(AppDbContext dbContext, AuditLogService auditLogSer
         var email = request.Email.Trim();
         if (await dbContext.Employees.AnyAsync(item => item.Id != employeeId && item.Email.ToLower() == email.ToLower(), cancellationToken))
             throw new ConflictException("An employee with this email already exists.");
-        var before = new { employee.Email, employee.FullName, employee.Phone, employee.JobTitle, employee.Status };
+        var before = new { employee.Email, employee.FullName, employee.Phone, employee.JobTitle, employee.Status, employee.HourlyRate, employee.BankName, employee.BankAccountNumber };
         employee.Email = email;
         employee.FullName = request.FullName.Trim();
         employee.Phone = request.Phone.Trim();
         employee.JobTitle = string.IsNullOrWhiteSpace(request.JobTitle) ? null : request.JobTitle.Trim();
         employee.Status = request.Status;
+        if (request.HourlyRate.HasValue)
+            employee.HourlyRate = request.HourlyRate.Value;
+        employee.BankName = string.IsNullOrWhiteSpace(request.BankName) ? null : request.BankName.Trim();
+        employee.BankAccountNumber = string.IsNullOrWhiteSpace(request.BankAccountNumber) ? null : request.BankAccountNumber.Trim();
         AddAudit("UPDATE_EMPLOYEE", employee, before,
-            new { employee.Email, employee.FullName, employee.Phone, employee.JobTitle, employee.Status },
+            new { employee.Email, employee.FullName, employee.Phone, employee.JobTitle, employee.Status, employee.HourlyRate, employee.BankName, employee.BankAccountNumber },
             string.IsNullOrWhiteSpace(request.Reason) ? "Update employee profile." : request.Reason.Trim(), context);
         await dbContext.SaveChangesAsync(cancellationToken);
         return ToDto(employee);
@@ -158,14 +169,15 @@ public class EmployeeService(AppDbContext dbContext, AuditLogService auditLogSer
         {
             ActorId = context.ActorId, IpAddress = context.IpAddress, UserAgent = context.UserAgent, CorrelationId = context.CorrelationId,
             Action = action, EntityType = "employee", EntityId = employee.Id,
-            BeforeData = before is null ? null : System.Text.Json.JsonSerializer.Serialize(before),
-            AfterData = System.Text.Json.JsonSerializer.Serialize(after), Reason = reason, OccurredAt = DateTime.UtcNow
+            BeforeData = before is null ? null : System.Text.Json.JsonSerializer.Serialize(before, PayrollHelper.AuditJsonOptions),
+            AfterData = System.Text.Json.JsonSerializer.Serialize(after, PayrollHelper.AuditJsonOptions), Reason = reason, OccurredAt = DateTime.UtcNow
         });
     }
 
     private static EmployeeDto ToDto(EmployeeModel employee) => new(employee.Id, employee.EmployeeCode ?? string.Empty,
         employee.Email, employee.FullName, employee.Phone, employee.Role.RoleName, employee.Status, employee.JobTitle,
-        employee.BranchName, employee.IsProtected, employee.AvatarUrl, employee.CreatedAt);
+        employee.BranchName, employee.IsProtected, employee.AvatarUrl, employee.CreatedAt,
+        employee.HourlyRate ?? 0m, employee.BankName, employee.BankAccountNumber);
 
     public async Task<EmployeeRoleResponse> ChangeRoleAsync(
         Guid actorId,

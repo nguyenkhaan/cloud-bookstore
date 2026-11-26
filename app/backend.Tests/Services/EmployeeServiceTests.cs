@@ -270,6 +270,92 @@ public sealed class EmployeeServiceTests
         Assert.Equal("employee", audit.EntityType);
     }
 
+    [Fact]
+    public async Task CreateAsync_and_UpdateAsync_persist_hourly_rate_bank_info_validate_negative_rate_and_serialize_enum_audits ()
+    {
+        await using var db = CreateDbContext();
+        var roles = SeedRoles(db);
+        var actor = NewEmployee(roles[RoleName.ADMIN], "Admin", "admin@comicpos.vn", "NV-0001", status: EmployeeStatus.ACTIVE);
+        db.Employees.Add(actor);
+        await db.SaveChangesAsync();
+
+        var service = CreateService(db);
+        var ctx = new AuditLogContext(actor.Id, null);
+
+        await Assert.ThrowsAsync<BadRequestException>(() => service.CreateAsync(actor.Id,
+            new CreateEmployeeRequest("neg@comicpos.vn", "Negative Rate", "0908111222", RoleName.CASHIER, null, -1m), ctx));
+
+        var created = await service.CreateAsync(actor.Id,
+            new CreateEmployeeRequest(
+                "staff.bank@comicpos.vn",
+                "Staff Bank",
+                "0908111333",
+                RoleName.CASHIER,
+                "Thu ngân",
+                32_000m,
+                "  Vietcombank  ",
+                " 0123456789 "),
+            ctx);
+
+        Assert.Equal(32_000m, created.HourlyRate);
+        Assert.Equal("Vietcombank", created.BankName);
+        Assert.Equal("0123456789", created.BankAccountNumber);
+
+        var createAudit = await db.AuditLogs.SingleAsync(log => log.Action == "CREATE_EMPLOYEE");
+        Assert.Contains("\"Role\":\"CASHIER\"", createAudit.AfterData);
+        Assert.Contains("\"Status\":\"INVITED\"", createAudit.AfterData);
+        Assert.Contains("\"HourlyRate\":32000", createAudit.AfterData);
+        Assert.Contains("\"BankName\":\"Vietcombank\"", createAudit.AfterData);
+        Assert.Contains("\"BankAccountNumber\":\"0123456789\"", createAudit.AfterData);
+
+        await Assert.ThrowsAsync<BadRequestException>(() => service.UpdateAsync(actor.Id, created.Id,
+            new UpdateEmployeeRequest(created.Email, created.FullName, created.Phone, created.JobTitle, EmployeeStatus.ACTIVE, null, -5m), ctx));
+
+        var updated = await service.UpdateAsync(actor.Id, created.Id,
+            new UpdateEmployeeRequest(
+                created.Email,
+                created.FullName,
+                created.Phone,
+                created.JobTitle,
+                EmployeeStatus.ACTIVE,
+                "Cập nhật lương và tài khoản ngân hàng",
+                40_000m,
+                " ACB ",
+                " 987654321 "),
+            ctx);
+
+        Assert.Equal(40_000m, updated.HourlyRate);
+        Assert.Equal("ACB", updated.BankName);
+        Assert.Equal("987654321", updated.BankAccountNumber);
+
+        var updateAudit = await db.AuditLogs.SingleAsync(log => log.Action == "UPDATE_EMPLOYEE");
+        Assert.Contains("\"Status\":\"INVITED\"", updateAudit.BeforeData);
+        Assert.Contains("\"HourlyRate\":32000", updateAudit.BeforeData);
+        Assert.Contains("\"BankName\":\"Vietcombank\"", updateAudit.BeforeData);
+        Assert.Contains("\"Status\":\"ACTIVE\"", updateAudit.AfterData);
+        Assert.Contains("\"HourlyRate\":40000", updateAudit.AfterData);
+        Assert.Contains("\"BankName\":\"ACB\"", updateAudit.AfterData);
+        Assert.Contains("\"BankAccountNumber\":\"987654321\"", updateAudit.AfterData);
+
+        // Omitting HourlyRate keeps existing value; blank bank fields clear to null
+        var clearedBank = await service.UpdateAsync(actor.Id, created.Id,
+            new UpdateEmployeeRequest(
+                created.Email,
+                created.FullName,
+                created.Phone,
+                created.JobTitle,
+                EmployeeStatus.ACTIVE,
+                null,
+                null,
+                "   ",
+                null),
+            ctx);
+
+        Assert.Equal(40_000m, clearedBank.HourlyRate);
+        Assert.Null(clearedBank.BankName);
+        Assert.Null(clearedBank.BankAccountNumber);
+    }
+
     private static string NewDatabaseName() => Guid.NewGuid().ToString("N");
 
     private static AppDbContext CreateDbContext()

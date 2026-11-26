@@ -16,6 +16,7 @@ import {
 } from '../hr-employees.hook'
 import { formatHrRoleLabel, isHrAdmin, resolveHrRoleCode } from '../hr-role.util'
 import { formatEmployeeCreatedAt } from '../hr-employees.service'
+import { formatVnd } from '../hr-payroll.utils'
 import { hrPaths } from '../hr.route'
 
 const SHIFT_PAGE_SIZE = 5
@@ -228,6 +229,26 @@ export default function EmployeeDetailPage() {
                   </div>
                   <div className="mt-1 text-sm font-semibold text-slate-900">
                     {employee.username}
+                  </div>
+                </div>
+
+                <div className="min-w-0">
+                  <div className="text-[11px] text-slate-500">Lương theo giờ</div>
+                  <div className="mt-1 text-sm font-semibold text-slate-900">
+                    {employee.hourlyRate > 0
+                      ? `${formatVnd(employee.hourlyRate)}/giờ`
+                      : 'Chưa thiết lập'}
+                  </div>
+                </div>
+
+                <div className="min-w-0">
+                  <div className="text-[11px] text-slate-500">
+                    Tài khoản ngân hàng
+                  </div>
+                  <div className="mt-1 text-sm font-semibold text-slate-900">
+                    {[employee.bankName, employee.bankAccountNumber]
+                      .filter(Boolean)
+                      .join(' · ') || 'Chưa cập nhật'}
                   </div>
                 </div>
               </div>

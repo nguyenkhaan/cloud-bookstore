@@ -3,6 +3,8 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { after, before, test } from 'node:test'
 import { fileURLToPath } from 'node:url'
+import React from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { createServer } from 'vite'
 
 const frontendRoot = path.resolve(
@@ -15,6 +17,7 @@ let server
 let hrRoutes
 let payrollService
 let privateClient
+let PayslipBreakdownCard
 
 before(async () => {
   server = await createServer({
@@ -27,6 +30,9 @@ before(async () => {
   )
   const clientMod = await server.ssrLoadModule('/src/api/client.ts')
   privateClient = clientMod.privateClient
+  ;({ PayslipBreakdownCard } = await server.ssrLoadModule(
+    '/src/features/hr/components/PayslipBreakdownCard.tsx',
+  ))
 })
 
 after(async () => {
@@ -272,4 +278,72 @@ test('SCR-HRM-06 payslip service maps live backend PayslipDetailDto fields, draw
     privateClient.get = originalGet
     privateClient.post = originalPost
   }
+})
+
+test('SCR-HRM-06 PayslipBreakdownCard omits trailing middot when storeName is empty', () => {
+  const basePayslip = {
+    hasPayslip: true,
+    entryId: 'entry-1',
+    payslipCode: 'PAY-202601-NV0002',
+    periodKey: '01/2026',
+    periodRange: '01/01–31/01/2026',
+    payrollCode: 'PAY-202601',
+    attendanceSourceCode: 'ATT-202601',
+    payrollStatus: 'settled',
+    payoutStatus: 'paid',
+    payoutDate: '01/02/2026',
+    approvedBy: 'Admin Cloud',
+    approvedAt: '01/02/2026 · 09:00',
+    employeeId: 'emp-2',
+    employeeCode: 'NV-0002',
+    employeeName: 'Nhân viên B',
+    employeeRoleLabel: 'Thu ngân',
+    storeName: '',
+    bankAccount: 'VCB · 123456',
+    transactionRef: 'PAY-202601-001',
+    standardHours: 8,
+    hourlyRate: 25000,
+    baseSalary: 200000,
+    overtimeHours: 0,
+    overtimeAmount: 0,
+    bonus: 0,
+    bonusNote: '',
+    allowance: 0,
+    allowanceNote: '',
+    mandatoryContribution: 0,
+    mandatoryContributionNote: '',
+    taxAmount: 0,
+    taxNote: '',
+    deduction: 0,
+    advanceVoucherCode: '',
+    totalIncome: 200000,
+    totalDeduction: 0,
+    netPay: 200000,
+    netPayInWords: 'Hai trăm nghìn đồng.',
+    zaloStatus: 'sent',
+    zaloSentAt: '01/02/2026',
+    zaloLinked: true,
+    availablePeriods: [],
+    attendanceDays: [],
+    overtimeEntries: [],
+    advanceVouchers: [],
+    disputes: [],
+  }
+
+  const htmlWithoutStore = renderToStaticMarkup(
+    React.createElement(PayslipBreakdownCard, {
+      payslip: basePayslip,
+      onOpenDrawer: () => {},
+    }),
+  )
+  assert.match(htmlWithoutStore, /PAY-202601-NV0002/)
+  assert.doesNotMatch(htmlWithoutStore, /PAY-202601-NV0002 ·/)
+
+  const htmlWithStore = renderToStaticMarkup(
+    React.createElement(PayslipBreakdownCard, {
+      payslip: { ...basePayslip, storeName: 'Nhà sách Mây' },
+      onOpenDrawer: () => {},
+    }),
+  )
+  assert.match(htmlWithStore, /PAY-202601-NV0002 · Nhà sách Mây/)
 })

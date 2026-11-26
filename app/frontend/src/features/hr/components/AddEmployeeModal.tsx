@@ -41,16 +41,23 @@ function AddEmployeeModalForm({
   const emailId = useId()
   const phoneId = useId()
   const jobTitleId = useId()
+  const hourlyRateId = useId()
+  const bankNameId = useId()
+  const bankAccountNumberId = useId()
 
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [roleCode, setRoleCode] = useState<BackendRoleName>('CASHIER')
   const [jobTitle, setJobTitle] = useState('')
+  const [hourlyRateInput, setHourlyRateInput] = useState('')
+  const [bankName, setBankName] = useState('')
+  const [bankAccountNumber, setBankAccountNumber] = useState('')
 
   const [nameError, setNameError] = useState<string | null>(null)
   const [emailError, setEmailError] = useState<string | null>(null)
   const [phoneError, setPhoneError] = useState<string | null>(null)
+  const [hourlyRateError, setHourlyRateError] = useState<string | null>(null)
   const [generalError, setGeneralError] = useState<string | null>(null)
 
   const createMutation = useCreateHrEmployeeMutation()
@@ -83,13 +90,29 @@ function AddEmployeeModalForm({
       : !isValidPhone(trimmedPhone)
         ? 'Số điện thoại phải gồm 9–11 chữ số.'
         : null
+    const trimmedHourlyRate = hourlyRateInput.trim()
+    const parsedHourlyRate =
+      trimmedHourlyRate === '' ? undefined : Number(trimmedHourlyRate)
+    const nextHourlyRateError =
+      trimmedHourlyRate !== '' &&
+      (parsedHourlyRate === undefined ||
+        !Number.isFinite(parsedHourlyRate) ||
+        parsedHourlyRate < 0)
+        ? 'Lương theo giờ phải lớn hơn hoặc bằng 0.'
+        : null
 
     setNameError(nextNameError)
     setEmailError(nextEmailError)
     setPhoneError(nextPhoneError)
+    setHourlyRateError(nextHourlyRateError)
     setGeneralError(null)
 
-    if (nextNameError || nextEmailError || nextPhoneError) {
+    if (
+      nextNameError ||
+      nextEmailError ||
+      nextPhoneError ||
+      nextHourlyRateError
+    ) {
       return
     }
 
@@ -100,6 +123,9 @@ function AddEmployeeModalForm({
         phone: trimmedPhone,
         roleCode,
         jobTitle: jobTitle.trim() || undefined,
+        hourlyRate: parsedHourlyRate,
+        bankName: bankName.trim() || undefined,
+        bankAccountNumber: bankAccountNumber.trim() || undefined,
       })
       notify.success(
         `Đã tạo tài khoản ${created.code} (${created.fullName}) ở trạng thái Chờ kích hoạt.`,
@@ -223,6 +249,45 @@ function AddEmployeeModalForm({
               placeholder="Thu ngân"
               type="text"
               value={jobTitle}
+              variant="outlined"
+            />
+
+            <TextField
+              hint={hourlyRateError}
+              id={hourlyRateId}
+              invalid={Boolean(hourlyRateError)}
+              label="Lương theo giờ (VNĐ/giờ)"
+              min={0}
+              onChange={(event) => {
+                setHourlyRateInput(event.target.value)
+                if (hourlyRateError) setHourlyRateError(null)
+              }}
+              placeholder="25000"
+              step="any"
+              type="number"
+              value={hourlyRateInput}
+              variant="outlined"
+            />
+
+            <TextField
+              id={bankNameId}
+              label="Ngân hàng"
+              maxLength={100}
+              onChange={(event) => setBankName(event.target.value)}
+              placeholder="Vietcombank"
+              type="text"
+              value={bankName}
+              variant="outlined"
+            />
+
+            <TextField
+              id={bankAccountNumberId}
+              label="Số tài khoản ngân hàng"
+              maxLength={50}
+              onChange={(event) => setBankAccountNumber(event.target.value)}
+              placeholder="0123456789"
+              type="text"
+              value={bankAccountNumber}
               variant="outlined"
             />
 

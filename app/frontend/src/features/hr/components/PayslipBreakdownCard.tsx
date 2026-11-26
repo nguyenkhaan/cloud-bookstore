@@ -18,7 +18,7 @@ export function PayslipBreakdownCard({
   return (
     <Card
       padding="lg"
-      subtitle={`${payslip.payslipCode} · ${payslip.storeName}`}
+      subtitle={[payslip.payslipCode, payslip.storeName].filter(Boolean).join(' · ')}
       title={`Phiếu lương tháng ${payslip.periodKey}`}
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

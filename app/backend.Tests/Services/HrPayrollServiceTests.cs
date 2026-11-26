@@ -161,6 +161,14 @@ public sealed class HrPayrollServiceTests
             new UnlockPayrollRequest("Cập nhật lại phụ cấp ca đêm"), ctx);
         Assert.Equal(PayrollPeriodStatus.DRAFT, unlocked.Status);
 
+        var approveAudit = await db.AuditLogs.AsNoTracking().FirstAsync(a => a.Action == "APPROVE_PAYROLL_PERIOD");
+        Assert.Contains("\"Status\":\"DRAFT\"", approveAudit.BeforeData);
+        Assert.Contains("\"Status\":\"APPROVED_UNPAID\"", approveAudit.AfterData);
+
+        var unlockAudit = await db.AuditLogs.AsNoTracking().SingleAsync(a => a.Action == "UNLOCK_PAYROLL_PERIOD");
+        Assert.Contains("\"Status\":\"APPROVED_UNPAID\"", unlockAudit.BeforeData);
+        Assert.Contains("\"Status\":\"DRAFT\"", unlockAudit.AfterData);
+
         // Approve again, payout, and verify unlock is blocked with 409 Conflict
         await service.ApproveAsync(admin.Id, "10/2026", ctx);
         await service.PayoutAsync(admin.Id, "10/2026",
@@ -401,6 +409,10 @@ public sealed class HrPayrollServiceTests
 
         var list = await service.ListAdjustmentsAsync("11/2026");
         Assert.Single(list);
+
+        var adjustmentAudit = await db.AuditLogs.AsNoTracking().SingleAsync(a => a.Action == "CREATE_PAYROLL_ADJUSTMENT");
+        Assert.Contains("\"AdjustmentType\":\"ADD_NEXT_PERIOD\"", adjustmentAudit.AfterData);
+        Assert.Contains("\"Status\":\"APPROVED\"", adjustmentAudit.AfterData);
     }
 
     [Fact]
