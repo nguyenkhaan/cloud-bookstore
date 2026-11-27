@@ -123,6 +123,7 @@ public sealed class AuthServiceTests : IAsyncLifetime
     [InlineData("db-npgsql")]
     [InlineData("db-timeout")]
     [InlineData("db-cancellation")]
+    [InlineData("db-task-cancellation")]
     [InlineData("db-wrapped-npgsql")]
     [InlineData("db-wrapped-timeout")]
     [InlineData("db-wrapped-socket")]
@@ -133,7 +134,7 @@ public sealed class AuthServiceTests : IAsyncLifetime
         {
             "redis-http" => new HttpRequestException("Dependency detail"),
             "redis-timeout" or "db-timeout" => new TimeoutException("Dependency detail"),
-            "redis-cancellation" => new TaskCanceledException("Dependency detail"),
+            "redis-cancellation" or "db-task-cancellation" => new TaskCanceledException("Dependency detail"),
             "redis-json" => new JsonException("Dependency detail"),
             "redis-operation" => new InvalidOperationException("Dependency detail"),
             "db-npgsql" => new NpgsqlException("Dependency detail"),
@@ -179,21 +180,69 @@ public sealed class AuthServiceTests : IAsyncLifetime
     }
 
     [Theory]
+    [InlineData("healthy", HttpStatusCode.OK)]
     [InlineData("redis", HttpStatusCode.ServiceUnavailable)]
     [InlineData("postgres", HttpStatusCode.ServiceUnavailable)]
     [InlineData("revoked", HttpStatusCode.Unauthorized)]
+    [InlineData("missing-jti", HttpStatusCode.Unauthorized)]
+    [InlineData("invalid-jti", HttpStatusCode.Unauthorized)]
+    [InlineData("revoked-session", HttpStatusCode.Unauthorized)]
+    [InlineData("expired-session", HttpStatusCode.Unauthorized)]
+    [InlineData("inactive-employee", HttpStatusCode.Unauthorized)]
+    [InlineData("locked-employee", HttpStatusCode.Unauthorized)]
+    [InlineData("temporarily-locked-employee", HttpStatusCode.Unauthorized)]
+    [InlineData("changed-role", HttpStatusCode.Unauthorized)]
     public async Task AccessTokenValidation_http_pipeline_preserves_cookies(string state, HttpStatusCode expectedStatus)
     {
-        var access = await IssueLiveAccessAsync();
-        if (state == "redis")
-            redis.ExistsFailure = new HttpRequestException("Simulated Redis failure");
-        if (state == "revoked")
-            await tokenStore.RevokeAccessAsync(ReadJwt(access).Id);
+        await SeedEmployeeAsync();
+        await using var db = new AppDbContext(options);
+        var login = await LoginAsync(CreateService(db));
+        var access = login.AccessToken;
+        var accessJti = ReadJwt(access).Id;
+        switch (state)
+        {
+            case "redis":
+                redis.ExistsFailure = new HttpRequestException("Simulated Redis failure");
+                break;
+            case "revoked":
+                await tokenStore.RevokeAccessAsync(accessJti);
+                break;
+            case "missing-jti":
+            case "invalid-jti":
+                var original = ReadJwt(access);
+                var claims = original.Claims.Where(claim => claim.Type != JwtRegisteredClaimNames.Jti).ToList();
+                if (state == "invalid-jti")
+                    claims.Add(new Claim(JwtRegisteredClaimNames.Jti, "not-a-valid-jti"));
+                access = new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(claims: claims,
+                    signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(AccessSecret)),
+                        SecurityAlgorithms.HmacSha256)));
+                break;
+            case "revoked-session":
+                (await db.EmployeeSessions.SingleAsync()).RevokedAt = DateTime.UtcNow;
+                break;
+            case "expired-session":
+                (await db.EmployeeSessions.SingleAsync()).ExpiresAt = DateTime.UtcNow.AddMinutes(-1);
+                break;
+            case "inactive-employee":
+                (await db.Employees.SingleAsync()).Status = EmployeeStatus.REVOKED;
+                break;
+            case "locked-employee":
+                (await db.Employees.SingleAsync()).Status = EmployeeStatus.LOCKED;
+                break;
+            case "temporarily-locked-employee":
+                (await db.Employees.SingleAsync()).LockoutEndUtc = DateTime.UtcNow.AddMinutes(5);
+                break;
+            case "changed-role":
+                (await db.Roles.SingleAsync()).RoleName = RoleName.INVENTORY_MANAGER;
+                break;
+        }
+        await db.SaveChangesAsync();
 
         var databaseOptions = state == "postgres"
             ? CreateUnavailableDatabaseOptions(new NpgsqlException("Simulated PostgreSQL failure"))
             : options;
         var builder = WebApplication.CreateBuilder();
+        var tokenValidationCalls = 0;
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Services.AddProblemDetails();
         builder.Services.AddExceptionHandler<ApiHandlerException>();
@@ -218,8 +267,11 @@ public sealed class AuthServiceTests : IAsyncLifetime
                     context.Token = AuthTokenSelector.Select(context.Request, new AuthCookieSettings().AccessCookieName).Token;
                     return Task.CompletedTask;
                 },
-                OnTokenValidated = context => context.HttpContext.RequestServices
-                    .GetRequiredService<AccessTokenValidation>().ValidateAsync(context),
+                OnTokenValidated = context =>
+                {
+                    Interlocked.Increment(ref tokenValidationCalls);
+                    return context.HttpContext.RequestServices.GetRequiredService<AccessTokenValidation>().ValidateAsync(context);
+                },
             };
         });
         builder.Services.AddAuthorization();
@@ -234,6 +286,7 @@ public sealed class AuthServiceTests : IAsyncLifetime
         using var request = new HttpRequestMessage(HttpMethod.Get, "/api/auth/profile");
         request.Headers.Add("Cookie", $"{new AuthCookieSettings().AccessCookieName}={access}");
         using var response = await client.SendAsync(request);
+        Assert.Equal(1, tokenValidationCalls);
         Assert.Equal(expectedStatus, response.StatusCode);
         Assert.False(response.Headers.Contains("Set-Cookie"));
         if (expectedStatus == HttpStatusCode.ServiceUnavailable)
@@ -274,6 +327,35 @@ public sealed class AuthServiceTests : IAsyncLifetime
         Assert.IsType<NoContentResult>(await controller.RequestPasswordReset(ResetRequest()));
         Assert.Equal(2, email.ResetAttempts);
         Assert.NotEqual(previousHash, await GetResetHashAsync());
+    }
+
+    [Theory]
+    [InlineData("register")]
+    [InlineData("verification-resends")]
+    public async Task Email_throttle_suppresses_each_pending_verification_entrypoint(string entrypoint)
+    {
+        await SeedEmployeeAsync(EmployeeStatus.PENDING_OTP);
+        await using var db = new AppDbContext(options);
+        var controller = CreateController(db, IPAddress.Loopback);
+        Assert.IsType<CreatedResult>(await controller.Register(RegisterEmail($" {Email.ToUpperInvariant()} ")));
+        for (var count = 0; count < 2; count++)
+            Assert.IsType<NoContentResult>(await controller.ResendVerification(new ResendVerificationRequest { Email = Email }));
+        Assert.Equal(3, email.VerificationAttempts);
+        var priorTokens = redis.Values.ToArray();
+
+        if (entrypoint == "register")
+        {
+            var result = Assert.IsType<CreatedResult>(await controller.Register(RegisterEmail(Email)));
+            Assert.Equal(new RegisterResponse(Email, "New Employee"), result.Value);
+        }
+        else
+        {
+            Assert.IsType<NoContentResult>(await controller.ResendVerification(new ResendVerificationRequest { Email = Email }));
+        }
+
+        Assert.Equal(3, email.VerificationAttempts);
+        Assert.Equal(priorTokens, redis.Values.ToArray());
+        Assert.Equal(EmployeeStatus.PENDING_OTP, (await db.Employees.SingleAsync()).Status);
     }
 
     [Fact]
@@ -350,6 +432,7 @@ public sealed class AuthServiceTests : IAsyncLifetime
         var profile = await CreateService(db).UpdateProfileAsync(employeeId,
             new UpdateProfileRequest { FullName = "  Updated Employee  ", Phone = "0901234568" });
         Assert.Equal("Updated Employee", profile.FullName);
+        Assert.Equal("0901234568", profile.Phone);
 
         await using var persisted = new AppDbContext(options);
         var employee = await persisted.Employees.SingleAsync();
