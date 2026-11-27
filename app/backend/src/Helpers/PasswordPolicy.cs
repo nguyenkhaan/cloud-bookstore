@@ -12,7 +12,8 @@ internal static class PasswordPolicy
     public static void Validate(string password)
     {
         var runes = password.EnumerateRunes().ToArray();
-        if (runes.Length is < 12 or > 128 || !runes.Any(Rune.IsUpper) ||
+        if (runes.Length is < 12 or > 128 ||
+            !runes.Any(rune => Rune.GetUnicodeCategory(rune) == UnicodeCategory.UppercaseLetter) ||
             !runes.Any(rune => Rune.GetUnicodeCategory(rune) == UnicodeCategory.DecimalDigitNumber) ||
             !runes.Any(rune => !Rune.IsLetter(rune) &&
                 Rune.GetUnicodeCategory(rune) != UnicodeCategory.DecimalDigitNumber &&

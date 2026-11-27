@@ -8,7 +8,6 @@ import { CenterLayout } from '@/features/auth/components/CenterLayout'
 import { PasswordField } from '@/features/auth/components/PasswordField'
 import {
   isPasswordAcceptable,
-  PASSWORD_MAX_LENGTH,
   PasswordRules,
 } from '@/features/auth/components/PasswordRules'
 import { PasswordStrengthBar } from '@/features/auth/components/PasswordStrengthBar'
@@ -273,7 +272,6 @@ export function RegisterPage() {
               hint={fieldErrors.password}
               invalid={Boolean(fieldErrors.password)}
               label="Mật khẩu"
-              maxLength={PASSWORD_MAX_LENGTH}
               name="password"
               onChange={(event) => {
                 setPassword(event.target.value)
@@ -294,7 +292,6 @@ export function RegisterPage() {
             hint={fieldErrors.confirmPassword}
             invalid={Boolean(fieldErrors.confirmPassword)}
             label="Xác nhận mật khẩu"
-            maxLength={PASSWORD_MAX_LENGTH}
             name="confirmPassword"
             onChange={(event) => {
               setConfirmPassword(event.target.value)

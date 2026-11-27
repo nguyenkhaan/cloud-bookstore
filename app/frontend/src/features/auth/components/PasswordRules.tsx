@@ -1,7 +1,7 @@
 import { cn } from '@/lib/cn'
 import { CheckIcon } from './Icons'
 
-export const PASSWORD_MAX_LENGTH = 128
+const PASSWORD_MAX_LENGTH = 128
 const PASSWORD_MIN_LENGTH = 12
 
 type PasswordChecks = {
@@ -17,11 +17,12 @@ export function getPasswordChecks(password: unknown): PasswordChecks {
     return { length: false, upper: false, digit: false, special: false }
   }
 
+  const length = [...password].length
   return {
-    length: [...password].length >= PASSWORD_MIN_LENGTH && [...password].length <= PASSWORD_MAX_LENGTH,
+    length: length >= PASSWORD_MIN_LENGTH && length <= PASSWORD_MAX_LENGTH,
     upper: /\p{Lu}/u.test(password),
     digit: /\p{Nd}/u.test(password),
-    special: /[^\p{L}\p{Nd}\s]/u.test(password),
+    special: /[^\p{L}\p{Nd}\p{White_Space}]/u.test(password),
   }
 }
 

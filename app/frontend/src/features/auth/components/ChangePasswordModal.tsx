@@ -6,7 +6,7 @@ import { useChangePasswordMutation } from '../auth.hook'
 import { localizeAuthError } from '../auth.service'
 import { Banner } from './Banner'
 import { PasswordField } from './PasswordField'
-import { isPasswordAcceptable, PASSWORD_MAX_LENGTH, PasswordRules } from './PasswordRules'
+import { isPasswordAcceptable, PasswordRules } from './PasswordRules'
 import { PasswordStrengthBar } from './PasswordStrengthBar'
 
 type PasswordValues = { currentPassword: string; newPassword: string; confirmPassword: string }
@@ -75,7 +75,7 @@ export function ChangePasswordForm({ onSuccess, onCancel, onPendingChange, submi
       <div className="space-y-2.5">
         <PasswordField
           autoComplete="new-password" hint={errors.newPassword} invalid={Boolean(errors.newPassword)}
-          label="Mật khẩu mới" maxLength={PASSWORD_MAX_LENGTH} name="newPassword"
+          label="Mật khẩu mới" name="newPassword"
           onChange={(event) => setField('newPassword', event.target.value)} required value={newPassword} variant="outlined"
         />
         <PasswordStrengthBar password={newPassword} />
@@ -83,7 +83,7 @@ export function ChangePasswordForm({ onSuccess, onCancel, onPendingChange, submi
       </div>
       <PasswordField
         autoComplete="new-password" hint={errors.confirmPassword} invalid={Boolean(errors.confirmPassword)}
-        label="Xác nhận mật khẩu mới" maxLength={PASSWORD_MAX_LENGTH} name="confirmPassword"
+        label="Xác nhận mật khẩu mới" name="confirmPassword"
         onChange={(event) => setField('confirmPassword', event.target.value)} required value={confirmPassword} variant="outlined"
       />
       {requestError && <Banner tone="error">{requestError}</Banner>}

@@ -7,11 +7,8 @@ using Microsoft.Extensions.Options;
 using backend.src.Exceptions;
 using backend.src.Configurations;
 using backend.src.Infrastructure;
-using backend.src.Models.Enums;
 using backend.src.Scripts;
 using backend.src.Services;
-using backend.src.Bases.Enums;
-using System.IdentityModel.Tokens.Jwt;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -169,76 +166,7 @@ builder.Services
 
                 return Task.CompletedTask;
             },
-            OnTokenValidated = async context =>
-            {
-                var jti = context.Principal?.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
-                if (string.IsNullOrWhiteSpace(jti))
-                {
-                    context.Fail("Token JTI is missing.");
-                    return;
-                }
-                var tokenStore = context.HttpContext.RequestServices.GetRequiredService<TokenJtiStore>();
-                try
-                {
-                    if (!await tokenStore.IsActiveAsync(jti, TokenType.ACCESS, context.HttpContext.RequestAborted))
-                    {
-                        context.Fail("Token has been revoked.");
-                        return;
-                    }
-
-                    var subject = context.Principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-                    if (!Guid.TryParse(subject, out var employeeId))
-                    {
-                        context.Fail("Token subject is invalid.");
-                        return;
-                    }
-                    //Getting role name 
-                    var jwtRoleValue = context.Principal?
-                        .FindFirst("role")?
-                        .Value;
-                    var dbContext = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
-                    //Lay them va so sanh voi role name ben trong database nua de co the nam duoc ro hon
-                    var employee = await dbContext.Employees
-                        .AsNoTracking()
-                        .Include(employee => employee.Role)
-                        .SingleOrDefaultAsync(item => item.Id == employeeId, context.HttpContext.RequestAborted);
-                    var session = await dbContext.EmployeeSessions
-                        .AsNoTracking()
-                        .SingleOrDefaultAsync(item => item.AccessJti == jti && item.EmployeeId == employeeId &&
-                            item.RevokedAt == null && item.ExpiresAt > DateTime.UtcNow,
-                            context.HttpContext.RequestAborted);
-                    if (session is null)
-                    {
-                        context.Fail("Session has been revoked or is invalid.");
-                        return;
-                    }
-                    if (employee is null ||
-                        employee.Status != backend.src.Models.Enums.EmployeeStatus.ACTIVE ||
-                        employee.LockoutEndUtc > DateTime.UtcNow)
-                    {
-                        context.Fail("Account is unavailable.");
-                        return;
-                    }
-                    if (!Enum.TryParse<RoleName>(
-                        jwtRoleValue,
-                        ignoreCase: true,
-                        out var jwtRole))
-                    {
-                        context.Fail("Token role is invalid.");
-                        return;
-                    }
-                    if (employee.Role.RoleName != jwtRole)
-                    {
-                        context.Fail("Account role has been changed");
-                        return;
-                    }
-
-                }
-                catch (Exception)
-                {
-                    context.Fail("Token state is unavailable.");
-                }
-            }
+            OnTokenValidated = AccessTokenValidation.ValidateAsync
         };
     });
 builder.Services.AddAuthorization(options => options.AddPolicy(PermissionAttribute.PolicyName,

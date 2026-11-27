@@ -7,6 +7,6 @@ public sealed class ResetPasswordRequest
     [Required]
     public string Token { get; init; } = string.Empty;
 
-    [Required, MinLength(12), MaxLength(128)]
+    [Required]
     public string NewPassword { get; init; } = string.Empty;
 }

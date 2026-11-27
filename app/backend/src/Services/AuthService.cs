@@ -245,7 +245,7 @@ public class AuthService(
             throw new UnauthorizedException("Invalid or expired refresh token");
 
         var session = await IssueBrowserSessionAsync(employee, userAgent, device, transaction);
-        await CleanupLegacySessionAsync(accessJti);
+        await CleanupSessionKeysAsync(accessJti, refreshJti);
         return session;
     }
 
@@ -316,7 +316,8 @@ public class AuthService(
             return;
 
         var resetToken = GenerateEmailToken(employee.Id, employee.Email, TokenType.RESET_PASSWORD);
-        employee.PasswordResetTokenHash = HashToken(resetToken);
+        var tokenHash = HashToken(resetToken);
+        employee.PasswordResetTokenHash = tokenHash;
         await dbContext.SaveChangesAsync();
         await transaction.CommitAsync();
 
@@ -326,7 +327,32 @@ public class AuthService(
         }
         catch (Exception exception)
         {
-            logger?.LogWarning(exception, "Password reset delivery failed for employee {EmployeeId}.", employee.Id);
+            logger?.LogWarning("Password reset email delivery failed ({ErrorType}).", exception.GetType().Name);
+            try
+            {
+                await ClearFailedResetTokenAsync(employee, tokenHash);
+            }
+            catch (Exception cleanupException)
+            {
+                logger?.LogWarning("Password reset email recovery failed ({ErrorType}).", cleanupException.GetType().Name);
+            }
+        }
+    }
+
+    private async Task ClearFailedResetTokenAsync(EmployeeModel employee, string tokenHash)
+    {
+        if (dbContext.Database.IsRelational())
+        {
+            await dbContext.Employees
+                .Where(item => item.Id == employee.Id && item.PasswordResetTokenHash == tokenHash)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.PasswordResetTokenHash, (string?)null));
+            return;
+        }
+
+        var employeeEntry = dbContext.Entry(employee);
+        await employeeEntry.ReloadAsync();
+        if (employeeEntry.State != EntityState.Detached && employee.PasswordResetTokenHash == tokenHash)
+        {
             employee.PasswordResetTokenHash = null;
             await dbContext.SaveChangesAsync();
         }
@@ -452,17 +478,15 @@ public class AuthService(
             ?? throw new NotFoundException("Session was not found.");
         if (device.AccessJti == accessJti)
             throw new BadRequestException("Use logout to end the current session.");
-        var revokedDevices = new List<EmployeeSessionModel>();
         if (device.RevokedAt is null)
         {
             device.RevokedAt = DateTime.UtcNow;
-            revokedDevices.Add(device);
             await AppendAuditAsync("REVOKE_SESSION", employeeId, employeeId, "Revoked account device session.",
                 after: new { SessionId = device.Id });
             await dbContext.SaveChangesAsync();
         }
         await transaction.CommitAsync();
-        await CleanupRevokedDevicesAsync(revokedDevices);
+        await CleanupSessionKeysAsync(device.AccessJti, device.RefreshJti);
     }
 
     public async Task<RevokeOtherSessionsResponse> RevokeOtherSessionsAsync(Guid employeeId, string accessJti)
@@ -510,8 +534,7 @@ public class AuthService(
         }
         catch
         {
-            await tokenJtiStore.RevokeLoginAsync(accessJti, refreshJwt.Id);
-            await csrfTokenService.RevokeAsync(accessJti);
+            await CleanupSessionKeysAsync(accessJti, refreshJwt.Id);
             throw;
         }
     }
@@ -521,7 +544,8 @@ public class AuthService(
         var transaction = await dbContext.Database.BeginTransactionAsync();
         try
         {
-            await dbContext.Database.ExecuteSqlInterpolatedAsync($"SELECT \"Id\" FROM employee WHERE \"Id\" = {employeeId} FOR UPDATE");
+            if (dbContext.Database.IsNpgsql())
+                await dbContext.Database.ExecuteSqlInterpolatedAsync($"SELECT \"Id\" FROM employee WHERE \"Id\" = {employeeId} FOR UPDATE");
             return transaction;
         }
         catch
@@ -549,29 +573,31 @@ public class AuthService(
     private async Task CleanupRevokedDevicesAsync(IEnumerable<EmployeeSessionModel> devices)
     {
         foreach (var device in devices)
-        {
-            try
-            {
-                await tokenJtiStore.RevokeLoginAsync(device.AccessJti, device.RefreshJti);
-                await csrfTokenService.RevokeAsync(device.AccessJti);
-            }
-            catch (Exception exception)
-            {
-                logger?.LogWarning(exception, "Session cleanup failed for employee {EmployeeId}.", device.EmployeeId);
-            }
-        }
+            await CleanupSessionKeysAsync(device.AccessJti, device.RefreshJti);
+    }
+
+    private async Task CleanupSessionKeysAsync(string accessJti, string refreshJti)
+    {
+        await TryDeleteSessionKeyAsync("access", () => tokenJtiStore.RevokeAccessAsync(accessJti));
+        await TryDeleteSessionKeyAsync("refresh", () => tokenJtiStore.RevokeRefreshAsync(refreshJti));
+        await TryDeleteSessionKeyAsync("CSRF", () => csrfTokenService.RevokeAsync(accessJti));
     }
 
     private async Task CleanupLegacySessionAsync(string accessJti)
     {
+        await TryDeleteSessionKeyAsync("legacy access and refresh", () => tokenJtiStore.RevokeLoginByAccessAsync(accessJti));
+        await TryDeleteSessionKeyAsync("CSRF", () => csrfTokenService.RevokeAsync(accessJti));
+    }
+
+    private async Task TryDeleteSessionKeyAsync(string keyType, Func<Task> delete)
+    {
         try
         {
-            await tokenJtiStore.RevokeLoginByAccessAsync(accessJti);
-            await csrfTokenService.RevokeAsync(accessJti);
+            await delete();
         }
         catch (Exception exception)
         {
-            logger?.LogWarning(exception, "Legacy session cleanup failed.");
+            logger?.LogWarning("Failed to delete {KeyType} session key ({ErrorType}).", keyType, exception.GetType().Name);
         }
     }
 

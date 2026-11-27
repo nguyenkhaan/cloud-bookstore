@@ -7,6 +7,6 @@ public sealed class ChangePasswordRequest
     [Required]
     public string CurrentPassword { get; init; } = string.Empty;
 
-    [Required, MinLength(12), MaxLength(128)]
+    [Required]
     public string NewPassword { get; init; } = string.Empty;
 }
