@@ -284,13 +284,10 @@ public class AuthService(
         if (!await tokenJtiStore.IsActiveAsync(accessJti, TokenType.ACCESS))
             throw new UnauthorizedException("Invalid or expired access token");
 
-        var device = await dbContext.EmployeeSessions.SingleOrDefaultAsync(item =>
-            item.EmployeeId == employeeId && item.AccessJti == accessJti && item.RevokedAt == null);
-        if (device is not null)
-        {
-            device.LastActiveAt = DateTime.UtcNow;
-            await dbContext.SaveChangesAsync();
-        }
+        var now = DateTime.UtcNow;
+        if (!await dbContext.EmployeeSessions.AnyAsync(item => item.EmployeeId == employeeId &&
+                item.AccessJti == accessJti && item.RevokedAt == null && item.ExpiresAt > now))
+            throw new UnauthorizedException("Invalid or expired access token");
         var csrfToken = await csrfTokenService.IssueAsync(
             accessJti,
             TimeSpan.FromMinutes(securitySettings.RefreshTokenLifetimeMinutes));

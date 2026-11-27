@@ -34,8 +34,8 @@ async function openPage(testCase, viewport = desktop) {
   return page
 }
 
-async function signIn(page, testCase) {
-  const staff = await createActiveEmployee(await client(testCase))
+async function signIn(page, testCase, staff) {
+  staff ??= await createActiveEmployee(await client(testCase))
   await page.goto('/login')
   await page.getByLabel('Email nội bộ', { exact: true }).fill(staff.email)
   await page.getByLabel('Mật khẩu', { exact: true }).fill(staff.password)
@@ -59,6 +59,51 @@ function responseFor(page, method, pathname) {
 function profileName(page) {
   return page.getByLabel('Họ và tên', { exact: true })
 }
+
+test('AC6 /profile reports a failed bulk sign-out and can retry without ending the current session', async (testCase) => {
+  const page = await openPage(testCase)
+  const staff = await signIn(page, testCase)
+  const otherPage = await openPage(testCase)
+  await signIn(otherPage, testCase, staff)
+
+  for (const sessionPage of [page, otherPage]) {
+    await sessionPage.goto('/profile')
+    await sessionPage.getByText('Phiên này', { exact: true }).waitFor()
+  }
+
+  const revokePath = `${auth}/sessions/revoke-others`
+  const revokeUrl = `${stack.beUrl}${revokePath}`
+  const sessionUrl = `${stack.beUrl}${auth}/session`
+  await page.route(revokeUrl, async (route) => {
+    if (route.request().method() !== 'POST') return route.fallback()
+    await route.fulfill({
+      status: 503,
+      headers: { 'access-control-allow-origin': stack.feUrl, 'access-control-allow-credentials': 'true' },
+      json: { title: 'Service unavailable' },
+    })
+  })
+
+  const revoke = page.getByRole('button', { name: 'Đăng xuất tất cả thiết bị khác', exact: true })
+  const error = page.getByRole('alert').filter({ hasText: 'Không thể đăng xuất các thiết bị khác.' })
+  const failed = responseFor(page, 'POST', revokePath)
+  await revoke.click()
+  expectStatus(await failed, 503)
+  await error.waitFor({ state: 'visible' })
+  const sessions = page.getByRole('table', { name: 'Danh sách phiên đăng nhập' })
+  assert.equal(await sessions.getByText('Đang hoạt động', { exact: true }).count(), 2)
+  expectStatus(await page.context().request.get(sessionUrl), 200)
+  expectStatus(await otherPage.context().request.get(sessionUrl), 200)
+
+  await page.unroute(revokeUrl)
+  const retried = responseFor(page, 'POST', revokePath)
+  await revoke.click()
+  expectStatus(await retried, 200)
+  await error.waitFor({ state: 'hidden' })
+  await sessions.getByText('Đã đăng xuất', { exact: true }).waitFor()
+  assert.equal(await sessions.getByText('Đang hoạt động', { exact: true }).count(), 1)
+  expectStatus(await page.context().request.get(sessionUrl), 200)
+  expectStatus(await otherPage.context().request.get(sessionUrl), 401)
+})
 
 test('AC5 /profile renders a skeleton during the real profile request', async (testCase) => {
   const page = await openPage(testCase)
@@ -249,6 +294,13 @@ test('AC2 expired verification JWT scrubs token, leaves account PENDING_OTP, and
   await page.waitForURL('**/dashboard')
 })
 
+async function assertRenderedAvatar(avatar, avatarUrl) {
+  await avatar.waitFor({ state: 'visible' })
+  await avatar.evaluate((image) => image.decode())
+  assert.equal(await avatar.getAttribute('src'), avatarUrl)
+  assert.ok(await avatar.evaluate((image) => image.complete && image.naturalWidth > 0))
+}
+
 test('AC5 /profile signed Cloudinary avatar upload updates Header immediately, persists on reload, and audits', async (testCase) => {
   const page = await openPage(testCase)
   const staff = await signIn(page, testCase)
@@ -273,6 +325,11 @@ test('AC5 /profile signed Cloudinary avatar upload updates Header immediately, p
       }),
     })
   })
+  await page.route('https://res.cloudinary.com/**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'image/png',
+    body: picture.buffer,
+  }))
 
   const profileLoad = responseFor(page, 'GET', profilePath)
   await page.goto('/profile')
@@ -288,15 +345,17 @@ test('AC5 /profile signed Cloudinary avatar upload updates Header immediately, p
   const updatedProfile = await putRes.json()
   assert.ok(updatedProfile.avatarUrl, 'PUT /api/auth/profile/avatar returns persisted avatarUrl')
 
-  const headerAvatar = page.locator('header img[src]')
-  await headerAvatar.waitFor({ state: 'visible' })
-  assert.equal(await headerAvatar.getAttribute('src'), updatedProfile.avatarUrl)
+  const persistedImage = `img[src=${JSON.stringify(updatedProfile.avatarUrl)}]`
+  const headerAvatar = page.locator(`header ${persistedImage}`)
+  const profileAvatar = page.locator(`main ${persistedImage}`)
+  await assertRenderedAvatar(headerAvatar, updatedProfile.avatarUrl)
+  await assertRenderedAvatar(profileAvatar, updatedProfile.avatarUrl)
 
   const reloadedProfile = responseFor(page, 'GET', profilePath)
   await page.reload()
   expectStatus(await reloadedProfile, 200)
-  await headerAvatar.waitFor({ state: 'visible' })
-  assert.equal(await headerAvatar.getAttribute('src'), updatedProfile.avatarUrl)
+  await assertRenderedAvatar(headerAvatar, updatedProfile.avatarUrl)
+  await assertRenderedAvatar(profileAvatar, updatedProfile.avatarUrl)
   assert.equal(employeeRow(staff.email).AvatarUrl, updatedProfile.avatarUrl)
 
   const events = auditRows(staffRow.Id, 'UPDATE_PROFILE_AVATAR')

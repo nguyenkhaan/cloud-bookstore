@@ -127,6 +127,59 @@ public sealed class AuthServiceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Authenticated_profile_requests_record_activity_at_most_once_per_minute()
+    {
+        var employeeId = await SeedEmployeeAsync();
+        await using var db = new AppDbContext(options);
+        var service = CreateService(db);
+        var login = await LoginAsync(service);
+        var accessJti = ReadJwt(login.AccessToken).Id;
+        var clock = new TestTimeProvider(DateTimeOffset.FromUnixTimeSeconds(DateTimeOffset.UtcNow.ToUnixTimeSeconds()).UtcDateTime);
+        var initialActivity = clock.UtcNow.AddMinutes(-2);
+        var device = await db.EmployeeSessions.SingleAsync(item => item.AccessJti == accessJti);
+        device.LastActiveAt = initialActivity;
+        await db.SaveChangesAsync();
+
+        Assert.Null((await ValidateAccessAsync(login.AccessToken, clock))?.Failure);
+        Assert.Equal(clock.UtcNow, (await GetDeviceAsync(db, login)).LastActiveAt);
+
+        var firstActivity = clock.UtcNow;
+        clock.UtcNow = firstActivity.AddSeconds(59);
+        Assert.Null((await ValidateAccessAsync(login.AccessToken, clock))?.Failure);
+        await service.GetBrowserSessionAsync(accessJti, employeeId);
+        Assert.Equal(firstActivity, (await GetDeviceAsync(db, login)).LastActiveAt);
+
+        clock.UtcNow = firstActivity.AddMinutes(1);
+        Assert.Null((await ValidateAccessAsync(login.AccessToken, clock))?.Failure);
+        Assert.Equal(clock.UtcNow, (await GetDeviceAsync(db, login)).LastActiveAt);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Revoked_or_expired_device_sessions_are_rejected_without_recording_activity(bool revoked)
+    {
+        await SeedEmployeeAsync();
+        await using var db = new AppDbContext(options);
+        var login = await LoginAsync(CreateService(db));
+        var accessJti = ReadJwt(login.AccessToken).Id;
+        var now = DateTime.UtcNow;
+        var device = await db.EmployeeSessions.SingleAsync(item => item.AccessJti == accessJti);
+        device.LastActiveAt = now.AddMinutes(-2);
+        if (revoked)
+            device.RevokedAt = now.AddMinutes(-1);
+        else
+            device.ExpiresAt = now.AddMinutes(-1);
+        await db.SaveChangesAsync();
+        var originalActivity = (await GetDeviceAsync(db, login)).LastActiveAt;
+
+        Assert.True(await tokenStore.IsActiveAsync(accessJti, TokenType.ACCESS));
+        Assert.Equal("Session has been revoked or is invalid.",
+            (await ValidateAccessAsync(login.AccessToken, new TestTimeProvider(now)))?.Failure?.Message);
+        Assert.Equal(originalActivity, (await GetDeviceAsync(db, login)).LastActiveAt);
+    }
+
+    [Fact]
     public async Task Change_password_preserves_current_session_and_revokes_other_tracked_sessions()
     {
         var employeeId = await SeedEmployeeAsync();
@@ -406,17 +459,28 @@ public sealed class AuthServiceTests : IAsyncLifetime
         return new AuthController(CreateService(db), new AuthCookieService(settings), settings);
     }
 
-    private async Task<AuthenticateResult?> ValidateAccessAsync(string accessToken)
+    private async Task<AuthenticateResult?> ValidateAccessAsync(string accessToken, TimeProvider? clock = null)
     {
         await using var db = new AppDbContext(options);
         await using var services = new ServiceCollection().AddSingleton(db).AddSingleton(tokenStore).BuildServiceProvider();
         var scheme = new AuthenticationScheme(JwtBearerDefaults.AuthenticationScheme, null, typeof(JwtBearerHandler));
-        var context = new TokenValidatedContext(new DefaultHttpContext { RequestServices = services }, scheme, new JwtBearerOptions())
+        var httpContext = new DefaultHttpContext { RequestServices = services };
+        httpContext.Request.Method = HttpMethods.Get;
+        httpContext.Request.Path = "/api/auth/profile";
+        var context = new TokenValidatedContext(httpContext, scheme, new JwtBearerOptions())
         {
             Principal = new ClaimsPrincipal(new ClaimsIdentity(ReadJwt(accessToken).Claims, scheme.Name)),
         };
-        await AccessTokenValidation.ValidateAsync(context);
+        var validation = new AccessTokenValidation(clock ?? TimeProvider.System, NullLogger<AccessTokenValidation>.Instance);
+        await validation.ValidateAsync(context);
         return context.Result;
+    }
+
+    private sealed class TestTimeProvider(DateTime utcNow) : TimeProvider
+    {
+        public DateTime UtcNow { get; set; } = utcNow;
+
+        public override DateTimeOffset GetUtcNow() => UtcNow;
     }
 
     private sealed class FakeEmail() : EmailService(Options.Create(new EmailSettings()), NullLogger<EmailService>.Instance)

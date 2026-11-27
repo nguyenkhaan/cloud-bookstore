@@ -166,7 +166,8 @@ builder.Services
 
                 return Task.CompletedTask;
             },
-            OnTokenValidated = AccessTokenValidation.ValidateAsync
+            OnTokenValidated = context => context.HttpContext.RequestServices
+                .GetRequiredService<AccessTokenValidation>().ValidateAsync(context)
         };
     });
 builder.Services.AddAuthorization(options => options.AddPolicy(PermissionAttribute.PolicyName,
@@ -209,6 +210,7 @@ builder.Services.AddScoped<BookSeriesService>();
 builder.Services.AddScoped<TitleService>();
 builder.Services.AddScoped<EditionService>();
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<AccessTokenValidation>();
 builder.Services.AddScoped<BookCopyService>();
 builder.Services.AddScoped<CustomerService>();
 builder.Services.AddScoped<CustomerHistoryService>();

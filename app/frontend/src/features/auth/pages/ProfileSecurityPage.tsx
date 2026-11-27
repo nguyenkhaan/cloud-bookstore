@@ -192,6 +192,7 @@ function DeviceSessions() {
   const [device, setDevice] = useState<EmployeeSessionResponse | null>(null)
   const bulkTrigger = useRef<HTMLButtonElement>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [bulkActionError, setBulkActionError] = useState<string | null>(null)
   const isRevoking = revokeSession.isPending || revokeOthers.isPending
 
   async function confirmRevoke() {
@@ -209,12 +210,12 @@ function DeviceSessions() {
 
   async function revokeOtherDevices() {
     if (isRevoking) return
-    setActionError(null)
+    setBulkActionError(null)
     try {
       const { revokedCount } = await revokeOthers.mutateAsync()
       notify.success(revokedCount > 0 ? `Đã đăng xuất ${revokedCount} thiết bị khác.` : 'Không có thiết bị khác đang hoạt động.')
     } catch {
-      setActionError('Không thể đăng xuất thiết bị. Vui lòng thử lại.')
+      setBulkActionError('Không thể đăng xuất các thiết bị khác. Vui lòng thử lại.')
     }
   }
 
@@ -224,6 +225,7 @@ function DeviceSessions() {
         <h2 className="text-lg font-bold text-slate-900" id="profile-sessions-title">Thiết bị &amp; Phiên đăng nhập</h2>
         <Button className="min-h-11" disabled={isRevoking || !devices.some((item) => !item.isCurrent && item.status === 'ACTIVE')} onClick={() => void revokeOtherDevices()} ref={bulkTrigger} type="button" variant="outline">Đăng xuất tất cả thiết bị khác</Button>
       </div>
+      {bulkActionError && <div className="mb-4"><Banner tone="error">{bulkActionError}</Banner></div>}
       {isPending && <p className="py-3 text-sm text-slate-600" role="status">Đang tải phiên đăng nhập…</p>}
       {isError && (
         <div className="space-y-2">
