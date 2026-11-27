@@ -1,6 +1,9 @@
+using System.Data.Common;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Sockets;
 using backend.src.Bases.Enums;
 using backend.src.Data;
+using backend.src.Exceptions;
 using backend.src.Infrastructure;
 using backend.src.Models.Enums;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -23,22 +26,29 @@ internal sealed class AccessTokenValidation(TimeProvider clock, ILogger<AccessTo
 
         var services = context.HttpContext.RequestServices;
         var cancellationToken = context.HttpContext.RequestAborted;
+        var subject = context.Principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        if (!Guid.TryParse(subject, out var employeeId))
+        {
+            context.Fail("Token subject is invalid.");
+            return;
+        }
+
+        var tokenStore = services.GetRequiredService<TokenJtiStore>();
         try
         {
-            var tokenStore = services.GetRequiredService<TokenJtiStore>();
             if (!await tokenStore.IsActiveAsync(jti, TokenType.ACCESS, cancellationToken))
             {
                 context.Fail("Token has been revoked.");
                 return;
             }
+        }
+        catch (Exception exception) when (RedisService.IsUnavailable(exception, cancellationToken))
+        {
+            throw new ServiceUnavailableException("Token state is temporarily unavailable.", exception);
+        }
 
-            var subject = context.Principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-            if (!Guid.TryParse(subject, out var employeeId))
-            {
-                context.Fail("Token subject is invalid.");
-                return;
-            }
-
+        try
+        {
             var dbContext = services.GetRequiredService<AppDbContext>();
             var now = clock.GetUtcNow().UtcDateTime;
             var session = await dbContext.EmployeeSessions.AsNoTracking()
@@ -76,11 +86,16 @@ internal sealed class AccessTokenValidation(TimeProvider clock, ILogger<AccessTo
             if (session.LastActiveAt <= activityAt - ActivityThrottle)
                 await TryRecordActivityAsync(dbContext, session.Id, jti, activityAt, cancellationToken);
         }
-        catch (Exception)
+        catch (Exception exception) when (IsDatabaseUnavailable(exception, cancellationToken))
         {
-            context.Fail("Token state is unavailable.");
+            throw new ServiceUnavailableException("Token state is temporarily unavailable.", exception);
         }
     }
+
+    private static bool IsDatabaseUnavailable(Exception exception, CancellationToken cancellationToken) =>
+        exception is DbException or TimeoutException ||
+        exception is OperationCanceledException && !cancellationToken.IsCancellationRequested ||
+        exception is InvalidOperationException { InnerException: DbException or TimeoutException or SocketException };
 
     private async Task TryRecordActivityAsync(AppDbContext dbContext, Guid sessionId, string jti, DateTime now,
         CancellationToken cancellationToken)
@@ -112,7 +127,7 @@ internal sealed class AccessTokenValidation(TimeProvider clock, ILogger<AccessTo
                 activity.IsModified = false;
             }
         }
-        catch (Exception exception)
+        catch (Exception exception) when (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
             logger.LogWarning("Could not record device session activity ({FailureType}).", exception.GetType().Name);
         }

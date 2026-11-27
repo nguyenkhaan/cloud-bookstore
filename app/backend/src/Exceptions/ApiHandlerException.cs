@@ -33,6 +33,9 @@ public sealed class ApiHandlerException(ILogger<ApiHandlerException> logger) : I
             UnauthorizedException => (
                 StatusCodes.Status401Unauthorized, exception.Message
             ),
+            ServiceUnavailableException => (
+                StatusCodes.Status503ServiceUnavailable, exception.Message
+            ),
             DbUpdateConcurrencyException concurrency when concurrency.Entries.Any(e => e.Entity is UploadIntentModel) => (
                 StatusCodes.Status409Conflict,
                 "Upload intent has already been consumed."

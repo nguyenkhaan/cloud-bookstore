@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -7,6 +8,11 @@ namespace backend.src.Infrastructure;
 public sealed class RedisService(HttpClient httpClient, IConfiguration configuration)
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private const string IncrementWithExpiryScript = """
+        local count = redis.call('INCR', KEYS[1])
+        if count == 1 then redis.call('PEXPIRE', KEYS[1], ARGV[1]) end
+        return count
+        """;
 
     public async Task<T?> GetAsync<T>(string key, CancellationToken cancellationToken = default)
     {
@@ -73,6 +79,18 @@ public sealed class RedisService(HttpClient httpClient, IConfiguration configura
         var result = await ExecuteAsync(["EXISTS", ValidateKey(key)], cancellationToken);
         return GetIntegerResult(result, "EXISTS") > 0;
     }
+
+    public async Task<long> IncrementAsync(string key, TimeSpan window, CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(window, TimeSpan.Zero);
+        var milliseconds = Math.Ceiling(window.TotalMilliseconds).ToString(CultureInfo.InvariantCulture);
+        var result = await ExecuteAsync(["EVAL", IncrementWithExpiryScript, "1", ValidateKey(key), milliseconds], cancellationToken);
+        return GetIntegerResult(result, "INCR");
+    }
+
+    internal static bool IsUnavailable(Exception exception, CancellationToken cancellationToken) =>
+        exception is HttpRequestException or TimeoutException or JsonException or InvalidOperationException ||
+        exception is OperationCanceledException && !cancellationToken.IsCancellationRequested;
 
     public async Task<bool> PingAsync(CancellationToken cancellationToken = default)
     {

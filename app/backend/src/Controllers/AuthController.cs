@@ -37,7 +37,7 @@ public class AuthController(
         [FromBody] RegisterRequest request 
     )
     {
-        var response = await authService.Register(request);
+        var response = await authService.Register(request, HttpContext.Connection.RemoteIpAddress?.ToString());
         return Created(string.Empty , response);
     }
 
@@ -53,7 +53,7 @@ public class AuthController(
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> ResendVerification([FromBody] ResendVerificationRequest request)
     {
-        await authService.ResendVerificationAsync(request.Email);
+        await authService.ResendVerificationAsync(request.Email, HttpContext.Connection.RemoteIpAddress?.ToString());
         return NoContent();
     }
 
@@ -61,7 +61,7 @@ public class AuthController(
     [HttpPost("password-reset-requests")]
     public async Task<IActionResult> RequestPasswordReset([FromBody] ForgotPasswordRequest request)
     {
-        await authService.RequestPasswordReset(request);
+        await authService.RequestPasswordReset(request, HttpContext.Connection.RemoteIpAddress?.ToString());
         return NoContent();
     }
 

@@ -1,9 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using System.Data.Common;
+using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Json;
+using System.Net.Sockets;
 using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 using backend.src.Bases.Enums;
 using backend.src.Configurations;
 using backend.src.Controllers;
@@ -17,6 +21,8 @@ using backend.src.Models.Enums;
 using backend.src.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +31,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Npgsql;
 using Xunit;
 
@@ -45,6 +52,7 @@ public sealed class AuthServiceTests : IAsyncLifetime
     private readonly FakeEmail email = new();
     private readonly FakeRedis redis = new();
     private readonly HttpClient redisClient;
+    private readonly RedisService redisService;
     private readonly TokenService tokenService;
     private readonly TokenJtiStore tokenStore;
     private readonly CsrfTokenService csrfService;
@@ -81,7 +89,7 @@ public sealed class AuthServiceTests : IAsyncLifetime
         options = builder.Options;
 
         redisClient = new HttpClient(redis);
-        var redisService = new RedisService(redisClient, configuration);
+        redisService = new RedisService(redisClient, configuration);
         tokenService = new TokenService(configuration);
         tokenStore = new TokenJtiStore(redisService);
         csrfService = new CsrfTokenService(new RedisCsrfTokenStore(redisService), CsrfTokenSigningKey.FromSecret(AccessSecret));
@@ -104,6 +112,250 @@ public sealed class AuthServiceTests : IAsyncLifetime
             await using var db = new AppDbContext(options);
             await db.Database.EnsureDeletedAsync();
         }
+    }
+
+    [Theory]
+    [InlineData("redis-http")]
+    [InlineData("redis-timeout")]
+    [InlineData("redis-cancellation")]
+    [InlineData("redis-json")]
+    [InlineData("redis-operation")]
+    [InlineData("db-npgsql")]
+    [InlineData("db-timeout")]
+    [InlineData("db-cancellation")]
+    [InlineData("db-wrapped-npgsql")]
+    [InlineData("db-wrapped-timeout")]
+    [InlineData("db-wrapped-socket")]
+    public async Task AccessTokenValidation_distinguishes_dependency_outages(string failure)
+    {
+        var access = await IssueLiveAccessAsync();
+        Exception outage = failure switch
+        {
+            "redis-http" => new HttpRequestException("Dependency detail"),
+            "redis-timeout" or "db-timeout" => new TimeoutException("Dependency detail"),
+            "redis-cancellation" => new TaskCanceledException("Dependency detail"),
+            "redis-json" => new JsonException("Dependency detail"),
+            "redis-operation" => new InvalidOperationException("Dependency detail"),
+            "db-npgsql" => new NpgsqlException("Dependency detail"),
+            "db-cancellation" => new OperationCanceledException("Dependency detail"),
+            "db-wrapped-npgsql" => new InvalidOperationException("Dependency detail", new NpgsqlException("Connection failed")),
+            "db-wrapped-timeout" => new InvalidOperationException("Dependency detail", new TimeoutException()),
+            "db-wrapped-socket" => new InvalidOperationException("Dependency detail", new SocketException()),
+            _ => throw new ArgumentException("Unknown failure scenario.", nameof(failure)),
+        };
+        var databaseOptions = options;
+        if (failure.StartsWith("redis-", StringComparison.Ordinal))
+            redis.ExistsFailure = outage;
+        else
+            databaseOptions = CreateUnavailableDatabaseOptions(outage);
+
+        var exception = await Assert.ThrowsAsync<ServiceUnavailableException>(() =>
+            ValidateAccessAsync(access, databaseOptions: databaseOptions));
+        Assert.Same(outage, failure == "db-timeout" ? exception.InnerException?.InnerException : exception.InnerException);
+        Assert.DoesNotContain("Dependency detail", exception.Message);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task AccessTokenValidation_propagates_client_abort(bool duringRedisLookup)
+    {
+        var access = await IssueLiveAccessAsync();
+        using var abort = new CancellationTokenSource();
+        var databaseOptions = options;
+        if (duringRedisLookup)
+        {
+            redis.ExistsFailure = new OperationCanceledException(abort.Token);
+            redis.BeforeExists = abort.Cancel;
+        }
+        else
+        {
+            databaseOptions = CreateUnavailableDatabaseOptions(new OperationCanceledException(abort.Token), abort.Cancel);
+        }
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            ValidateAccessAsync(access, databaseOptions: databaseOptions, cancellationToken: abort.Token));
+        Assert.True(abort.IsCancellationRequested);
+    }
+
+    [Theory]
+    [InlineData("redis", HttpStatusCode.ServiceUnavailable)]
+    [InlineData("postgres", HttpStatusCode.ServiceUnavailable)]
+    [InlineData("revoked", HttpStatusCode.Unauthorized)]
+    public async Task AccessTokenValidation_http_pipeline_preserves_cookies(string state, HttpStatusCode expectedStatus)
+    {
+        var access = await IssueLiveAccessAsync();
+        if (state == "redis")
+            redis.ExistsFailure = new HttpRequestException("Simulated Redis failure");
+        if (state == "revoked")
+            await tokenStore.RevokeAccessAsync(ReadJwt(access).Id);
+
+        var databaseOptions = state == "postgres"
+            ? CreateUnavailableDatabaseOptions(new NpgsqlException("Simulated PostgreSQL failure"))
+            : options;
+        var builder = WebApplication.CreateBuilder();
+        builder.WebHost.UseUrls("http://127.0.0.1:0");
+        builder.Services.AddProblemDetails();
+        builder.Services.AddExceptionHandler<ApiHandlerException>();
+        builder.Services.AddSingleton(tokenStore);
+        builder.Services.AddScoped(_ => new AppDbContext(databaseOptions));
+        builder.Services.AddSingleton(TimeProvider.System);
+        builder.Services.AddScoped<AccessTokenValidation>();
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(jwt =>
+        {
+            jwt.MapInboundClaims = false;
+            jwt.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(AccessSecret)),
+                ValidIssuer = configuration["ApiSettings:Issuer"],
+                ValidAudience = configuration["ApiSettings:Audience"],
+            };
+            jwt.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context =>
+                {
+                    context.Token = AuthTokenSelector.Select(context.Request, new AuthCookieSettings().AccessCookieName).Token;
+                    return Task.CompletedTask;
+                },
+                OnTokenValidated = context => context.HttpContext.RequestServices
+                    .GetRequiredService<AccessTokenValidation>().ValidateAsync(context),
+            };
+        });
+        builder.Services.AddAuthorization();
+        await using var app = builder.Build();
+        app.UseExceptionHandler(new ExceptionHandlerOptions { AllowStatusCode404Response = true });
+        app.UseAuthentication();
+        app.UseAuthorization();
+        app.MapGet("/api/auth/profile", () => Results.Ok()).RequireAuthorization();
+        await app.StartAsync();
+
+        using var client = new HttpClient { BaseAddress = new Uri(app.Urls.Single()) };
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/auth/profile");
+        request.Headers.Add("Cookie", $"{new AuthCookieSettings().AccessCookieName}={access}");
+        using var response = await client.SendAsync(request);
+        Assert.Equal(expectedStatus, response.StatusCode);
+        Assert.False(response.Headers.Contains("Set-Cookie"));
+        if (expectedStatus == HttpStatusCode.ServiceUnavailable)
+        {
+            Assert.Empty(response.Headers.WwwAuthenticate);
+            var payload = await response.Content.ReadFromJsonAsync<JsonElement>();
+            Assert.Equal("Token state is temporarily unavailable.", payload.GetProperty("message").GetString());
+        }
+    }
+
+    [Fact]
+    public async Task Email_throttle_shares_normalized_address_and_uses_a_fixed_window()
+    {
+        await SeedEmployeeAsync(EmployeeStatus.PENDING_OTP);
+        await using var db = new AppDbContext(options);
+        var controller = CreateController(db, IPAddress.Loopback);
+        var windowStart = redis.UtcNow;
+
+        Assert.IsType<CreatedResult>(await controller.Register(RegisterEmail($" {Email.ToUpperInvariant()} ")));
+        redis.UtcNow = windowStart.AddMinutes(5);
+        Assert.IsType<NoContentResult>(await controller.ResendVerification(new ResendVerificationRequest { Email = Email }));
+        Assert.Equal(2, email.VerificationAttempts);
+
+        var employee = await db.Employees.SingleAsync();
+        employee.Status = EmployeeStatus.ACTIVE;
+        await db.SaveChangesAsync();
+        Assert.IsType<NoContentResult>(await controller.RequestPasswordReset(ResetRequest()));
+        var previousHash = await GetResetHashAsync();
+        Assert.NotNull(previousHash);
+
+        redis.UtcNow = windowStart.AddMinutes(15).AddMilliseconds(-1);
+        Assert.IsType<NoContentResult>(await controller.RequestPasswordReset(ResetRequest(Email.ToUpperInvariant())));
+        Assert.Equal(1, email.ResetAttempts);
+        Assert.Equal(previousHash, await GetResetHashAsync());
+        Assert.Equal(4, redis.CounterValues[RedisKeyManager.ForEmailThrottleByAddress(Email)].Count);
+
+        redis.UtcNow = windowStart.AddMinutes(15);
+        Assert.IsType<NoContentResult>(await controller.RequestPasswordReset(ResetRequest()));
+        Assert.Equal(2, email.ResetAttempts);
+        Assert.NotEqual(previousHash, await GetResetHashAsync());
+    }
+
+    [Fact]
+    public async Task Email_throttle_checks_actual_ip_and_suppresses_all_three_endpoints_without_mutation()
+    {
+        configuration["AuthSecurity:EmailThrottleMaxPerIp"] = "2";
+        await SeedEmployeeAsync(EmployeeStatus.PENDING_OTP, "pending@example.test");
+        await SeedEmployeeAsync(addRole: false);
+        await using var db = new AppDbContext(options);
+        var controller = CreateController(db, IPAddress.Loopback);
+
+        Assert.IsType<NoContentResult>(await controller.RequestPasswordReset(ResetRequest("missing@example.test")));
+        Assert.IsType<NoContentResult>(await controller.ResendVerification(new ResendVerificationRequest { Email = "other@example.test" }));
+        controller.Request.Headers["X-Forwarded-For"] = "203.0.113.50";
+
+        var register = Assert.IsType<CreatedResult>(await controller.Register(RegisterEmail(" NEW@EXAMPLE.TEST ")));
+        Assert.Equal(new RegisterResponse("new@example.test", "New Employee"), register.Value);
+        Assert.IsType<NoContentResult>(await controller.ResendVerification(new ResendVerificationRequest { Email = "pending@example.test" }));
+        Assert.IsType<NoContentResult>(await controller.RequestPasswordReset(ResetRequest()));
+        Assert.Equal(0, email.VerificationAttempts);
+        Assert.Equal(0, email.ResetAttempts);
+        Assert.Null(await GetResetHashAsync());
+        Assert.Equal(2, await db.Employees.CountAsync());
+        Assert.Empty(redis.Values);
+        Assert.Equal(5, redis.CounterValues[RedisKeyManager.ForEmailThrottleByIp(IPAddress.Loopback.ToString())].Count);
+        Assert.All(redis.CounterValues.Keys, key =>
+        {
+            Assert.DoesNotContain("@", key);
+            Assert.DoesNotContain(IPAddress.Loopback.ToString(), key);
+        });
+
+        var otherClient = CreateController(db, IPAddress.IPv6Loopback);
+        Assert.IsType<NoContentResult>(await otherClient.RequestPasswordReset(ResetRequest()));
+        Assert.Equal(1, email.ResetAttempts);
+    }
+
+    [Fact]
+    public async Task Email_throttle_preserves_register_validation_and_conflict_precedence()
+    {
+        await SeedEmployeeAsync();
+        await using var db = new AppDbContext(options);
+        var controller = CreateController(db, IPAddress.Loopback);
+        redis.IncrementFailure = new TimeoutException();
+
+        await Assert.ThrowsAsync<BadRequestException>(() => controller.Register(RegisterEmail("invalid")));
+        await Assert.ThrowsAsync<BadRequestException>(() => controller.Register(RegisterEmail("user@blocked.test")));
+        await Assert.ThrowsAsync<BadRequestException>(() => controller.Register(RegisterEmail(Email, "weak")));
+        await Assert.ThrowsAsync<ConflictException>(() => controller.Register(RegisterEmail($" {Email.ToUpperInvariant()} ")));
+        Assert.Empty(redis.CounterValues);
+    }
+
+    [Fact]
+    public async Task Email_throttle_redis_failure_is_retryable_without_sending_or_mutating()
+    {
+        await SeedEmployeeAsync();
+        await using var db = new AppDbContext(options);
+        var controller = CreateController(db, IPAddress.Loopback);
+        redis.IncrementFailure = new HttpRequestException("Simulated Redis failure");
+
+        await Assert.ThrowsAsync<ServiceUnavailableException>(() => controller.Register(RegisterEmail("new@example.test")));
+        await Assert.ThrowsAsync<ServiceUnavailableException>(() => controller.ResendVerification(new ResendVerificationRequest { Email = Email }));
+        await Assert.ThrowsAsync<ServiceUnavailableException>(() => controller.RequestPasswordReset(ResetRequest()));
+        Assert.Equal(1, await db.Employees.CountAsync());
+        Assert.Equal(0, email.VerificationAttempts);
+        Assert.Equal(0, email.ResetAttempts);
+        Assert.Null(await GetResetHashAsync());
+    }
+
+    [Fact]
+    public async Task Profile_update_persists_fields_and_audit()
+    {
+        var employeeId = await SeedEmployeeAsync();
+        await using var db = new AppDbContext(options);
+        var profile = await CreateService(db).UpdateProfileAsync(employeeId,
+            new UpdateProfileRequest { FullName = "  Updated Employee  ", Phone = "0901234568" });
+        Assert.Equal("Updated Employee", profile.FullName);
+
+        await using var persisted = new AppDbContext(options);
+        var employee = await persisted.Employees.SingleAsync();
+        Assert.Equal(profile.FullName, employee.FullName);
+        Assert.Equal(profile.Phone, employee.Phone);
+        Assert.Equal("UPDATE_PROFILE", (await persisted.AuditLogs.SingleAsync()).Action);
     }
 
     [Fact]
@@ -405,6 +657,9 @@ public sealed class AuthServiceTests : IAsyncLifetime
 
     private static ForgotPasswordRequest ResetRequest(string address = Email) => new() { Email = address };
 
+    private static RegisterRequest RegisterEmail(string address, string password = NewPassword) =>
+        new() { Email = address, FullName = "  New Employee  ", Phone = "0901234567", Password = password };
+
     private static Task<BrowserAuthenticationSession> LoginAsync(AuthService service) =>
         service.Login(new LoginRequest(Email, CurrentPassword), UserAgent);
 
@@ -423,13 +678,13 @@ public sealed class AuthServiceTests : IAsyncLifetime
         return db.EmployeeSessions.AsNoTracking().SingleAsync(item => item.AccessJti == accessJti);
     }
 
-    private async Task<Guid> SeedEmployeeAsync()
+    private async Task<Guid> SeedEmployeeAsync(EmployeeStatus status = EmployeeStatus.ACTIVE, string address = Email, bool addRole = true)
     {
         await using var db = new AppDbContext(options);
         var employee = new EmployeeModel
         {
-            Email = Email, FullName = "Test Employee", Phone = "0901234567", Password = CurrentPasswordHash,
-            Role = new RoleModel { RoleName = RoleName.CASHIER }, Status = EmployeeStatus.ACTIVE,
+            Email = address, FullName = "Test Employee", Phone = "0901234567", Password = CurrentPasswordHash,
+            Role = addRole ? new RoleModel { RoleName = RoleName.CASHIER } : await db.Roles.SingleAsync(), Status = status,
         };
         db.Employees.Add(employee);
         await db.SaveChangesAsync();
@@ -450,21 +705,40 @@ public sealed class AuthServiceTests : IAsyncLifetime
             CloudName = "test", ApiKey = "test", ApiSecret = "test",
         }));
         return new AuthService(db, tokenService, new SettingService(configuration), email, tokenStore, csrfService, audit,
-            new UploadIntentService(db, cloudinary, audit), cloudinary, configuration);
+            new UploadIntentService(db, cloudinary, audit), cloudinary, configuration, redisService);
     }
 
-    private AuthController CreateController(AppDbContext db)
+    private AuthController CreateController(AppDbContext db, IPAddress? clientIp = null)
     {
         var settings = new AuthCookieSettings();
-        return new AuthController(CreateService(db), new AuthCookieService(settings), settings);
+        var httpContext = new DefaultHttpContext();
+        httpContext.Connection.RemoteIpAddress = clientIp;
+        return new AuthController(CreateService(db), new AuthCookieService(settings), settings)
+        {
+            ControllerContext = new ControllerContext { HttpContext = httpContext },
+        };
     }
 
-    private async Task<AuthenticateResult?> ValidateAccessAsync(string accessToken, TimeProvider? clock = null)
+    private async Task<string> IssueLiveAccessAsync()
     {
-        await using var db = new AppDbContext(options);
+        var employeeId = Guid.NewGuid();
+        var access = tokenService.GenerateToken(employeeId, TokenType.ACCESS, [new Claim("role", nameof(RoleName.CASHIER))]);
+        await tokenStore.StoreLoginAsync(access, tokenService.GenerateToken(employeeId, TokenType.REFRESH));
+        return access;
+    }
+
+    private static DbContextOptions<AppDbContext> CreateUnavailableDatabaseOptions(Exception outage, Action? beforeThrow = null) =>
+        new DbContextOptionsBuilder<AppDbContext>()
+            .UseNpgsql("Host=127.0.0.1;Database=intercepted;Username=intercepted;Pooling=false")
+            .AddInterceptors(new RejectConnection(outage, beforeThrow)).Options;
+
+    private async Task<AuthenticateResult?> ValidateAccessAsync(string accessToken, TimeProvider? clock = null,
+        DbContextOptions<AppDbContext>? databaseOptions = null, CancellationToken cancellationToken = default)
+    {
+        await using var db = new AppDbContext(databaseOptions ?? options);
         await using var services = new ServiceCollection().AddSingleton(db).AddSingleton(tokenStore).BuildServiceProvider();
         var scheme = new AuthenticationScheme(JwtBearerDefaults.AuthenticationScheme, null, typeof(JwtBearerHandler));
-        var httpContext = new DefaultHttpContext { RequestServices = services };
+        var httpContext = new DefaultHttpContext { RequestServices = services, RequestAborted = cancellationToken };
         httpContext.Request.Method = HttpMethods.Get;
         httpContext.Request.Path = "/api/auth/profile";
         var context = new TokenValidatedContext(httpContext, scheme, new JwtBearerOptions())
@@ -487,6 +761,7 @@ public sealed class AuthServiceTests : IAsyncLifetime
     {
         public Func<string, Task> DeliverReset { get; set; } = _ => Task.CompletedTask;
         public int ResetAttempts { get; private set; }
+        public int VerificationAttempts { get; private set; }
         public string? LastResetToken { get; private set; }
 
         public override Task SendPasswordResetEmailAsync(string recipientEmail, string recipientName, string token,
@@ -498,18 +773,32 @@ public sealed class AuthServiceTests : IAsyncLifetime
         }
 
         public override Task SendAccountVerificationEmailAsync(string recipientEmail, string recipientName, string token,
-            CancellationToken cancellationToken = default) => Task.CompletedTask;
+            CancellationToken cancellationToken = default)
+        {
+            VerificationAttempts++;
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class FakeRedis : HttpMessageHandler
     {
         public Dictionary<string, string> Values { get; } = [];
         public HashSet<string> FailNextDeleteOf { get; } = [];
+        public Dictionary<string, (long Count, DateTimeOffset ExpiresAt)> CounterValues { get; } = [];
+        public DateTimeOffset UtcNow { get; set; } = DateTimeOffset.UnixEpoch;
+        public Exception? ExistsFailure { get; set; }
+        public Action? BeforeExists { get; set; }
+        public Exception? IncrementFailure { get; set; }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             var command = await request.Content!.ReadFromJsonAsync<string[]>(cancellationToken) ?? throw new InvalidOperationException();
             var key = command[1];
+            if (command[0] == "EXISTS" && ExistsFailure is { } existsFailure)
+            {
+                BeforeExists?.Invoke();
+                throw existsFailure;
+            }
             if (command[0] == "DEL" && command.Skip(1).Any(FailNextDeleteOf.Contains))
             {
                 FailNextDeleteOf.Clear();
@@ -522,15 +811,42 @@ public sealed class AuthServiceTests : IAsyncLifetime
                 "SET" => Store(key, command[2]),
                 "EXISTS" => Values.ContainsKey(key) ? 1 : 0,
                 "DEL" => command.Skip(1).Count(Values.Remove),
+                "EVAL" => IncrementCounter(command),
                 _ => throw new InvalidOperationException($"Unexpected Redis command: {command[0]}"),
             };
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = JsonContent.Create(new { result }) };
+        }
+
+        private long IncrementCounter(string[] command)
+        {
+            if (IncrementFailure is { } incrementFailure)
+                throw incrementFailure;
+            Assert.Contains("'INCR'", command[1]);
+            Assert.Contains("'PEXPIRE'", command[1]);
+            Assert.Equal("1", command[2]);
+            var key = command[3];
+            var counter = CounterValues.GetValueOrDefault(key);
+            if (counter.ExpiresAt <= UtcNow)
+                counter = (0, UtcNow.AddMilliseconds(double.Parse(command[4], CultureInfo.InvariantCulture)));
+            counter.Count++;
+            CounterValues[key] = counter;
+            return counter.Count;
         }
 
         private string Store(string key, string value)
         {
             Values[key] = value;
             return "OK";
+        }
+    }
+
+    private sealed class RejectConnection(Exception outage, Action? beforeThrow) : DbConnectionInterceptor
+    {
+        public override ValueTask<InterceptionResult> ConnectionOpeningAsync(DbConnection connection,
+            ConnectionEventData eventData, InterceptionResult result, CancellationToken cancellationToken = default)
+        {
+            beforeThrow?.Invoke();
+            return ValueTask.FromException<InterceptionResult>(outage);
         }
     }
 

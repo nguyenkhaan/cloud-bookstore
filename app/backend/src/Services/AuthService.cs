@@ -31,6 +31,7 @@ public class AuthService(
     UploadIntentService uploadIntentService,
     ICloudinaryService cloudinaryService,
     IConfiguration configuration,
+    RedisService redisService,
     ILogger<AuthService>? logger = null)
 {
     private readonly AuthSecuritySettings securitySettings = AuthSecuritySettings.FromConfiguration(configuration);
@@ -85,7 +86,7 @@ public class AuthService(
 
         return await IssueBrowserSessionAsync(employee, userAgent, null, transaction);
     }
-    public async Task<RegisterResponse> Register(RegisterRequest request)
+    public async Task<RegisterResponse> Register(RegisterRequest request, string? clientIp = null)
     {
         var email = NormalizeEmail(request.Email);
         var atIndex = email.LastIndexOf('@');
@@ -103,23 +104,25 @@ public class AuthService(
         }
         PasswordPolicy.Validate(request.Password);
         var employee = await dbContext.Employees.FirstOrDefaultAsync(em => em.Email.ToLower() == email);
-        if (employee != null)
-        {
-            if (employee.Status == EmployeeStatus.PENDING_OTP)
-            {
-                var verificationToken = await CreateRegistrationVerificationTokenAsync(employee);
-                await emailService.SendAccountVerificationEmailAsync(employee.Email, employee.FullName, verificationToken);
-                return new RegisterResponse(employee.Email, employee.FullName);
-            }
-
+        if (employee is not null && employee.Status != EmployeeStatus.PENDING_OTP)
             throw new ConflictException("User has been registered");
+
+        var fullName = request.FullName.Trim();
+        if (await IsEmailThrottledAsync(email, clientIp))
+            return new RegisterResponse(email, fullName);
+
+        if (employee is not null)
+        {
+            var verificationToken = await CreateRegistrationVerificationTokenAsync(employee);
+            await emailService.SendAccountVerificationEmailAsync(employee.Email, employee.FullName, verificationToken);
+            return new RegisterResponse(employee.Email, employee.FullName);
         }
         var employeeRole = await dbContext.Roles.FirstOrDefaultAsync(r => r.RoleName == RoleName.CASHIER);
         var newEmployee = new EmployeeModel
         {
             Email = email,
             Password = PasswordPolicy.Hash(request.Password),
-            FullName = request.FullName.Trim(),
+            FullName = fullName,
             Phone = request.Phone.Trim(),
             Status = EmployeeStatus.PENDING_OTP,
             Role = employeeRole!
@@ -146,9 +149,12 @@ public class AuthService(
         return new RegisterResponse(Email: newEmployee.Email, FullName: newEmployee.FullName);
     }
 
-    public async Task ResendVerificationAsync(string email)
+    public async Task ResendVerificationAsync(string email, string? clientIp = null)
     {
         var normalizedEmail = NormalizeEmail(email);
+        if (await IsEmailThrottledAsync(normalizedEmail, clientIp))
+            return;
+
         var employee = await dbContext.Employees
             .SingleOrDefaultAsync(item => item.Email.ToLower() == normalizedEmail);
         if (employee is null || employee.Status != EmployeeStatus.PENDING_OTP)
@@ -161,6 +167,32 @@ public class AuthService(
             employee.Email,
             employee.FullName,
             verificationToken);
+    }
+
+    private async Task<bool> IsEmailThrottledAsync(string normalizedEmail, string? clientIp)
+    {
+        var window = TimeSpan.FromMinutes(securitySettings.EmailThrottleWindowMinutes);
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(clientIp) &&
+                await redisService.IncrementAsync(RedisKeyManager.ForEmailThrottleByIp(clientIp), window) > securitySettings.EmailThrottleMaxPerIp)
+            {
+                logger?.LogWarning("Suppressed authentication email: IP throttle exceeded.");
+                return true;
+            }
+
+            if (await redisService.IncrementAsync(RedisKeyManager.ForEmailThrottleByAddress(normalizedEmail), window) > securitySettings.EmailThrottleMaxPerEmail)
+            {
+                logger?.LogWarning("Suppressed authentication email: address throttle exceeded.");
+                return true;
+            }
+
+            return false;
+        }
+        catch (Exception exception) when (RedisService.IsUnavailable(exception, CancellationToken.None))
+        {
+            throw new ServiceUnavailableException("Authentication email is temporarily unavailable.", exception);
+        }
     }
 
     private async Task<string> CreateRegistrationVerificationTokenAsync(EmployeeModel employee)
@@ -297,9 +329,12 @@ public class AuthService(
         return new BrowserSessionResponse(csrfToken, ToSessionUser(employee));
     }
 
-    public async Task RequestPasswordReset(ForgotPasswordRequest request)
+    public async Task RequestPasswordReset(ForgotPasswordRequest request, string? clientIp = null)
     {
         var email = NormalizeEmail(request.Email);
+        if (await IsEmailThrottledAsync(email, clientIp))
+            return;
+
         var employeeId = await dbContext.Employees
             .Where(item => item.Email.ToLower() == email && item.Status == EmployeeStatus.ACTIVE)
             .Select(item => (Guid?)item.Id)
@@ -405,12 +440,15 @@ public class AuthService(
         if (fullName.Length < 2)
             throw new BadRequestException("Họ và tên phải có ít nhất 2 ký tự.");
 
+        await using var transaction = await BeginEmployeeMutationAsync(employeeId);
         var employee = await GetEmployeeAsync(employeeId);
         var before = new { employee.FullName, employee.Phone };
         employee.FullName = fullName;
         employee.Phone = request.Phone;
+        await dbContext.SaveChangesAsync();
         await AppendAuditAsync("UPDATE_PROFILE", employeeId, employeeId, "Updated account profile.", before,
             new { employee.FullName, employee.Phone });
+        await transaction.CommitAsync();
         return ToProfile(employee);
     }
 

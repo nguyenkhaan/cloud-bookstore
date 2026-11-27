@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using backend.src.Bases.Enums;
 
 namespace backend.src.Infrastructure;
@@ -8,6 +10,7 @@ public static class RedisKeyManager
     private const string AuthenticationScope = "auth";
     private const string CsrfScope = "csrf";
     private const string RegistrationVerificationScope = "verify_register";
+    private const string EmailThrottleScope = "email_throttle";
 
     public static string ForToken(TokenType tokenType, string tokenId)
     {
@@ -42,6 +45,14 @@ public static class RedisKeyManager
 
         return Join(AuthenticationScope, CsrfScope, accessTokenId);
     }
+
+    public static string ForEmailThrottleByAddress(string normalizedEmail) =>
+        Join(AuthenticationScope, EmailThrottleScope, "address", Hash(normalizedEmail));
+
+    public static string ForEmailThrottleByIp(string clientIp) =>
+        Join(AuthenticationScope, EmailThrottleScope, "ip", Hash(clientIp));
+
+    private static string Hash(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
 
     private static string Join(params string[] segments)
         => string.Join(':', new[] { ServicePrefix }.Concat(segments));
