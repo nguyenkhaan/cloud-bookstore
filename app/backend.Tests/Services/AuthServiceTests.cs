@@ -44,6 +44,7 @@ public sealed class AuthServiceTests : IAsyncLifetime
     private const string NewPassword = "Replacement123!";
     private const string UserAgent = "Mozilla/5.0";
     private const string AccessSecret = "test-access-signing-secret-at-least-32-bytes";
+    private const string PostgresConnectionVariable = "CLOUDBOOK_AUTH_TEST_POSTGRES";
     private static readonly string CurrentPasswordHash = BCrypt.Net.BCrypt.HashPassword(CurrentPassword, workFactor: 4);
 
     private readonly ResetCleanupFailure resetCleanupFailure = new();
@@ -72,7 +73,7 @@ public sealed class AuthServiceTests : IAsyncLifetime
     public AuthServiceTests()
     {
         var databaseName = $"auth_tests_{Guid.NewGuid():N}";
-        var testConnectionString = Environment.GetEnvironmentVariable("CLOUDBOOK_AUTH_TEST_POSTGRES");
+        var testConnectionString = Environment.GetEnvironmentVariable(PostgresConnectionVariable);
         var builder = new DbContextOptionsBuilder<AppDbContext>();
         usesPostgres = !string.IsNullOrWhiteSpace(testConnectionString);
         if (usesPostgres)
@@ -241,6 +242,27 @@ public sealed class AuthServiceTests : IAsyncLifetime
         var databaseOptions = state == "postgres"
             ? CreateUnavailableDatabaseOptions(new NpgsqlException("Simulated PostgreSQL failure"))
             : options;
+        await AssertAccessPipelineAsync(access, databaseOptions, expectedStatus);
+    }
+
+    [PostgresFact]
+    public async Task AccessTokenValidation_http_pipeline_returns_503_when_only_employee_read_fails()
+    {
+        await SeedEmployeeAsync();
+        await using var db = new AppDbContext(options);
+        var login = await LoginAsync(CreateService(db));
+        var failure = new RejectEmployeeLookup();
+        var databaseOptions = new DbContextOptionsBuilder<AppDbContext>(options).AddInterceptors(failure).Options;
+
+        await AssertAccessPipelineAsync(login.AccessToken, databaseOptions, HttpStatusCode.ServiceUnavailable);
+
+        Assert.Equal(1, failure.CompletedSessionReads);
+        Assert.Equal(1, failure.FailedEmployeeReads);
+    }
+
+    private async Task AssertAccessPipelineAsync(string access, DbContextOptions<AppDbContext> databaseOptions,
+        HttpStatusCode expectedStatus)
+    {
         var builder = WebApplication.CreateBuilder();
         var tokenValidationCalls = 0;
         builder.WebHost.UseUrls("http://127.0.0.1:0");
@@ -392,19 +414,33 @@ public sealed class AuthServiceTests : IAsyncLifetime
         Assert.Equal(1, email.ResetAttempts);
     }
 
+    [Theory]
+    [InlineData("bad address@example.test", NewPassword, "Invalid email address")]
+    [InlineData("user@blocked.test", NewPassword, "Email domain is not allowed")]
+    [InlineData("new@example.test", "Replacement1234", "Password must be 12 to 128 characters and include an uppercase letter, a digit, and a special character.")]
+    public async Task Email_throttle_preserves_register_400_for_each_single_validation_fault(string address,
+        string password, string expectedMessage)
+    {
+        await using var db = new AppDbContext(options);
+        var controller = CreateController(db, IPAddress.Loopback);
+        redis.IncrementFailure = new TimeoutException();
+
+        var error = await Assert.ThrowsAsync<BadRequestException>(() => controller.Register(RegisterEmail(address, password)));
+
+        Assert.Equal(expectedMessage, error.Message);
+        Assert.Equal(0, redis.IncrementAttempts);
+    }
+
     [Fact]
-    public async Task Email_throttle_preserves_register_validation_and_conflict_precedence()
+    public async Task Email_throttle_preserves_register_409_for_valid_active_duplicate()
     {
         await SeedEmployeeAsync();
         await using var db = new AppDbContext(options);
         var controller = CreateController(db, IPAddress.Loopback);
         redis.IncrementFailure = new TimeoutException();
 
-        await Assert.ThrowsAsync<BadRequestException>(() => controller.Register(RegisterEmail("invalid")));
-        await Assert.ThrowsAsync<BadRequestException>(() => controller.Register(RegisterEmail("user@blocked.test")));
-        await Assert.ThrowsAsync<BadRequestException>(() => controller.Register(RegisterEmail(Email, "weak")));
         await Assert.ThrowsAsync<ConflictException>(() => controller.Register(RegisterEmail($" {Email.ToUpperInvariant()} ")));
-        Assert.Empty(redis.CounterValues);
+        Assert.Equal(0, redis.IncrementAttempts);
     }
 
     [Fact]
@@ -416,12 +452,37 @@ public sealed class AuthServiceTests : IAsyncLifetime
         redis.IncrementFailure = new HttpRequestException("Simulated Redis failure");
 
         await Assert.ThrowsAsync<ServiceUnavailableException>(() => controller.Register(RegisterEmail("new@example.test")));
-        await Assert.ThrowsAsync<ServiceUnavailableException>(() => controller.ResendVerification(new ResendVerificationRequest { Email = Email }));
         await Assert.ThrowsAsync<ServiceUnavailableException>(() => controller.RequestPasswordReset(ResetRequest()));
         Assert.Equal(1, await db.Employees.CountAsync());
         Assert.Equal(0, email.VerificationAttempts);
         Assert.Equal(0, email.ResetAttempts);
         Assert.Null(await GetResetHashAsync());
+    }
+
+    [Fact]
+    public async Task Pending_verification_resend_preserves_token_during_Redis_outage_and_can_retry()
+    {
+        var employeeId = await SeedEmployeeAsync(EmployeeStatus.PENDING_OTP);
+        await using var db = new AppDbContext(options);
+        var controller = CreateController(db, IPAddress.Loopback);
+        var request = new ResendVerificationRequest { Email = Email };
+        Assert.IsType<NoContentResult>(await controller.ResendVerification(request));
+        Assert.Equal(1, email.VerificationAttempts);
+        var tokenKey = RedisKeyManager.ForCurrentRegistrationVerification(employeeId);
+        var previousToken = redis.Values[tokenKey];
+        var outage = new HttpRequestException("Simulated Redis failure");
+        redis.IncrementFailure = outage;
+
+        var error = await Assert.ThrowsAsync<ServiceUnavailableException>(() => controller.ResendVerification(request));
+
+        Assert.Same(outage, error.InnerException);
+        Assert.Equal(1, email.VerificationAttempts);
+        Assert.Equal(previousToken, redis.Values[tokenKey]);
+
+        redis.IncrementFailure = null;
+        Assert.IsType<NoContentResult>(await controller.ResendVerification(request));
+        Assert.Equal(2, email.VerificationAttempts);
+        Assert.NotEqual(previousToken, redis.Values[tokenKey]);
     }
 
     [Fact]
@@ -872,6 +933,7 @@ public sealed class AuthServiceTests : IAsyncLifetime
         public Exception? ExistsFailure { get; set; }
         public Action? BeforeExists { get; set; }
         public Exception? IncrementFailure { get; set; }
+        public int IncrementAttempts { get; private set; }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
@@ -902,6 +964,7 @@ public sealed class AuthServiceTests : IAsyncLifetime
 
         private long IncrementCounter(string[] command)
         {
+            IncrementAttempts++;
             if (IncrementFailure is { } incrementFailure)
                 throw incrementFailure;
             Assert.Contains("'INCR'", command[1]);
@@ -920,6 +983,40 @@ public sealed class AuthServiceTests : IAsyncLifetime
         {
             Values[key] = value;
             return "OK";
+        }
+    }
+
+    private sealed class PostgresFactAttribute : FactAttribute
+    {
+        public PostgresFactAttribute()
+        {
+            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(PostgresConnectionVariable)))
+                Skip = $"Set {PostgresConnectionVariable} to run this PostgreSQL test.";
+        }
+    }
+
+    private sealed class RejectEmployeeLookup : DbCommandInterceptor
+    {
+        public int CompletedSessionReads { get; private set; }
+        public int FailedEmployeeReads { get; private set; }
+
+        public override ValueTask<DbDataReader> ReaderExecutedAsync(DbCommand command, CommandExecutedEventData eventData,
+            DbDataReader result, CancellationToken cancellationToken = default)
+        {
+            if (command.CommandText.Contains("FROM employee_sessions AS ", StringComparison.Ordinal))
+                CompletedSessionReads++;
+            return ValueTask.FromResult(result);
+        }
+
+        public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(DbCommand command,
+            CommandEventData eventData, InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default)
+        {
+            if (command.CommandText.Contains("FROM employee AS ", StringComparison.Ordinal))
+            {
+                FailedEmployeeReads++;
+                throw new NpgsqlException("Simulated employee lookup outage.", new TimeoutException());
+            }
+            return ValueTask.FromResult(result);
         }
     }
 

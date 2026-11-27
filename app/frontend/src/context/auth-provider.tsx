@@ -5,23 +5,19 @@ import {
   clearCsrfToken,
   getCsrfToken,
   persistStoredUser,
-  readStoredUser,
   removeStoredUser,
   setSessionExpiredHandler,
 } from '@/api/client'
 import { AuthContext, formatUser } from './AuthProvider'
 import type { AuthContextValue, AuthSession } from './AuthProvider'
 import { useLoginMutation, useLogoutMutation } from '@/features/auth/auth.hook'
-import { getSession } from '@/features/auth/auth.service'
+import { ApiError, getSession } from '@/features/auth/auth.service'
 
-
+type SessionCheck = 'initializing' | 'unavailable' | 'retrying' | 'complete'
 
 export function AuthProvider({ children }: PropsWithChildren) {
-  const [session, setSession] = useState<AuthSession | null>(() => {
-    const stored = readStoredUser()
-    return stored ? { authenticated: true, user: stored } : null
-  })
-  const [isInitializing, setIsInitializing] = useState(true)
+  const [session, setSession] = useState<AuthSession | null>(null)
+  const [sessionCheck, setSessionCheck] = useState<SessionCheck>('initializing')
   const { mutateAsync: requestLogin } = useLoginMutation()
   const { mutateAsync: requestLogout } = useLogoutMutation()
   const navigate = useNavigate()
@@ -47,6 +43,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [redirectToLogin])
 
   useEffect(() => {
+    if (sessionCheck !== 'initializing' && sessionCheck !== 'retrying') return
+
     let active = true
 
     void getSession()
@@ -60,19 +58,27 @@ export function AuthProvider({ children }: PropsWithChildren) {
             removeStoredUser()
             setSession(null)
           }
+          setSessionCheck('complete')
         }
       })
-      .catch(() => {
-        if (active) clearSession()
-      })
-      .finally(() => {
-        if (active) setIsInitializing(false)
+      .catch((error: unknown) => {
+        if (!active) return
+        if (error instanceof ApiError && error.status === 503) {
+          setSessionCheck('unavailable')
+          return
+        }
+        clearSession()
+        setSessionCheck('complete')
       })
 
     return () => {
       active = false
     }
-  }, [clearSession])
+  }, [clearSession, sessionCheck])
+
+  const retrySession = useCallback(() => {
+    setSessionCheck((current) => current === 'unavailable' ? 'retrying' : current)
+  }, [])
 
   const login = useCallback(async (email: string, password: string) => {
     const response = await requestLogin({ email: email.trim(), password })
@@ -99,8 +105,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [session?.user?.id])
 
   const value = useMemo<AuthContextValue>(
-    () => ({ session, isInitializing, login, signOut, updateSessionUser }),
-    [session, isInitializing, login, signOut, updateSessionUser],
+    () => ({
+      session,
+      isInitializing: sessionCheck === 'initializing' || sessionCheck === 'retrying',
+      isSessionUnavailable: sessionCheck === 'unavailable' || sessionCheck === 'retrying',
+      retrySession,
+      login,
+      signOut,
+      updateSessionUser,
+    }),
+    [session, sessionCheck, retrySession, login, signOut, updateSessionUser],
   )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

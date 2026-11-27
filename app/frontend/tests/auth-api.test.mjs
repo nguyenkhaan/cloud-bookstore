@@ -348,6 +348,27 @@ describe('auth service', { concurrency: false }, () => {
     assert.equal(apiClient.getCsrfToken(), null)
   })
 
+  test('a 503 during refresh preserves CSRF and leaves session bootstrap retryable', async () => {
+    await authApi.login({ email: 'reader@example.com', password: 'password-123' })
+    requests.length = 0
+    failures = [
+      { status: 401, message: 'Expired access token' },
+      { status: 503, message: 'Token state is temporarily unavailable.' },
+    ]
+
+    await assert.rejects(authApi.getSession(), { name: 'ApiError', status: 503 })
+    assert.equal(onSessionExpiredCalls, 0)
+    assert.equal(apiClient.getCsrfToken(), 'csrf-token')
+    assert.equal(csrfStorage.get('cloud-bookstore.csrf-token'), 'csrf-token')
+
+    failures = [{ status: 401, message: 'Expired access token' }]
+    assert.equal((await authApi.getSession()).csrfToken, 'session-csrf-token')
+    assert.deepEqual(requests.map(({ url }) => url), [
+      '/auth/session', '/auth/refresh', '/auth/session', '/auth/refresh', '/auth/session',
+    ])
+    assert.equal(onSessionExpiredCalls, 0)
+  })
+
   test('network failures use status zero in ApiError', async () => {
     failures = [{}]
 

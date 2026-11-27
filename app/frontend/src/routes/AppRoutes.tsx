@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
+import { Button } from '@/components/common/Button'
+import { Banner } from '@/features/auth/components/Banner'
 import LoginPage from '@/features/auth/pages/LoginPage'
 import RegisterPage from '@/features/auth/pages/RegisterPage'
 import VerifyRegisterPage from '@/features/auth/pages/VerifyRegisterPage'
@@ -63,17 +65,29 @@ function ResetPasswordRoute() {
   const { search } = useLocation()
   return <ResetPasswordPage search={search} />
 }
-function GuestOnly({children} : {children : ReactNode}) {
-  const {session , isInitializing} = useAuth() 
-  if (isInitializing) return null 
-  if (session) 
-    return <Navigate replace to={workspacePaths.overview} />
+function SessionUnavailable({ isRetrying, retry }: { isRetrying: boolean; retry: () => void }) {
+  return (
+    <main className="grid min-h-dvh place-items-center bg-slate-50 p-4">
+      <div className="w-full max-w-sm" aria-busy={isRetrying}>
+        <Banner tone="warning">Tạm thời không thể kiểm tra phiên đăng nhập.</Banner>
+        <Button className="mt-4 min-h-11" type="button" loading={isRetrying} onClick={retry}>Thử lại</Button>
+      </div>
+    </main>
+  )
+}
+
+function GuestOnly({ children }: { children: ReactNode }) {
+  const { session, isInitializing, isSessionUnavailable, retrySession } = useAuth()
+  if (isSessionUnavailable) return <SessionUnavailable isRetrying={isInitializing} retry={retrySession} />
+  if (isInitializing) return null
+  if (session) return <Navigate replace to={workspacePaths.overview} />
   return children
 }
 function RequireSession({ children }: { children: ReactNode }) {
   const { pathname, search } = useLocation()
-  const { session, isInitializing } = useAuth()
+  const { session, isInitializing, isSessionUnavailable, retrySession } = useAuth()
 
+  if (isSessionUnavailable) return <SessionUnavailable isRetrying={isInitializing} retry={retrySession} />
   if (isInitializing) return null
 
   if (!session) {

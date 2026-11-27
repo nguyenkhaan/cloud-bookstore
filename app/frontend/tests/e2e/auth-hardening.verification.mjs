@@ -60,6 +60,56 @@ function profileName(page) {
   return page.getByLabel('Họ và tên', { exact: true })
 }
 
+test('a protected reload during a session outage can retry without signing in again', async (testCase) => {
+  const page = await openPage(testCase)
+  const staff = await signIn(page, testCase)
+  await page.goto('/profile')
+  await profileName(page).waitFor()
+
+  const storageSnapshot = () => page.evaluate(() => ({
+    csrf: sessionStorage.getItem('cloud-bookstore.csrf-token'),
+    user: sessionStorage.getItem('cloud-bookstore.user-info'),
+  }))
+  const authCookies = async () => (await page.context().cookies(`${stack.beUrl}${auth}/session`))
+    .filter(({ name }) => name === 'cloudbook_access' || name === 'cloudbook_refresh')
+  const stored = await storageSnapshot()
+  const cookies = await authCookies()
+  assert.ok(stored.csrf)
+  assert.equal(JSON.parse(stored.user).email, staff.email)
+  assert.equal(cookies.length, 2)
+
+  const sessionPath = `${auth}/session`
+  let unavailable = true
+  let loginRequests = 0
+  page.on('request', (request) => {
+    if (request.method() === 'POST' && new URL(request.url()).pathname === `${auth}/login`) loginRequests++
+  })
+  await page.route(`${stack.beUrl}${sessionPath}`, (route) =>
+    unavailable && route.request().method() === 'GET'
+      ? route.fulfill({ status: 503, json: { message: 'Token state is temporarily unavailable.' } })
+      : route.fallback())
+
+  const failed = responseFor(page, 'GET', sessionPath)
+  await page.reload()
+  assert.equal((await failed).status(), 503)
+  const retry = page.getByRole('button', { name: 'Thử lại', exact: true })
+  await retry.waitFor()
+  assert.equal(new URL(page.url()).pathname, '/profile')
+  assert.equal(await profileName(page).count(), 0)
+  assert.deepEqual(await storageSnapshot(), stored)
+  assert.deepEqual(await authCookies(), cookies)
+  await capture(page, 'profile-session-unavailable')
+
+  unavailable = false
+  const recovered = responseFor(page, 'GET', sessionPath)
+  await retry.click()
+  assert.equal((await recovered).status(), 200)
+  await profileName(page).waitFor()
+  assert.equal(new URL(page.url()).pathname, '/profile')
+  assert.deepEqual(await authCookies(), cookies)
+  assert.equal(loginRequests, 0)
+})
+
 test('AC6 /profile reports a failed bulk sign-out and can retry without ending the current session', async (testCase) => {
   const page = await openPage(testCase)
   const staff = await signIn(page, testCase)
