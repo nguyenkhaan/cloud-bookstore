@@ -248,12 +248,20 @@ public class AuthService(
     {
         var refreshPrincipal = ValidateRefreshToken(refreshToken);
         var refreshJti = refreshPrincipal.FindFirstValue(JwtRegisteredClaimNames.Jti)!;
-        var accessJti = await tokenJtiStore.GetAccessJtiForRefreshAsync(refreshJti);
-        if (string.IsNullOrWhiteSpace(accessJti))
-            throw new UnauthorizedException("Invalid or expired refresh token");
+        string? accessJti;
+        try
+        {
+            accessJti = await tokenJtiStore.GetAccessJtiForRefreshAsync(refreshJti);
+            if (string.IsNullOrWhiteSpace(accessJti))
+                throw new UnauthorizedException("Invalid or expired refresh token");
 
-        if (!await csrfTokenService.IsValidAsync(accessJti, csrfToken))
-            throw new ForbiddenException("Invalid CSRF token");
+            if (!await csrfTokenService.IsValidAsync(accessJti, csrfToken))
+                throw new ForbiddenException("Invalid CSRF token");
+        }
+        catch (Exception exception) when (RedisService.IsUnavailable(exception, CancellationToken.None))
+        {
+            throw new ServiceUnavailableException("Token state is temporarily unavailable.", exception);
+        }
 
         var subject = refreshPrincipal.FindFirstValue(JwtRegisteredClaimNames.Sub);
         if (!Guid.TryParse(subject, out var employeeId))
@@ -560,16 +568,20 @@ public class AuthService(
         device.ExpiresAt = refreshJwt.ValidTo;
         await dbContext.SaveChangesAsync();
 
+        var sessionKeysStored = false;
         try
         {
             await tokenJtiStore.StoreLoginAsync(accessToken, refreshToken);
             var csrfToken = await csrfTokenService.IssueAsync(accessJti, TimeSpan.FromMinutes(securitySettings.RefreshTokenLifetimeMinutes));
+            sessionKeysStored = true;
             await transaction.CommitAsync();
             return new BrowserAuthenticationSession(accessToken, refreshToken, csrfToken, ToSessionUser(employee));
         }
-        catch
+        catch (Exception exception)
         {
             await CleanupSessionKeysAsync(accessJti, refreshJwt.Id);
+            if (!sessionKeysStored && RedisService.IsUnavailable(exception, CancellationToken.None))
+                throw new ServiceUnavailableException("Token state is temporarily unavailable.", exception);
             throw;
         }
     }

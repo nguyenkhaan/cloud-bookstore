@@ -25,11 +25,7 @@ public class AuthController(
     {
         var session = await authService.Login(request, Request.Headers.UserAgent.ToString());
         authCookieService.AppendAuthenticationCookies(Response, session.AccessToken, session.RefreshToken);
-        return Ok(new AuthenticationResponse(
-            session.AccessToken,
-            session.RefreshToken,
-            session.CsrfToken,
-            session.User));
+        return Ok(new AuthenticationResponse(session.CsrfToken, session.User));
     }
     [AllowAnonymous]
     [HttpPost("register")]
@@ -118,15 +114,16 @@ public class AuthController(
             var csrfToken = Request.Headers[authCookieSettings.CsrfHeaderName].ToString();
             var session = await authService.Refresh(refreshToken, csrfToken, Request.Headers.UserAgent.ToString());
             authCookieService.AppendAuthenticationCookies(Response, session.AccessToken, session.RefreshToken);
-            return Ok(new AuthenticationResponse(
-                session.AccessToken,
-                session.RefreshToken,
-                session.CsrfToken,
-                session.User));
+            return Ok(new AuthenticationResponse(session.CsrfToken, session.User));
         }
-        catch (backend.src.Exceptions.UnauthorizedException)
+        catch (UnauthorizedException)
         {
-            authCookieService.ExpireAuthenticationCookies(Response);
+            // Exception handling clears headers before writing the error response.
+            Response.OnStarting(() =>
+            {
+                authCookieService.ExpireAuthenticationCookies(Response);
+                return Task.CompletedTask;
+            });
             throw;
         }
     }

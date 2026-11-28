@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { after, before, beforeEach, describe, test } from 'node:test'
 import { createServer } from 'vite'
 
@@ -159,13 +160,17 @@ describe('AUTH screens QA single-fault isolation & entrypoint parity', { concurr
     assert.deepEqual(requests.map(({ method, url }) => [method, url]), [['post', '/auth/register']])
   })
 
-  test('registration rejects domains outside the configured client allowlist', async () => {
-    const registerPage = await server.ssrLoadModule('/src/features/auth/pages/RegisterPage.tsx')
+  test('registration delegates domain policy to the backend and localizes rejection', async () => {
+    const pageSource = readFileSync(new URL('../src/features/auth/pages/RegisterPage.tsx', import.meta.url), 'utf8')
+    assert.doesNotMatch(pageSource, /VITE_ALLOWED_EMAIL_DOMAINS|DEFAULT_ALLOWED_EMAIL_DOMAINS|allowedEmailDomains|isAllowedRegistrationEmail/)
 
-    assert.equal(registerPage.isAllowedRegistrationEmail('staff@cloud.io'), true)
-    assert.equal(registerPage.isAllowedRegistrationEmail('staff@cloud.bookstore.io'), true)
-    assert.equal(registerPage.isAllowedRegistrationEmail('staff@example.org'), false)
-    assert.equal(registerPage.isAllowedRegistrationEmail('staff@cloud.io.example.org'), false)
+    nextError = { status: 400, message: 'Email domain is not allowed' }
+    await assert.rejects(
+      authApi.register({ email: 'staff@example.org', fullName: 'Valid Staff', phone: '0901234567', password: 'MayBook2026!' }),
+      (error) => error instanceof authApi.ApiError && error.status === 400
+        && authApi.localizeAuthError(error, 'fallback') === 'Tên miền email này không được phép đăng ký.',
+    )
+    assert.deepEqual(requests.map(({ method, url }) => [method, url]), [['post', '/auth/register']])
   })
 
   test('auth.service preserves 401/409 ApiError status for resetPassword and register failures', async () => {

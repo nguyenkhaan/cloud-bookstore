@@ -12,6 +12,7 @@ public class RegisterRequest
     [MaxLength(200)]
     public string FullName { get; set; } = string.Empty;
     [Required]
+    [MaxLength(512)]
     public string Password { get; set; } = string.Empty;
     [Required]
     [RegularExpression(@"^0[0-9]{9}$", ErrorMessage = "Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 0.")]

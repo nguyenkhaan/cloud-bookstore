@@ -436,6 +436,25 @@ for (const [method, path, data] of [
   })
 }
 
+test('AUTH-001 login and refresh keep JWTs out of live JSON', async (testCase) => {
+  const context = await client(testCase)
+  const { email, password } = stack.accounts.cashier
+  const loginResponse = await context.post(`${auth}/login`, { data: { email, password } })
+  expectStatus(loginResponse, 200)
+  const loginBody = await loginResponse.json()
+  assert.deepEqual(Object.keys(loginBody).sort(), ['csrfToken', 'user'])
+  assert.ok(loginBody.csrfToken)
+  assert.equal(loginBody.user.email, email)
+
+  const refreshResponse = await context.post(`${auth}/refresh`, { headers: csrf(loginBody.csrfToken) })
+  expectStatus(refreshResponse, 200)
+  const refreshBody = await refreshResponse.json()
+  assert.deepEqual(Object.keys(refreshBody).sort(), ['csrfToken', 'user'])
+  assert.ok(refreshBody.csrfToken)
+  assert.notEqual(refreshBody.csrfToken, loginBody.csrfToken)
+  assert.equal(refreshBody.user.email, email)
+})
+
 test('AC7 running OpenAPI describes every changed auth entrypoint and avatar owner type', async (testCase) => {
   const guest = await client(testCase)
   const response = await guest.get('/openapi/v1.json')
@@ -451,5 +470,6 @@ test('AC7 running OpenAPI describes every changed auth entrypoint and avatar own
   ]
   const missing = operations.filter(([path, method]) => !document.paths[path]?.[method])
   assert.deepEqual(missing, [], 'OpenAPI is missing operations')
+  assert.deepEqual(Object.keys(document.components.schemas.AuthenticationResponse.properties).sort(), ['csrfToken', 'user'])
   assert.match(JSON.stringify(document.components.schemas), /EMPLOYEE_AVATAR/)
 })

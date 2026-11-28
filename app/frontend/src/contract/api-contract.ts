@@ -7521,8 +7521,6 @@ export interface components {
             reason: null | string;
         };
         AuthenticationResponse: {
-            accessToken: string;
-            refreshToken: string;
             csrfToken: string;
             user?: null | components["schemas"]["BrowserSessionUser"];
         };

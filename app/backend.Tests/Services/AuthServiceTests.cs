@@ -523,6 +523,130 @@ public sealed class AuthServiceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Login_and_refresh_return_only_csrf_and_user_in_json_and_set_httponly_cookies()
+    {
+        await SeedEmployeeAsync();
+        await using var app = await StartAuthPipelineAsync();
+        using var client = new HttpClient(new HttpClientHandler { UseCookies = false }) { BaseAddress = new Uri(app.Urls.Single()) };
+        using var login = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest(Email, CurrentPassword));
+        var (refreshCookie, csrf) = await AssertSessionResponseAsync(login);
+
+        using var forbidden = await PostRefreshAsync(client, refreshCookie, "invalid-csrf");
+        Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
+        Assert.False(forbidden.Headers.Contains("Set-Cookie"));
+
+        using var refresh = await PostRefreshAsync(client, refreshCookie, csrf);
+        var (rotatedCookie, rotatedCsrf) = await AssertSessionResponseAsync(refresh);
+        Assert.NotEqual(refreshCookie, rotatedCookie);
+        Assert.NotEqual(csrf, rotatedCsrf);
+
+        foreach (var cookie in new[] { null, "cloudbook_refresh=invalid", refreshCookie })
+        {
+            using var unauthorized = await PostRefreshAsync(client, cookie, csrf);
+            Assert.Equal(HttpStatusCode.Unauthorized, unauthorized.StatusCode);
+            var expired = ReadAuthCookies(unauthorized);
+            Assert.All(expired, entry => Assert.Contains("expires=Thu, 01 Jan 1970", entry, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
+    [Theory]
+    [InlineData("GET", "refresh", false)]
+    [InlineData("GET", "csrf", false)]
+    [InlineData("SET", "refresh", false)]
+    [InlineData("SET", "csrf", false)]
+    [InlineData("GET", "refresh", true)]
+    [InlineData("GET", "csrf", true)]
+    [InlineData("SET", "refresh", true)]
+    [InlineData("SET", "csrf", true)]
+    public async Task Refresh_translates_redis_outages_without_expiring_session_cookies(string command, string scope, bool throughHttp)
+    {
+        await SeedEmployeeAsync();
+        await using var db = new AppDbContext(options);
+        var service = CreateService(db);
+        var session = await LoginAsync(service);
+        const string placeholder = "test-jti";
+        var sampleKey = scope == "csrf" ? RedisKeyManager.ForCsrf(placeholder) : RedisKeyManager.ForToken(TokenType.REFRESH, placeholder);
+        var outage = new HttpRequestException("Redis unavailable");
+        redis.CommandFailure = (command, sampleKey[..^placeholder.Length], outage);
+
+        if (throughHttp)
+        {
+            await using var app = await StartAuthPipelineAsync();
+            using var client = new HttpClient { BaseAddress = new Uri(app.Urls.Single()) };
+            var cookie = $"{new AuthCookieSettings().RefreshCookieName}={session.RefreshToken}";
+            using var response = await PostRefreshAsync(client, cookie, session.CsrfToken);
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+            Assert.False(response.Headers.Contains("Set-Cookie"));
+            var payload = await response.Content.ReadFromJsonAsync<JsonElement>();
+            Assert.Equal("Token state is temporarily unavailable.", payload.GetProperty("message").GetString());
+        }
+        else
+        {
+            var error = await Assert.ThrowsAsync<ServiceUnavailableException>(() => service.Refresh(session.RefreshToken, session.CsrfToken, UserAgent));
+            Assert.Same(outage, error.InnerException);
+        }
+
+        Assert.Equal(SessionKeys(session).Order(), redis.Values.Keys.Order());
+        if (usesPostgres)
+        {
+            redis.CommandFailure = null;
+            await using var retryDb = new AppDbContext(options);
+            var recovered = await CreateService(retryDb).Refresh(session.RefreshToken, session.CsrfToken, UserAgent);
+            Assert.NotEqual(session.RefreshToken, recovered.RefreshToken);
+        }
+    }
+
+    private async Task<WebApplication> StartAuthPipelineAsync()
+    {
+        var builder = WebApplication.CreateBuilder();
+        builder.WebHost.UseUrls("http://127.0.0.1:0");
+        builder.Services.AddProblemDetails();
+        builder.Services.AddExceptionHandler<ApiHandlerException>();
+        builder.Services.AddScoped(_ => new AppDbContext(options));
+        builder.Services.AddScoped(services => CreateService(services.GetRequiredService<AppDbContext>()));
+        builder.Services.AddSingleton(new AuthCookieSettings());
+        builder.Services.AddSingleton<AuthCookieService>();
+        builder.Services.AddControllers().AddApplicationPart(typeof(AuthController).Assembly);
+        var app = builder.Build();
+        app.UseExceptionHandler();
+        app.MapControllers();
+        await app.StartAsync();
+        return app;
+    }
+
+    private static async Task<HttpResponseMessage> PostRefreshAsync(HttpClient client, string? cookie, string csrf)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/refresh");
+        if (cookie is not null) request.Headers.Add("Cookie", cookie);
+        request.Headers.Add(new AuthCookieSettings().CsrfHeaderName, csrf);
+        return await client.SendAsync(request);
+    }
+
+    private static string[] ReadAuthCookies(HttpResponseMessage response)
+    {
+        var settings = new AuthCookieSettings();
+        var cookies = response.Headers.GetValues("Set-Cookie").ToArray();
+        Assert.Equal(2, cookies.Length);
+        Assert.Contains(cookies, cookie => cookie.StartsWith($"{settings.AccessCookieName}=", StringComparison.Ordinal));
+        Assert.Contains(cookies, cookie => cookie.StartsWith($"{settings.RefreshCookieName}=", StringComparison.Ordinal));
+        return cookies;
+    }
+
+    private static async Task<(string RefreshCookie, string Csrf)> AssertSessionResponseAsync(HttpResponseMessage response)
+    {
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(new[] { "csrfToken", "user" }, body.EnumerateObject().Select(property => property.Name).Order());
+        Assert.Equal(Email, body.GetProperty("user").GetProperty("email").GetString());
+        var csrf = Assert.IsType<string>(body.GetProperty("csrfToken").GetString());
+        Assert.NotEmpty(csrf);
+        var cookies = ReadAuthCookies(response);
+        Assert.All(cookies, cookie => Assert.Contains("httponly", cookie, StringComparison.OrdinalIgnoreCase));
+        var refreshCookie = cookies.Single(cookie => cookie.StartsWith($"{new AuthCookieSettings().RefreshCookieName}=", StringComparison.Ordinal));
+        return (refreshCookie.Split(';', 2)[0], csrf);
+    }
+
+    [Fact]
     public async Task Authenticated_profile_requests_record_activity_at_most_once_per_minute()
     {
         var employeeId = await SeedEmployeeAsync();
@@ -748,6 +872,37 @@ public sealed class AuthServiceTests : IAsyncLifetime
         Assert.Null((await ValidateAccessAsync(rotated.AccessToken))?.Failure);
     }
 
+    [Fact]
+    public void Password_policy_bounds_rune_count_and_utf16_length()
+    {
+        var emoji = string.Concat(Enumerable.Repeat("\U0001F600", 125));
+        var valid = $"{emoji}A1!";
+        Assert.Equal(253, valid.Length);
+        PasswordPolicy.Validate(valid);
+        Assert.Throws<BadRequestException>(() => PasswordPolicy.Validate(valid + "x"));
+        Assert.Throws<BadRequestException>(() => PasswordPolicy.Validate("A1!" + new string('x', 100_000)));
+    }
+
+    [Theory]
+    [InlineData(512, true)]
+    [InlineData(513, false)]
+    public void Password_request_dtos_enforce_the_model_length_limit(int length, bool accepted)
+    {
+        var password = "A1!" + new string('x', length - 3);
+        var requests = new (object Request, string Member)[]
+        {
+            (RegisterEmail(Email, password), nameof(RegisterRequest.Password)),
+            (ChangeRequest(password), nameof(ChangePasswordRequest.NewPassword)),
+            (new ResetPasswordRequest { Token = "reset-token", NewPassword = password }, nameof(ResetPasswordRequest.NewPassword)),
+        };
+        foreach (var (request, member) in requests)
+        {
+            var errors = new List<ValidationResult>();
+            Assert.Equal(accepted, Validator.TryValidateObject(request, new ValidationContext(request), errors, validateAllProperties: true));
+            if (!accepted) Assert.Equal(member, Assert.Single(Assert.Single(errors).MemberNames));
+        }
+    }
+
     public static TheoryData<string, bool> UnicodePasswords => new()
     {
         { "Aabcdefghij1\u0085", false },
@@ -931,6 +1086,7 @@ public sealed class AuthServiceTests : IAsyncLifetime
         public Dictionary<string, (long Count, DateTimeOffset ExpiresAt)> CounterValues { get; } = [];
         public DateTimeOffset UtcNow { get; set; } = DateTimeOffset.UnixEpoch;
         public Exception? ExistsFailure { get; set; }
+        public (string Command, string KeyPrefix, Exception Error)? CommandFailure { get; set; }
         public Action? BeforeExists { get; set; }
         public Exception? IncrementFailure { get; set; }
         public int IncrementAttempts { get; private set; }
@@ -939,6 +1095,8 @@ public sealed class AuthServiceTests : IAsyncLifetime
         {
             var command = await request.Content!.ReadFromJsonAsync<string[]>(cancellationToken) ?? throw new InvalidOperationException();
             var key = command[1];
+            if (CommandFailure is { } failure && command[0] == failure.Command && key.StartsWith(failure.KeyPrefix, StringComparison.Ordinal))
+                throw failure.Error;
             if (command[0] == "EXISTS" && ExistsFailure is { } existsFailure)
             {
                 BeforeExists?.Invoke();

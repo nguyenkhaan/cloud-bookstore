@@ -142,8 +142,10 @@ test('AC3 login rejects an incorrect password with a Vietnamese banner below sub
 })
 
 for (const [fault, overrides, inputLabel] of [
-  ['outside domain', { email: 'valid@example.org' }, 'Email nội bộ'],
   ['malformed address', { email: 'missing-at.cloud.io' }, 'Email nội bộ'],
+  ['short name', { fullName: 'A' }, 'Họ và tên'],
+  ['invalid phone', { phone: '1901234567' }, 'Số điện thoại'],
+  ['password mismatch', {}, 'Xác nhận mật khẩu'],
   ...passwordFaults.map(([fault, password]) => [fault, { password }, 'Mật khẩu']),
 ]) {
   test(`AC1 registration UI isolates only ${fault} and preserves valid entries`, async (testCase) => {
@@ -156,6 +158,7 @@ for (const [fault, overrides, inputLabel] of [
     await page.goto('/register')
     await fillRegistration(page, staff)
     const invalid = page.getByLabel(inputLabel, { exact: true })
+    if (fault === 'password mismatch') await invalid.fill('DifferentBook3!')
     if (fault === '129 characters' && await invalid.inputValue() === staff.password.slice(0, 128)) {
       assert.equal(await page.getByLabel('Xác nhận mật khẩu', { exact: true }).inputValue(), staff.password.slice(0, 128))
       assert.equal(requests.length, 0)
@@ -168,6 +171,37 @@ for (const [fault, overrides, inputLabel] of [
     assert.equal(requests.length, 0, 'Invalid values are rejected before the API call')
     assert.equal(await page.getByLabel('Họ và tên', { exact: true }).inputValue(), staff.fullName)
     assert.equal(await page.getByLabel('Số điện thoại', { exact: true }).inputValue(), staff.phone)
+  })
+}
+
+for (const [size, viewport] of Object.entries(viewports)) {
+  test(`AUTH-003 registration shows backend domain rejection inline on ${size}`, async (testCase) => {
+    const page = await openPage(testCase, viewport)
+    const staff = employee({ email: 'valid@example.org' })
+    const requests = []
+    page.on('request', (request) => {
+      if (new URL(request.url()).pathname === `${auth}/register` && request.method() === 'POST') requests.push(request)
+    })
+    await page.goto('/register')
+    await fillRegistration(page, staff)
+    const rejected = responseFor(page, `${auth}/register`, 'POST')
+    const submit = page.getByRole('button', { name: 'Đăng ký', exact: true }).and(page.getByTestId('auth-register-submit'))
+    await submit.focus()
+    await page.keyboard.press('Enter')
+    expectStatus(await rejected, 400)
+    const email = page.getByRole('textbox', { name: 'Email nội bộ', exact: true })
+    const errorText = 'Tên miền email này không được phép đăng ký.'
+    await page.getByRole('alert').filter({ hasText: errorText }).waitFor()
+    assert.equal(await email.getAttribute('aria-invalid'), 'true')
+    assert.equal(await email.evaluate((input) => input.getAttribute('aria-describedby')?.split(/\s+/)
+      .map((id) => document.getElementById(id)?.textContent).join(' ')), errorText)
+    assert.equal(requests.length, 1)
+    assert.equal(await email.inputValue(), staff.email)
+    assert.equal(await page.getByLabel('Họ và tên', { exact: true }).inputValue(), staff.fullName)
+    assert.equal(await page.getByLabel('Số điện thoại', { exact: true }).inputValue(), staff.phone)
+    assert.equal(await page.getByLabel('Mật khẩu', { exact: true }).inputValue(), staff.password)
+    assert.equal(await page.getByLabel('Xác nhận mật khẩu', { exact: true }).inputValue(), staff.password)
+    await checkVisual(page, `${size === 'mobile' ? '02' : '01'}-register-${size}-domain-error`)
   })
 }
 

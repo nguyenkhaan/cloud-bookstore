@@ -8,19 +8,31 @@ namespace backend.src.Helpers;
 internal static class PasswordPolicy
 {
     private const string PrehashedSuffix = ":sha384";
+    private const int MaxRunes = 128;
+    private const string ValidationMessage = "Password must be 12 to 128 characters and include an uppercase letter, a digit, and a special character.";
 
     public static void Validate(string password)
     {
-        var runes = password.EnumerateRunes().ToArray();
-        if (runes.Length is < 12 or > 128 ||
-            !runes.Any(rune => Rune.GetUnicodeCategory(rune) == UnicodeCategory.UppercaseLetter) ||
-            !runes.Any(rune => Rune.GetUnicodeCategory(rune) == UnicodeCategory.DecimalDigitNumber) ||
-            !runes.Any(rune => !Rune.IsLetter(rune) &&
-                Rune.GetUnicodeCategory(rune) != UnicodeCategory.DecimalDigitNumber &&
-                !Rune.IsWhiteSpace(rune)))
+        if (string.IsNullOrEmpty(password) || password.Length > MaxRunes * 2)
+            throw new BadRequestException(ValidationMessage);
+
+        var count = 0;
+        var hasUpper = false;
+        var hasDigit = false;
+        var hasSpecial = false;
+        foreach (var rune in password.EnumerateRunes())
         {
-            throw new BadRequestException("Password must be 12 to 128 characters and include an uppercase letter, a digit, and a special character.");
+            if (++count > MaxRunes)
+                throw new BadRequestException(ValidationMessage);
+
+            var category = Rune.GetUnicodeCategory(rune);
+            hasUpper |= category == UnicodeCategory.UppercaseLetter;
+            hasDigit |= category == UnicodeCategory.DecimalDigitNumber;
+            hasSpecial |= category != UnicodeCategory.DecimalDigitNumber && !Rune.IsLetter(rune) && !Rune.IsWhiteSpace(rune);
         }
+
+        if (count < 12 || !hasUpper || !hasDigit || !hasSpecial)
+            throw new BadRequestException(ValidationMessage);
     }
 
     public static string Hash(string password) => Encoding.UTF8.GetByteCount(password) > 72

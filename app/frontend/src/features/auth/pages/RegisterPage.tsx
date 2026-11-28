@@ -19,17 +19,6 @@ import { ApiError, isValidAuthEmail, localizeAuthError } from '@/features/auth/a
 import type { Notice } from '@/features/auth/auth.type'
 
 const PHONE_REGEX = /^0\d{9}$/
-const DEFAULT_ALLOWED_EMAIL_DOMAINS = '@cloud.io,@cloud.bookstore.io'
-const allowedEmailDomains = (import.meta.env.VITE_ALLOWED_EMAIL_DOMAINS ?? DEFAULT_ALLOWED_EMAIL_DOMAINS)
-  .split(',')
-  .map((domain) => domain.trim().toLowerCase())
-  .filter(Boolean)
-
-export function isAllowedRegistrationEmail(email: string): boolean {
-  const atIndex = email.lastIndexOf('@')
-  if (atIndex < 0) return false
-  return allowedEmailDomains.includes(email.slice(atIndex).toLowerCase())
-}
 
 type FieldErrors = {
   fullName?: string
@@ -88,8 +77,6 @@ export function RegisterPage() {
     }
     if (!isValidAuthEmail(normalizedEmail)) {
       errors.email = 'Vui lòng nhập địa chỉ email nội bộ hợp lệ.'
-    } else if (!isAllowedRegistrationEmail(normalizedEmail)) {
-      errors.email = 'Tên miền email này không được phép đăng ký.'
     }
     if (!PHONE_REGEX.test(normalizedPhone)) {
       errors.phone = 'Số điện thoại phải gồm đúng 10 chữ số và bắt đầu bằng số 0.'
@@ -125,7 +112,11 @@ export function RegisterPage() {
       })
       setSubmittedEmail(normalizedEmail)
     } catch (error) {
-      setNotice(describeRegisterError(error))
+      if (error instanceof ApiError && error.status === 400 && error.message.toLowerCase().includes('email domain')) {
+        setFieldErrors({ email: localizeAuthError(error, 'Tên miền email này không được phép đăng ký.') })
+      } else {
+        setNotice(describeRegisterError(error))
+      }
     } finally {
       setIsRegistering(false)
     }
@@ -233,7 +224,7 @@ export function RegisterPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <TextField
               autoComplete="email"
-              hint={fieldErrors.email}
+              hint={fieldErrors.email && <span role="alert">{fieldErrors.email}</span>}
               invalid={Boolean(fieldErrors.email)}
               label="Email nội bộ"
               name="email"
@@ -318,7 +309,7 @@ export function RegisterPage() {
             type="submit"
             variant="primary"
           >
-            {isRegistering ? 'Đang đăng ký…' : 'Đăng ký tài khoản'}
+            {isRegistering ? 'Đang đăng ký…' : 'Đăng ký'}
           </Button>
 
           {notice && <Banner tone={notice.tone}>{notice.message}</Banner>}
