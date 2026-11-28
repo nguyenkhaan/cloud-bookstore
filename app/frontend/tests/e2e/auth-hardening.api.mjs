@@ -13,26 +13,80 @@ const sessionsPath = `${auth}/sessions`
 const changePath = `${auth}/change-password`
 const maxPassword = `A1!${'x'.repeat(125)}`
 
-test('login rejects oversized bodies and fields without counting failed attempts', async (testCase) => {
+test('login accepts a 4096-byte body with valid credentials', async (testCase) => {
   const guest = await client(testCase)
   const staff = await createActiveEmployee(guest)
-  const send = (data) => guest.post(`${auth}/login`, { data })
-  for (const size of [100_000, 5_000_000]) {
-    expectStatus(await send({ email: staff.email, password: 'x'.repeat(size) }), 413)
-  }
+  const credentials = JSON.stringify({ email: staff.email, password: staff.password })
+  const response = await guest.post(`${auth}/login`, {
+    headers: { 'Content-Type': 'application/json' },
+    data: credentials.padEnd(4096),
+  })
+  expectStatus(response, 200)
+  assert.equal(employeeRow(staff.email).FailedLoginAttempts, 0)
+})
 
-  for (const [data, field] of [
-    [{ email: staff.email, password: 'x'.repeat(600) }, 'Password'],
-    [{ email: 'x'.repeat(321), password: staff.password }, 'Email'],
-  ]) {
-    const response = await send(data)
+for (const bytes of [4097, 100_000, 5_000_000]) {
+  test(`login rejects a ${bytes}-byte body with otherwise valid credentials`, async (testCase) => {
+    const guest = await client(testCase)
+    const staff = await createActiveEmployee(guest)
+    const credentials = JSON.stringify({ email: staff.email, password: staff.password })
+    const response = await guest.post(`${auth}/login`, {
+      headers: { 'Content-Type': 'application/json' },
+      data: credentials.padEnd(bytes),
+    })
+    expectStatus(response, 413)
+    assert.equal(response.headers()['set-cookie'], undefined)
+    assert.equal(employeeRow(staff.email).FailedLoginAttempts, 0)
+  })
+}
+
+for (const [field, override] of [
+  ['Password', { password: `A1!${'x'.repeat(510)}` }],
+  ['Email', { email: `${'x'.repeat(312)}@cloud.io` }],
+]) {
+  test(`login rejects only the overlength ${field} field`, async (testCase) => {
+    const guest = await client(testCase)
+    const staff = await createActiveEmployee(guest)
+    const response = await guest.post(`${auth}/login`, {
+      data: { email: staff.email, password: staff.password, ...override },
+    })
     expectStatus(response, 400)
     assert.match(response.headers()['content-type'], /^application\/problem\+json\b/)
     assert.deepEqual(Object.keys((await response.json()).errors), [field])
-  }
+    assert.equal(response.headers()['set-cookie'], undefined)
+    assert.equal(employeeRow(staff.email).FailedLoginAttempts, 0)
+  })
+}
 
-  assert.equal(employeeRow(staff.email).FailedLoginAttempts, 0)
-  await login(guest, staff)
+for (const [condition, currentPassword] of [
+  ['missing', undefined],
+  ['513 characters', `A1!${'x'.repeat(510)}`],
+]) {
+  test(`change password rejects only a current password that is ${condition}`, async (testCase) => {
+    const guest = await client(testCase)
+    const staff = await createActiveEmployee(guest)
+    const session = await login(guest, staff)
+    const response = await guest.post(changePath, { headers: session.headers, data: { currentPassword, newPassword } })
+    expectStatus(response, 400)
+    assert.match(response.headers()['content-type'], /^application\/problem\+json\b/)
+    assert.deepEqual(Object.keys((await response.json()).errors), ['CurrentPassword'])
+    expectStatus(await guest.post(changePath, {
+      headers: session.headers,
+      data: { currentPassword: staff.password, newPassword },
+    }), 204)
+  })
+}
+
+test('login rejects a 257-unit password before checking a malformed stored hash', async (testCase) => {
+  const guest = await client(testCase)
+  const staff = await createActiveEmployee(guest)
+  sql(`UPDATE employee SET "Password" = 'not-a-bcrypt-hash' WHERE "Email" = ${sqlLiteral(staff.email)}`)
+  const response = await guest.post(`${auth}/login`, {
+    data: { email: staff.email, password: `A1!${'x'.repeat(254)}` },
+  })
+  expectStatus(response, 401)
+  assert.equal(response.headers()['set-cookie'], undefined)
+  assert.equal(employeeRow(staff.email).FailedLoginAttempts, 1)
 })
 
 async function expectRevoked(session) {

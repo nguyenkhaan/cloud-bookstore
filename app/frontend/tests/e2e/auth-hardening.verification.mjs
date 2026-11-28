@@ -7,7 +7,7 @@ import { after, before, test } from 'node:test'
 import { setTimeout as delay } from 'node:timers/promises'
 import {
   auditRows, auth, chromium, client, createActiveEmployee, employee, employeeRow, expectStatus, login, newPassword,
-  originalPassword, requireMailLink, stack,
+  originalPassword, requireMailLink, sql, sqlLiteral, stack,
 } from './auth-fixture.mjs'
 
 const profilePath = `${auth}/profile`
@@ -55,6 +55,18 @@ async function capture(page, name) {
   await page.screenshot({ path: join(process.env.AUTH_SCREENSHOTS_DIR, `${name}.png`), fullPage: true, animations: 'disabled' })
 }
 
+async function assertLogoutWarning(page, text) {
+  const warning = page.getByRole('status').filter({ hasText: text })
+  await warning.waitFor()
+  assert.equal(await page.getByRole('status').count(), 1)
+  assert.equal(await page.getByRole('dialog').count(), 0)
+  assert.equal(await page.getByRole('heading', { name: 'Đăng nhập hệ thống', exact: true }).count(), 1)
+  assert.deepEqual(await page.evaluate(() => ({
+    overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    brokenImages: [...document.images].filter((image) => image.getClientRects().length && !image.naturalWidth).length,
+  })), { overflow: false, brokenImages: 0 })
+}
+
 function responseFor(page, method, pathname) {
   return page.waitForResponse((response) => response.request().method() === method && new URL(response.url()).pathname === pathname)
 }
@@ -96,38 +108,67 @@ test('logout clears browser cookies and revokes the session during a Redis outag
     sessions.push({ page, staff, cookies, screenshot })
   }
 
+  const guardClient = await client(testCase)
+  const guardStaff = await createActiveEmployee(guardClient)
+  const guard = await login(guardClient, guardStaff)
+  const revocationCount = (email) => Number(sql(`SELECT count(*) FROM employee_sessions AS session
+    JOIN employee ON employee."Id" = session."EmployeeId"
+    WHERE employee."Email" = ${sqlLiteral(email)} AND session."RevokedAt" IS NOT NULL`))
+
   const container = stack.containers.redisRest
   assert.match(container, /^cloudbook-verify-/)
   try {
     execFileSync('docker', ['stop', '--timeout', '2', container], { stdio: 'pipe', timeout: 60_000 })
-    for (const { page, cookies, screenshot } of sessions) {
+    for (const [fault, headers, code] of [
+      ['missing CSRF', {}, 'CSRF_TOKEN_INVALID'],
+      ['invalid CSRF', { 'X-CSRF-Token': 'invalid' }, 'CSRF_TOKEN_INVALID'],
+      ['disallowed origin', { ...guard.headers, Origin: 'https://disallowed.example.test' }, undefined],
+    ]) {
+      const response = await guardClient.post(logoutPath, { headers })
+      expectStatus(response, 403, `Logout rejects ${fault}`)
+      assert.equal(response.headers()['set-cookie'], undefined)
+      if (code) assert.equal((await response.json()).code, code)
+      assert.equal(revocationCount(guardStaff.email), 0)
+    }
+    for (const response of [
+      await guardClient.get(sessionUrl),
+      await guardClient.post(`${auth}/refresh`, { headers: guard.headers }),
+    ]) {
+      expectStatus(response, 503)
+      assert.equal(response.headers()['set-cookie'], undefined)
+    }
+
+    for (const { page, staff, cookies, screenshot } of sessions) {
       const responsePromise = responseFor(page, 'POST', logoutPath)
       await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click()
       const response = await responsePromise
       assert.equal(response.status(), 503)
-      const { code, cookiesCleared, revocationCompleted } = await response.json()
+      const { code, cookiesCleared, revocationCompleted, message } = await response.json()
       assert.equal(code, 'LOGOUT_REVOCATION_INCOMPLETE')
       assert.equal(cookiesCleared, true)
       assert.equal(revocationCompleted, false)
+      assert.ok(typeof message === 'string' && message.trim().length > 0)
       const expired = (await response.headersArray()).filter(({ name }) => name.toLowerCase() === 'set-cookie')
       for (const { name } of cookies) {
         assert.ok(expired.some(({ value }) => value.startsWith(`${name}=`) && /expires=Thu, 01 Jan 1970/i.test(value)))
       }
 
       await page.waitForURL((url) => url.pathname === '/login' && url.searchParams.get('logout') === 'partial')
-      await page.getByRole('status').filter({ hasText: 'Đã xóa cookie đăng nhập' }).waitFor()
+      await assertLogoutWarning(page, 'Đã xóa cookie đăng nhập')
       assert.deepEqual(await browserAuthCookies(page.context()), [])
       assert.deepEqual(await page.evaluate(() => [
         sessionStorage.getItem('cloud-bookstore.csrf-token'),
         sessionStorage.getItem('cloud-bookstore.user-info'),
       ]), [null, null])
-      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth))
+      assert.equal(revocationCount(staff.email), 1)
       await capture(page, screenshot)
     }
   } finally {
     execFileSync('docker', ['start', container], { stdio: 'pipe', timeout: 60_000 })
     await waitForBackendReadiness()
   }
+
+  expectStatus(await guardClient.get(sessionUrl), 200)
 
   for (const { page, staff, cookies } of sessions) {
     await page.reload()
@@ -150,17 +191,24 @@ test('logout distinguishes unconfirmed cookie removal from a complete sign-out',
   await page.route(logoutUrl, (route) => route.abort())
   await signOutButton.click()
   await page.waitForURL((url) => url.pathname === '/login' && url.searchParams.get('logout') === 'incomplete')
-  await page.getByRole('status').filter({ hasText: 'Không thể xác nhận đã đăng xuất' }).waitFor()
+  await assertLogoutWarning(page, 'Không thể xác nhận đã đăng xuất')
   assert.equal((await browserAuthCookies(page.context())).length, 2)
+  await capture(page, '03-degraded-logout-incomplete-desktop')
 
   const cleanPage = await openPage(testCase)
   await signIn(cleanPage, testCase, staff)
   const complete = responseFor(cleanPage, 'POST', logoutPath)
   await cleanPage.getByRole('button', { name: 'Đăng xuất', exact: true }).click()
-  assert.equal((await complete).status(), 204)
+  const response = await complete
+  assert.equal(response.status(), 204)
+  const expired = await response.headerValues('set-cookie')
+  for (const name of ['cloudbook_access', 'cloudbook_refresh']) {
+    assert.ok(expired.some((value) => value.startsWith(`${name}=`) && /expires=Thu, 01 Jan 1970/i.test(value)))
+  }
   await cleanPage.waitForURL('**/login')
   assert.equal(await cleanPage.getByRole('status').count(), 0)
   assert.deepEqual(await browserAuthCookies(cleanPage.context()), [])
+  await capture(cleanPage, '04-normal-logout-desktop')
 })
 
 const maximumDtoPassword = `A1!${'x'.repeat(509)}`
