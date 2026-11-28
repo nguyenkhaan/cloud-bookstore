@@ -883,6 +883,20 @@ public sealed class AuthServiceTests : IAsyncLifetime
         Assert.Throws<BadRequestException>(() => PasswordPolicy.Validate("A1!" + new string('x', 100_000)));
     }
 
+    [Fact]
+    public void Password_policy_rejects_oversized_input_without_input_sized_allocations()
+    {
+        var oversized = "A1!" + new string('x', 100_000);
+        Assert.Throws<BadRequestException>(() => PasswordPolicy.Validate(oversized));
+
+        var allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+        var error = Assert.Throws<BadRequestException>(() => PasswordPolicy.Validate(oversized));
+        var allocatedBytes = GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
+
+        Assert.Equal("Password must be 12 to 128 characters and include an uppercase letter, a digit, and a special character.", error.Message);
+        Assert.True(allocatedBytes < 65_536, $"Rejecting an oversized password allocated {allocatedBytes:N0} bytes.");
+    }
+
     [Theory]
     [InlineData(512, true)]
     [InlineData(513, false)]

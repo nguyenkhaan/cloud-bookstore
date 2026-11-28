@@ -4,7 +4,8 @@ import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { after, before, test } from 'node:test'
 import {
-  auditRows, auth, chromium, client, createActiveEmployee, employee, employeeRow, expectStatus, requireMailLink, stack,
+  auditRows, auth, chromium, client, createActiveEmployee, employee, employeeRow, expectStatus, login, newPassword,
+  originalPassword, requireMailLink, stack,
 } from './auth-fixture.mjs'
 
 const profilePath = `${auth}/profile`
@@ -59,6 +60,52 @@ function responseFor(page, method, pathname) {
 function profileName(page) {
   return page.getByLabel('Họ và tên', { exact: true })
 }
+
+const maximumDtoPassword = `A1!${'x'.repeat(509)}`
+const oversizedDtoPassword = `${maximumDtoPassword}x`
+
+async function assertDtoPasswordLimit(send, member) {
+  const atLimit = await send(maximumDtoPassword)
+  expectStatus(atLimit, 400)
+  assert.match((await atLimit.json()).message, /^Password must be 12 to 128 characters/)
+
+  const aboveLimit = await send(oversizedDtoPassword)
+  expectStatus(aboveLimit, 400)
+  assert.match(aboveLimit.headers()['content-type'], /^application\/problem\+json\b/)
+  const { errors } = await aboveLimit.json()
+  assert.deepEqual(Object.keys(errors), [member])
+  assert.equal(errors[member].length, 1)
+  assert.match(errors[member][0], /maximum length of '512'/)
+}
+
+test('AUTH-003 register enforces the password DTO limit before service validation', async (testCase) => {
+  const guest = await client(testCase)
+  const staff = employee()
+  await assertDtoPasswordLimit((password) => guest.post(`${auth}/register`, { data: { ...staff, password } }), 'Password')
+  assert.equal(employeeRow(staff.email), null)
+  expectStatus(await guest.post(`${auth}/register`, { data: staff }), 201)
+})
+
+test('AUTH-004 change password enforces the new password DTO limit with valid cookies and CSRF', async (testCase) => {
+  const context = await client(testCase)
+  const staff = await createActiveEmployee(context)
+  const session = await login(context, staff)
+  const send = (password) => context.post(`${auth}/change-password`, {
+    headers: session.headers, data: { currentPassword: originalPassword, newPassword: password },
+  })
+  await assertDtoPasswordLimit(send, 'NewPassword')
+  expectStatus(await send(newPassword), 204)
+})
+
+test('AUTH-004 password reset enforces the new password DTO limit without consuming a valid link', async (testCase) => {
+  const guest = await client(testCase)
+  const staff = await createActiveEmployee(guest)
+  expectStatus(await guest.post(`${auth}/password-reset-requests`, { data: { email: staff.email } }), 204)
+  const { token } = await requireMailLink(staff.email, '/reset-password')
+  const send = (password) => guest.post(`${auth}/password-resets`, { data: { token, newPassword: password } })
+  await assertDtoPasswordLimit(send, 'NewPassword')
+  expectStatus(await send(newPassword), 204)
+})
 
 test('a protected reload during a session outage can retry without signing in again', async (testCase) => {
   const page = await openPage(testCase)
