@@ -18,15 +18,19 @@ import { PayslipSourceDrawer } from '../components/PayslipSourceDrawer'
 import {
   useApprovePayrollMutation,
   useHrPayrollPeriodQuery,
+  useHrPayrollPeriodsListQuery,
   useInitializePayrollMutation,
+  usePayrollBreakdownQuery,
   useSendPayrollZaloMutation,
 } from '../hr-payroll.hook'
-import { PHONG_ADVANCE_VOUCHER_092026, formatVnd } from '../hr-payroll.mock'
+import { formatVnd, getTodayVietnamIsoDate } from '../hr-payroll.utils'
 import type {
   EmployeePayoutStatus,
+  PayrollBreakdownLine,
   PayrollEmployeeRow,
   PayrollPeriodStatus,
   PayoutMethod,
+  PayslipAdvanceVoucher,
 } from '../hr-payroll.type'
 import {
   formatHrRoleLabel,
@@ -40,16 +44,12 @@ export default function PayrollPage() {
   const location = useLocation()
   const { session, signOut } = useAuth()
 
-  const currentUser = session?.user ?? {
-    name: 'Nguyễn Minh Anh',
-    role: 'Quản trị viên',
-    roleCode: 'ADMIN',
-  }
+  const currentUser = session?.user
   const effectiveRoleCode = resolveHrRoleCode(currentUser)
   const isAdmin = isHrAdmin(effectiveRoleCode)
   const effectiveRoleLabel = formatHrRoleLabel(effectiveRoleCode)
 
-  const [periodKey, setPeriodKey] = useState('09/2026')
+  const [periodKey, setPeriodKey] = useState('')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<PayrollPeriodStatus | ''>('')
   const [payoutFilter, setPayoutFilter] = useState<
@@ -60,29 +60,48 @@ export default function PayrollPage() {
 
   const [payoutMethod, setPayoutMethod] = useState<PayoutMethod>('bank_transfer')
   const [transactionRefInput, setTransactionRefInput] = useState('')
-  const [payoutDateInput, setPayoutDateInput] = useState('03/10/2026')
+  const [payoutDateInput, setPayoutDateInput] = useState(() =>
+    getTodayVietnamIsoDate(),
+  )
 
   const [isUnlockOpen, setIsUnlockOpen] = useState(false)
   const [isBatchPayoutOpen, setIsBatchPayoutOpen] = useState(false)
   const [isZaloOpen, setIsZaloOpen] = useState(false)
   const [isManualAdjustOpen, setIsManualAdjustOpen] = useState(false)
   const [drawerRow, setDrawerRow] = useState<PayrollEmployeeRow | null>(null)
-  const [advanceDrawerRow, setAdvanceDrawerRow] =
-    useState<PayrollEmployeeRow | null>(null)
+  const [advanceDrawerState, setAdvanceDrawerState] = useState<{
+    row: PayrollEmployeeRow
+    voucher: PayslipAdvanceVoucher
+  } | null>(null)
 
-  const { data: summary } = useHrPayrollPeriodQuery(
+  const periodsQuery = useHrPayrollPeriodsListQuery(isAdmin)
+  const periodOptions = (periodsQuery.data ?? []).map((item) => ({
+    value: item.periodKey,
+    label: item.periodKey,
+  }))
+  const activePeriodKey = periodKey || periodsQuery.data?.[0]?.periodKey || ''
+
+  const periodQuery = useHrPayrollPeriodQuery(
     {
-      periodKey,
+      periodKey: activePeriodKey,
       search,
       statusFilter,
       payoutFilter,
     },
-    isAdmin,
+    isAdmin && Boolean(activePeriodKey),
+  )
+  const summary = periodQuery.data
+  const breakdownQuery = usePayrollBreakdownQuery(
+    summary?.periodKey ?? '',
+    drawerRow?.id ?? '',
+    Boolean(isAdmin && summary?.periodKey && drawerRow?.id),
   )
 
   const initializeMutation = useInitializePayrollMutation()
   const approveMutation = useApprovePayrollMutation()
   const sendZaloMutation = useSendPayrollZaloMutation()
+
+  if (!currentUser) return null
 
   const navigateFromSidebar = (id: string) => {
     const targetPath = workspacePathFor(id)
@@ -196,6 +215,10 @@ export default function PayrollPage() {
     )
   }
 
+  const hasError = periodsQuery.isError || periodQuery.isError
+  const isLoading =
+    periodsQuery.isLoading || (Boolean(activePeriodKey) && periodQuery.isLoading)
+
   const pageSubtitle = summary
     ? summary.status === 'draft'
       ? `${summary.payrollCode} · Bản nháp · Chưa duyệt · Nguồn công ${summary.attendanceSourceCode}`
@@ -203,8 +226,12 @@ export default function PayrollPage() {
         ? `${summary.payrollCode} · Đã duyệt và khóa · Chưa thanh toán`
         : summary.status === 'partially_paid'
           ? `${summary.payrollCode} · Đã trả ${summary.paidRowsCount}/${summary.allRowsCount} nhân viên · Còn lại ${formatVnd(summary.kpi.remainingAmount)}`
-          : `${summary.payrollCode} · ${summary.periodRangeLabel} · Nguồn ${summary.attendanceSourceCode} đã khóa · Đã duyệt ngày ${summary.approvedDate ?? '02/10/2026'}`
-    : 'Đang tải bảng lương…'
+          : `${summary.payrollCode} · ${summary.periodRangeLabel} · Nguồn ${summary.attendanceSourceCode} đã khóa · Đã duyệt ngày ${summary.approvedDate ?? '-'}`
+    : hasError
+      ? 'Không thể tải dữ liệu bảng lương.'
+      : isLoading
+        ? 'Đang tải bảng lương...'
+        : 'Chưa có kỳ lương nào.'
 
   const isDraft = summary?.status === 'draft'
   const zaloRecipients =
@@ -218,6 +245,7 @@ export default function PayrollPage() {
         <div className="flex flex-wrap items-center gap-2.5">
           <Button
             className="min-h-[44px]"
+            disabled={!summary}
             onClick={handleExportCsv}
             type="button"
             variant="secondary"
@@ -249,18 +277,50 @@ export default function PayrollPage() {
       user={currentUser}
     >
       <div className="space-y-6">
-        {summary && (
+        {hasError ? (
+          <Card padding="lg" title="Không thể tải bảng lương">
+            <div className="space-y-3">
+              <p className="text-sm text-slate-600">
+                Đã xảy ra lỗi khi tải dữ liệu bảng lương từ máy chủ. Vui lòng thử lại.
+              </p>
+              <Button
+                className="min-h-[44px]"
+                data-testid="hrm05-retry-btn"
+                onClick={() => {
+                  void periodsQuery.refetch()
+                  if (activePeriodKey) void periodQuery.refetch()
+                }}
+                type="button"
+                variant="primary"
+              >
+                Thử lại
+              </Button>
+            </div>
+          </Card>
+        ) : isLoading ? (
+          <Card padding="lg" title="Đang tải bảng lương">
+            <p className="text-sm text-slate-600">
+              Đang đồng bộ dữ liệu kỳ lương...
+            </p>
+          </Card>
+        ) : !summary ? (
+          <Card padding="lg" title="Chưa có dữ liệu kỳ lương">
+            <p className="text-sm text-slate-600">
+              Chưa có kỳ lương nào được khởi tạo trong hệ thống.
+            </p>
+          </Card>
+        ) : (
           <>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard
-                description={`${summary.kpi.totalEmployees} nhân viên trong bảng lương minh họa`}
+                description={`${summary.kpi.totalEmployees} nhân viên trong kỳ lương`}
                 label="Tổng lương thực lĩnh"
                 value={formatVnd(summary.kpi.totalNetPay)}
               />
               <StatCard
                 description={
                   summary.kpi.paidAmount > 0 && summary.kpi.remainingAmount === 0
-                    ? `${summary.payoutMethod === 'cash' ? 'Tiền mặt' : 'Chuyển khoản'} · ${summary.payoutDate ?? '03/10/2026'}`
+                    ? `${summary.payoutMethod === 'cash' ? 'Tiền mặt' : 'Chuyển khoản'} · ${summary.payoutDate ?? '-'}`
                     : `Còn phải trả: ${formatVnd(summary.kpi.remainingAmount)}`
                 }
                 label="Đã chi trả"
@@ -359,7 +419,8 @@ export default function PayrollPage() {
               }}
               page={page}
               payoutFilter={payoutFilter}
-              periodKey={periodKey}
+              periodKey={activePeriodKey}
+              periodOptions={periodOptions}
               search={search}
               selectedIds={selectedIds}
               statusFilter={statusFilter}
@@ -451,31 +512,43 @@ export default function PayrollPage() {
             />
 
             <PayrollBreakdownDrawer
+              breakdown={breakdownQuery.data}
+              isLoadingBreakdown={breakdownQuery.isLoading}
               onClose={() => setDrawerRow(null)}
-              onOpenAdvanceVoucher={() => {
-                if (drawerRow) {
-                  setAdvanceDrawerRow(drawerRow)
-                }
+              onOpenAdvanceVoucher={(_employeeId, line?: PayrollBreakdownLine) => {
+                if (!drawerRow) return
+                const targetLine =
+                  line ??
+                  (breakdownQuery.data?.deductionItems ?? drawerRow.deductionItems).find(
+                    (item) => Boolean(item.voucherCode),
+                  )
+                setAdvanceDrawerState({
+                  row: drawerRow,
+                  voucher: {
+                    voucherCode: targetLine?.voucherCode ?? '',
+                    employeeLabel: `${drawerRow.fullName} · ${drawerRow.employeeCode}`,
+                    amount: targetLine?.amount ?? drawerRow.deduction,
+                    receivedDate: summary.payoutDate ?? '-',
+                    payoutMethod: 'Khấu trừ lương kỳ',
+                    approverLabel: summary.approvedBy ?? 'Admin',
+                    content: targetLine?.label ?? 'Tạm ứng lương',
+                    attachmentName: '-',
+                    footnote: '',
+                  },
+                })
               }}
               payrollCode={summary.payrollCode}
               row={drawerRow}
             />
 
             <PayslipSourceDrawer
-              advanceVoucher={
-                advanceDrawerRow
-                  ? {
-                      ...PHONG_ADVANCE_VOUCHER_092026,
-                      voucherCode:
-                        advanceDrawerRow.deductionItems[0]?.voucherCode ??
-                        'ADV-0921',
-                      employeeLabel: `${advanceDrawerRow.fullName} · ${advanceDrawerRow.employeeCode}`,
-                      amount: advanceDrawerRow.deduction || 100000,
-                    }
-                  : undefined
-              }
-              drawerType={advanceDrawerRow ? 'advance' : null}
-              onClose={() => setAdvanceDrawerRow(null)}
+              advanceVoucher={advanceDrawerState?.voucher}
+              drawerType={advanceDrawerState ? 'advance' : null}
+              employeeCode={advanceDrawerState?.row.employeeCode}
+              employeeName={advanceDrawerState?.row.fullName}
+              onClose={() => setAdvanceDrawerState(null)}
+              payslipCode={summary.payrollCode}
+              periodKey={summary.periodKey}
               periodRange={summary.periodRangeLabel}
             />
           </>

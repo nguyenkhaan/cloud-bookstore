@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { SelectBox } from '@/components/common/SelectBox'
-import { formatVnd } from '../hr-payroll.mock'
+import { formatVnd } from '../hr-payroll.utils'
 import type { PayrollPeriodSummary, PayoutMethod } from '../hr-payroll.type'
 import { hrPaths } from '../hr.route'
 
@@ -83,7 +83,7 @@ export function PayrollBottomPanels({
                       Mã giao dịch
                     </p>
                     <p className="mt-1 text-sm font-medium text-slate-700">
-                      {summary.transactionRef ?? 'BANK-PAY-20261003-001'}
+                      {summary.transactionRef ?? '-'}
                     </p>
                   </div>
                   <div>
@@ -91,7 +91,7 @@ export function PayrollBottomPanels({
                       Ngày chi
                     </p>
                     <p className="mt-1 text-sm font-semibold text-slate-900">
-                      {summary.payoutDate ?? '03/10/2026'}
+                      {summary.payoutDate ?? '-'}
                     </p>
                   </div>
                 </div>
@@ -118,8 +118,8 @@ export function PayrollBottomPanels({
                 <p className="text-xs text-slate-500">
                   Đã trả {summary.paidRowsCount}/{summary.allRowsCount} nhân viên
                   · {formatVnd(summary.kpi.paidAmount)} ·{' '}
-                  {summary.payoutConfirmedBy ?? 'Nguyễn Minh Anh'} xác nhận ngày{' '}
-                  {summary.payoutDate ?? '03/10/2026'}.
+                  {summary.payoutConfirmedBy ?? 'Admin'} xác nhận ngày{' '}
+                  {summary.payoutDate ?? '-'}.
                 </p>
               </div>
             ) : isDraft ? (

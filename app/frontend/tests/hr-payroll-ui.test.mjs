@@ -14,6 +14,8 @@ const src = (...parts) => path.join(frontendRoot, 'src', ...parts)
 let server
 let hrRoutes
 let payrollService
+let payrollUtils
+let privateClient
 
 before(async () => {
   server = await createServer({
@@ -24,16 +26,21 @@ before(async () => {
   payrollService = await server.ssrLoadModule(
     '/src/features/hr/hr-payroll.service.ts',
   )
+  payrollUtils = await server.ssrLoadModule(
+    '/src/features/hr/hr-payroll.utils.ts',
+  )
+  const clientMod = await server.ssrLoadModule('/src/api/client.ts')
+  privateClient = clientMod.privateClient
 })
 
 after(async () => {
   await server?.close()
 })
 
-test('SCR-HRM-05 routes, files, and forbidden card guard exist', () => {
+test('SCR-HRM-05 routes, API-backed files, and forbidden card guard exist without mock store or hardcoded demo copy', () => {
   const requiredFiles = [
     ['features', 'hr', 'hr-payroll.type.ts'],
-    ['features', 'hr', 'hr-payroll.mock.ts'],
+    ['features', 'hr', 'hr-payroll.utils.ts'],
     ['features', 'hr', 'hr-payroll.service.ts'],
     ['features', 'hr', 'hr-payroll.hook.ts'],
     ['features', 'hr', 'components', 'PayrollTableSection.tsx'],
@@ -49,6 +56,7 @@ test('SCR-HRM-05 routes, files, and forbidden card guard exist', () => {
   for (const parts of requiredFiles) {
     assert.ok(existsSync(src(...parts)), `missing src/${parts.join('/')}`)
   }
+  assert.equal(existsSync(src('features', 'hr', 'hr-payroll.mock.ts')), false)
 
   assert.equal(hrRoutes.hrPaths.payroll, '/hr/payroll')
   assert.equal(
@@ -70,126 +78,300 @@ test('SCR-HRM-05 routes, files, and forbidden card guard exist', () => {
     src('features', 'hr', 'pages', 'PayrollPage.tsx'),
     'utf8',
   )
+  const tableSectionSource = readFileSync(
+    src('features', 'hr', 'components', 'PayrollTableSection.tsx'),
+    'utf8',
+  )
+  const batchPayoutModalSource = readFileSync(
+    src('features', 'hr', 'components', 'PayrollBatchPayoutModal.tsx'),
+    'utf8',
+  )
   const adjustmentPageSource = readFileSync(
     src('features', 'hr', 'pages', 'PayrollAdjustmentPage.tsx'),
     'utf8',
   )
   assert.match(payrollPageSource, /hrm05-forbidden-card/)
   assert.match(payrollPageSource, /Bạn chưa có quyền truy cập bảng lương/)
+  assert.match(payrollPageSource, /useHrPayrollPeriodsListQuery/)
+  assert.match(payrollPageSource, /usePayrollBreakdownQuery/)
+  assert.match(payrollPageSource, /hrm05-retry-btn/)
+  assert.match(tableSectionSource, /hrm05-pending-adjustments/)
+  assert.match(batchPayoutModalSource, /accept="image\/jpeg,image\/png,image\/webp"/)
+  assert.doesNotMatch(batchPayoutModalSource, /20261003|PC-20261003/)
   assert.doesNotMatch(payrollPageSource, /HrModuleTabs/)
   assert.doesNotMatch(adjustmentPageSource, /HrModuleTabs/)
+  assert.doesNotMatch(adjustmentPageSource, /PAY-202609|Trần Hoàng Phong|5\.380\.000đ|DC-0926-003/)
 })
 
-test('SCR-HRM-05 period states match exact Figma figures (30.850.000đ) and draft/approve/unlock workflow', async () => {
-  payrollService.resetHrPayrollStore()
-
-  const settled = await payrollService.listPayrollPeriod({
-    periodKey: '09/2026',
-  })
-  assert.equal(settled.status, 'settled')
-  assert.equal(settled.kpi.totalNetPay, 30850000)
-  assert.equal(settled.kpi.paidAmount, 30850000)
-  assert.equal(settled.kpi.approvedOtHours, 14)
-  assert.equal(settled.kpi.zaloSentCount, 2)
-  assert.equal(settled.rows.length, 4)
-  assert.equal(settled.rows[0].cashVarianceReport?.voucherCode, 'CASH-0925-02')
-
-  // Cannot unlock settled payroll
-  await assert.rejects(
-    () => payrollService.unlockPayrollPeriod('09/2026', 'Thử mở khóa'),
-    /đã phát sinh khoản chi/,
-  )
-
-  // Draft period 10/2026 -> approve -> unlock requires non-empty reason
-  const draft = await payrollService.listPayrollPeriod({ periodKey: '10/2026' })
-  assert.equal(draft.status, 'draft')
-  assert.equal(draft.kpi.paidAmount, 0)
-
-  const approved = await payrollService.approveAndLockPayroll('10/2026')
-  assert.equal(approved.status, 'approved_unpaid')
-
-  await assert.rejects(
-    () => payrollService.unlockPayrollPeriod('10/2026', '   '),
-    /lý do mở khóa/,
-  )
-
-  const unlocked = await payrollService.unlockPayrollPeriod(
-    '10/2026',
-    'Bổ sung thưởng ca tối',
-  )
-  assert.equal(unlocked.status, 'draft')
-  assert.ok(unlocked.history.some((h) => h.event.includes('Mở khóa bảng lương')))
-})
-
-test('SCR-HRM-05 batch payout (11.745.000đ partial), Zalo send (4/4), and next-period adjustment ADJ-*', async () => {
-  payrollService.resetHrPayrollStore()
-
-  // Approved unpaid period 08/2026: Phong (5.380.000) + Khoa (6.365.000) = 11.745.000đ
-  const partial = await payrollService.executeBatchPayout({
-    periodKey: '08/2026',
-    employeeIds: ['NV-0002', 'NV-0003'],
-    method: 'bank_transfer',
-    transactionRef: 'BANK-PAY-20261003-002',
-    payoutDate: '03/10/2026',
-    actorName: 'Nguyễn Minh Anh',
-  })
-  assert.equal(partial.status, 'partially_paid')
-  assert.equal(partial.kpi.paidAmount, 11745000)
-  assert.equal(partial.kpi.remainingAmount, 19105000)
-  assert.equal(partial.paidRowsCount, 2)
-
-  // Cash payout for remaining 2 employees generates PC-* voucher and settles period
-  const settledCash = await payrollService.executeBatchPayout({
-    periodKey: '08/2026',
-    employeeIds: ['NV-0004', 'NV-0005'],
-    method: 'cash',
-    transactionRef: '',
-    payoutDate: '04/10/2026',
-    note: 'Chi tiền mặt đợt 2',
-    actorName: 'Nguyễn Minh Anh',
-  })
-  assert.equal(settledCash.status, 'settled')
-  assert.equal(settledCash.kpi.paidAmount, 30850000)
-  assert.match(settledCash.batches[1].transactionRef, /^PC-/)
-
-  // Zalo send on 09/2026 updates 2 -> 4/4
-  const zaloSent = await payrollService.sendPayrollZaloPayslips('09/2026', [
-    'NV-0004',
-    'NV-0005',
+test('SCR-HRM-05 utils format VND, Vietnamese words, Asia/Ho_Chi_Minh timestamps, and next period options accurately', () => {
+  assert.equal(payrollUtils.formatVnd(30850000), '30.850.000đ')
+  assert.equal(payrollUtils.formatVnd(-50000), '-50.000đ')
+  assert.equal(payrollUtils.numberToVietnameseWords(0), 'Không đồng.')
+  assert.equal(payrollUtils.numberToVietnameseWords(280000), 'Hai trăm tám mươi nghìn đồng.')
+  assert.equal(payrollUtils.numberToVietnameseWords(5380000), 'Năm triệu ba trăm tám mươi nghìn đồng.')
+  assert.match(payrollUtils.getTodayVietnamIsoDate(), /^\d{4}-\d{2}-\d{2}$/)
+  assert.equal(payrollUtils.PAYROLL_STATUS_LABELS.draft, 'Bản nháp')
+  assert.equal(payrollUtils.PAYROLL_STATUS_LABELS.settled, 'Đã duyệt & Khóa')
+  assert.equal(payrollUtils.formatVietnamDateTime(undefined), '-')
+  assert.notEqual(payrollUtils.formatVietnamDateTime('2026-10-03T02:30:00Z'), '-')
+  assert.equal(payrollUtils.toIsoDateOnly('03/10/2026'), '2026-10-03')
+  assert.deepEqual(payrollUtils.getNextPeriodKeys('11/2026', 2), [
+    { value: '12/2026', label: 'Kỳ 12/2026' },
+    { value: '01/2027', label: 'Kỳ 01/2027' },
   ])
-  assert.equal(zaloSent.kpi.zaloSentCount, 4)
+})
 
-  // Next-period adjustment
-  await assert.rejects(
-    () =>
-      payrollService.createNextPeriodAdjustment({
-        sourcePayrollCode: 'PAY-202609',
-        sourcePeriodKey: '09/2026',
-        sourceVoucherRef: 'BANK-PAY-20261003-001',
-        employeeId: 'NV-0002',
-        targetPeriodKey: '10/2026',
-        category: 'Phụ cấp',
-        adjustmentType: 'add_next_period',
-        amount: 200000,
-        reason: '',
-        mode: 'approved',
-      }),
-    /lý do/,
-  )
+test('SCR-HRM-05 payroll service forwards uppercase enums and maps backend DTO responses cleanly', async () => {
+  const originalGet = privateClient.get
+  const originalPost = privateClient.post
+  const originalPatch = privateClient.patch
+  const calls = []
 
-  const adj = await payrollService.createNextPeriodAdjustment({
-    sourcePayrollCode: 'PAY-202609',
-    sourcePeriodKey: '09/2026',
-    sourceVoucherRef: 'BANK-PAY-20261003-001',
-    employeeId: 'NV-0002',
-    targetPeriodKey: '10/2026',
-    category: 'Phụ cấp',
-    adjustmentType: 'add_next_period',
-    amount: 200000,
-    referenceCode: 'DC-0926-003',
-    reason: 'Bù phụ cấp trách nhiệm tháng 09',
-    mode: 'approved',
-  })
-  assert.match(adj.id, /^ADJ-/)
-  assert.equal(adj.amount, 200000)
+  const backendSummary = {
+    periodKey: '03/2026',
+    payrollCode: 'PAY-202603',
+    periodRangeLabel: '01/03–31/03/2026',
+    attendanceSourceCode: 'ATT-202603',
+    status: 'SETTLED',
+    exists: true,
+    approvedAt: '2026-04-01T02:00:00Z',
+    approvedByName: 'Admin Cloud',
+    payoutAt: '2026-04-01T03:00:00Z',
+    payoutMethod: 'BANK_TRANSFER',
+    transactionRef: 'BANK-20260401-001',
+    payoutConfirmedByName: 'Admin Cloud',
+    kpi: {
+      totalNetPay: 280000,
+      paidAmount: 280000,
+      remainingAmount: 0,
+      approvedOtHours: 1,
+      zaloSentCount: 1,
+      totalEmployees: 1,
+      zaloUnsentCount: 0,
+      zaloFailedCount: 0,
+    },
+    rows: [
+      {
+        employeeId: 'emp-2',
+        entryId: 'entry-2',
+        employeeCode: 'NV-0002',
+        fullName: 'Nhân viên B',
+        roleLabel: 'Thu ngân',
+        standardHours: 8,
+        hourlyRate: 25000,
+        baseSalary: 200000,
+        overtimeHours: 1,
+        overtimeAmount: 37500,
+        bonus: 42500,
+        allowance: 0,
+        deduction: 0,
+        mandatoryContribution: 0,
+        taxAmount: 0,
+        netPay: 280000,
+        payoutStatus: 'PAID',
+        zaloStatus: 'SENT',
+        zaloSentAt: '2026-04-01T04:00:00Z',
+        zaloLinked: true,
+        bankAccount: 'VCB · 1234',
+        payoutAt: '2026-04-01T03:00:00Z',
+        payoutMethod: 'BANK_TRANSFER',
+        transactionRef: 'BANK-20260401-001',
+        contributionNote: null,
+        bonusItems: [{ label: 'Thưởng', amount: 42500, voucherCode: null }],
+        allowanceItems: [],
+        deductionItems: [],
+      },
+    ],
+    allRowsCount: 1,
+    paidRowsCount: 1,
+    batches: [
+      {
+        id: 'batch-1',
+        batchNumber: 1,
+        method: 'BANK_TRANSFER',
+        transactionRef: 'BANK-20260401-001',
+        payoutAt: '2026-04-01T03:00:00Z',
+        amount: 280000,
+        employeeNames: ['Nhân viên B'],
+        confirmedByName: 'Admin Cloud',
+      },
+    ],
+    history: [
+      {
+        id: 'hist-1',
+        occurredAt: '2026-04-01T02:00:00Z',
+        actorName: 'Admin Cloud',
+        event: 'Duyệt & Chốt bảng lương',
+        result: 'Đã khóa',
+      },
+    ],
+    pendingAdjustments: [],
+  }
+
+  privateClient.get = async (url, config) => {
+    calls.push({ method: 'GET', url, config })
+    if (url === '/hr/payroll/periods') {
+      return {
+        status: 200,
+        data: [{ periodKey: '03/2026', payrollCode: 'PAY-202603', status: 'DRAFT', exists: true }],
+      }
+    }
+    if (url === '/hr/payroll/adjustments') {
+      return {
+        status: 200,
+        data: [{
+          id: 'guid-1',
+          adjustmentCode: 'ADJ-202603-0001',
+          adjustmentType: 'ADD_NEXT_PERIOD',
+          amount: 50000,
+          status: 'APPROVED',
+          createdAt: '2026-03-01T03:00:00Z',
+        }],
+      }
+    }
+    if (url.endsWith('/breakdown')) {
+      return {
+        status: 200,
+        data: {
+          entryId: 'entry-2',
+          employeeId: 'emp-2',
+          bonusItems: [{ label: 'Thưởng', amount: 42500, voucherCode: null }],
+          allowanceItems: [],
+          deductionItems: [{ label: 'Tạm ứng', amount: 50000, voucherCode: 'ADV-0301' }],
+          cashVariances: [{
+            cashSessionId: 'cs-1',
+            voucherCode: 'CS-ABCDEF12',
+            openedAt: '2026-03-10T01:00:00Z',
+            closedAt: '2026-03-10T09:00:00Z',
+            expectedAmount: 1000000,
+            countedAmount: 950000,
+            difference: -50000,
+            varianceNote: 'Thiếu quỹ cuối ca',
+            approverName: 'Admin Cloud',
+          }],
+        },
+      }
+    }
+    return { status: 200, data: backendSummary }
+  }
+  privateClient.post = async (url, body) => {
+    calls.push({ method: 'POST', url, body })
+    if (url === '/hr/payroll/adjustments') {
+      return {
+        status: 201,
+        data: {
+          id: 'guid-2',
+          adjustmentCode: 'ADJ-202603-0002',
+          adjustmentType: body.adjustmentType,
+          amount: body.amount,
+          status: body.mode,
+          createdAt: '2026-03-01T04:00:00Z',
+        },
+      }
+    }
+    return { status: 200, data: backendSummary }
+  }
+  privateClient.patch = async (url, body) => {
+    calls.push({ method: 'PATCH', url, body })
+    return { status: 200, data: backendSummary }
+  }
+
+  try {
+    const periods = await payrollService.listPayrollPeriods()
+    assert.equal(periods[0].status, 'draft')
+
+    const period = await payrollService.listPayrollPeriod({
+      periodKey: '03/2026',
+      search: 'NV-0002',
+      statusFilter: 'draft',
+      payoutFilter: 'unpaid',
+    })
+    assert.equal(period.status, 'settled')
+    assert.equal(period.approvedBy, 'Admin Cloud')
+    assert.equal(period.payoutMethod, 'bank_transfer')
+    assert.equal(period.rows[0].id, 'emp-2')
+    assert.equal(period.rows[0].payoutStatus, 'paid')
+    assert.equal(period.rows[0].zaloStatus, 'sent')
+    assert.doesNotMatch(period.approvedAt ?? '', /T02:00:00Z/)
+    assert.equal(period.batches[0].method, 'bank_transfer')
+
+    await payrollService.initializePayrollFromAttendance('03/2026')
+    await payrollService.adjustDraftPayrollEmployee({
+      periodKey: '03/2026',
+      employeeId: 'emp-2',
+      bonus: 500000,
+      allowance: 200000,
+      deduction: 100000,
+      note: 'Thưởng dự án',
+    })
+    await payrollService.approveAndLockPayroll('03/2026')
+    await payrollService.unlockPayrollPeriod('03/2026', 'Bổ sung thưởng ca tối')
+    const sampleProof = {
+      uploadIntentId: '11111111-2222-3333-4444-555555555555',
+      publicId: 'cloud-bookstore/private/payroll/proof-1',
+      version: 1,
+      signature: 'sig-1',
+      assetId: 'asset-1',
+      format: 'png',
+      bytes: 1234,
+    }
+    await payrollService.executeBatchPayout({
+      periodKey: '03/2026',
+      employeeIds: ['emp-2'],
+      method: 'bank_transfer',
+      transactionRef: 'BANK-PAY-20261003-002',
+      payoutDate: '03/11/2026',
+      proofUpload: sampleProof,
+      actorName: 'Admin',
+    })
+    await payrollService.executeBatchPayout({
+      periodKey: '03/2026',
+      employeeIds: ['emp-3'],
+      method: 'cash',
+      transactionRef: '',
+      payoutDate: '04/11/2026',
+      actorName: 'Admin',
+    })
+    await payrollService.sendPayrollZaloPayslips('03/2026', ['emp-2'])
+    const breakdown = await payrollService.getPayrollBreakdown('03/2026', 'emp-2')
+    assert.equal(breakdown.cashVariances.length, 1)
+    assert.equal(breakdown.cashVariances[0].voucherCode, 'CS-ABCDEF12')
+    assert.equal(breakdown.cashVariances[0].difference, -50000)
+
+    const adjustments = await payrollService.listNextPeriodAdjustments('04/2026')
+    assert.equal(adjustments[0].id, 'ADJ-202603-0001')
+    assert.equal(adjustments[0].adjustmentType, 'add_next_period')
+    assert.equal(adjustments[0].status, 'approved')
+
+    const adj = await payrollService.createNextPeriodAdjustment({
+      sourcePayrollCode: 'PAY-202603',
+      sourcePeriodKey: '03/2026',
+      sourceVoucherRef: 'BANK-PAY-20261003-002',
+      employeeId: 'emp-2',
+      targetPeriodKey: '04/2026',
+      category: 'Phụ cấp',
+      adjustmentType: 'add_next_period',
+      amount: 200000,
+      reason: 'Bù phụ cấp trách nhiệm',
+      proofUpload: sampleProof,
+      mode: 'approved',
+    })
+
+    assert.equal(calls[1].url, '/hr/payroll/periods/03%2F2026')
+    assert.equal(calls[1].config.params.status, 'DRAFT')
+    assert.equal(calls[6].body.method, 'BANK_TRANSFER')
+    assert.equal(calls[6].body.payoutDate, '2026-11-03')
+    assert.deepEqual(calls[6].body.proofUpload, sampleProof)
+    assert.equal(calls[7].body.method, 'CASH')
+    assert.equal(calls[7].body.transactionRef, undefined)
+    assert.equal(calls[11].body.adjustmentType, 'ADD_NEXT_PERIOD')
+    assert.equal(calls[11].body.mode, 'APPROVED')
+    assert.deepEqual(calls[11].body.proofUpload, sampleProof)
+    assert.equal(adj.id, 'ADJ-202603-0002')
+    assert.equal(adj.status, 'approved')
+  } finally {
+    privateClient.get = originalGet
+    privateClient.post = originalPost
+    privateClient.patch = originalPatch
+  }
 })

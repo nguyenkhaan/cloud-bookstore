@@ -4,8 +4,10 @@ import { Upload, X } from 'lucide-react'
 import { Button } from '@/components/common/Button'
 import { notify } from '@/components/common/Toast'
 import { cn } from '@/lib/cn'
+import { uploadImage } from '@/features/uploads/upload.service'
+import type { CloudinaryUploadResultRequest } from '@/features/uploads/upload.type'
 import { useBatchPayoutMutation } from '../hr-payroll.hook'
-import { formatVnd } from '../hr-payroll.mock'
+import { formatVnd, getTodayVietnamIsoDate } from '../hr-payroll.utils'
 import type { PayrollEmployeeRow, PayoutMethod } from '../hr-payroll.type'
 
 export interface PayrollBatchPayoutModalProps {
@@ -31,7 +33,7 @@ export function PayrollBatchPayoutModal({
   actorName,
   initialMethod = 'bank_transfer',
   initialTransactionRef,
-  initialPayoutDate = '03/10/2026',
+  initialPayoutDate,
   onClose,
   onSuccess,
 }: PayrollBatchPayoutModalProps) {
@@ -40,7 +42,7 @@ export function PayrollBatchPayoutModal({
     <PayrollBatchPayoutModalForm
       actorName={actorName}
       initialMethod={initialMethod}
-      initialPayoutDate={initialPayoutDate}
+      initialPayoutDate={initialPayoutDate || getTodayVietnamIsoDate()}
       initialTransactionRef={initialTransactionRef}
       nextBatchNumber={nextBatchNumber}
       onClose={onClose}
@@ -78,18 +80,19 @@ function PayrollBatchPayoutModalForm({
 
   const [method, setMethod] = useState<PayoutMethod>(initialMethod ?? 'bank_transfer')
   const [transactionRef, setTransactionRef] = useState(
-    initialTransactionRef?.trim() || `BANK-PAY-20261003-00${nextBatchNumber + 1}`,
+    initialTransactionRef?.trim() ?? '',
   )
-  const [payoutDate, setPayoutDate] = useState(initialPayoutDate || '03/10/2026')
+  const [payoutDate, setPayoutDate] = useState(initialPayoutDate || getTodayVietnamIsoDate())
   const [note, setNote] = useState(
     `Chi tiền mặt đợt ${nextBatchNumber} cho ${shortNames}.`,
   )
   const [attachmentName, setAttachmentName] = useState('')
+  const [proofUpload, setProofUpload] = useState<CloudinaryUploadResultRequest | undefined>(undefined)
+  const [isUploading, setIsUploading] = useState(false)
   const [txError, setTxError] = useState<string | null>(null)
   const [dateError, setDateError] = useState<string | null>(null)
 
   const payoutMutation = useBatchPayoutMutation()
-  const cashVoucherCode = `PC-20261003-00${nextBatchNumber + 7}`
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -121,10 +124,11 @@ function PayrollBatchPayoutModalForm({
         periodKey,
         employeeIds: selectedRows.map((r) => r.id),
         method,
-        transactionRef: method === 'bank_transfer' ? trimmedTx : cashVoucherCode,
+        transactionRef: method === 'bank_transfer' ? trimmedTx : '',
         payoutDate: trimmedDate,
         note: method === 'cash' ? note.trim() : undefined,
         attachmentName: attachmentName || undefined,
+        proofUpload,
         actorName,
       })
       notify.success(
@@ -326,12 +330,23 @@ function PayrollBatchPayoutModalForm({
                     </span>
                   </button>
                   <input
-                    accept="image/*,.pdf"
+                    accept="image/jpeg,image/png,image/webp"
                     className="hidden"
-                    onChange={(event) => {
+                    onChange={async (event) => {
                       const file = event.target.files?.[0]
-                      setAttachmentName(file ? file.name : '')
+                      if (!file) return
+                      setIsUploading(true)
+                      try {
+                        const uploaded = await uploadImage('PAYROLL_PAYOUT_PROOF', file)
+                        setProofUpload(uploaded.imageUpload)
+                        setAttachmentName(file.name)
+                      } catch (error) {
+                        notify.error(error instanceof Error ? error.message : 'Không thể tải chứng từ.')
+                      } finally {
+                        setIsUploading(false)
+                      }
                     }}
+                    disabled={isUploading}
                     ref={fileInputRef}
                     type="file"
                   />
@@ -375,7 +390,7 @@ function PayrollBatchPayoutModalForm({
                   Mã phiếu chi
                 </span>
                 <p className="mt-1 text-sm font-medium text-slate-800">
-                  {cashVoucherCode} · Tạo khi xác nhận
+                  Tự động tạo mã PC-YYYYMMDD-XXX khi xác nhận
                 </p>
               </div>
 

@@ -1,6 +1,6 @@
 import { Card } from '@/components/common/Card'
 import { cn } from '@/lib/cn'
-import { formatVnd } from '../hr-payroll.mock'
+import { formatVnd } from '../hr-payroll.utils'
 import type { PayslipDetailDto } from '../hr-payroll.type'
 import type { PayslipSourceDrawerType } from './PayslipSourceDrawer'
 
@@ -18,7 +18,7 @@ export function PayslipBreakdownCard({
   return (
     <Card
       padding="lg"
-      subtitle={`${payslip.payslipCode} · ${payslip.storeName}`}
+      subtitle={[payslip.payslipCode, payslip.storeName].filter(Boolean).join(' · ')}
       title={`Phiếu lương tháng ${payslip.periodKey}`}
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -44,7 +44,7 @@ export function PayslipBreakdownCard({
             )}
           >
             {isPaid
-              ? `Đã thanh toán · ${payslip.payoutDate ?? '03/10/2026'}`
+              ? `Đã thanh toán${payslip.payoutDate ? ` · ${payslip.payoutDate}` : ''}`
               : 'Đã duyệt · Chờ thanh toán'}
           </span>
           <p className="mt-2 text-xs text-slate-500">
@@ -132,7 +132,7 @@ export function PayslipBreakdownCard({
                 Trích nộp bắt buộc
               </td>
               <td className="px-3 py-3.5 text-slate-600">
-                <p>BHXH / BHYT / BHTN: 0đ</p>
+                <p>BHXH / BHYT / BHTN: {formatVnd(payslip.mandatoryContribution)}</p>
                 <p className="mt-0.5 text-[11px] text-slate-500">
                   {payslip.mandatoryContributionNote}
                 </p>
@@ -163,7 +163,9 @@ export function PayslipBreakdownCard({
                   onClick={() => onOpenDrawer('advance')}
                   type="button"
                 >
-                  Tạm ứng {payslip.advanceVoucherCode} · Xem chứng từ
+                  {payslip.advanceVoucherCode
+                    ? `Tạm ứng ${payslip.advanceVoucherCode} · Xem chứng từ`
+                    : 'Xem chứng từ tạm ứng'}
                 </button>
               </td>
               <td className="px-3 py-3.5 text-right font-semibold text-slate-900">
@@ -216,19 +218,21 @@ export function PayslipBreakdownCard({
         {isPaid ? (
           <>
             <p>
-              Đã chuyển khoản {formatVnd(payslip.netPay)} · {payslip.bankAccount}
+              Đã chi trả {formatVnd(payslip.netPay)}
+              {payslip.bankAccount ? ` · ${payslip.bankAccount}` : ''}
             </p>
             <p className="mt-0.5">
-              {payslip.payoutDate ?? '03/10/2026'} ·{' '}
-              {payslip.transactionRef ?? 'BANK-PAY-20261003-001'}
+              {payslip.payoutDate ?? '-'}
+              {payslip.transactionRef ? ` · ${payslip.transactionRef}` : ''}
             </p>
           </>
         ) : (
           <>
             <p>Đã duyệt · Chờ thanh toán</p>
             <p className="mt-0.5">
-              Dự kiến chi trả ngày {payslip.expectedPayoutDate ?? '03/11/2026'}{' '}
-              · {payslip.bankAccount}
+              {payslip.bankAccount
+                ? `Tài khoản nhận lương: ${payslip.bankAccount}`
+                : 'Chờ Admin xác nhận đợt chi trả.'}
             </p>
           </>
         )}

@@ -133,6 +133,10 @@ Khung giá gợi ý kế thừa từ tài liệu cũ:
 | BR-PAYROLL-001 | Accepted | Lương được ghi nhận và duyệt theo từng ca; không có bảng công hoặc bảng lương theo kỳ trong MVP. |
 | BR-PAYROLL-002 | Accepted | Admin duyệt điều chỉnh lương ca; điều chỉnh thủ công phải có lý do. |
 | BR-PAYROLL-003 | Accepted | Hệ thống chỉ ghi nhận chi lương; không tự động chuyển tiền qua ngân hàng. |
+| BR-HR-004 | Accepted | Admin tạo tài khoản nhân viên trực tiếp; tài khoản bắt đầu ở trạng thái `INVITED` và được kích hoạt bằng liên kết thiết lập mật khẩu dùng một lần gửi qua email. Không dùng whitelist hoặc tự đăng ký (PDR-009). |
+| BR-HR-005 | Accepted | Tài khoản RootAdmin được bảo vệ khỏi khóa, thu hồi và hạ quyền; Admin không thể tự khóa, thu hồi hoặc hạ quyền tài khoản của mình (PDR-009). |
+| BR-ATT-004 | Accepted | Yêu cầu nghỉ, đổi ca và giải trình chấm công được lưu có lịch sử; chỉ Admin duyệt, không được tự duyệt yêu cầu của chính mình, và chỉ yêu cầu giải trình được duyệt mới điều chỉnh bản ghi công (PDR-009). |
+| BR-PAYROLL-004 | Accepted | Hệ thống hỗ trợ tổng hợp bảng lương theo kỳ, điều chỉnh có audit và phê duyệt Admin; không tự động chuyển tiền ra (PDR-009). |
 
 ## Tích hợp và cấu hình
 

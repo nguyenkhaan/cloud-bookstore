@@ -11,7 +11,7 @@ import { MainLayout } from '@/components/layout'
 import { useAuth } from '@/features/auth/auth.hook'
 import { workspacePathFor } from '@/features/workspace/workspace.route'
 import { AddEmployeeModal } from '../components/AddEmployeeModal'
-import { HR_EMPLOYEE_STATUS_LABELS } from '../hr-employees.mock'
+import { HR_EMPLOYEE_STATUS_LABELS } from '../hr-employees.constants'
 import { useHrEmployeesQuery } from '../hr-employees.hook'
 import type { BackendRoleName, HrEmployeeStatus } from '../hr-employees.type'
 import { formatHrRoleLabel, isHrAdmin, resolveHrRoleCode } from '../hr-role.util'
@@ -22,6 +22,7 @@ const STATUS_BADGE_VARIANTS: Record<HrEmployeeStatus, BadgeVariant> = {
   in_shift: 'info',
   pending_activation: 'warning',
   locked: 'danger',
+  revoked: 'danger',
 }
 
 const PAGE_SIZE = 6
@@ -38,11 +39,7 @@ export default function EmployeeListPage() {
   const [page, setPage] = useState(1)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
 
-  const currentUser = session?.user ?? {
-    name: 'Nguyễn Minh Anh',
-    role: 'Quản trị viên',
-    roleCode: 'ADMIN',
-  }
+  const currentUser = session?.user
   const effectiveRoleCode = resolveHrRoleCode(currentUser)
   const isAdmin = isHrAdmin(effectiveRoleCode)
 
@@ -59,10 +56,10 @@ export default function EmployeeListPage() {
   const totalPages = data?.totalPages ?? 1
   const currentPage = data?.page ?? page
   const kpi = data?.kpi ?? {
-    activeCount: 12,
-    newAccountsCount: 2,
-    inShiftCount: 5,
-    rootAdminCount: 1,
+    activeCount: 0,
+    newAccountsCount: 0,
+    inShiftCount: 0,
+    rootAdminCount: 0,
   }
 
   const handleResetFilters = () => {
@@ -75,6 +72,10 @@ export default function EmployeeListPage() {
   const navigateFromSidebar = (id: string) => {
     const targetPath = workspacePathFor(id)
     if (targetPath) navigate(targetPath)
+  }
+
+  if (!currentUser) {
+    return null
   }
 
   const startRow = totalCount === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1
@@ -186,6 +187,7 @@ export default function EmployeeListPage() {
                   { value: 'in_shift', label: 'Đang trong ca' },
                   { value: 'pending_activation', label: 'Chờ kích hoạt' },
                   { value: 'locked', label: 'Đã khóa' },
+                  { value: 'revoked', label: 'Đã thu hồi' },
                 ]}
                 searchable={false}
                 value={statusFilter}

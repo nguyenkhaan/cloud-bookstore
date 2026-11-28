@@ -50,6 +50,14 @@ test('audit presentation formats UTC+7 millisecond timestamps and summarizes JSO
   assert.equal(auditPresentation.isBookCopyEntity('SaleInvoice'), false)
   assert.equal(auditPresentation.moduleDisplayLabel('BookCopy'), 'Kho')
   assert.equal(auditPresentation.moduleDisplayLabel('SaleInvoice'), 'POS')
+  assert.equal(auditPresentation.moduleDisplayLabel('hr_request'), 'Nhân sự')
+  assert.equal(auditPresentation.moduleDisplayLabel('hrrequest'), 'Nhân sự')
+  assert.equal(auditPresentation.moduleDisplayLabel('payroll_period'), 'Nhân sự')
+  assert.equal(auditPresentation.moduleDisplayLabel('payrollperiod'), 'Nhân sự')
+  assert.equal(auditPresentation.moduleDisplayLabel('payroll_adjustment'), 'Nhân sự')
+  assert.equal(auditPresentation.moduleDisplayLabel('payrolladjustment'), 'Nhân sự')
+  assert.equal(auditPresentation.moduleDisplayLabel('payslip_dispute'), 'Nhân sự')
+  assert.equal(auditPresentation.moduleDisplayLabel('payslipdispute'), 'Nhân sự')
 
   const summary = auditPresentation.summarizeTransition({
     id: '1',

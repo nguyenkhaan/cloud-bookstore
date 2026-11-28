@@ -1,5 +1,4 @@
 import { useId, useState } from 'react'
-import { Info } from 'lucide-react'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { notify } from '@/components/common/Toast'
@@ -7,15 +6,13 @@ import { cn } from '@/lib/cn'
 import {
   HR_REQUEST_STATUS_LABELS,
   HR_REQUEST_TYPE_LABELS,
-} from '../hr-requests.mock'
+} from '../hr-requests.constants'
 import { useReviewHrRequestMutation } from '../hr-requests.hook'
 import type { HrRequestRecord } from '../hr-requests.type'
 
 export interface ApprovalRequestDetailCardProps {
   request: HrRequestRecord | null
   isAdmin: boolean
-  reviewerName: string
-  reviewerRoleLabel: string
   onReviewed?: (updated: HrRequestRecord) => void
 }
 
@@ -31,8 +28,6 @@ function DetailFieldBox({ label, value }: { label: string; value: string }) {
 export function ApprovalRequestDetailCard({
   request,
   isAdmin,
-  reviewerName,
-  reviewerRoleLabel,
   onReviewed,
 }: ApprovalRequestDetailCardProps) {
   const noteId = useId()
@@ -50,6 +45,9 @@ export function ApprovalRequestDetailCard({
     )
   }
 
+  const isOwnRequest = request.isOwnedByCurrentUser
+  const canReview = isAdmin && request.status === 'pending' && !isOwnRequest
+
   const handleDecision = async (decision: 'approved' | 'rejected') => {
     const trimmedNote = note.trim()
     if (!trimmedNote) {
@@ -63,8 +61,6 @@ export function ApprovalRequestDetailCard({
         requestId: request.id,
         decision,
         note: trimmedNote,
-        reviewerName,
-        reviewerRoleLabel,
       })
       notify.success(
         decision === 'approved'
@@ -75,9 +71,7 @@ export function ApprovalRequestDetailCard({
       onReviewed?.(updated)
     } catch (error) {
       setNoteError(
-        error instanceof Error
-          ? error.message
-          : 'Không thể cập nhật trạng thái đơn.',
+        error instanceof Error ? error.message : 'Không thể cập nhật trạng thái đơn.',
       )
     }
   }
@@ -85,66 +79,30 @@ export function ApprovalRequestDetailCard({
   return (
     <Card padding="lg">
       <div>
-        <h3 className="text-base font-bold text-slate-900">
-          Chi tiết yêu cầu cần duyệt
-        </h3>
+        <h3 className="text-base font-bold text-slate-900">Chi tiết yêu cầu cần duyệt</h3>
         <p className="mt-0.5 text-sm font-bold text-slate-900">
           {request.code} · {request.requesterName}
         </p>
       </div>
 
       <div className="mt-4 space-y-3">
-        <DetailFieldBox
-          label="Loại yêu cầu *"
-          value={HR_REQUEST_TYPE_LABELS[request.type]}
-        />
+        <DetailFieldBox label="Loại yêu cầu *" value={HR_REQUEST_TYPE_LABELS[request.type]} />
         <DetailFieldBox label="Ngày áp dụng *" value={request.applyDate} />
+        <DetailFieldBox label="Ca hiện tại *" value={request.currentShiftLabel} />
 
-        {request.type === 'shift_swap' && (
-          <>
-            <DetailFieldBox
-              label="Ca hiện tại *"
-              value={request.currentShiftLabel}
-            />
-            {request.targetShiftLabel && (
-              <DetailFieldBox
-                label="Ca muốn đổi *"
-                value={request.targetShiftLabel}
-              />
-            )}
-            <DetailFieldBox
-              label="Nhân viên thay thế *"
-              value={request.replacementLabel ?? request.replacementName}
-            />
-          </>
+        {request.targetShiftLabel && (
+          <DetailFieldBox label="Ca muốn đổi *" value={request.targetShiftLabel} />
         )}
 
-        {request.type === 'leave' && (
-          <>
-            <DetailFieldBox
-              label="Ca xin nghỉ *"
-              value={request.currentShiftLabel}
-            />
-            <DetailFieldBox
-              label="Nhân viên thay thế *"
-              value={request.replacementLabel ?? request.replacementName}
-            />
-          </>
+        {request.type !== 'attendance_explanation' && (
+          <DetailFieldBox
+            label="Nhân viên thay thế *"
+            value={request.replacementLabel ?? request.replacementName}
+          />
         )}
 
-        {request.type === 'attendance_explanation' && (
-          <>
-            <DetailFieldBox
-              label="Ca chấm công *"
-              value={request.currentShiftLabel}
-            />
-            {request.correctTimeRange && (
-              <DetailFieldBox
-                label="Thời gian đúng *"
-                value={request.correctTimeRange}
-              />
-            )}
-          </>
+        {request.correctTimeRange && (
+          <DetailFieldBox label="Thời gian đúng *" value={request.correctTimeRange} />
         )}
 
         <DetailFieldBox label="Lý do *" value={request.reason} />
@@ -152,15 +110,8 @@ export function ApprovalRequestDetailCard({
         {request.attachmentLabel && (
           <DetailFieldBox
             label="Bằng chứng / Tệp đính kèm"
-            value={request.attachmentLabel}
+            value={request.proofUrl ? `${request.attachmentLabel} - ${request.proofUrl}` : request.attachmentLabel}
           />
-        )}
-
-        {request.validationNotice && (
-          <div className="flex items-start gap-2 rounded-xl bg-emerald-50 px-3.5 py-3 text-xs text-emerald-700">
-            <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-            <span>{request.validationNotice}</span>
-          </div>
         )}
 
         {request.status !== 'pending' && (
@@ -168,19 +119,23 @@ export function ApprovalRequestDetailCard({
             <div className="font-semibold text-slate-900">
               Kết quả: {HR_REQUEST_STATUS_LABELS[request.status]}
             </div>
-            {request.reviewNote && (
-              <p className="mt-1 text-slate-600">Ghi chú: {request.reviewNote}</p>
-            )}
+            {request.reviewNote && <p className="mt-1 text-slate-600">Ghi chú: {request.reviewNote}</p>}
+          </div>
+        )}
+
+        {isAdmin && isOwnRequest && (
+          <div
+            className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-xs text-amber-800"
+            role="note"
+          >
+            Bạn là người tạo đơn này nên không thể tự phê duyệt hoặc từ chối (nguyên tắc maker-checker).
           </div>
         )}
 
         {isAdmin ? (
           <div className="space-y-3 pt-1">
             <div>
-              <label
-                className="block text-xs font-medium text-slate-600"
-                htmlFor={noteId}
-              >
+              <label className="block text-xs font-medium text-slate-600" htmlFor={noteId}>
                 Ghi chú xét duyệt *
               </label>
               <textarea
@@ -200,11 +155,7 @@ export function ApprovalRequestDetailCard({
                 value={note}
               />
               {noteError && (
-                <p
-                  className="mt-1 text-xs text-rose-600"
-                  id={`${noteId}-error`}
-                  role="alert"
-                >
+                <p className="mt-1 text-xs text-rose-600" id={`${noteId}-error`} role="alert">
                   {noteError}
                 </p>
               )}
@@ -213,7 +164,7 @@ export function ApprovalRequestDetailCard({
             <Button
               className="min-h-[44px]"
               data-testid="hrm04-approve-btn"
-              disabled={request.status !== 'pending'}
+              disabled={!canReview}
               fullWidth
               loading={reviewMutation.isPending}
               onClick={() => void handleDecision('approved')}
@@ -226,7 +177,7 @@ export function ApprovalRequestDetailCard({
             <Button
               className="min-h-[44px]"
               data-testid="hrm04-reject-btn"
-              disabled={request.status !== 'pending'}
+              disabled={!canReview}
               fullWidth
               loading={reviewMutation.isPending}
               onClick={() => void handleDecision('rejected')}

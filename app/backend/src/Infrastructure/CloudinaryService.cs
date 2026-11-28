@@ -33,6 +33,9 @@ public sealed class CloudinaryService : ICloudinaryService
             UploadOwnerType.BOOK_COPY_IMAGE => new("upload", settings.PublicUploadPreset, "public/book-copies"),
             UploadOwnerType.RENTAL_LINE_IMAGE => new("authenticated", settings.AuthenticatedUploadPreset, "private/rental-lines"),
             UploadOwnerType.STOCK_RECEIPT_IMAGE => new("authenticated", settings.AuthenticatedUploadPreset, "private/stock-receipts"),
+            UploadOwnerType.HR_REQUEST_PROOF => new("authenticated", settings.AuthenticatedUploadPreset, "private/hr/requests"),
+            UploadOwnerType.PAYSLIP_DISPUTE_PROOF => new("authenticated", settings.AuthenticatedUploadPreset, "private/hr/payslip-disputes"),
+            UploadOwnerType.PAYROLL_PAYOUT_PROOF => new("authenticated", settings.AuthenticatedUploadPreset, "private/hr/payroll-payouts"),
             _ => throw new ArgumentOutOfRangeException(nameof(ownerType), ownerType, "Unsupported Cloudinary upload owner type.")
         };
 

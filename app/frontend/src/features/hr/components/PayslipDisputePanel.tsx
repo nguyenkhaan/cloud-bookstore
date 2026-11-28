@@ -6,20 +6,24 @@ import { Card } from '@/components/common/Card'
 import { SelectBox } from '@/components/common/SelectBox'
 import { notify } from '@/components/common/Toast'
 import { cn } from '@/lib/cn'
+import { uploadImage } from '@/features/uploads/upload.service'
+import type { CloudinaryUploadResultRequest } from '@/features/uploads/upload.type'
 import { useCreatePayslipDisputeMutation } from '../hr-payroll.hook'
-import { PAYSLIP_DISPUTE_CATEGORY_OPTIONS } from '../hr-payroll.mock'
+import { PAYSLIP_DISPUTE_CATEGORY_OPTIONS } from '../hr-payroll.utils'
 import type {
   PayslipDisputeCategory,
   PayslipDisputeRecord,
 } from '../hr-payroll.type'
 
 export interface PayslipDisputePanelProps {
+  entryId?: string
   employeeId: string
   periodKey: string
   disputes: PayslipDisputeRecord[]
 }
 
 export function PayslipDisputePanel({
+  entryId,
   employeeId,
   periodKey,
   disputes,
@@ -32,6 +36,8 @@ export function PayslipDisputePanel({
   const [content, setContent] = useState('')
   const [attachmentName, setAttachmentName] = useState('')
   const [attachmentSize, setAttachmentSize] = useState('')
+  const [proofUpload, setProofUpload] = useState<CloudinaryUploadResultRequest | undefined>(undefined)
+  const [isUploading, setIsUploading] = useState(false)
   const [contentError, setContentError] = useState<string | null>(null)
   const [selectedDispute, setSelectedDispute] =
     useState<PayslipDisputeRecord | null>(null)
@@ -49,17 +55,20 @@ export function PayslipDisputePanel({
 
     try {
       const created = await createDisputeMutation.mutateAsync({
+        entryId,
         employeeId,
         periodKey,
         category,
         content: trimmed,
         attachmentName: attachmentName || undefined,
         attachmentSize: attachmentSize || undefined,
+        proofUpload,
       })
-      notify.success(`Đã gửi yêu cầu đối chiếu ${created.id}.`)
+      notify.success(`Đã gửi yêu cầu đối chiếu ${created.disputeCode ?? created.id}.`)
       setContent('')
       setAttachmentName('')
       setAttachmentSize('')
+      setProofUpload(undefined)
     } catch (error) {
       setContentError(
         error instanceof Error
@@ -140,12 +149,19 @@ export function PayslipDisputePanel({
             <input
               accept="image/jpeg,image/png,.jpg,.jpeg,.png"
               className="hidden"
-              onChange={(event) => {
+              onChange={async (event) => {
                 const file = event.target.files?.[0]
                 if (!file) return
-                setAttachmentName(file.name)
-                setAttachmentSize(`${Math.max(1, Math.round(file.size / 1024))} KB`)
+                setIsUploading(true)
+                try {
+                  const uploaded = await uploadImage('PAYSLIP_DISPUTE_PROOF', file)
+                  setProofUpload(uploaded.imageUpload)
+                  setAttachmentName(file.name)
+                  setAttachmentSize(`${Math.max(1, Math.round(file.size / 1024))} KB`)
+                } catch (error) { notify.error(error instanceof Error ? error.message : 'Không thể tải minh chứng.') }
+                finally { setIsUploading(false) }
               }}
+              disabled={isUploading}
               ref={fileInputRef}
               type="file"
             />
@@ -178,7 +194,7 @@ export function PayslipDisputePanel({
                   key={dispute.id}
                 >
                   <p className="font-semibold text-slate-900">
-                    {dispute.id} · {dispute.categoryLabel}
+                    {dispute.disputeCode ?? dispute.id} · {dispute.categoryLabel}
                   </p>
                   <p
                     className={cn(
@@ -257,7 +273,7 @@ export function PayslipDisputeDetailModal({
               Chi tiết phản hồi đối chiếu
             </h2>
             <p className="mt-0.5 text-xs text-slate-500">
-              {dispute.id} · {dispute.categoryLabel} · {dispute.payslipCode}
+              {dispute.disputeCode ?? dispute.id} · {dispute.categoryLabel} · {dispute.payslipCode}
             </p>
           </div>
           <button

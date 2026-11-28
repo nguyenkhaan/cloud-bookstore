@@ -1,571 +1,641 @@
+import { privateClient } from '@/api/client'
 import {
   PAYSLIP_DISPUTE_CATEGORY_LABELS,
   PAYSLIP_DISPUTE_STATUS_LABELS,
-  PAYSLIP_PERIOD_OPTIONS,
-  PHONG_ADVANCE_VOUCHER_092026,
-  PHONG_ATTENDANCE_DAYS_092026,
-  PHONG_OVERTIME_ENTRIES_092026,
-  createInitialPayrollPeriods,
-  createInitialPayslipDisputes,
+  formatIsoDateOnly,
+  formatVietnamDate,
+  formatVietnamDateTime,
+  formatVietnamTime,
   formatVnd,
-} from './hr-payroll.mock'
+  numberToVietnameseWords,
+  toIsoDateOnly,
+} from './hr-payroll.utils'
 import type {
   BatchPayoutInput,
   CreateNextAdjustmentInput,
   CreatePayslipDisputeInput,
+  EmployeePayoutStatus,
   ListPayrollParams,
   ManualAdjustInput,
   NextPeriodAdjustmentRecord,
+  PayrollAuditHistoryItem,
+  PayrollBatchPayoutRecord,
+  PayrollBreakdownData,
+  PayrollBreakdownLine,
+  PayrollCashVarianceItem,
   PayrollEmployeeRow,
-  PayrollPeriodRecord,
+  PayrollPeriodListItem,
+  PayrollPeriodStatus,
   PayrollPeriodSummary,
+  PayoutMethod,
+  PayslipAdvanceVoucher,
+  PayslipAttendanceDay,
   PayslipDetailDto,
+  PayslipDisputeCategory,
   PayslipDisputeRecord,
+  PayslipDisputeStatus,
+  PayslipOvertimeEntry,
+  PayslipPeriodOption,
+  ZaloSendStatus,
 } from './hr-payroll.type'
 
-let payrollPeriodsStore: PayrollPeriodRecord[] = createInitialPayrollPeriods()
-let nextAdjustmentsStore: NextPeriodAdjustmentRecord[] = []
-let payslipDisputesStore: PayslipDisputeRecord[] = createInitialPayslipDisputes()
+type QueryParams = ListPayrollParams & { status?: string; page?: number; pageSize?: number }
 
-export function resetHrPayrollStore(): void {
-  payrollPeriodsStore = createInitialPayrollPeriods()
-  nextAdjustmentsStore = []
-  payslipDisputesStore = createInitialPayslipDisputes()
-}
+type RawRecord = Record<string, unknown>
 
-function findPeriod(periodKey: string): PayrollPeriodRecord {
-  const found = payrollPeriodsStore.find((item) => item.periodKey === periodKey)
-  if (found) return found
-  return payrollPeriodsStore[0]
-}
-
-function recalcRowNetPay(row: PayrollEmployeeRow): PayrollEmployeeRow {
-  const baseSalary = row.standardHours * row.hourlyRate
-  const overtimeAmount = Math.round(row.overtimeHours * row.hourlyRate * 1.5)
-  const netPay =
-    baseSalary +
-    overtimeAmount +
-    row.bonus +
-    row.allowance -
-    row.deduction -
-    row.mandatoryContribution -
-    row.taxAmount
-  return {
-    ...row,
-    baseSalary,
-    overtimeAmount,
-    netPay,
+function mapPeriodStatus(value: unknown): PayrollPeriodStatus {
+  const normalized = String(value ?? '').trim().toUpperCase()
+  switch (normalized) {
+    case 'APPROVED_UNPAID':
+      return 'approved_unpaid'
+    case 'PARTIALLY_PAID':
+      return 'partially_paid'
+    case 'SETTLED':
+      return 'settled'
+    case 'DRAFT':
+    default:
+      return 'draft'
   }
 }
 
-function formatCurrentTimestamp(): string {
-  return '04/10/2026 · 10:30'
+function mapPayoutStatus(value: unknown): EmployeePayoutStatus {
+  return String(value ?? '').trim().toUpperCase() === 'PAID' ? 'paid' : 'unpaid'
 }
 
-export async function listPayrollPeriod(
-  params: ListPayrollParams = {},
-): Promise<PayrollPeriodSummary> {
-  const period = findPeriod(params.periodKey || '09/2026')
-  const search = (params.search ?? '').trim().toLowerCase()
+function mapPayoutMethod(value: unknown): PayoutMethod | undefined {
+  const normalized = String(value ?? '').trim().toUpperCase()
+  if (normalized === 'BANK_TRANSFER') return 'bank_transfer'
+  if (normalized === 'CASH') return 'cash'
+  return undefined
+}
 
-  const filteredRows = period.rows.filter((row) => {
-    if (search) {
-      const matchesSearch =
-        row.fullName.toLowerCase().includes(search) ||
-        row.employeeCode.toLowerCase().includes(search) ||
-        row.roleLabel.toLowerCase().includes(search)
-      if (!matchesSearch) return false
-    }
+function mapZaloStatus(value: unknown): ZaloSendStatus {
+  const normalized = String(value ?? '').trim().toUpperCase()
+  if (normalized === 'SENT') return 'sent'
+  if (normalized === 'FAILED') return 'failed'
+  return 'unsent'
+}
 
-    if (params.statusFilter === 'draft' && period.status !== 'draft') {
-      return false
-    }
-    if (params.statusFilter === 'approved_unpaid' && period.status === 'draft') {
-      return false
-    }
+function mapDisputeCategory(value: unknown): PayslipDisputeCategory {
+  const normalized = String(value ?? '').trim().toUpperCase()
+  switch (normalized) {
+    case 'BASE_SALARY':
+      return 'base_salary'
+    case 'OVERTIME':
+      return 'overtime'
+    case 'BONUS':
+      return 'bonus'
+    case 'DEDUCTION':
+      return 'deduction'
+    case 'ALLOWANCE':
+    default:
+      return 'allowance'
+  }
+}
 
-    if (params.payoutFilter === 'paid' && row.payoutStatus !== 'paid') {
-      return false
-    }
-    if (params.payoutFilter === 'unpaid' && row.payoutStatus !== 'unpaid') {
-      return false
-    }
-    if (
-      params.payoutFilter === 'partial' &&
-      period.status !== 'partially_paid'
-    ) {
-      return false
-    }
+function mapDisputeStatus(value: unknown): PayslipDisputeStatus {
+  const normalized = String(value ?? '').trim().toUpperCase()
+  if (normalized === 'EXPLAINED') return 'explained'
+  if (
+    normalized === 'APPROVED_NEXT_PERIOD_ADJUSTMENT' ||
+    normalized === 'APPROVED_NEXT_PERIOD'
+  ) {
+    return 'approved_next_period'
+  }
+  return 'pending_response'
+}
 
-    return true
+function mapAdjustmentType(value: unknown): 'add_next_period' | 'deduct_next_period' {
+  return String(value ?? '').trim().toUpperCase() === 'DEDUCT_NEXT_PERIOD'
+    ? 'deduct_next_period'
+    : 'add_next_period'
+}
+
+function mapAdjustmentStatus(value: unknown): 'draft' | 'approved' {
+  const normalized = String(value ?? '').trim().toUpperCase()
+  return normalized === 'APPROVED' || normalized === 'APPLIED' ? 'approved' : 'draft'
+}
+
+function mapLines(items: unknown): PayrollBreakdownLine[] {
+  if (!Array.isArray(items)) return []
+  return items.map((raw) => {
+    const item = (raw ?? {}) as RawRecord
+    return {
+      label: String(item.label ?? ''),
+      amount: Number(item.amount ?? 0),
+      voucherCode: item.voucherCode ? String(item.voucherCode) : undefined,
+    }
+  })
+}
+
+export function mapPayrollPeriodListItem(raw: unknown): PayrollPeriodListItem {
+  const item = (raw ?? {}) as RawRecord
+  return {
+    periodKey: String(item.periodKey ?? ''),
+    payrollCode: String(item.payrollCode ?? ''),
+    periodRangeLabel: String(item.periodRangeLabel ?? ''),
+    status: mapPeriodStatus(item.status),
+    exists: Boolean(item.exists),
+    employeeCount: Number(item.employeeCount ?? 0),
+    totalNetPay: Number(item.totalNetPay ?? 0),
+    paidAmount: Number(item.paidAmount ?? 0),
+  }
+}
+
+export function mapPayrollAdjustment(raw: unknown): NextPeriodAdjustmentRecord {
+  const item = (raw ?? {}) as RawRecord
+  const adjustmentCode = item.adjustmentCode ? String(item.adjustmentCode) : ''
+  const proofUrl = item.proofUrl ? String(item.proofUrl) : undefined
+  return {
+    id: adjustmentCode || String(item.id ?? ''),
+    sourcePayrollCode: String(item.sourcePayrollCode ?? ''),
+    sourcePeriodKey: String(item.sourcePeriodKey ?? ''),
+    sourceVoucherRef: String(item.sourceVoucherRef ?? ''),
+    employeeId: String(item.employeeId ?? ''),
+    employeeLabel: String(item.employeeLabel ?? ''),
+    targetPeriodKey: String(item.targetPeriodKey ?? ''),
+    category: String(item.category ?? ''),
+    adjustmentType: mapAdjustmentType(item.adjustmentType),
+    amount: Number(item.amount ?? 0),
+    referenceCode: String(item.referenceCode ?? ''),
+    reason: String(item.reason ?? ''),
+    attachmentName: proofUrl ? 'Chứng từ đính kèm' : (item.attachmentName ? String(item.attachmentName) : undefined),
+    status: mapAdjustmentStatus(item.status),
+    createdAt: item.createdAt ? formatVietnamDateTime(String(item.createdAt)) : '-',
+  }
+}
+
+export function mapPayrollPeriodDetail(raw: unknown): PayrollPeriodSummary {
+  const data = (raw ?? {}) as RawRecord
+  const rawKpi = (data.kpi ?? {}) as RawRecord
+  const rawRows = Array.isArray(data.rows) ? data.rows : []
+  const rawBatches = Array.isArray(data.batches) ? data.batches : []
+  const rawHistory = Array.isArray(data.history) ? data.history : []
+  const rawPending = Array.isArray(data.pendingAdjustments) ? data.pendingAdjustments : []
+
+  const rows: PayrollEmployeeRow[] = rawRows.map((rawRow) => {
+    const row = (rawRow ?? {}) as RawRecord
+    const overtimeHours = Number(row.overtimeHours ?? 0)
+    const hourlyRate = Number(row.hourlyRate ?? 0)
+    return {
+      id: String(row.employeeId ?? row.id ?? ''),
+      entryId: row.entryId ? String(row.entryId) : undefined,
+      employeeCode: String(row.employeeCode ?? ''),
+      fullName: String(row.fullName ?? ''),
+      roleLabel: String(row.roleLabel ?? ''),
+      standardHours: Number(row.standardHours ?? 0),
+      hourlyRate,
+      baseSalary: Number(row.baseSalary ?? 0),
+      overtimeHours,
+      overtimeAmount: Number(row.overtimeAmount ?? 0),
+      overtimeFormula: row.overtimeFormula
+        ? String(row.overtimeFormula)
+        : overtimeHours > 0
+          ? `${overtimeHours} giờ × ${formatVnd(hourlyRate)} × 1,5`
+          : '0 giờ',
+      bonus: Number(row.bonus ?? 0),
+      allowance: Number(row.allowance ?? 0),
+      deduction: Number(row.deduction ?? 0),
+      mandatoryContribution: Number(row.mandatoryContribution ?? 0),
+      taxAmount: Number(row.taxAmount ?? 0),
+      netPay: Number(row.netPay ?? 0),
+      payoutStatus: mapPayoutStatus(row.payoutStatus),
+      zaloStatus: mapZaloStatus(row.zaloStatus),
+      zaloSentAt: row.zaloSentAt ? formatVietnamDateTime(String(row.zaloSentAt)) : undefined,
+      zaloErrorReason: row.zaloErrorReason ? String(row.zaloErrorReason) : undefined,
+      zaloLinked: Boolean(row.zaloLinked),
+      bankAccount: String(row.bankAccount ?? ''),
+      payoutDate: row.payoutAt
+        ? formatVietnamDate(String(row.payoutAt))
+        : row.payoutDate
+          ? String(row.payoutDate)
+          : undefined,
+      payoutMethod: mapPayoutMethod(row.payoutMethod),
+      transactionRef: row.transactionRef ? String(row.transactionRef) : undefined,
+      bonusItems: mapLines(row.bonusItems),
+      allowanceItems: mapLines(row.allowanceItems),
+      deductionItems: mapLines(row.deductionItems),
+      contributionNote: String(row.contributionNote ?? ''),
+      cashVarianceReport: row.cashVarianceReport as PayrollEmployeeRow['cashVarianceReport'],
+    }
   })
 
-  const totalNetPay = period.rows.reduce((sum, r) => sum + r.netPay, 0)
-  const paidAmount = period.rows
-    .filter((r) => r.payoutStatus === 'paid')
-    .reduce((sum, r) => sum + r.netPay, 0)
-  const remainingAmount = Math.max(0, totalNetPay - paidAmount)
-  const approvedOtHours = period.rows.reduce((sum, r) => sum + r.overtimeHours, 0)
-  const zaloSentCount = period.rows.filter((r) => r.zaloStatus === 'sent').length
-  const zaloUnsentCount = period.rows.filter(
-    (r) => r.zaloStatus === 'unsent',
-  ).length
-  const zaloFailedCount = period.rows.filter(
-    (r) => r.zaloStatus === 'failed',
-  ).length
+  const batches: PayrollBatchPayoutRecord[] = rawBatches.map((rawBatch) => {
+    const batch = (rawBatch ?? {}) as RawRecord
+    const proofUrl = batch.proofUrl ? String(batch.proofUrl) : undefined
+    return {
+      id: String(batch.id ?? ''),
+      batchNumber: Number(batch.batchNumber ?? 0),
+      method: mapPayoutMethod(batch.method) ?? 'bank_transfer',
+      transactionRef: String(batch.transactionRef ?? ''),
+      payoutDate: batch.payoutAt
+        ? formatVietnamDate(String(batch.payoutAt))
+        : String(batch.payoutDate ?? '-'),
+      amount: Number(batch.amount ?? 0),
+      employeeNames: Array.isArray(batch.employeeNames) ? batch.employeeNames.map(String) : [],
+      note: batch.note ? String(batch.note) : undefined,
+      attachmentName: proofUrl ? 'Chứng từ chi trả' : (batch.attachmentName ? String(batch.attachmentName) : undefined),
+      confirmedBy: String(batch.confirmedByName ?? batch.confirmedBy ?? ''),
+    }
+  })
+
+  const history: PayrollAuditHistoryItem[] = rawHistory.map((rawItem) => {
+    const item = (rawItem ?? {}) as RawRecord
+    return {
+      id: String(item.id ?? ''),
+      timestamp: item.occurredAt
+        ? formatVietnamDateTime(String(item.occurredAt))
+        : String(item.timestamp ?? '-'),
+      actor: String(item.actorName ?? item.actor ?? ''),
+      event: String(item.event ?? ''),
+      result: String(item.result ?? ''),
+    }
+  })
 
   return {
-    periodKey: period.periodKey,
-    payrollCode: period.payrollCode,
-    periodRangeLabel: period.periodRangeLabel,
-    attendanceSourceCode: period.attendanceSourceCode,
-    status: period.status,
-    approvedDate: period.approvedDate,
-    approvedAt: period.approvedAt,
-    approvedBy: period.approvedBy,
-    payoutDate: period.payoutDate,
-    payoutMethod: period.payoutMethod,
-    transactionRef: period.transactionRef,
-    payoutConfirmedBy: period.payoutConfirmedBy,
+    periodKey: String(data.periodKey ?? ''),
+    payrollCode: String(data.payrollCode ?? ''),
+    periodRangeLabel: String(data.periodRangeLabel ?? ''),
+    attendanceSourceCode: String(data.attendanceSourceCode ?? ''),
+    status: mapPeriodStatus(data.status),
+    exists: typeof data.exists === 'boolean' ? data.exists : undefined,
+    approvedAt: data.approvedAt ? formatVietnamDateTime(String(data.approvedAt)) : undefined,
+    approvedDate: data.approvedAt
+      ? formatVietnamDate(String(data.approvedAt))
+      : data.approvedDate
+        ? String(data.approvedDate)
+        : undefined,
+    approvedBy: data.approvedByName
+      ? String(data.approvedByName)
+      : data.approvedBy
+        ? String(data.approvedBy)
+        : undefined,
+    payoutDate: data.payoutAt
+      ? formatVietnamDate(String(data.payoutAt))
+      : data.payoutDate
+        ? String(data.payoutDate)
+        : undefined,
+    payoutMethod: mapPayoutMethod(data.payoutMethod),
+    transactionRef: data.transactionRef ? String(data.transactionRef) : undefined,
+    payoutConfirmedBy: data.payoutConfirmedByName
+      ? String(data.payoutConfirmedByName)
+      : data.payoutConfirmedBy
+        ? String(data.payoutConfirmedBy)
+        : undefined,
     kpi: {
-      totalNetPay,
-      paidAmount,
-      remainingAmount,
-      approvedOtHours,
-      zaloSentCount,
-      totalEmployees: period.rows.length,
-      zaloUnsentCount,
-      zaloFailedCount,
+      totalNetPay: Number(rawKpi.totalNetPay ?? 0),
+      paidAmount: Number(rawKpi.paidAmount ?? 0),
+      remainingAmount: Number(rawKpi.remainingAmount ?? 0),
+      approvedOtHours: Number(rawKpi.approvedOtHours ?? 0),
+      zaloSentCount: Number(rawKpi.zaloSentCount ?? 0),
+      totalEmployees: Number(rawKpi.totalEmployees ?? 0),
+      zaloUnsentCount: Number(rawKpi.zaloUnsentCount ?? 0),
+      zaloFailedCount: Number(rawKpi.zaloFailedCount ?? 0),
     },
-    rows: filteredRows.map((row) => ({ ...row })),
-    allRowsCount: period.rows.length,
-    paidRowsCount: period.rows.filter((r) => r.payoutStatus === 'paid').length,
-    batches: [...period.batches],
-    history: [...period.history],
+    rows,
+    allRowsCount: Number(data.allRowsCount ?? rows.length),
+    paidRowsCount: Number(data.paidRowsCount ?? 0),
+    batches,
+    history,
+    pendingAdjustments: rawPending.map(mapPayrollAdjustment),
   }
 }
 
-export async function initializePayrollFromAttendance(
-  periodKey: string,
-  actorName = 'Nguyễn Minh Anh',
-): Promise<PayrollPeriodSummary> {
-  const period = findPeriod(periodKey)
-  if (period.status !== 'draft') {
-    throw new Error('Chỉ có thể khởi tạo lại bảng lương khi đang ở trạng thái Bản nháp.')
+export function mapPayslipDispute(raw: unknown): PayslipDisputeRecord {
+  const item = (raw ?? {}) as RawRecord
+  const category = mapDisputeCategory(item.category)
+  const status = mapDisputeStatus(item.status)
+  const proofUrl = item.proofUrl ? String(item.proofUrl) : undefined
+  return {
+    id: String(item.id ?? ''),
+    disputeCode: item.disputeCode ? String(item.disputeCode) : undefined,
+    payslipCode: String(item.payslipCode ?? ''),
+    employeeId: item.employeeId ? String(item.employeeId) : undefined,
+    employeeName: item.employeeName ? String(item.employeeName) : undefined,
+    category,
+    categoryLabel: item.categoryLabel ? String(item.categoryLabel) : PAYSLIP_DISPUTE_CATEGORY_LABELS[category],
+    status,
+    statusLabel: item.statusLabel ? String(item.statusLabel) : PAYSLIP_DISPUTE_STATUS_LABELS[status],
+    content: String(item.content ?? ''),
+    proofUrl,
+    attachmentName: proofUrl ? 'Ảnh minh chứng' : (item.attachmentName ? String(item.attachmentName) : undefined),
+    attachmentSize: item.attachmentSize ? String(item.attachmentSize) : undefined,
+    submittedAt: item.submittedAt ? formatVietnamDateTime(String(item.submittedAt)) : '-',
+    adminName: item.adminName ? String(item.adminName) : undefined,
+    adminRole: item.adminRole ? String(item.adminRole) : undefined,
+    respondedAt: item.respondedAt ? formatVietnamDateTime(String(item.respondedAt)) : undefined,
+    adminResponse: item.adminResponse ? String(item.adminResponse) : undefined,
+    calculationNote: item.calculationNote ? String(item.calculationNote) : undefined,
+    adjustmentNote: item.adjustmentNote ? String(item.adjustmentNote) : undefined,
+    linkedAdjustmentCode: item.linkedAdjustmentCode ? String(item.linkedAdjustmentCode) : undefined,
+    ownedByActor: typeof item.ownedByActor === 'boolean' ? item.ownedByActor : undefined,
   }
-
-  period.history = [
-    ...period.history,
-    {
-      id: `HIS-INIT-${Date.now()}`,
-      timestamp: formatCurrentTimestamp(),
-      actor: `${actorName} · Admin`,
-      event: `Đồng bộ lại từ ${period.attendanceSourceCode}`,
-      result: `${period.rows.length} nhân viên · ${formatVnd(
-        period.rows.reduce((s, r) => s + r.netPay, 0),
-      )}`,
-    },
-  ]
-
-  return listPayrollPeriod({ periodKey: period.periodKey })
 }
 
-export async function adjustDraftPayrollEmployee(
-  input: ManualAdjustInput,
-  actorName = 'Nguyễn Minh Anh',
-): Promise<PayrollPeriodSummary> {
-  const period = findPeriod(input.periodKey)
-  if (period.status !== 'draft') {
-    throw new Error('Chỉ có thể điều chỉnh thủ công khi bảng lương đang ở Bản nháp.')
-  }
+export function mapPayslipDetail(raw: unknown): PayslipDetailDto {
+  const data = (raw ?? {}) as RawRecord
+  const hasPayslip = typeof data.hasPayslip === 'boolean'
+    ? data.hasPayslip
+    : Boolean(data.entryId || data.payslipCode)
+  const entryId = data.entryId ? String(data.entryId) : null
+  const netPay = Number(data.netPay ?? 0)
+  const taxAmount = Number(data.taxAmount ?? 0)
+  const approvedBy = String(data.approvedByName ?? data.approvedBy ?? '') || '-'
+  const employeeCode = String(data.employeeCode ?? '')
+  const employeeName = String(data.employeeName ?? '')
 
-  let updatedName = ''
-  period.rows = period.rows.map((row) => {
-    if (row.id !== input.employeeId) return row
-    updatedName = row.fullName
-    return recalcRowNetPay({
-      ...row,
-      bonus: Math.max(0, input.bonus),
-      allowance: Math.max(0, input.allowance),
-      deduction: Math.max(0, input.deduction),
-      bonusItems: [{ label: input.note?.trim() || 'Điều chỉnh thưởng', amount: Math.max(0, input.bonus) }],
-    })
-  })
-
-  if (updatedName) {
-    period.history = [
-      ...period.history,
-      {
-        id: `HIS-ADJ-${Date.now()}`,
-        timestamp: formatCurrentTimestamp(),
-        actor: `${actorName} · Admin`,
-        event: `Điều chỉnh thủ công · ${updatedName}`,
-        result: input.note?.trim() || 'Cập nhật khoản mục bản nháp',
-      },
-    ]
-  }
-
-  return listPayrollPeriod({ periodKey: period.periodKey })
-}
-
-export async function approveAndLockPayroll(
-  periodKey: string,
-  actorName = 'Nguyễn Minh Anh',
-): Promise<PayrollPeriodSummary> {
-  const period = findPeriod(periodKey)
-  if (period.status !== 'draft') {
-    throw new Error('Bảng lương đã được duyệt trước đó.')
-  }
-
-  period.status = 'approved_unpaid'
-  period.approvedDate = '02/11/2026'
-  period.approvedAt = '02/11/2026 · 14:20'
-  period.approvedBy = actorName
-  period.history = [
-    ...period.history,
-    {
-      id: `HIS-LOCK-${Date.now()}`,
-      timestamp: formatCurrentTimestamp(),
-      actor: `${actorName} · Admin`,
-      event: 'Duyệt & Chốt bảng lương',
-      result: 'Đã khóa · Chi phí được phê duyệt',
-    },
-  ]
-
-  return listPayrollPeriod({ periodKey: period.periodKey })
-}
-
-export async function unlockPayrollPeriod(
-  periodKey: string,
-  reason: string,
-  actorName = 'Nguyễn Minh Anh',
-): Promise<PayrollPeriodSummary> {
-  const trimmedReason = reason.trim()
-  if (!trimmedReason) {
-    throw new Error('Vui lòng nhập lý do mở khóa bảng lương.')
-  }
-
-  const period = findPeriod(periodKey)
-  const hasPaidAny = period.rows.some((r) => r.payoutStatus === 'paid')
-  if (period.status === 'settled' || period.status === 'partially_paid' || hasPaidAny) {
-    throw new Error('Không thể mở khóa bảng lương đã phát sinh khoản chi.')
-  }
-
-  period.status = 'draft'
-  period.approvedDate = undefined
-  period.approvedAt = undefined
-  period.approvedBy = undefined
-  period.history = [
-    ...period.history,
-    {
-      id: `HIS-UNLOCK-${Date.now()}`,
-      timestamp: formatCurrentTimestamp(),
-      actor: `${actorName} · Admin`,
-      event: 'Mở khóa bảng lương',
-      result: trimmedReason,
-    },
-  ]
-
-  return listPayrollPeriod({ periodKey: period.periodKey })
-}
-
-export async function executeBatchPayout(
-  input: BatchPayoutInput,
-): Promise<PayrollPeriodSummary> {
-  const period = findPeriod(input.periodKey)
-  if (period.status === 'draft') {
-    throw new Error('Vui lòng duyệt & chốt bảng lương trước khi chi trả.')
-  }
-  if (input.employeeIds.length === 0) {
-    throw new Error('Vui lòng chọn ít nhất một nhân viên chưa thanh toán.')
-  }
-  if (!input.payoutDate.trim()) {
-    throw new Error('Vui lòng chọn ngày chi trả.')
-  }
-  if (input.method === 'bank_transfer' && !input.transactionRef.trim()) {
-    throw new Error('Vui lòng nhập mã giao dịch ngân hàng.')
-  }
-
-  const targetIds = new Set(input.employeeIds)
-  const batchNumber = period.batches.length + 1
-  const resolvedRef =
-    input.method === 'bank_transfer'
-      ? input.transactionRef.trim()
-      : input.transactionRef.trim() || `PC-20261003-00${batchNumber + 7}`
-
-  let batchAmount = 0
-  const paidNames: string[] = []
-
-  period.rows = period.rows.map((row) => {
-    if (!targetIds.has(row.id) || row.payoutStatus === 'paid') {
-      return row
+  const rawPeriods = Array.isArray(data.availablePeriods) ? data.availablePeriods : []
+  const availablePeriods: PayslipPeriodOption[] = rawPeriods.map((rawPeriod) => {
+    const p = (rawPeriod ?? {}) as RawRecord
+    if (typeof p.paid === 'boolean') {
+      const status = p.paid ? 'paid' : 'pending_payout'
+      return {
+        periodKey: String(p.periodKey ?? ''),
+        status,
+        statusShortLabel: p.paid ? 'Đã thanh toán' : 'Chờ thanh toán',
+      }
     }
-    batchAmount += row.netPay
-    paidNames.push(row.fullName.split(' ').slice(-1)[0] || row.fullName)
+    const status = p.status === 'paid' ? 'paid' : 'pending_payout'
     return {
-      ...row,
-      payoutStatus: 'paid',
-      payoutDate: input.payoutDate.trim(),
-      payoutMethod: input.method,
-      transactionRef: resolvedRef,
+      periodKey: String(p.periodKey ?? ''),
+      status,
+      statusShortLabel: String(p.statusShortLabel ?? (status === 'paid' ? 'Đã thanh toán' : 'Chờ thanh toán')),
     }
   })
 
-  if (paidNames.length === 0) {
-    throw new Error('Các nhân viên được chọn đã được thanh toán.')
-  }
-
-  const allPaid = period.rows.every((r) => r.payoutStatus === 'paid')
-  period.status = allPaid ? 'settled' : 'partially_paid'
-  period.payoutDate = input.payoutDate.trim()
-  period.payoutMethod = input.method
-  period.transactionRef = resolvedRef
-  period.payoutConfirmedBy = input.actorName
-
-  period.batches = [
-    ...period.batches,
-    {
-      id: `BATCH-${period.periodKey}-${batchNumber}`,
-      batchNumber,
-      method: input.method,
-      transactionRef: resolvedRef,
-      payoutDate: input.payoutDate.trim(),
-      amount: batchAmount,
-      employeeNames: paidNames,
-      note: input.note?.trim(),
-      attachmentName: input.attachmentName,
-      confirmedBy: input.actorName,
-    },
-  ]
-
-  period.history = [
-    ...period.history,
-    {
-      id: `HIS-PAY-${Date.now()}`,
-      timestamp: formatCurrentTimestamp(),
-      actor: `${input.actorName} · Admin`,
-      event:
-        input.method === 'bank_transfer'
-          ? `Xác nhận chuyển khoản đợt ${batchNumber}`
-          : `Chi tiền mặt đợt ${batchNumber}`,
-      result: `${resolvedRef} · ${formatVnd(batchAmount)}`,
-    },
-  ]
-
-  return listPayrollPeriod({ periodKey: period.periodKey })
-}
-
-export async function sendPayrollZaloPayslips(
-  periodKey: string,
-  employeeIds: string[],
-  actorName = 'Nguyễn Minh Anh',
-): Promise<PayrollPeriodSummary> {
-  const period = findPeriod(periodKey)
-  if (period.status === 'draft') {
-    throw new Error('Chỉ được gửi phiếu lương sau khi Admin duyệt bảng lương.')
-  }
-
-  const targetIds = new Set(employeeIds)
-  let sentNow = 0
-  period.rows = period.rows.map((row) => {
-    if (!targetIds.has(row.id)) return row
-    sentNow += 1
+  const rawAttendance = Array.isArray(data.attendanceDays) ? data.attendanceDays : []
+  const attendanceDays: PayslipAttendanceDay[] = rawAttendance.map((rawDay) => {
+    const d = (rawDay ?? {}) as RawRecord
+    const checkInOut = d.checkInOut
+      ? String(d.checkInOut)
+      : d.checkInAt || d.checkOutAt
+        ? `${d.checkInAt ? formatVietnamTime(String(d.checkInAt)) : '--:--'} - ${d.checkOutAt ? formatVietnamTime(String(d.checkOutAt)) : '--:--'}`
+        : d.shiftNo
+          ? `Ca ${String(d.shiftNo)} · Chưa chấm công`
+          : '-'
     return {
-      ...row,
-      zaloStatus: 'sent',
-      zaloSentAt: '03/10/2026, 09:42',
-      zaloErrorReason: undefined,
+      date: d.workDate ? formatIsoDateOnly(String(d.workDate)) : String(d.date ?? '-'),
+      checkInOut,
+      standardHours: Number(d.standardHours ?? 0),
+      otHours: Number(d.overtimeHours ?? d.otHours ?? 0),
     }
   })
 
-  period.history = [
-    ...period.history,
-    {
-      id: `HIS-ZALO-${Date.now()}`,
-      timestamp: formatCurrentTimestamp(),
-      actor: `${actorName} · Admin`,
-      event: 'Gửi phiếu lương qua Zalo',
-      result: `${sentNow} phiếu đã gửi thành công`,
-    },
-  ]
+  const rawOvertime = Array.isArray(data.overtimeEntries) ? data.overtimeEntries : []
+  const overtimeEntries: PayslipOvertimeEntry[] = rawOvertime.map((rawOt) => {
+    const ot = (rawOt ?? {}) as RawRecord
+    const timeRange = ot.timeRange
+      ? String(ot.timeRange)
+      : ot.startAt || ot.endAt
+        ? `${ot.startAt ? formatVietnamTime(String(ot.startAt)) : '--:--'} - ${ot.endAt ? formatVietnamTime(String(ot.endAt)) : '--:--'}`
+        : '-'
+    return {
+      date: ot.workDate ? formatIsoDateOnly(String(ot.workDate)) : String(ot.date ?? '-'),
+      timeRange,
+      hours: Number(ot.hours ?? 0),
+      amount: Number(ot.amount ?? 0),
+    }
+  })
 
-  return listPayrollPeriod({ periodKey: period.periodKey })
+  let advanceVoucher: PayslipAdvanceVoucher | undefined
+  let advanceVoucherCode = data.advanceVoucherCode ? String(data.advanceVoucherCode) : ''
+  if (Array.isArray(data.advanceVouchers) && data.advanceVouchers.length > 0) {
+    const first = (data.advanceVouchers[0] ?? {}) as RawRecord
+    const code = String(first.voucherCode ?? '')
+    advanceVoucherCode = advanceVoucherCode || code
+    advanceVoucher = {
+      voucherCode: code,
+      employeeLabel: `${employeeName}${employeeCode ? ` · ${employeeCode}` : ''}`,
+      amount: Number(first.amount ?? 0),
+      receivedDate: first.createdAt ? formatVietnamDate(String(first.createdAt)) : '-',
+      payoutMethod: 'Khấu trừ lương kỳ',
+      approverLabel: approvedBy,
+      content: String(first.content ?? ''),
+      attachmentName: '-',
+      footnote: '',
+    }
+  } else if (data.advanceVoucher && typeof data.advanceVoucher === 'object') {
+    advanceVoucher = data.advanceVoucher as PayslipAdvanceVoucher
+    advanceVoucherCode = advanceVoucherCode || advanceVoucher.voucherCode || ''
+  }
+
+  const rawDisputes = Array.isArray(data.disputes) ? data.disputes : []
+  const payoutStatus: 'paid' | 'pending_payout' = typeof data.paid === 'boolean'
+    ? (data.paid ? 'paid' : 'pending_payout')
+    : data.payoutStatus === 'paid'
+      ? 'paid'
+      : 'pending_payout'
+
+  return {
+    hasPayslip,
+    entryId,
+    payslipCode: String(data.payslipCode ?? ''),
+    periodKey: String(data.periodKey ?? ''),
+    periodRange: String(data.periodRange ?? ''),
+    payrollCode: String(data.payrollCode ?? ''),
+    attendanceSourceCode: String(data.attendanceSourceCode ?? ''),
+    payrollStatus: mapPeriodStatus(data.payrollStatus),
+    payoutStatus,
+    payoutDate: data.payoutAt
+      ? formatVietnamDate(String(data.payoutAt))
+      : data.payoutDate
+        ? String(data.payoutDate)
+        : undefined,
+    expectedPayoutDate: data.expectedPayoutDate ? String(data.expectedPayoutDate) : undefined,
+    approvedBy,
+    approvedAt: data.approvedAt ? formatVietnamDateTime(String(data.approvedAt)) : '-',
+    employeeId: String(data.employeeId ?? ''),
+    employeeCode,
+    employeeName,
+    employeeRoleLabel: String(data.employeeRoleLabel ?? ''),
+    storeName: String(data.storeName ?? ''),
+    bankAccount: String(data.bankAccount ?? ''),
+    transactionRef: data.transactionRef ? String(data.transactionRef) : undefined,
+    standardHours: Number(data.standardHours ?? 0),
+    hourlyRate: Number(data.hourlyRate ?? 0),
+    baseSalary: Number(data.baseSalary ?? 0),
+    overtimeHours: Number(data.overtimeHours ?? 0),
+    overtimeAmount: Number(data.overtimeAmount ?? 0),
+    bonus: Number(data.bonus ?? 0),
+    bonusNote: String(data.bonusNote ?? ''),
+    allowance: Number(data.allowance ?? 0),
+    allowanceNote: String(data.allowanceNote ?? ''),
+    mandatoryContribution: Number(data.mandatoryContribution ?? 0),
+    mandatoryContributionNote: String(data.mandatoryContributionNote ?? ''),
+    taxAmount,
+    taxNote: data.taxNote
+      ? String(data.taxNote)
+      : taxAmount > 0
+        ? 'Đã khấu trừ theo quy định'
+        : 'Không phát sinh',
+    deduction: Number(data.deduction ?? 0),
+    advanceVoucherCode,
+    totalIncome: Number(data.totalIncome ?? 0),
+    totalDeduction: Number(data.totalDeduction ?? 0),
+    netPay,
+    netPayInWords: data.netPayInWords ? String(data.netPayInWords) : numberToVietnameseWords(netPay),
+    zaloStatus: mapZaloStatus(data.zaloStatus),
+    zaloSentAt: data.zaloSentAt ? formatVietnamDateTime(String(data.zaloSentAt)) : undefined,
+    zaloLinked: Boolean(data.zaloLinked),
+    availablePeriods,
+    attendanceDays,
+    overtimeEntries,
+    advanceVoucher,
+    disputes: rawDisputes.map(mapPayslipDispute),
+  }
 }
 
-export async function listNextPeriodAdjustments(): Promise<
-  NextPeriodAdjustmentRecord[]
-> {
-  return [...nextAdjustmentsStore]
+export function mapPayrollBreakdown(raw: unknown): PayrollBreakdownData {
+  const data = (raw ?? {}) as RawRecord
+  const rawVariances = Array.isArray(data.cashVariances) ? data.cashVariances : []
+  const cashVariances: PayrollCashVarianceItem[] = rawVariances.map((rawVar) => {
+    const v = (rawVar ?? {}) as RawRecord
+    return {
+      cashSessionId: String(v.cashSessionId ?? ''),
+      voucherCode: String(v.voucherCode ?? ''),
+      openedAt: v.openedAt ? formatVietnamDateTime(String(v.openedAt)) : '-',
+      closedAt: v.closedAt ? formatVietnamDateTime(String(v.closedAt)) : undefined,
+      expectedAmount: v.expectedAmount != null ? Number(v.expectedAmount) : undefined,
+      countedAmount: v.countedAmount != null ? Number(v.countedAmount) : undefined,
+      difference: Number(v.difference ?? 0),
+      varianceNote: v.varianceNote ? String(v.varianceNote) : undefined,
+      approverName: v.approverName ? String(v.approverName) : undefined,
+    }
+  })
+
+  return {
+    entryId: String(data.entryId ?? ''),
+    employeeId: String(data.employeeId ?? ''),
+    bonusItems: mapLines(data.bonusItems),
+    allowanceItems: mapLines(data.allowanceItems),
+    deductionItems: mapLines(data.deductionItems),
+    cashVariances,
+  }
 }
 
-export async function createNextPeriodAdjustment(
-  input: CreateNextAdjustmentInput,
-): Promise<NextPeriodAdjustmentRecord> {
-  if (!input.reason.trim()) {
-    throw new Error('Vui lòng nhập lý do, căn cứ và phạm vi điều chỉnh.')
-  }
-  if (!Number.isFinite(input.amount) || input.amount <= 0) {
-    throw new Error('Số tiền điều chỉnh phải lớn hơn 0.')
-  }
+export async function listPayrollPeriods(): Promise<PayrollPeriodListItem[]> {
+  const { data } = await privateClient.get<unknown[]>('/hr/payroll/periods')
+  return Array.isArray(data) ? data.map(mapPayrollPeriodListItem) : []
+}
 
-  const period = findPeriod(input.sourcePeriodKey || '09/2026')
-  const emp =
-    period.rows.find((r) => r.id === input.employeeId) ?? period.rows[0]
+export async function listPayrollPeriod(params: ListPayrollParams = {}): Promise<PayrollPeriodSummary> {
+  const { data } = await privateClient.get<unknown>(`/hr/payroll/periods/${encodeURIComponent(params.periodKey ?? '')}`, {
+    params: {
+      page: 1,
+      pageSize: 200,
+      search: params.search || undefined,
+      status: params.statusFilter ? params.statusFilter.toUpperCase() : undefined,
+      payoutFilter: params.payoutFilter || undefined,
+    } satisfies QueryParams,
+  })
+  return mapPayrollPeriodDetail(data)
+}
 
-  const record: NextPeriodAdjustmentRecord = {
-    id: `ADJ-202610-00${nextAdjustmentsStore.length + 1}`,
-    sourcePayrollCode: input.sourcePayrollCode || period.payrollCode,
-    sourcePeriodKey: input.sourcePeriodKey || period.periodKey,
-    sourceVoucherRef:
-      input.sourceVoucherRef || period.transactionRef || 'BANK-PAY-20261003-001',
-    employeeId: emp.id,
-    employeeLabel: `${emp.fullName} · ${emp.employeeCode}`,
+export async function initializePayrollFromAttendance(periodKey: string, _actorName?: string): Promise<PayrollPeriodSummary> {
+  const { data } = await privateClient.post<unknown>(`/hr/payroll/periods/${encodeURIComponent(periodKey)}/initialize`)
+  return mapPayrollPeriodDetail(data)
+}
+
+export async function adjustDraftPayrollEmployee(input: ManualAdjustInput, _actorName?: string): Promise<PayrollPeriodSummary> {
+  const { data } = await privateClient.patch<unknown>(
+    `/hr/payroll/periods/${encodeURIComponent(input.periodKey)}/employees/${input.employeeId}`,
+    { bonus: input.bonus, allowance: input.allowance, deduction: input.deduction, note: input.note },
+  )
+  return mapPayrollPeriodDetail(data)
+}
+
+export async function approveAndLockPayroll(periodKey: string, _actorName?: string): Promise<PayrollPeriodSummary> {
+  const { data } = await privateClient.post<unknown>(`/hr/payroll/periods/${encodeURIComponent(periodKey)}/approve`)
+  return mapPayrollPeriodDetail(data)
+}
+
+export async function unlockPayrollPeriod(periodKey: string, reason: string, _actorName?: string): Promise<PayrollPeriodSummary> {
+  const { data } = await privateClient.post<unknown>(`/hr/payroll/periods/${encodeURIComponent(periodKey)}/unlock`, { reason })
+  return mapPayrollPeriodDetail(data)
+}
+
+export async function executeBatchPayout(input: BatchPayoutInput): Promise<PayrollPeriodSummary> {
+  const transactionRef =
+    input.method === 'cash' ? undefined : input.transactionRef.trim() || undefined
+  const { data } = await privateClient.post<unknown>(`/hr/payroll/periods/${encodeURIComponent(input.periodKey)}/payouts`, {
+    employeeIds: input.employeeIds,
+    method: input.method.toUpperCase(),
+    transactionRef,
+    payoutDate: toIsoDateOnly(input.payoutDate),
+    note: input.note,
+    proofUpload: input.proofUpload ?? undefined,
+  })
+  return mapPayrollPeriodDetail(data)
+}
+
+export async function sendPayrollZaloPayslips(periodKey: string, employeeIds: string[], _actorName?: string): Promise<unknown> {
+  const { data } = await privateClient.post<unknown>(`/hr/payroll/periods/${encodeURIComponent(periodKey)}/send-zalo`, { employeeIds })
+  return data
+}
+
+export async function listNextPeriodAdjustments(periodKey?: string): Promise<NextPeriodAdjustmentRecord[]> {
+  const { data } = await privateClient.get<unknown[]>('/hr/payroll/adjustments', { params: { periodKey } })
+  return Array.isArray(data) ? data.map(mapPayrollAdjustment) : []
+}
+
+export async function createNextPeriodAdjustment(input: CreateNextAdjustmentInput): Promise<NextPeriodAdjustmentRecord> {
+  const { data } = await privateClient.post<unknown>('/hr/payroll/adjustments', {
+    employeeId: input.employeeId,
+    sourcePeriodKey: input.sourcePeriodKey || undefined,
+    sourceVoucherRef: input.sourceVoucherRef || undefined,
     targetPeriodKey: input.targetPeriodKey,
     category: input.category,
-    adjustmentType: input.adjustmentType,
-    amount: Math.round(input.amount),
-    referenceCode: input.referenceCode?.trim() || '',
-    reason: input.reason.trim(),
-    attachmentName: input.attachmentName,
-    status: input.mode,
-    createdAt: formatCurrentTimestamp(),
-  }
-
-  nextAdjustmentsStore = [record, ...nextAdjustmentsStore]
-  return record
+    adjustmentType: input.adjustmentType.toUpperCase(),
+    amount: input.amount,
+    referenceCode: input.referenceCode || undefined,
+    reason: input.reason,
+    mode: input.mode.toUpperCase(),
+    proofUpload: input.proofUpload ?? undefined,
+  })
+  return mapPayrollAdjustment(data)
 }
 
-export async function getPayslipDetail(
-  employeeId = 'NV-0002',
-  periodKey = '09/2026',
-): Promise<PayslipDetailDto> {
-  const normalizedPeriod =
-    PAYSLIP_PERIOD_OPTIONS.find((p) => p.periodKey === periodKey)?.periodKey ??
-    '09/2026'
+export async function getPayrollBreakdown(periodKey: string, employeeId: string): Promise<PayrollBreakdownData> {
+  const { data } = await privateClient.get<unknown>(`/hr/payroll/periods/${encodeURIComponent(periodKey)}/employees/${employeeId}/breakdown`)
+  return mapPayrollBreakdown(data)
+}
 
-  const payrollPeriod =
-    payrollPeriodsStore.find((p) => p.periodKey === normalizedPeriod) ??
-    payrollPeriodsStore[0]
+export async function getMyPayslipDetail(periodKey?: string): Promise<PayslipDetailDto> {
+  const { data } = await privateClient.get<unknown>('/hr/payslips/me', {
+    params: { periodKey: periodKey || undefined },
+  })
+  return mapPayslipDetail(data)
+}
 
-  const row = payrollPeriod.rows.find((r) => r.id === employeeId)
-  if (!row) {
-    throw new Error('Chưa có mã nhân viên tương ứng để tải phiếu lương cá nhân. Vui lòng đồng bộ hồ sơ nhân sự với tài khoản đăng nhập.')
-  }
+export async function getEmployeePayslipDetail(employeeId: string, periodKey?: string): Promise<PayslipDetailDto> {
+  const { data } = await privateClient.get<unknown>(`/hr/payslips/${employeeId}`, {
+    params: { periodKey: periodKey || undefined },
+  })
+  return mapPayslipDetail(data)
+}
 
-  const isPendingPayout = normalizedPeriod === '10/2026'
-  const totalIncome =
-    row.baseSalary + row.overtimeAmount + row.bonus + row.allowance
-  const totalDeduction =
-    row.deduction + row.mandatoryContribution + row.taxAmount
+export async function getPayslipDetail(employeeId: string, periodKey: string): Promise<PayslipDetailDto> {
+  return getEmployeePayslipDetail(employeeId, periodKey)
+}
 
-  const periodRangeMap: Record<string, string> = {
-    '10/2026': '01/10–31/10/2026',
-    '09/2026': '01/09–30/09/2026',
-    '08/2026': '01/08–31/08/2026',
-    '07/2026': '01/07–31/07/2026',
-  }
+export async function createPayslipDispute(input: CreatePayslipDisputeInput): Promise<PayslipDisputeRecord> {
+  const targetEntryId = input.entryId || input.employeeId
+  const { data } = await privateClient.post<unknown>(`/hr/payslips/${targetEntryId}/disputes`, {
+    category: input.category.toUpperCase(),
+    content: input.content,
+    proofUpload: input.proofUpload ?? undefined,
+  })
+  return mapPayslipDispute(data)
+}
 
-  const netPayWordsMap: Record<number, string> = {
-    5380000: 'Năm triệu ba trăm tám mươi nghìn đồng.',
-    6365000: 'Sáu triệu ba trăm sáu mươi lăm nghìn đồng.',
-    13820000: 'Mười ba triệu tám trăm hai mươi nghìn đồng.',
-    5285000: 'Năm triệu hai trăm tám mươi lăm nghìn đồng.',
-  }
+export async function respondPayslipDispute(disputeId: string, input: Record<string, unknown>): Promise<PayslipDisputeRecord> {
+  const { data } = await privateClient.post<unknown>(`/hr/payslips/disputes/${disputeId}/respond`, input)
+  return mapPayslipDispute(data)
+}
 
-  const shortMonthCode = normalizedPeriod.replace('/', '')
-  const payslipCode = `PAY-${shortMonthCode.slice(2)}${shortMonthCode.slice(0, 2)}-${row.employeeCode.replace(/-/g, '')}`
-
+export async function resendSinglePayslipZalo(entryId: string, _periodKey?: string): Promise<{ sentAt?: string }> {
+  const { data } = await privateClient.post<{ sentAt?: string | null }>(`/hr/payslips/${entryId}/resend-zalo`)
   return {
-    payslipCode,
-    periodKey: normalizedPeriod,
-    periodRange: periodRangeMap[normalizedPeriod] ?? '01/09–30/09/2026',
-    payrollCode: `PAY-${shortMonthCode.slice(2)}${shortMonthCode.slice(0, 2)}`,
-    attendanceSourceCode: `ATT-${shortMonthCode.slice(2)}${shortMonthCode.slice(0, 2)}`,
-    payrollStatus: isPendingPayout ? 'approved_unpaid' : 'settled',
-    payoutStatus: isPendingPayout ? 'pending_payout' : 'paid',
-    payoutDate: isPendingPayout ? undefined : '03/10/2026',
-    expectedPayoutDate: isPendingPayout ? '03/11/2026' : '03/10/2026',
-    approvedBy: 'Nguyễn Minh Anh',
-    approvedAt: isPendingPayout ? '02/11/2026 · 14:20' : '02/10/2026 · 14:20',
-    employeeId: row.id,
-    employeeCode: row.employeeCode,
-    employeeName: row.fullName,
-    employeeRoleLabel: row.roleLabel.replace('Thu ngân · ', ''),
-    storeName: 'Nhà sách Mây · Cơ sở 01',
-    bankAccount: row.bankAccount,
-    transactionRef: isPendingPayout ? undefined : 'BANK-PAY-20261003-001',
-    standardHours: row.standardHours,
-    hourlyRate: row.hourlyRate,
-    baseSalary: row.baseSalary,
-    overtimeHours: row.overtimeHours,
-    overtimeAmount: row.overtimeAmount,
-    bonus: row.bonus,
-    bonusNote: row.bonusItems[0]?.label ?? 'Đạt mục tiêu phục vụ tháng 09',
-    allowance: row.allowance,
-    allowanceNote: 'Ăn ca / Đi lại',
-    mandatoryContribution: row.mandatoryContribution,
-    mandatoryContributionNote: 'Hồ sơ minh họa: thử việc, chưa tham gia',
-    taxAmount: row.taxAmount,
-    taxNote: '0đ · Cần đối chiếu hồ sơ thuế minh họa',
-    deduction: row.deduction,
-    advanceVoucherCode: row.deductionItems[0]?.voucherCode ?? 'ADV-0921',
-    totalIncome,
-    totalDeduction,
-    netPay: row.netPay,
-    netPayInWords:
-      netPayWordsMap[row.netPay] ?? `${formatVnd(row.netPay)}.`,
-    zaloStatus: row.zaloStatus,
-    zaloSentAt: row.zaloSentAt ?? '03/10/2026, 09:35',
-    zaloLinked: row.zaloLinked,
-    availablePeriods: PAYSLIP_PERIOD_OPTIONS,
-    attendanceDays: PHONG_ATTENDANCE_DAYS_092026,
-    overtimeEntries: PHONG_OVERTIME_ENTRIES_092026,
-    advanceVoucher: {
-      ...PHONG_ADVANCE_VOUCHER_092026,
-      employeeLabel: `${row.fullName} · ${row.employeeCode}`,
-      amount: row.deduction || 100000,
-    },
-    disputes: [...payslipDisputesStore],
+    sentAt: data?.sentAt ? formatVietnamDateTime(data.sentAt) : undefined,
   }
-}
-
-export async function createPayslipDispute(
-  input: CreatePayslipDisputeInput,
-): Promise<PayslipDisputeRecord> {
-  const trimmed = input.content.trim()
-  if (!trimmed) {
-    throw new Error('Vui lòng nhập nội dung đối chiếu.')
-  }
-
-  const nextNum = payslipDisputesStore.length + 1
-  const code = `DC-0926-${String(nextNum).padStart(3, '0')}`
-  const newDispute: PayslipDisputeRecord = {
-    id: code,
-    payslipCode: `PAY-202609-${input.employeeId.replace(/-/g, '')}`,
-    category: input.category,
-    categoryLabel: PAYSLIP_DISPUTE_CATEGORY_LABELS[input.category],
-    status: 'pending_response',
-    statusLabel: PAYSLIP_DISPUTE_STATUS_LABELS.pending_response,
-    content: trimmed,
-    attachmentName: input.attachmentName,
-    attachmentSize: input.attachmentSize,
-    submittedAt: formatCurrentTimestamp(),
-  }
-
-  payslipDisputesStore = [newDispute, ...payslipDisputesStore]
-  return newDispute
-}
-
-export async function resendSinglePayslipZalo(
-  employeeId: string,
-  periodKey: string,
-): Promise<{ sentAt: string }> {
-  const period = findPeriod(periodKey === '10/2026' ? '10/2026' : '09/2026')
-  const sentAt = '04/10/2026, 10:32'
-  period.rows = period.rows.map((row) =>
-    row.id === employeeId
-      ? { ...row, zaloStatus: 'sent', zaloSentAt: sentAt, zaloErrorReason: undefined }
-      : row,
-  )
-  return { sentAt }
 }

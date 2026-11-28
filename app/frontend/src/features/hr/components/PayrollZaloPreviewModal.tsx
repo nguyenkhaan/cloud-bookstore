@@ -2,7 +2,7 @@ import { useEffect, useId, useState } from 'react'
 import { X } from 'lucide-react'
 import { Button } from '@/components/common/Button'
 import { cn } from '@/lib/cn'
-import { formatVnd } from '../hr-payroll.mock'
+import { formatVnd } from '../hr-payroll.utils'
 import type { ZaloSendStatus } from '../hr-payroll.type'
 
 export interface ZaloPreviewRecipient {

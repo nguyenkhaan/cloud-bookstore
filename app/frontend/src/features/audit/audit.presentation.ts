@@ -67,6 +67,14 @@ export function moduleDisplayLabel(entityType?: string | null): string {
     case 'employeeworkrecord':
     case 'employee':
     case 'payroll':
+    case 'hr_request':
+    case 'hrrequest':
+    case 'payroll_period':
+    case 'payrollperiod':
+    case 'payroll_adjustment':
+    case 'payrolladjustment':
+    case 'payslip_dispute':
+    case 'payslipdispute':
       return 'Nhân sự'
     case 'customer':
     case 'customers':

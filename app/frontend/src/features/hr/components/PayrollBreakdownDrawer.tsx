@@ -1,25 +1,36 @@
 import { useEffect, useId, useState } from 'react'
 import { X } from 'lucide-react'
 import { Button } from '@/components/common/Button'
-import { formatVnd } from '../hr-payroll.mock'
-import type { PayrollEmployeeRow } from '../hr-payroll.type'
+import { formatVnd } from '../hr-payroll.utils'
+import type {
+  PayrollBreakdownData,
+  PayrollBreakdownLine,
+  PayrollCashVarianceItem,
+  PayrollEmployeeRow,
+} from '../hr-payroll.type'
 
 export interface PayrollBreakdownDrawerProps {
   row: PayrollEmployeeRow | null
   payrollCode: string
+  breakdown?: PayrollBreakdownData
+  isLoadingBreakdown?: boolean
   onClose: () => void
-  onOpenAdvanceVoucher?: (employeeId: string) => void
+  onOpenAdvanceVoucher?: (employeeId: string, line?: PayrollBreakdownLine) => void
 }
 
 export function PayrollBreakdownDrawer({
   row,
   payrollCode,
+  breakdown,
+  isLoadingBreakdown = false,
   onClose,
   onOpenAdvanceVoucher,
 }: PayrollBreakdownDrawerProps) {
   if (!row) return null
   return (
     <PayrollBreakdownDrawerBody
+      breakdown={breakdown}
+      isLoadingBreakdown={isLoadingBreakdown}
       key={row.id}
       onClose={onClose}
       onOpenAdvanceVoucher={onOpenAdvanceVoucher}
@@ -32,16 +43,21 @@ export function PayrollBreakdownDrawer({
 function PayrollBreakdownDrawerBody({
   row,
   payrollCode,
+  breakdown,
+  isLoadingBreakdown,
   onClose,
   onOpenAdvanceVoucher,
 }: {
   row: PayrollEmployeeRow
   payrollCode: string
+  breakdown?: PayrollBreakdownData
+  isLoadingBreakdown: boolean
   onClose: () => void
-  onOpenAdvanceVoucher?: (employeeId: string) => void
+  onOpenAdvanceVoucher?: (employeeId: string, line?: PayrollBreakdownLine) => void
 }) {
   const titleId = useId()
   const [view, setView] = useState<'breakdown' | 'cash_variance'>('breakdown')
+  const [selectedVariance, setSelectedVariance] = useState<PayrollCashVarianceItem | null>(null)
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -53,8 +69,14 @@ function PayrollBreakdownDrawerBody({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onClose])
 
+  const bonusItems = breakdown?.bonusItems ?? row.bonusItems
+  const allowanceItems = breakdown?.allowanceItems ?? row.allowanceItems
+  const deductionItems = breakdown?.deductionItems ?? row.deductionItems
+  const cashVariances = breakdown?.cashVariances ?? []
+
   const totalIncome =
     row.baseSalary + row.overtimeAmount + row.bonus + row.allowance
+  const activeVariance = selectedVariance ?? cashVariances[0] ?? null
   const report = row.cashVarianceReport
 
   return (
@@ -73,14 +95,16 @@ function PayrollBreakdownDrawerBody({
         <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
           <div>
             <h2 className="text-lg font-bold text-slate-900" id={titleId}>
-              {view === 'cash_variance' && report
+              {view === 'cash_variance' && (activeVariance || report)
                 ? 'Biên bản đối soát lệch quỹ'
                 : 'Chi tiết các khoản lương'}
             </h2>
             <p className="mt-1 text-xs text-slate-500">
-              {view === 'cash_variance' && report
-                ? `${report.voucherCode} · ${report.shiftLabel}`
-                : `${row.fullName} · ${row.employeeCode} · ${payrollCode}`}
+              {view === 'cash_variance' && activeVariance
+                ? `${activeVariance.voucherCode} · ${row.fullName} · ${row.employeeCode}`
+                : view === 'cash_variance' && report
+                  ? `${report.voucherCode} · ${report.shiftLabel}`
+                  : `${row.fullName} · ${row.employeeCode} · ${payrollCode}`}
             </p>
           </div>
           <button
@@ -94,7 +118,62 @@ function PayrollBreakdownDrawerBody({
         </div>
 
         <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5 text-sm">
-          {view === 'cash_variance' && report ? (
+          {view === 'cash_variance' && activeVariance ? (
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs font-medium text-slate-500">
+                  Mã ca két / chứng từ
+                </p>
+                <p className="mt-1 text-sm font-semibold text-slate-900">
+                  {activeVariance.voucherCode}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-slate-500">
+                  Thời gian mở - đóng ca
+                </p>
+                <p className="mt-1 text-sm text-slate-700">
+                  {activeVariance.openedAt} - {activeVariance.closedAt ?? '-'}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs font-medium text-slate-500">Dự kiến</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
+                    {activeVariance.expectedAmount != null
+                      ? formatVnd(activeVariance.expectedAmount)
+                      : '-'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-slate-500">Kiểm đếm</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
+                    {activeVariance.countedAmount != null
+                      ? formatVnd(activeVariance.countedAmount)
+                      : '-'}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-slate-500">Chênh lệch</p>
+                <p className="mt-1 text-sm font-bold text-rose-700">
+                  {formatVnd(activeVariance.difference)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-slate-500">Ghi chú chênh lệch</p>
+                <p className="mt-1 text-sm text-slate-700">
+                  {activeVariance.varianceNote || 'Không có ghi chú.'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-slate-500">Người duyệt</p>
+                <p className="mt-1 text-sm font-semibold text-slate-900">
+                  {activeVariance.approverName || 'Chưa duyệt'}
+                </p>
+              </div>
+            </div>
+          ) : view === 'cash_variance' && report ? (
             <div className="space-y-4">
               <div>
                 <p className="text-xs font-medium text-slate-500">
@@ -161,8 +240,8 @@ function PayrollBreakdownDrawerBody({
                   Thưởng · {formatVnd(row.bonus)}
                 </h3>
                 <div className="mt-1.5 space-y-1 text-xs text-slate-600">
-                  {row.bonusItems.map((item) => (
-                    <p key={item.label}>
+                  {bonusItems.map((item, idx) => (
+                    <p key={`${item.label}-${idx}`}>
                       {item.label} · {formatVnd(item.amount)}
                     </p>
                   ))}
@@ -174,8 +253,8 @@ function PayrollBreakdownDrawerBody({
                   Phụ cấp · {formatVnd(row.allowance)}
                 </h3>
                 <div className="mt-1.5 space-y-1 text-xs text-slate-600">
-                  {row.allowanceItems.map((item) => (
-                    <p key={item.label}>
+                  {allowanceItems.map((item, idx) => (
+                    <p key={`${item.label}-${idx}`}>
                       {item.label}: {formatVnd(item.amount)}
                     </p>
                   ))}
@@ -187,18 +266,18 @@ function PayrollBreakdownDrawerBody({
                   Khấu trừ nội bộ · {formatVnd(row.deduction)}
                 </h3>
                 <div className="mt-1.5 space-y-1 text-xs text-slate-600">
-                  {row.deductionItems.length === 0 ? (
+                  {deductionItems.length === 0 ? (
                     <p>Không phát sinh khấu trừ nội bộ.</p>
                   ) : (
-                    row.deductionItems.map((item) => (
-                      <div className="space-y-1" key={item.label}>
+                    deductionItems.map((item, idx) => (
+                      <div className="space-y-1" key={`${item.label}-${idx}`}>
                         <p>
                           {item.label} · {formatVnd(item.amount)}
                         </p>
                         {item.voucherCode && (
                           <button
                             className="text-xs font-medium text-indigo-600 hover:underline"
-                            onClick={() => onOpenAdvanceVoucher?.(row.id)}
+                            onClick={() => onOpenAdvanceVoucher?.(row.id, item)}
                             type="button"
                           >
                             Xem chứng từ tạm ứng {item.voucherCode}
@@ -223,7 +302,32 @@ function PayrollBreakdownDrawerBody({
                 <h3 className="text-sm font-bold text-slate-900">
                   Chứng từ quỹ liên quan
                 </h3>
-                {report ? (
+                {isLoadingBreakdown && cashVariances.length === 0 ? (
+                  <p className="mt-1.5 text-xs text-slate-500">
+                    Đang tải dữ liệu đối soát quỹ...
+                  </p>
+                ) : cashVariances.length > 0 ? (
+                  <div className="mt-1.5 space-y-2">
+                    {cashVariances.map((variance) => (
+                      <div className="space-y-1" key={variance.cashSessionId}>
+                        <p className="text-xs font-medium text-indigo-600">
+                          {variance.voucherCode} · Chênh lệch {formatVnd(variance.difference)}
+                        </p>
+                        <button
+                          className="text-xs font-medium text-indigo-600 hover:underline"
+                          data-testid="hrm05-open-cash-variance-btn"
+                          onClick={() => {
+                            setSelectedVariance(variance)
+                            setView('cash_variance')
+                          }}
+                          type="button"
+                        >
+                          Xem biên bản lệch quỹ và người duyệt
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : report ? (
                   <div className="mt-1.5 space-y-1">
                     <p className="text-xs font-medium text-indigo-600">
                       {report.voucherCode} · {report.reconciliationResult}

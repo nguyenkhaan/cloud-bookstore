@@ -2717,6 +2717,275 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/buybacks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Search?: string;
+                    Status?: components["schemas"]["ApprovalStatus"];
+                    Page?: number;
+                    PageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfCustomerBuybackDetailResponse"];
+                        "application/json": components["schemas"]["PagedResultOfCustomerBuybackDetailResponse"];
+                        "text/json": components["schemas"]["PagedResultOfCustomerBuybackDetailResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateCustomerBuybackRequest"];
+                    "text/json": components["schemas"]["CreateCustomerBuybackRequest"];
+                    "application/*+json": components["schemas"]["CreateCustomerBuybackRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CustomerBuybackDetailResponse"];
+                        "application/json": components["schemas"]["CustomerBuybackDetailResponse"];
+                        "text/json": components["schemas"]["CustomerBuybackDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/buybacks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CustomerBuybackDetailResponse"];
+                        "application/json": components["schemas"]["CustomerBuybackDetailResponse"];
+                        "text/json": components["schemas"]["CustomerBuybackDetailResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/buybacks/lookup-isbn/{query}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    query: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BuybackIsbnLookupResponse"];
+                        "application/json": components["schemas"]["BuybackIsbnLookupResponse"];
+                        "text/json": components["schemas"]["BuybackIsbnLookupResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/buybacks/{id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": null | components["schemas"]["CompleteCustomerBuybackRequest"];
+                    "text/json": null | components["schemas"]["CompleteCustomerBuybackRequest"];
+                    "application/*+json": null | components["schemas"]["CompleteCustomerBuybackRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CustomerBuybackDetailResponse"];
+                        "application/json": components["schemas"]["CustomerBuybackDetailResponse"];
+                        "text/json": components["schemas"]["CustomerBuybackDetailResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/customers/{customerId}/history/summary": {
         parameters: {
             query?: never;
@@ -3751,6 +4020,116 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/editions/stock-alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Search?: string;
+                    Channel?: string;
+                    Severity?: string;
+                    SupplierId?: string;
+                    OnlyAlerts?: boolean;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EditionStockAlertDashboardResponse"];
+                        "application/json": components["schemas"]["EditionStockAlertDashboardResponse"];
+                        "text/json": components["schemas"]["EditionStockAlertDashboardResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/editions/{id}/thresholds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateEditionThresholdsRequest"];
+                    "text/json": components["schemas"]["UpdateEditionThresholdsRequest"];
+                    "application/*+json": components["schemas"]["UpdateEditionThresholdsRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EditionStockAlertItemResponse"];
+                        "application/json": components["schemas"]["EditionStockAlertItemResponse"];
+                        "text/json": components["schemas"]["EditionStockAlertItemResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/editions": {
         parameters: {
             query?: never;
@@ -4247,6 +4626,267 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/employees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Search?: string;
+                    RoleName?: components["schemas"]["RoleName"];
+                    Status?: components["schemas"]["EmployeeStatus"];
+                    InShiftOnly?: boolean;
+                    Page?: number;
+                    PageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EmployeeListResultDto"];
+                        "application/json": components["schemas"]["EmployeeListResultDto"];
+                        "text/json": components["schemas"]["EmployeeListResultDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateEmployeeRequest"];
+                    "text/json": components["schemas"]["CreateEmployeeRequest"];
+                    "application/*+json": components["schemas"]["CreateEmployeeRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EmployeeDto"];
+                        "application/json": components["schemas"]["EmployeeDto"];
+                        "text/json": components["schemas"]["EmployeeDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/employees/{employeeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    employeeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EmployeeDto"];
+                        "application/json": components["schemas"]["EmployeeDto"];
+                        "text/json": components["schemas"]["EmployeeDto"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    employeeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateEmployeeRequest"];
+                    "text/json": components["schemas"]["UpdateEmployeeRequest"];
+                    "application/*+json": components["schemas"]["UpdateEmployeeRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EmployeeDto"];
+                        "application/json": components["schemas"]["EmployeeDto"];
+                        "text/json": components["schemas"]["EmployeeDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/employees/{employeeId}/shifts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path: {
+                    employeeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EmployeeShiftListDto"];
+                        "application/json": components["schemas"]["EmployeeShiftListDto"];
+                        "text/json": components["schemas"]["EmployeeShiftListDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/employees/{employeeId}/resend-setup-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    employeeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/employees/{employeeId}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    employeeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ChangeEmployeeRequest"];
+                    "text/json": components["schemas"]["ChangeEmployeeRequest"];
+                    "application/*+json": components["schemas"]["ChangeEmployeeRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EmployeeRoleResponse"];
+                        "application/json": components["schemas"]["EmployeeRoleResponse"];
+                        "text/json": components["schemas"]["EmployeeRoleResponse"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/health/liveness": {
         parameters: {
             query?: never;
@@ -4431,6 +5071,854 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payroll/periods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayrollPeriodListItemDto"][];
+                        "application/json": components["schemas"]["PayrollPeriodListItemDto"][];
+                        "text/json": components["schemas"]["PayrollPeriodListItemDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payroll/periods/{periodKey}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Search?: string;
+                    Status?: components["schemas"]["PayrollPeriodStatus"];
+                    PayoutFilter?: string;
+                    Page?: number;
+                    PageSize?: number;
+                };
+                header?: never;
+                path: {
+                    periodKey: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayrollPeriodDetailDto"];
+                        "application/json": components["schemas"]["PayrollPeriodDetailDto"];
+                        "text/json": components["schemas"]["PayrollPeriodDetailDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payroll/periods/{periodKey}/initialize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    periodKey: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayrollPeriodDetailDto"];
+                        "application/json": components["schemas"]["PayrollPeriodDetailDto"];
+                        "text/json": components["schemas"]["PayrollPeriodDetailDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payroll/periods/{periodKey}/employees/{employeeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    periodKey: string;
+                    employeeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PatchPayrollEmployeeRequest"];
+                    "text/json": components["schemas"]["PatchPayrollEmployeeRequest"];
+                    "application/*+json": components["schemas"]["PatchPayrollEmployeeRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayrollPeriodDetailDto"];
+                        "application/json": components["schemas"]["PayrollPeriodDetailDto"];
+                        "text/json": components["schemas"]["PayrollPeriodDetailDto"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/hr/payroll/periods/{periodKey}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    periodKey: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayrollPeriodDetailDto"];
+                        "application/json": components["schemas"]["PayrollPeriodDetailDto"];
+                        "text/json": components["schemas"]["PayrollPeriodDetailDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payroll/periods/{periodKey}/unlock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    periodKey: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UnlockPayrollRequest"];
+                    "text/json": components["schemas"]["UnlockPayrollRequest"];
+                    "application/*+json": components["schemas"]["UnlockPayrollRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayrollPeriodDetailDto"];
+                        "application/json": components["schemas"]["PayrollPeriodDetailDto"];
+                        "text/json": components["schemas"]["PayrollPeriodDetailDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payroll/periods/{periodKey}/payouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    periodKey: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["BatchPayoutRequest"];
+                    "text/json": components["schemas"]["BatchPayoutRequest"];
+                    "application/*+json": components["schemas"]["BatchPayoutRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayrollPeriodDetailDto"];
+                        "application/json": components["schemas"]["PayrollPeriodDetailDto"];
+                        "text/json": components["schemas"]["PayrollPeriodDetailDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payroll/periods/{periodKey}/send-zalo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    periodKey: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SendPayrollZaloRequest"];
+                    "text/json": components["schemas"]["SendPayrollZaloRequest"];
+                    "application/*+json": components["schemas"]["SendPayrollZaloRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SendPayrollZaloResultDto"];
+                        "application/json": components["schemas"]["SendPayrollZaloResultDto"];
+                        "text/json": components["schemas"]["SendPayrollZaloResultDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payroll/periods/{periodKey}/employees/{employeeId}/breakdown": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    periodKey: string;
+                    employeeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayrollBreakdownDto"];
+                        "application/json": components["schemas"]["PayrollBreakdownDto"];
+                        "text/json": components["schemas"]["PayrollBreakdownDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payroll/adjustments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    periodKey?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayrollAdjustmentDto"][];
+                        "application/json": components["schemas"]["PayrollAdjustmentDto"][];
+                        "text/json": components["schemas"]["PayrollAdjustmentDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreatePayrollAdjustmentRequest"];
+                    "text/json": components["schemas"]["CreatePayrollAdjustmentRequest"];
+                    "application/*+json": components["schemas"]["CreatePayrollAdjustmentRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayrollAdjustmentDto"];
+                        "application/json": components["schemas"]["PayrollAdjustmentDto"];
+                        "text/json": components["schemas"]["PayrollAdjustmentDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payslips/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    periodKey?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayslipDetailDto"];
+                        "application/json": components["schemas"]["PayslipDetailDto"];
+                        "text/json": components["schemas"]["PayslipDetailDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payslips/{employeeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    periodKey?: string;
+                };
+                header?: never;
+                path: {
+                    employeeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayslipDetailDto"];
+                        "application/json": components["schemas"]["PayslipDetailDto"];
+                        "text/json": components["schemas"]["PayslipDetailDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payslips/{entryId}/disputes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    entryId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreatePayslipDisputeRequest"];
+                    "text/json": components["schemas"]["CreatePayslipDisputeRequest"];
+                    "application/*+json": components["schemas"]["CreatePayslipDisputeRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayslipDisputeDto"];
+                        "application/json": components["schemas"]["PayslipDisputeDto"];
+                        "text/json": components["schemas"]["PayslipDisputeDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payslips/disputes/{disputeId}/respond": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    disputeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RespondPayslipDisputeRequest"];
+                    "text/json": components["schemas"]["RespondPayslipDisputeRequest"];
+                    "application/*+json": components["schemas"]["RespondPayslipDisputeRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PayslipDisputeDto"];
+                        "application/json": components["schemas"]["PayslipDisputeDto"];
+                        "text/json": components["schemas"]["PayslipDisputeDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/payslips/{entryId}/resend-zalo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    entryId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ZaloSendResultDto"];
+                        "application/json": components["schemas"]["ZaloSendResultDto"];
+                        "text/json": components["schemas"]["ZaloSendResultDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Scope?: string;
+                    Search?: string;
+                    Month?: string;
+                    Status?: components["schemas"]["HrRequestStatus"];
+                    Page?: number;
+                    PageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["HrRequestListDto"];
+                        "application/json": components["schemas"]["HrRequestListDto"];
+                        "text/json": components["schemas"]["HrRequestListDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateHrRequestRequest"];
+                    "text/json": components["schemas"]["CreateHrRequestRequest"];
+                    "application/*+json": components["schemas"]["CreateHrRequestRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["HrRequestDto"];
+                        "application/json": components["schemas"]["HrRequestDto"];
+                        "text/json": components["schemas"]["HrRequestDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/requests/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["HrRequestOptionsDto"];
+                        "application/json": components["schemas"]["HrRequestOptionsDto"];
+                        "text/json": components["schemas"]["HrRequestOptionsDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/requests/{requestId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    requestId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["HrRequestDto"];
+                        "application/json": components["schemas"]["HrRequestDto"];
+                        "text/json": components["schemas"]["HrRequestDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hr/requests/{requestId}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    requestId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["HrRequestReviewRequest"];
+                    "text/json": components["schemas"]["HrRequestReviewRequest"];
+                    "application/*+json": components["schemas"]["HrRequestReviewRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["HrRequestDto"];
+                        "application/json": components["schemas"]["HrRequestDto"];
+                        "text/json": components["schemas"]["HrRequestDto"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -5567,6 +7055,979 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stock-out": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Search?: string;
+                    Status?: components["schemas"]["ApprovalStatus"];
+                    Page?: number;
+                    PageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfStockOutDetailResponse"];
+                        "application/json": components["schemas"]["PagedResultOfStockOutDetailResponse"];
+                        "text/json": components["schemas"]["PagedResultOfStockOutDetailResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateStockOutRequest"];
+                    "text/json": components["schemas"]["CreateStockOutRequest"];
+                    "application/*+json": components["schemas"]["CreateStockOutRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockOutDetailResponse"];
+                        "application/json": components["schemas"]["StockOutDetailResponse"];
+                        "text/json": components["schemas"]["StockOutDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock-out/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockOutDetailResponse"];
+                        "application/json": components["schemas"]["StockOutDetailResponse"];
+                        "text/json": components["schemas"]["StockOutDetailResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock-out/{id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockOutDetailResponse"];
+                        "application/json": components["schemas"]["StockOutDetailResponse"];
+                        "text/json": components["schemas"]["StockOutDetailResponse"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock-receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Search?: string;
+                    SupplierId?: string;
+                    Status?: components["schemas"]["ApprovalStatus"];
+                    SourceType?: components["schemas"]["StockReceiptSourceType"];
+                    Page?: number;
+                    PageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfStockReceiptSummaryResponse"];
+                        "application/json": components["schemas"]["PagedResultOfStockReceiptSummaryResponse"];
+                        "text/json": components["schemas"]["PagedResultOfStockReceiptSummaryResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateStockReceiptRequest"];
+                    "text/json": components["schemas"]["CreateStockReceiptRequest"];
+                    "application/*+json": components["schemas"]["CreateStockReceiptRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockReceiptDetailResponse"];
+                        "application/json": components["schemas"]["StockReceiptDetailResponse"];
+                        "text/json": components["schemas"]["StockReceiptDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock-receipts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockReceiptDetailResponse"];
+                        "application/json": components["schemas"]["StockReceiptDetailResponse"];
+                        "text/json": components["schemas"]["StockReceiptDetailResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateStockReceiptRequest"];
+                    "text/json": components["schemas"]["UpdateStockReceiptRequest"];
+                    "application/*+json": components["schemas"]["UpdateStockReceiptRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockReceiptDetailResponse"];
+                        "application/json": components["schemas"]["StockReceiptDetailResponse"];
+                        "text/json": components["schemas"]["StockReceiptDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock-receipts/{id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": null | components["schemas"]["CompleteStockReceiptRequest"];
+                    "text/json": null | components["schemas"]["CompleteStockReceiptRequest"];
+                    "application/*+json": null | components["schemas"]["CompleteStockReceiptRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockReceiptDetailResponse"];
+                        "application/json": components["schemas"]["StockReceiptDetailResponse"];
+                        "text/json": components["schemas"]["StockReceiptDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock-receipts/{id}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": null | components["schemas"]["ActivateStockReceiptCopiesRequest"];
+                    "text/json": null | components["schemas"]["ActivateStockReceiptCopiesRequest"];
+                    "application/*+json": null | components["schemas"]["ActivateStockReceiptCopiesRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockReceiptDetailResponse"];
+                        "application/json": components["schemas"]["StockReceiptDetailResponse"];
+                        "text/json": components["schemas"]["StockReceiptDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock-receipts/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockReceiptDetailResponse"];
+                        "application/json": components["schemas"]["StockReceiptDetailResponse"];
+                        "text/json": components["schemas"]["StockReceiptDetailResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/suppliers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Search?: string;
+                    IsActive?: boolean;
+                    HasPending?: boolean;
+                    Page?: number;
+                    PageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfSupplierResponse"];
+                        "application/json": components["schemas"]["PagedResultOfSupplierResponse"];
+                        "text/json": components["schemas"]["PagedResultOfSupplierResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateSupplierRequest"];
+                    "text/json": components["schemas"]["CreateSupplierRequest"];
+                    "application/*+json": components["schemas"]["CreateSupplierRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SupplierResponse"];
+                        "application/json": components["schemas"]["SupplierResponse"];
+                        "text/json": components["schemas"]["SupplierResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/suppliers/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SupplierStatsResponse"];
+                        "application/json": components["schemas"]["SupplierStatsResponse"];
+                        "text/json": components["schemas"]["SupplierStatsResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/suppliers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SupplierResponse"];
+                        "application/json": components["schemas"]["SupplierResponse"];
+                        "text/json": components["schemas"]["SupplierResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateSupplierRequest"];
+                    "text/json": components["schemas"]["UpdateSupplierRequest"];
+                    "application/*+json": components["schemas"]["UpdateSupplierRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SupplierResponse"];
+                        "application/json": components["schemas"]["SupplierResponse"];
+                        "text/json": components["schemas"]["SupplierResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/suppliers/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateSupplierStatusRequest"];
+                    "text/json": components["schemas"]["UpdateSupplierStatusRequest"];
+                    "application/*+json": components["schemas"]["UpdateSupplierStatusRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SupplierResponse"];
+                        "application/json": components["schemas"]["SupplierResponse"];
+                        "text/json": components["schemas"]["SupplierResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/uploads/signature": {
         parameters: {
             query?: never;
@@ -5636,6 +8097,9 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ActivateStockReceiptCopiesRequest: {
+            lines?: null | components["schemas"]["CompleteStockReceiptLinePricingRequest"][];
+        };
         ApprovalAuditItem: {
             /** Format: uuid */
             id: string;
@@ -5715,6 +8179,15 @@ export interface components {
             remainingQuantity: number;
             conditionGrade: components["schemas"]["ConditionGrade"];
             availability: components["schemas"]["BookChannelAvailability"];
+        };
+        BatchPayoutRequest: {
+            employeeIds: string[];
+            method: components["schemas"]["PaymentMethod"];
+            transactionRef: null | string;
+            /** Format: date */
+            payoutDate: string;
+            note?: null | string;
+            proofUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
         };
         /** @enum {unknown} */
         BookChannelAvailability: "BOTH" | "SALE_ONLY" | "RENTAL_ONLY";
@@ -5924,6 +8397,7 @@ export interface components {
             fullName: string;
             role: string;
             avatarUrl?: null | string;
+            employeeCode?: null | string;
         };
         BuybackApprovalDetailResponse: {
             /** Format: uuid */
@@ -5993,6 +8467,36 @@ export interface components {
             quantity: number;
             imageUrl: null | string;
         };
+        BuybackIsbnLookupResponse: {
+            /** Format: uuid */
+            editionId: string;
+            /** Format: uuid */
+            titleId: string;
+            titleName: string;
+            author: null | string;
+            publisher: null | string;
+            /** Format: int16 */
+            publishYear: null | number;
+            isbn: null | string;
+            /** Format: int64 */
+            coverPrice: number;
+            /** Format: int64 */
+            gradeAMinPrice: number;
+            /** Format: int64 */
+            gradeAMaxPrice: number;
+            /** Format: int64 */
+            gradeBMinPrice: number;
+            /** Format: int64 */
+            gradeBMaxPrice: number;
+            /** Format: int64 */
+            gradeCMinPrice: number;
+            /** Format: int64 */
+            gradeCMaxPrice: number;
+            /** Format: int64 */
+            gradeDMinPrice: number;
+            /** Format: int64 */
+            gradeDMaxPrice: number;
+        };
         BuybackLineSummary: {
             titleName: string;
             volumeLabel: null | string;
@@ -6004,6 +8508,23 @@ export interface components {
         };
         CancelInventoryAdjustmentRequestDto: {
             reason?: null | string;
+        };
+        CashVarianceDto: {
+            /** Format: uuid */
+            cashSessionId: string;
+            voucherCode: string;
+            /** Format: date-time */
+            openedAt: string;
+            /** Format: date-time */
+            closedAt: null | string;
+            /** Format: int64 */
+            expectedAmount: null | number;
+            /** Format: int64 */
+            countedAmount: null | number;
+            /** Format: int64 */
+            difference: number;
+            varianceNote: null | string;
+            approverName: null | string;
         };
         CategoryDetailResponse: {
             /** Format: uuid */
@@ -6039,6 +8560,29 @@ export interface components {
             format: null | string;
             /** Format: int64 */
             bytes: null | number;
+        };
+        CompleteCustomerBuybackRequest: {
+            payoutMethod?: components["schemas"]["PaymentMethod"];
+            managerPin?: null | string;
+            note?: null | string;
+        };
+        CompleteStockReceiptLinePricingRequest: {
+            /** Format: uuid */
+            lineId?: null | string;
+            /** Format: uuid */
+            editionId?: null | string;
+            /** Format: int64 */
+            sellingPrice?: null | number;
+            /** Format: int64 */
+            rentalRate?: null | number;
+            availability?: null | components["schemas"]["BookChannelAvailability"];
+            shelfCode?: null | string;
+        };
+        CompleteStockReceiptRequest: {
+            /** @default true */
+            activateImmediately: boolean;
+            note?: null | string;
+            lines?: null | components["schemas"]["CompleteStockReceiptLinePricingRequest"][];
         };
         /** @enum {unknown} */
         ConditionGrade: "A" | "B" | "C" | "D";
@@ -6096,6 +8640,39 @@ export interface components {
             parentId?: null | string;
             /** @default true */
             isActive: boolean;
+        };
+        CreateCustomerBuybackLineRequest: {
+            /** Format: uuid */
+            editionId?: null | string;
+            isbn?: null | string;
+            titleName?: null | string;
+            conditionGrade?: components["schemas"]["ConditionGrade"];
+            /**
+             * Format: int64
+             * @default 0
+             */
+            agreedBuyPrice: number;
+            /**
+             * Format: int64
+             * @default 0
+             */
+            expectedSellingPrice: number;
+            /**
+             * Format: int32
+             * @default 1
+             */
+            quantity: number;
+            conditionNote?: null | string;
+        };
+        CreateCustomerBuybackRequest: {
+            sellerName: null | string;
+            sellerPhone: null | string;
+            payoutMethod?: components["schemas"]["PaymentMethod"];
+            exceedReason?: null | string;
+            managerPin?: null | string;
+            /** @default false */
+            completeImmediately: boolean;
+            lines?: null | components["schemas"]["CreateCustomerBuybackLineRequest"][];
         };
         CreateCustomerRequest: {
             fullName: string;
@@ -6157,6 +8734,34 @@ export interface components {
             isActive: boolean;
             imageUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
         };
+        CreateEmployeeRequest: {
+            email: string;
+            fullName: string;
+            phone: string;
+            roleName: components["schemas"]["RoleName"];
+            jobTitle?: null | string;
+            /** Format: double */
+            hourlyRate?: null | number;
+            bankName?: null | string;
+            bankAccountNumber?: null | string;
+        };
+        CreateHrRequestRequest: {
+            type: components["schemas"]["HrRequestType"];
+            /** Format: date */
+            applyDate: string;
+            /** Format: int16 */
+            shiftNo: number;
+            /** Format: int16 */
+            targetShiftNo: null | number;
+            /** Format: uuid */
+            replacementEmployeeId: null | string;
+            /** Format: date-time */
+            correctCheckInAt: null | string;
+            /** Format: date-time */
+            correctCheckOutAt: null | string;
+            reason: string;
+            proofUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
+        };
         CreateInventoryAdjustmentRequestDto: {
             /** Format: uuid */
             copyId?: null | string;
@@ -6169,6 +8774,63 @@ export interface components {
             isFound?: null | boolean;
             checkCode?: null | string;
             checkNote?: null | string;
+        };
+        CreatePayrollAdjustmentRequest: {
+            /** Format: uuid */
+            employeeId: string;
+            sourcePeriodKey: null | string;
+            sourceVoucherRef: null | string;
+            targetPeriodKey: string;
+            category: string;
+            adjustmentType: components["schemas"]["PayrollAdjustmentType"];
+            /** Format: int64 */
+            amount: number;
+            reason: string;
+            mode?: components["schemas"]["PayrollAdjustmentStatus"];
+            referenceCode?: null | string;
+            proofUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
+        };
+        CreatePayslipDisputeRequest: {
+            category: components["schemas"]["PayslipDisputeCategory"];
+            content: string;
+            proofUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
+        };
+        CreateStockOutRequest: {
+            stockOutType: string;
+            reason: string;
+            evidenceFileName?: null | string;
+            lines?: null | components["schemas"]["StockOutLineRequest"][];
+        };
+        CreateStockReceiptLineRequest: {
+            /** Format: uuid */
+            editionId: string;
+            /**
+             * Format: int32
+             * @default 1
+             */
+            quantity: number;
+            /**
+             * Format: int64
+             * @default 0
+             */
+            unitCost: number;
+            conditionGrade?: components["schemas"]["ConditionGrade"];
+            availability?: components["schemas"]["BookChannelAvailability"];
+            conditionNote?: null | string;
+        };
+        CreateStockReceiptRequest: {
+            /** Format: uuid */
+            supplierId: string;
+            note?: null | string;
+            lines?: null | components["schemas"]["CreateStockReceiptLineRequest"][];
+        };
+        CreateSupplierRequest: {
+            name: string;
+            phone?: null | string;
+            address?: null | string;
+            taxCode?: null | string;
+            /** @default true */
+            isActive: boolean;
         };
         CreateTitleRequest: {
             name: string;
@@ -6185,6 +8847,43 @@ export interface components {
             isActive: boolean;
             imageUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
         };
+        CustomerBuybackDetailResponse: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            /** Format: uuid */
+            sellerId: null | string;
+            sellerName: string;
+            sellerPhone: string;
+            status: components["schemas"]["ApprovalStatus"];
+            needsApproval: boolean;
+            /** Format: int64 */
+            totalAmount: number;
+            /** Format: int32 */
+            totalCopies: number;
+            /** Format: int32 */
+            generatedCopyCount: number;
+            payoutMethod: components["schemas"]["PaymentMethod"];
+            paymentNo: null | string;
+            /** Format: int64 */
+            cashDrawerBefore: number;
+            /** Format: int64 */
+            cashDrawerAfter: number;
+            note: null | string;
+            /** Format: uuid */
+            createdBy: string;
+            createdByName: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            approvedBy: null | string;
+            approvedByName: null | string;
+            /** Format: date-time */
+            approvedAt: null | string;
+            /** Format: date-time */
+            completedAt: null | string;
+            lines: components["schemas"]["CustomerBuybackLineResponse"][];
+        };
         CustomerBuybackHistoryItem: {
             /** Format: uuid */
             receiptId: string;
@@ -6197,6 +8896,26 @@ export interface components {
             isPaidOut: boolean;
             needsApproval: boolean;
             lines: components["schemas"]["BuybackLineSummary"][];
+        };
+        CustomerBuybackLineResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            editionId: string;
+            titleName: string;
+            isbn: null | string;
+            conditionGrade: components["schemas"]["ConditionGrade"];
+            /** Format: int64 */
+            coverPrice: number;
+            /** Format: int64 */
+            agreedBuyPrice: number;
+            /** Format: int64 */
+            expectedSellingPrice: number;
+            /** Format: int32 */
+            quantity: number;
+            overSingleLimit: boolean;
+            barcodes: string[];
+            copyStatus: null | components["schemas"]["BookCopyStatus"];
         };
         CustomerDto: {
             /** Format: uuid */
@@ -6611,9 +9330,147 @@ export interface components {
             /** Format: int32 */
             copiesCount: number;
         };
+        EditionStockAlertDashboardResponse: {
+            /** Format: int32 */
+            alertEditionCount: number;
+            /** Format: int32 */
+            rentalLowEditionCount: number;
+            /** Format: int32 */
+            pendingImportCopiesCount: number;
+            /** Format: int32 */
+            pendingImportEditionCount: number;
+            latestPendingReceiptCode: null | string;
+            /** Format: int32 */
+            totalSuggestedRestockCount: number;
+            items: components["schemas"]["EditionStockAlertItemResponse"][];
+        };
+        EditionStockAlertItemResponse: {
+            /** Format: uuid */
+            editionId: string;
+            /** Format: uuid */
+            titleId: string;
+            titleName: string;
+            volumeLabel: null | string;
+            editionStatement: null | string;
+            isbn: null | string;
+            publisher: null | string;
+            /** Format: int16 */
+            publishYear: null | number;
+            /** Format: int64 */
+            coverPrice: number;
+            /** Format: int32 */
+            minStockSale: number;
+            /** Format: int32 */
+            minStockRental: number;
+            /** Format: int32 */
+            availableSale: number;
+            /** Format: int32 */
+            availableRental: number;
+            /** Format: int32 */
+            rentedCount: number;
+            /** Format: int32 */
+            totalPhysical: number;
+            /** Format: int32 */
+            pendingImportCount: number;
+            /** Format: int32 */
+            saleDeficit: number;
+            /** Format: int32 */
+            rentalDeficit: number;
+            /** Format: int32 */
+            suggestedRestockCount: number;
+            isSaleLow: boolean;
+            isRentalLow: boolean;
+            severity: string;
+            severityLabel: string;
+            suggestionText: string;
+            /** Format: uuid */
+            preferredSupplierId: null | string;
+            preferredSupplierCode: null | string;
+            preferredSupplierName: null | string;
+        };
         EmailTestResponse: {
             status: string;
         };
+        EmployeeDto: {
+            /** Format: uuid */
+            id: string;
+            employeeCode: string;
+            email: string;
+            fullName: string;
+            phone: string;
+            roleName: components["schemas"]["RoleName"];
+            status: components["schemas"]["EmployeeStatus"];
+            jobTitle: null | string;
+            branchName: null | string;
+            isProtected: boolean;
+            avatarUrl: null | string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: double */
+            hourlyRate: number;
+            bankName: null | string;
+            bankAccountNumber: null | string;
+        };
+        EmployeeListKpiDto: {
+            /** Format: int32 */
+            activeCount: number;
+            /** Format: int32 */
+            newAccountsCount: number;
+            /** Format: int32 */
+            inShiftCount: number;
+            /** Format: int32 */
+            rootAdminCount: number;
+        };
+        EmployeeListResultDto: {
+            items: components["schemas"]["EmployeeDto"][];
+            /** Format: int32 */
+            totalCount: number;
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalPages: number;
+            kpi: components["schemas"]["EmployeeListKpiDto"];
+        };
+        EmployeeRoleResponse: {
+            /** Format: uuid */
+            employeeId: string;
+            previousRole: components["schemas"]["RoleName"];
+            currentRole: components["schemas"]["RoleName"];
+            /** Format: date-time */
+            changedAt: string;
+        };
+        EmployeeShiftDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            workDate: string;
+            /** Format: int16 */
+            shiftNo: number;
+            /** Format: date-time */
+            checkInAt: null | string;
+            /** Format: date-time */
+            checkOutAt: null | string;
+            attendanceStatus: string;
+            /** Format: int32 */
+            workedMinutes: number;
+            /** Format: int32 */
+            overtimeMinutes: number;
+        };
+        EmployeeShiftListDto: {
+            items: components["schemas"]["EmployeeShiftDto"][];
+            /** Format: int32 */
+            totalCount: number;
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalPages: number;
+        };
+        /** @enum {unknown} */
+        EmployeeStatus: "INVITED" | "PENDING_OTP" | "ACTIVE" | "LOCKED" | "REVOKED";
         ExpenseBreakdownDto: {
             /** Format: int64 */
             customerBuyback: number;
@@ -6626,6 +9483,76 @@ export interface components {
         ForgotPasswordRequest: {
             email: string;
         };
+        HrRequestDto: {
+            /** Format: uuid */
+            id: string;
+            requestCode: string;
+            type: components["schemas"]["HrRequestType"];
+            /** Format: uuid */
+            requesterId: string;
+            requesterCode: string;
+            requesterName: string;
+            /** Format: date */
+            applyDate: string;
+            /** Format: int16 */
+            shiftNo: number;
+            /** Format: int16 */
+            targetShiftNo: null | number;
+            /** Format: uuid */
+            replacementEmployeeId: null | string;
+            replacementName: string;
+            /** Format: date-time */
+            correctCheckInAt: null | string;
+            /** Format: date-time */
+            correctCheckOutAt: null | string;
+            proofUrl: null | string;
+            reason: string;
+            status: components["schemas"]["HrRequestStatus"];
+            isOwnedByCurrentUser: boolean;
+            isRequestedByCurrentUser: boolean;
+            reviewNote: null | string;
+            reviewedBy: null | string;
+            /** Format: date-time */
+            reviewedAt: null | string;
+            history: components["schemas"]["HrRequestHistoryDto"][];
+        };
+        HrRequestHistoryDto: {
+            /** Format: uuid */
+            id: string;
+            action: string;
+            note: null | string;
+            /** Format: date-time */
+            occurredAt: string;
+            actorName: string;
+        };
+        HrRequestListDto: {
+            myRequests: components["schemas"]["HrRequestDto"][];
+            approvalQueue: components["schemas"]["HrRequestDto"][];
+            /** Format: int32 */
+            myCount: number;
+            /** Format: int32 */
+            pendingApprovalCount: number;
+        };
+        HrRequestOptionDto: {
+            value: string;
+            label: string;
+            /** Format: date */
+            applyDate?: null | string;
+            /** Format: int16 */
+            shiftNo?: null | number;
+        };
+        HrRequestOptionsDto: {
+            employees: components["schemas"]["HrRequestOptionDto"][];
+            workRecords: components["schemas"]["HrRequestOptionDto"][];
+        };
+        HrRequestReviewRequest: {
+            status: components["schemas"]["HrRequestStatus"];
+            note: string;
+        };
+        /** @enum {unknown} */
+        HrRequestStatus: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
+        /** @enum {unknown} */
+        HrRequestType: "SHIFT_SWAP" | "LEAVE" | "ATTENDANCE_EXPLANATION";
         IntegrationsConfigDto: {
             vietQr: components["schemas"]["VietQrIntegrationDto"];
             zaloOa: components["schemas"]["ZaloOaIntegrationDto"];
@@ -6980,6 +9907,19 @@ export interface components {
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
+        PagedResultOfCustomerBuybackDetailResponse: {
+            items: components["schemas"]["CustomerBuybackDetailResponse"][];
+            /** Format: int32 */
+            totalCount: number;
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
         PagedResultOfCustomerBuybackHistoryItem: {
             items: components["schemas"]["CustomerBuybackHistoryItem"][];
             /** Format: int32 */
@@ -7136,6 +10076,45 @@ export interface components {
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
+        PagedResultOfStockOutDetailResponse: {
+            items: components["schemas"]["StockOutDetailResponse"][];
+            /** Format: int32 */
+            totalCount: number;
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
+        PagedResultOfStockReceiptSummaryResponse: {
+            items: components["schemas"]["StockReceiptSummaryResponse"][];
+            /** Format: int32 */
+            totalCount: number;
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
+        PagedResultOfSupplierResponse: {
+            items: components["schemas"]["SupplierResponse"][];
+            /** Format: int32 */
+            totalCount: number;
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
         PagedResultOfTitleResponse: {
             items: components["schemas"]["TitleResponse"][];
             /** Format: int32 */
@@ -7149,8 +10128,322 @@ export interface components {
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
+        PatchPayrollEmployeeRequest: {
+            /** Format: int64 */
+            bonus: number;
+            /** Format: int64 */
+            allowance: number;
+            /** Format: int64 */
+            deduction: number;
+            note?: null | string;
+        };
         /** @enum {unknown} */
-        PaymentMethod: "CASH" | "BANK_TRANSFER" | null;
+        PaymentMethod: "CASH" | "BANK_TRANSFER";
+        PayrollAdjustmentDto: {
+            /** Format: uuid */
+            id: string;
+            adjustmentCode: string;
+            sourcePayrollCode: null | string;
+            sourcePeriodKey: null | string;
+            sourceVoucherRef: null | string;
+            /** Format: uuid */
+            employeeId: string;
+            employeeLabel: string;
+            targetPeriodKey: string;
+            category: string;
+            adjustmentType: components["schemas"]["PayrollAdjustmentType"];
+            /** Format: int64 */
+            amount: number;
+            referenceCode: null | string;
+            reason: string;
+            proofUrl: null | string;
+            status: components["schemas"]["PayrollAdjustmentStatus"];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /** @enum {unknown} */
+        PayrollAdjustmentStatus: "DRAFT" | "APPROVED" | "APPLIED";
+        /** @enum {unknown} */
+        PayrollAdjustmentType: "ADD_NEXT_PERIOD" | "DEDUCT_NEXT_PERIOD";
+        PayrollAuditHistoryDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            occurredAt: string;
+            actorName: string;
+            event: string;
+            result: null | string;
+        };
+        PayrollBatchDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            batchNumber: number;
+            method: components["schemas"]["PaymentMethod"];
+            transactionRef: string;
+            /** Format: date-time */
+            payoutAt: string;
+            /** Format: int64 */
+            amount: number;
+            employeeNames: string[];
+            note: null | string;
+            proofUrl: null | string;
+            confirmedByName: string;
+        };
+        PayrollBreakdownDto: {
+            /** Format: uuid */
+            entryId: string;
+            /** Format: uuid */
+            employeeId: string;
+            bonusItems: components["schemas"]["PayrollLineDto"][];
+            allowanceItems: components["schemas"]["PayrollLineDto"][];
+            deductionItems: components["schemas"]["PayrollLineDto"][];
+            cashVariances: components["schemas"]["CashVarianceDto"][];
+        };
+        PayrollEmployeeRowDto: {
+            /** Format: uuid */
+            employeeId: string;
+            /** Format: uuid */
+            entryId: string;
+            employeeCode: string;
+            fullName: string;
+            roleLabel: string;
+            /** Format: double */
+            standardHours: number;
+            /** Format: double */
+            hourlyRate: number;
+            /** Format: int64 */
+            baseSalary: number;
+            /** Format: double */
+            overtimeHours: number;
+            /** Format: int64 */
+            overtimeAmount: number;
+            /** Format: int64 */
+            bonus: number;
+            /** Format: int64 */
+            allowance: number;
+            /** Format: int64 */
+            deduction: number;
+            /** Format: int64 */
+            mandatoryContribution: number;
+            /** Format: int64 */
+            taxAmount: number;
+            /** Format: int64 */
+            netPay: number;
+            payoutStatus: components["schemas"]["WorkRecordPaymentStatus"];
+            zaloStatus: components["schemas"]["ZaloDeliveryStatus"];
+            /** Format: date-time */
+            zaloSentAt: null | string;
+            zaloErrorReason: null | string;
+            zaloLinked: boolean;
+            bankAccount: string;
+            /** Format: date-time */
+            payoutAt: null | string;
+            payoutMethod: null | components["schemas"]["PaymentMethod"];
+            transactionRef: null | string;
+            contributionNote: null | string;
+            bonusItems: components["schemas"]["PayrollLineDto"][];
+            allowanceItems: components["schemas"]["PayrollLineDto"][];
+            deductionItems: components["schemas"]["PayrollLineDto"][];
+        };
+        PayrollKpiDto: {
+            /** Format: int64 */
+            totalNetPay: number;
+            /** Format: int64 */
+            paidAmount: number;
+            /** Format: int64 */
+            remainingAmount: number;
+            /** Format: double */
+            approvedOtHours: number;
+            /** Format: int32 */
+            totalEmployees: number;
+            /** Format: int32 */
+            zaloSentCount: number;
+            /** Format: int32 */
+            zaloUnsentCount: number;
+            /** Format: int32 */
+            zaloFailedCount: number;
+        };
+        PayrollLineDto: {
+            label: string;
+            /** Format: int64 */
+            amount: number;
+            voucherCode: null | string;
+        };
+        PayrollPeriodDetailDto: {
+            periodKey: string;
+            payrollCode: string;
+            periodRangeLabel: string;
+            attendanceSourceCode: string;
+            status: components["schemas"]["PayrollPeriodStatus"];
+            exists: boolean;
+            /** Format: date-time */
+            approvedAt: null | string;
+            approvedByName: null | string;
+            /** Format: date-time */
+            payoutAt: null | string;
+            payoutMethod: null | components["schemas"]["PaymentMethod"];
+            transactionRef: null | string;
+            payoutConfirmedByName: null | string;
+            kpi: components["schemas"]["PayrollKpiDto"];
+            rows: components["schemas"]["PayrollEmployeeRowDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            filteredRowsCount: number;
+            /** Format: int32 */
+            allRowsCount: number;
+            /** Format: int32 */
+            paidRowsCount: number;
+            batches: components["schemas"]["PayrollBatchDto"][];
+            history: components["schemas"]["PayrollAuditHistoryDto"][];
+            pendingAdjustments: components["schemas"]["PayrollAdjustmentDto"][];
+        };
+        PayrollPeriodListItemDto: {
+            periodKey: string;
+            payrollCode: string;
+            periodRangeLabel: string;
+            status: components["schemas"]["PayrollPeriodStatus"];
+            exists: boolean;
+            /** Format: int32 */
+            employeeCount: number;
+            /** Format: int64 */
+            totalNetPay: number;
+            /** Format: int64 */
+            paidAmount: number;
+        };
+        /** @enum {unknown} */
+        PayrollPeriodStatus: "DRAFT" | "APPROVED_UNPAID" | "PARTIALLY_PAID" | "SETTLED";
+        PayslipAdvanceVoucherDto: {
+            voucherCode: string;
+            content: string;
+            /** Format: int64 */
+            amount: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        PayslipAttendanceDayDto: {
+            /** Format: date */
+            workDate: string;
+            /** Format: int16 */
+            shiftNo: number;
+            /** Format: date-time */
+            checkInAt: null | string;
+            /** Format: date-time */
+            checkOutAt: null | string;
+            /** Format: double */
+            standardHours: number;
+            /** Format: double */
+            overtimeHours: number;
+        };
+        PayslipDetailDto: {
+            hasPayslip: boolean;
+            /** Format: uuid */
+            entryId: null | string;
+            payslipCode: string;
+            periodKey: string;
+            periodRange: string;
+            payrollCode: string;
+            attendanceSourceCode: string;
+            payrollStatus: null | components["schemas"]["PayrollPeriodStatus"];
+            paid: boolean;
+            /** Format: date-time */
+            payoutAt: null | string;
+            approvedByName: string;
+            /** Format: date-time */
+            approvedAt: null | string;
+            /** Format: uuid */
+            employeeId: string;
+            employeeCode: string;
+            employeeName: string;
+            employeeRoleLabel: string;
+            storeName: string;
+            bankAccount: string;
+            transactionRef: null | string;
+            /** Format: double */
+            standardHours: number;
+            /** Format: double */
+            hourlyRate: number;
+            /** Format: int64 */
+            baseSalary: number;
+            /** Format: double */
+            overtimeHours: number;
+            /** Format: int64 */
+            overtimeAmount: number;
+            /** Format: int64 */
+            bonus: number;
+            bonusNote: string;
+            /** Format: int64 */
+            allowance: number;
+            allowanceNote: string;
+            /** Format: int64 */
+            mandatoryContribution: number;
+            mandatoryContributionNote: string;
+            /** Format: int64 */
+            taxAmount: number;
+            /** Format: int64 */
+            deduction: number;
+            /** Format: int64 */
+            totalIncome: number;
+            /** Format: int64 */
+            totalDeduction: number;
+            /** Format: int64 */
+            netPay: number;
+            zaloStatus: components["schemas"]["ZaloDeliveryStatus"];
+            /** Format: date-time */
+            zaloSentAt: null | string;
+            zaloLinked: boolean;
+            availablePeriods: components["schemas"]["PayslipPeriodOptionDto"][];
+            attendanceDays: components["schemas"]["PayslipAttendanceDayDto"][];
+            overtimeEntries: components["schemas"]["PayslipOvertimeEntryDto"][];
+            advanceVouchers: components["schemas"]["PayslipAdvanceVoucherDto"][];
+            disputes: components["schemas"]["PayslipDisputeDto"][];
+        };
+        /** @enum {unknown} */
+        PayslipDisputeCategory: "BASE_SALARY" | "OVERTIME" | "BONUS" | "ALLOWANCE" | "DEDUCTION";
+        PayslipDisputeDto: {
+            /** Format: uuid */
+            id: string;
+            disputeCode: string;
+            payslipCode: string;
+            /** Format: uuid */
+            employeeId: string;
+            employeeName: string;
+            category: components["schemas"]["PayslipDisputeCategory"];
+            status: components["schemas"]["PayslipDisputeStatus"];
+            content: string;
+            proofUrl: null | string;
+            /** Format: date-time */
+            submittedAt: string;
+            adminName: null | string;
+            /** Format: date-time */
+            respondedAt: null | string;
+            adminResponse: null | string;
+            calculationNote: null | string;
+            adjustmentNote: null | string;
+            linkedAdjustmentCode: null | string;
+            ownedByActor: boolean;
+        };
+        /** @enum {unknown} */
+        PayslipDisputeStatus: "PENDING_RESPONSE" | "EXPLAINED" | "APPROVED_NEXT_PERIOD_ADJUSTMENT";
+        PayslipOvertimeEntryDto: {
+            /** Format: date */
+            workDate: string;
+            /** Format: date-time */
+            startAt: null | string;
+            /** Format: date-time */
+            endAt: null | string;
+            /** Format: double */
+            hours: number;
+            /** Format: int64 */
+            amount: number;
+        };
+        PayslipPeriodOptionDto: {
+            periodKey: string;
+            paid: boolean;
+        };
         ProblemDetails: {
             type?: null | string;
             title?: null | string;
@@ -7219,6 +10512,15 @@ export interface components {
         ResetPasswordRequest: {
             token: string;
             newPassword: string;
+        };
+        RespondPayslipDisputeRequest: {
+            status: components["schemas"]["PayslipDisputeStatus"];
+            adminResponse: string;
+            calculationNote?: null | string;
+            adjustmentNote?: null | string;
+            /** Format: int64 */
+            adjustmentAmount?: null | number;
+            adjustmentType?: null | components["schemas"]["PayrollAdjustmentType"];
         };
         RevenueBreakdownDto: {
             /** Format: int64 */
@@ -7304,6 +10606,16 @@ export interface components {
             finalPrice: number;
             status: string;
         };
+        SendPayrollZaloRequest: {
+            employeeIds?: null | string[];
+        };
+        SendPayrollZaloResultDto: {
+            /** Format: int32 */
+            sentCount: number;
+            /** Format: int32 */
+            failedCount: number;
+            results: components["schemas"]["ZaloSendResultDto"][];
+        };
         SendTestEmailRequest: {
             recipientEmail: string;
         };
@@ -7331,8 +10643,184 @@ export interface components {
             password: string;
             status: string;
         };
+        StockOutDetailResponse: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            stockOutType: string;
+            stockOutTypeLabel: string;
+            status: components["schemas"]["ApprovalStatus"];
+            reason: string;
+            evidenceFileName: null | string;
+            /** Format: int32 */
+            copyCount: number;
+            /** Format: int64 */
+            totalCost: number;
+            /** Format: uuid */
+            createdBy: string;
+            createdByName: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            approvedBy: null | string;
+            approvedByName: null | string;
+            /** Format: date-time */
+            approvedAt: null | string;
+            lines: components["schemas"]["StockOutLineResponse"][];
+            history: components["schemas"]["StockOutHistoryItemResponse"][];
+        };
+        StockOutHistoryItemResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            actorId: null | string;
+            actorName: string;
+            action: string;
+            note: null | string;
+        };
+        StockOutLineRequest: {
+            copyBarcode: string;
+            lineReason?: null | string;
+        };
+        StockOutLineResponse: {
+            /** Format: uuid */
+            copyId: string;
+            copyBarcode: string;
+            titleName: string;
+            conditionGrade: string;
+            conditionNote: null | string;
+            /** Format: int64 */
+            costPrice: number;
+            currentStatus: string;
+            targetStatus: string;
+            lineReason: null | string;
+        };
+        StockReceiptDetailResponse: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            sourceType: components["schemas"]["StockReceiptSourceType"];
+            /** Format: uuid */
+            supplierId: null | string;
+            supplierCode: null | string;
+            supplierName: null | string;
+            status: components["schemas"]["ApprovalStatus"];
+            /** Format: int64 */
+            totalAmount: number;
+            /** Format: int32 */
+            lineCount: number;
+            /** Format: int32 */
+            totalCopies: number;
+            /** Format: int32 */
+            generatedCopyCount: number;
+            note: null | string;
+            /** Format: uuid */
+            createdBy: string;
+            createdByName: null | string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            completedAt: null | string;
+            lines: components["schemas"]["StockReceiptLineResponse"][];
+        };
+        StockReceiptLineResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            editionId: string;
+            /** Format: uuid */
+            titleId: string;
+            titleName: string;
+            volumeLabel: null | string;
+            isbn: null | string;
+            publisher: null | string;
+            /** Format: int16 */
+            publishYear: null | number;
+            editionStatement: null | string;
+            format: null | string;
+            /** Format: int64 */
+            coverPrice: number;
+            /** Format: int32 */
+            quantity: number;
+            /** Format: int64 */
+            unitCost: number;
+            conditionGrade: components["schemas"]["ConditionGrade"];
+            conditionNote: null | string;
+            availability: components["schemas"]["BookChannelAvailability"];
+            /** Format: int64 */
+            sellingPrice: null | number;
+            /** Format: int64 */
+            rentalRate: null | number;
+            /** Format: int32 */
+            generatedCopyCount: number;
+            firstBarcode: null | string;
+            lastBarcode: null | string;
+            barcodes: string[];
+            copyStatus: null | components["schemas"]["BookCopyStatus"];
+        };
         /** @enum {unknown} */
         StockReceiptSourceType: "SUPPLIER" | "CUSTOMER_BUYBACK";
+        StockReceiptSummaryResponse: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            sourceType: components["schemas"]["StockReceiptSourceType"];
+            /** Format: uuid */
+            supplierId: null | string;
+            supplierCode: null | string;
+            supplierName: null | string;
+            status: components["schemas"]["ApprovalStatus"];
+            /** Format: int64 */
+            totalAmount: number;
+            /** Format: int32 */
+            lineCount: number;
+            /** Format: int32 */
+            totalCopies: number;
+            /** Format: int32 */
+            generatedCopyCount: number;
+            note: null | string;
+            /** Format: uuid */
+            createdBy: string;
+            createdByName: null | string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            completedAt: null | string;
+        };
+        SupplierResponse: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            phone: null | string;
+            address: null | string;
+            taxCode: null | string;
+            isActive: boolean;
+            /** Format: int32 */
+            receiptCount: number;
+            /** Format: int64 */
+            totalImportAmount: number;
+            /** Format: int64 */
+            pendingAmount: number;
+            /** Format: int32 */
+            pendingReceiptCount: number;
+        };
+        SupplierStatsResponse: {
+            /** Format: int32 */
+            activeCount: number;
+            /** Format: int32 */
+            inactiveCount: number;
+            /** Format: int32 */
+            totalCount: number;
+            /** Format: int64 */
+            totalImportAmount: number;
+            /** Format: int64 */
+            totalPendingAmount: number;
+            /** Format: int32 */
+            pendingReceiptCount: number;
+        };
         TaxDeclarationReportResponse: {
             periodType: string;
             /** Format: int32 */
@@ -7453,6 +10941,9 @@ export interface components {
             /** Format: int32 */
             rentalCount: number;
         };
+        UnlockPayrollRequest: {
+            reason: string;
+        };
         UpdateApprovalStatusRequestDto: {
             status: components["schemas"]["ApprovalStatus"];
             reason: null | string;
@@ -7538,6 +11029,24 @@ export interface components {
         UpdateEditionStatusRequest: {
             isActive: boolean;
         };
+        UpdateEditionThresholdsRequest: {
+            /** Format: int32 */
+            minStockSale?: null | number;
+            /** Format: int32 */
+            minStockRental?: null | number;
+        };
+        UpdateEmployeeRequest: {
+            email: string;
+            fullName: string;
+            phone: string;
+            jobTitle: null | string;
+            status: components["schemas"]["EmployeeStatus"];
+            reason?: null | string;
+            /** Format: double */
+            hourlyRate?: null | number;
+            bankName?: null | string;
+            bankAccountNumber?: null | string;
+        };
         UpdateIntegrationsRequest: {
             vietQr?: null | components["schemas"]["VietQrIntegrationDto"];
             zaloOa?: null | components["schemas"]["ZaloOaIntegrationDto"];
@@ -7570,6 +11079,22 @@ export interface components {
             damagePenalties: null | components["schemas"]["DamagePenaltyConfigDto"][];
             changeReason: string;
         };
+        UpdateStockReceiptRequest: {
+            /** Format: uuid */
+            supplierId: string;
+            note?: null | string;
+            lines?: null | components["schemas"]["CreateStockReceiptLineRequest"][];
+        };
+        UpdateSupplierRequest: {
+            name: string;
+            phone?: null | string;
+            address?: null | string;
+            taxCode?: null | string;
+            isActive?: null | boolean;
+        };
+        UpdateSupplierStatusRequest: {
+            isActive: boolean;
+        };
         UpdateTitleRequest: {
             name: string;
             /** Format: uuid */
@@ -7588,7 +11113,7 @@ export interface components {
             isActive: boolean;
         };
         /** @enum {unknown} */
-        UploadOwnerType: "BOOK_SERIES_IMAGE" | "TITLE_IMAGE" | "EDITION_IMAGE" | "BOOK_COPY_IMAGE" | "RENTAL_LINE_IMAGE" | "STOCK_RECEIPT_IMAGE" | null;
+        UploadOwnerType: "BOOK_SERIES_IMAGE" | "TITLE_IMAGE" | "EDITION_IMAGE" | "BOOK_COPY_IMAGE" | "RENTAL_LINE_IMAGE" | "STOCK_RECEIPT_IMAGE" | "HR_REQUEST_PROOF" | "PAYSLIP_DISPUTE_PROOF" | "PAYROLL_PAYOUT_PROOF" | null;
         UploadSignatureRequest: {
             ownerType: null | components["schemas"]["UploadOwnerType"];
         };
@@ -7620,6 +11145,10 @@ export interface components {
             webhookUrl: string;
             status: string;
         };
+        /** @enum {unknown} */
+        WorkRecordPaymentStatus: "UNPAID" | "PAID";
+        /** @enum {unknown} */
+        ZaloDeliveryStatus: "UNSENT" | "SENT" | "FAILED";
         ZaloOaIntegrationDto: {
             appId: string;
             oaId: string;
@@ -7631,6 +11160,14 @@ export interface components {
             templateDepositSettled: string;
             reminderSchedule: string;
             status: string;
+        };
+        ZaloSendResultDto: {
+            /** Format: uuid */
+            entryId: string;
+            status: components["schemas"]["ZaloDeliveryStatus"];
+            /** Format: date-time */
+            sentAt: null | string;
+            errorReason: null | string;
         };
     };
     responses: never;

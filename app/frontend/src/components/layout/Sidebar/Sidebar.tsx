@@ -72,7 +72,7 @@ function hasReadableScreen(
   screenIds: readonly ScreenId[],
   role: AppRole | null,
   permissionCodes = new Set<string>(),
-  permissionStatus: 'loading' | 'ready' | 'error' = 'ready',
+  permissionStatus: 'loading' | 'ready' | 'error' = 'loading',
 ): boolean {
   return role !== null && screenIds.some((screenId) =>
     canReadAccess(resolveAccess(screenId, role, permissionCodes, permissionStatus)),

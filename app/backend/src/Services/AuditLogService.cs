@@ -429,10 +429,30 @@ public class AuditLogService(AppDbContext dbContext, IHttpContextAccessor? httpC
                 .Where(c => ids.Contains(c.Id))
                 .ToDictionaryAsync(c => c.Id, c => $"{c.FullName} ({c.Phone})", cancellationToken));
 
-        await LoadAsync<EmployeeModel>(["employee", "employees"], async ids =>
+        await LoadAsync<EmployeeModel>(["employee", "employees", "employeemodel"], async ids =>
             await dbContext.Employees.AsNoTracking()
                 .Where(e => ids.Contains(e.Id))
                 .ToDictionaryAsync(e => e.Id, e => e.FullName, cancellationToken));
+
+        await LoadAsync<HrRequestModel>(["hr_request", "hrrequest"], async ids =>
+            await dbContext.HrRequests.AsNoTracking()
+                .Where(request => ids.Contains(request.Id))
+                .ToDictionaryAsync(request => request.Id, request => request.RequestCode, cancellationToken));
+
+        await LoadAsync<PayrollPeriodModel>(["payroll_period", "payrollperiod"], async ids =>
+            await dbContext.PayrollPeriods.AsNoTracking()
+                .Where(period => ids.Contains(period.Id))
+                .ToDictionaryAsync(period => period.Id, period => $"{period.PayrollCode} · {period.PeriodKey}", cancellationToken));
+
+        await LoadAsync<PayrollAdjustmentModel>(["payroll_adjustment", "payrolladjustment"], async ids =>
+            await dbContext.PayrollAdjustments.AsNoTracking()
+                .Where(adjustment => ids.Contains(adjustment.Id))
+                .ToDictionaryAsync(adjustment => adjustment.Id, adjustment => adjustment.AdjustmentCode, cancellationToken));
+
+        await LoadAsync<PayslipDisputeModel>(["payslip_dispute", "payslipdispute"], async ids =>
+            await dbContext.PayslipDisputes.AsNoTracking()
+                .Where(dispute => ids.Contains(dispute.Id))
+                .ToDictionaryAsync(dispute => dispute.Id, dispute => dispute.DisputeCode, cancellationToken));
 
         return result;
     }

@@ -39,6 +39,12 @@ public static class Seed
         "employee_work_records",
         "payments",
         "notification_outbox",
+        "payroll_periods",
+        "payroll_payout_batches",
+        "payroll_entries",
+        "payroll_adjustments",
+        "payroll_entry_items",
+        "payslip_disputes",
         "audit_logs"
     ];
 
@@ -86,13 +92,16 @@ public static class Seed
     private static async Task InsertRowAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, string table, JsonElement row)
     {
         var columns = row.EnumerateObject().ToArray();
-        var names = string.Join(", ", columns.Select(column => $"\"{column.Name}\""));
+        var names = string.Join(", ", columns.Select(column => $"\"{NormalizeColumnName(column.Name)}\""));
         var values = string.Join(", ", columns.Select(column => $"@{column.Name}"));
         await using var command = new NpgsqlCommand($"INSERT INTO \"{table}\" ({names}) VALUES ({values}) ON CONFLICT DO NOTHING", connection, transaction);
         foreach (var column in columns)
             command.Parameters.Add(CreateParameter(column.Name, column.Value));
         await command.ExecuteNonQueryAsync();
     }
+
+    private static string NormalizeColumnName(string columnName)
+        => string.Equals(columnName, "status", StringComparison.Ordinal) ? "Status" : columnName;
 
     internal static NpgsqlParameter CreateParameter(string columnName, JsonElement value)
     {

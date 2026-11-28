@@ -8,6 +8,7 @@ export type AuthUser = {
   role: string
   roleCode?: AppRole
   email?: string
+  employeeCode?: string
   avatarUrl?: string
 }
 
@@ -35,6 +36,7 @@ export function formatUser(
       fullName?: string | null
       role?: string | null
       email?: string | null
+      employeeCode?: string | null
       avatarUrl?: string | null
     } | null,
 ): AuthUser {
@@ -48,6 +50,7 @@ export function formatUser(
     role: mapRoleToDisplay(raw.role ?? undefined),
     roleCode: roleCode ?? undefined,
     email: raw.email ?? undefined,
+    employeeCode: raw.employeeCode ?? undefined,
     avatarUrl: raw.avatarUrl ?? undefined,
   }
 }

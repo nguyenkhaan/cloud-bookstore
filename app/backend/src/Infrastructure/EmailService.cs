@@ -57,6 +57,26 @@ public class EmailService(
             cancellationToken);
     }
 
+    public virtual Task SendAccountSetupEmailAsync(
+        string recipientEmail,
+        string recipientName,
+        string token,
+        CancellationToken cancellationToken = default)
+    {
+        var link = CreateActionLink(settings.ResetPasswordPath, token);
+        return SendTemplateAsync(
+            recipientEmail,
+            "Thiết lập tài khoản Cloud Bookstore",
+            "AccountSetup.html",
+            new Dictionary<string, string>
+            {
+                ["recipientName"] = recipientName,
+                ["actionUrl"] = link
+            },
+            $"Chào {recipientName},\n\nThiết lập mật khẩu tài khoản: {link}",
+            cancellationToken);
+    }
+
     public virtual async Task<bool> SendTestEmailAsync(
         string recipientEmail,
         CancellationToken cancellationToken = default)

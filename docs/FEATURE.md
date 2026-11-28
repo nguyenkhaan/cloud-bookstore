@@ -15,7 +15,7 @@
 | ID | Trạng thái | Chức năng |
 | --- | --- | --- |
 | AUTH-001 | Required | Seed một tài khoản Admin gốc được bảo vệ khi triển khai. |
-| AUTH-002 | Required | Admin quản lý danh sách email nhân viên được phép đăng ký. |
+| AUTH-002 | Required | Admin tạo trực tiếp tài khoản nhân viên ở trạng thái `INVITED`; nhân viên thiết lập mật khẩu qua liên kết dùng một lần gửi bằng email. Không dùng whitelist email hoặc tự đăng ký (PDR-009). |
 | AUTH-003 | Open policy | Nhân viên đăng ký bằng email được cho phép và xác thực OTP. |
 | AUTH-004 | Open policy | Đăng nhập, đăng xuất, đổi mật khẩu và đặt lại mật khẩu. |
 | AUTH-005 | Required | Admin khóa, mở khóa hoặc vô hiệu hóa tài khoản không được bảo vệ. |
@@ -138,13 +138,13 @@
 
 | ID | Trạng thái | Chức năng |
 | --- | --- | --- |
-| EMP-001 | Required | Admin quản lý hồ sơ, tài khoản, vai trò và trạng thái làm việc của nhân viên. |
+| EMP-001 | Required | Admin quản lý hồ sơ, tài khoản, vai trò và trạng thái làm việc của nhân viên; tài khoản RootAdmin được bảo vệ (PDR-009). |
 | SHIFT-001 | Required | Ghi nhận từng ca/lần làm với ngày làm, thứ tự ca, check-in và check-out; một nhân viên có thể có nhiều ca trong một ngày. |
 | ATT-001 | Required | Ghi nhận trạng thái ca cơ bản: có mặt, đi trễ, vắng, thiếu chấm công hoặc nghỉ. |
-| ATT-002 | Required | Điều chỉnh chấm công cần lý do, Admin duyệt và lưu audit. |
-| PAYROLL-001 | Required | Ghi nhận lương thực nhận theo từng ca; không triển khai bảng công hoặc bảng lương theo kỳ. |
-| PAYROLL-002 | Required | Ghi nhận trạng thái đã/chưa trả lương và liên kết một khoản chi lương với ca tương ứng. |
-| PAYROLL-003 | Required | Admin duyệt điều chỉnh chấm công hoặc lương ca; chi lương chuyển khoản vẫn thực hiện ngoài hệ thống. |
+| ATT-002 | Required | Điều chỉnh chấm công cần lý do, Admin duyệt, lưu audit và cập nhật bản ghi công liên quan (PDR-009). |
+| PAYROLL-001 | Required | Tổng hợp công thành bảng lương theo kỳ, có khóa/mở khóa và phê duyệt Admin (PDR-009); lương theo ca vẫn là dữ liệu nguồn. |
+| PAYROLL-002 | Required | Ghi nhận khoản lương đã/chưa trả, đối soát và liên kết khoản chi lương với nhân viên/kỳ lương (PDR-009). |
+| PAYROLL-003 | Required | Admin duyệt điều chỉnh và chi lương; chi chuyển khoản vẫn do nhân viên thực hiện ngoài hệ thống (PDR-009). |
 
 ## 10. Thông báo và tích hợp
 
@@ -182,7 +182,7 @@
 - Gia hạn tự phục vụ hoặc tương tác hai chiều qua Zalo.
 - Thương mại điện tử, giao nhận hoặc thanh toán từ xa cho khách.
 - Điểm tích lũy, đổi điểm hoặc ví trả trước.
-- Mẫu ca, lịch tuần/tháng, yêu cầu nghỉ/đổi ca, bảng công và bảng lương theo kỳ.
+- Mẫu ca và lịch tuần/tháng.
+- Tự động chuyển tiền ra hoặc tự động nộp hồ sơ thuế.
 - Đa chi nhánh, điều chuyển liên chi nhánh hoặc SaaS đa tenant.
 - Văn phòng phẩm, F&B và nguyên liệu.
-- Tự động chuyển tiền ra hoặc tự động nộp hồ sơ thuế.

@@ -82,6 +82,7 @@ export interface StoredUser {
   role: string
   roleCode: AppRole
   email?: string
+  employeeCode?: string
   avatarUrl?: string
 }
 
@@ -102,6 +103,7 @@ export function readStoredUser(): StoredUser | null {
       role: value.role,
       roleCode,
       email: typeof value.email === 'string' ? value.email : undefined,
+      employeeCode: typeof value.employeeCode === 'string' ? value.employeeCode : undefined,
       avatarUrl: typeof value.avatarUrl === 'string' ? value.avatarUrl : undefined,
     }
   } catch {

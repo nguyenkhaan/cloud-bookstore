@@ -9,7 +9,7 @@ import {
   PAYROLL_STATUS_FILTER_OPTIONS,
   ZALO_STATUS_LABELS,
   formatVnd,
-} from '../hr-payroll.mock'
+} from '../hr-payroll.utils'
 import type {
   EmployeePayoutStatus,
   PayrollEmployeeRow,
@@ -20,6 +20,7 @@ import type {
 export interface PayrollTableSectionProps {
   summary: PayrollPeriodSummary
   periodKey: string
+  periodOptions?: { value: string; label: string }[]
   search: string
   statusFilter: PayrollPeriodStatus | ''
   payoutFilter: EmployeePayoutStatus | 'partial' | ''
@@ -45,6 +46,7 @@ const PAGE_SIZE = 10
 export function PayrollTableSection({
   summary,
   periodKey,
+  periodOptions,
   search,
   statusFilter,
   payoutFilter,
@@ -98,7 +100,7 @@ export function PayrollTableSection({
       const remainingCount = summary.allRowsCount - summary.paidRowsCount
       return `Đã ghi nhận đợt chi ${formatVnd(summary.kpi.paidAmount)} cho ${paidShort}. ${remainingCount} nhân viên còn lại chưa được chi trả.`
     }
-    return `Đã tất toán ${summary.paidRowsCount}/${summary.allRowsCount} nhân viên. Chứng từ đã đối chiếu; không thể sửa hoặc thanh toán lần hai. Trích nộp 0đ là dữ liệu minh họa cần kiểm tra hồ sơ.`
+    return `Đã tất toán ${summary.paidRowsCount}/${summary.allRowsCount} nhân viên. Chứng từ đã đối chiếu; không thể sửa hoặc thanh toán lần hai. Trích nộp 0đ cần kiểm tra hồ sơ.`
   })()
 
   return (
@@ -128,7 +130,13 @@ export function PayrollTableSection({
               hideLabel
               label="Kỳ lương"
               onChange={onPeriodChange}
-              options={PAYROLL_PERIOD_OPTIONS}
+              options={
+                periodOptions && periodOptions.length > 0
+                  ? periodOptions
+                  : periodKey
+                    ? [{ value: periodKey, label: periodKey }]
+                    : PAYROLL_PERIOD_OPTIONS
+              }
               searchable={false}
               testId="hrm05-period-select"
               value={periodKey}
@@ -144,10 +152,7 @@ export function PayrollTableSection({
               }
               options={PAYROLL_STATUS_FILTER_OPTIONS}
               searchable={false}
-              value={
-                statusFilter ||
-                (summary.status === 'draft' ? 'draft' : 'approved_unpaid')
-              }
+              value={statusFilter}
             />
           </div>
 
@@ -376,6 +381,60 @@ export function PayrollTableSection({
       <div className="mt-4 rounded-xl border border-emerald-200/80 bg-emerald-50/70 px-4 py-3 text-xs font-medium text-emerald-700">
         {statusBannerText}
       </div>
+
+      {isDraft && (summary.pendingAdjustments?.length ?? 0) > 0 && (
+        <div
+          className="mt-4 rounded-xl border border-indigo-200/80 bg-indigo-50/50 px-4 py-3 text-xs"
+          data-testid="hrm05-pending-adjustments"
+        >
+          <p className="font-semibold text-indigo-900">
+            Khoản điều chỉnh kỳ sau chờ áp dụng ({summary.pendingAdjustments?.length ?? 0})
+          </p>
+          <p className="mt-0.5 text-indigo-700">
+            Các khoản trạng thái Đã duyệt sẽ tự động áp dụng khi bấm &quot;Khởi tạo bảng lương từ bảng công&quot;.
+          </p>
+          <div className="mt-2.5 space-y-1.5">
+            {summary.pendingAdjustments?.map((adj) => {
+              const isAddition = adj.adjustmentType === 'add_next_period'
+              return (
+                <div
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-indigo-100 bg-white px-3 py-2"
+                  key={adj.id}
+                >
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-900">
+                      {adj.id} · {adj.employeeLabel}
+                    </p>
+                    <p className="text-slate-600">
+                      {adj.category} · {adj.reason}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        'font-bold',
+                        isAddition ? 'text-emerald-700' : 'text-rose-700',
+                      )}
+                    >
+                      {isAddition ? '+' : '-'}{formatVnd(adj.amount)}
+                    </span>
+                    <span
+                      className={cn(
+                        'rounded-full px-2 py-0.5 text-[11px] font-semibold',
+                        adj.status === 'approved'
+                          ? 'bg-emerald-50 text-emerald-700'
+                          : 'bg-amber-50 text-amber-800',
+                      )}
+                    >
+                      {adj.status === 'approved' ? 'Đã duyệt' : 'Bản nháp'}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="mt-4 flex flex-wrap items-center gap-2.5">
         <Button
