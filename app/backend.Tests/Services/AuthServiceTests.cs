@@ -43,6 +43,7 @@ public sealed class AuthServiceTests : IAsyncLifetime
     private const string CurrentPassword = "Current12345!";
     private const string NewPassword = "Replacement123!";
     private const string UserAgent = "Mozilla/5.0";
+    private const string AllowedOrigin = "http://localhost:5173";
     private const string AccessSecret = "test-access-signing-secret-at-least-32-bytes";
     private const string PostgresConnectionVariable = "CLOUDBOOK_AUTH_TEST_POSTGRES";
     private static readonly string CurrentPasswordHash = BCrypt.Net.BCrypt.HashPassword(CurrentPassword, workFactor: 4);
@@ -596,19 +597,205 @@ public sealed class AuthServiceTests : IAsyncLifetime
         }
     }
 
-    private async Task<WebApplication> StartAuthPipelineAsync()
+    [Theory]
+    [InlineData(600, 0, HttpStatusCode.BadRequest, "Password")]
+    [InlineData(0, 321, HttpStatusCode.BadRequest, "Email")]
+    [InlineData(100_000, 0, HttpStatusCode.RequestEntityTooLarge, null)]
+    [InlineData(5_000_000, 0, HttpStatusCode.RequestEntityTooLarge, null)]
+    public async Task Login_rejects_excessive_input_before_counting_a_failed_attempt(int passwordLength,
+        int emailLength, HttpStatusCode expectedStatus, string? invalidField)
+    {
+        await SeedEmployeeAsync();
+        await using var app = await StartAuthPipelineAsync();
+        using var client = new HttpClient { BaseAddress = new Uri(app.Urls.Single()) };
+        var request = new LoginRequest(emailLength > 0 ? new string('a', emailLength) : Email,
+            passwordLength > 0 ? new string('a', passwordLength) : CurrentPassword);
+
+        using var message = new HttpRequestMessage(HttpMethod.Post, "/api/auth/login")
+        {
+            Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json"),
+        };
+        message.Headers.ExpectContinue = expectedStatus == HttpStatusCode.RequestEntityTooLarge;
+        using var response = await client.SendAsync(message);
+
+        Assert.Equal(expectedStatus, response.StatusCode);
+        Assert.False(response.Headers.Contains("Set-Cookie"));
+        if (invalidField is not null)
+        {
+            var problem = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
+            Assert.NotNull(problem);
+            Assert.Contains(invalidField, problem.Errors.Keys);
+        }
+
+        await using var persisted = new AppDbContext(options);
+        Assert.Equal(0, (await persisted.Employees.SingleAsync()).FailedLoginAttempts);
+    }
+
+    [Theory]
+    [InlineData("access")]
+    [InlineData("csrf")]
+    [InlineData("refresh")]
+    [InlineData("cleanup")]
+    public async Task Logout_reports_incomplete_revocation_and_expires_cookies_if_redis_fails(string failure)
+    {
+        await SeedEmployeeAsync();
+        await using var db = new AppDbContext(options);
+        var session = await LoginAsync(CreateService(db));
+        await using var app = await StartAuthPipelineAsync();
+        using var client = new HttpClient(new HttpClientHandler { UseCookies = false }) { BaseAddress = new Uri(app.Urls.Single()) };
+        var cookies = $"cloudbook_access={session.AccessToken}; cloudbook_refresh={session.RefreshToken}";
+        var outage = new HttpRequestException("Redis unavailable");
+        switch (failure)
+        {
+            case "access":
+                redis.ExistsFailure = outage;
+                break;
+            case "csrf":
+                redis.CommandFailure = ("GET", RedisKeyManager.ForCsrf(ReadJwt(session.AccessToken).Id), outage);
+                break;
+            case "refresh":
+                redis.CommandFailure = ("GET", RedisKeyManager.ForToken(TokenType.REFRESH, ReadJwt(session.RefreshToken).Id), outage);
+                break;
+            case "cleanup":
+                redis.FailNextDeleteOf.Add(RedisKeyManager.ForToken(TokenType.ACCESS, ReadJwt(session.AccessToken).Id));
+                break;
+        }
+
+        if (failure == "access")
+        {
+            redis.CommandFailure = ("GET", string.Empty, outage);
+            foreach (var (token, origin, expectedCode) in new[]
+            {
+                (null, AllowedOrigin, CsrfProtectionMiddleware.CsrfRejectedCode),
+                ("invalid", AllowedOrigin, CsrfProtectionMiddleware.CsrfRejectedCode),
+                (session.CsrfToken, "https://disallowed.example.test", null),
+            })
+            {
+                using var request = CreateSessionRequest(HttpMethod.Post, "logout", cookies, token, origin);
+                using var forbidden = await client.SendAsync(request);
+                Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
+                Assert.False(forbidden.Headers.Contains("Set-Cookie"));
+                if (expectedCode is not null)
+                {
+                    var body = await forbidden.Content.ReadFromJsonAsync<JsonElement>();
+                    Assert.Equal(expectedCode, body.GetProperty("code").GetString());
+                }
+            }
+
+            using var invalidJwt = CreateSessionRequest(HttpMethod.Post, "logout",
+                "cloudbook_access=invalid", session.CsrfToken);
+            using var unauthorized = await client.SendAsync(invalidJwt);
+            Assert.Equal(HttpStatusCode.Unauthorized, unauthorized.StatusCode);
+            Assert.False(unauthorized.Headers.Contains("Set-Cookie"));
+
+            using var protectedRequest = CreateSessionRequest(HttpMethod.Get, "session", cookies);
+            using var unavailable = await client.SendAsync(protectedRequest);
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, unavailable.StatusCode);
+            Assert.False(unavailable.Headers.Contains("Set-Cookie"));
+
+            await using var beforeLogout = new AppDbContext(options);
+            Assert.Null((await beforeLogout.EmployeeSessions.SingleAsync()).RevokedAt);
+        }
+
+        using var logout = CreateSessionRequest(HttpMethod.Post, "logout", cookies, session.CsrfToken);
+        using var response = await client.SendAsync(logout);
+        await AssertIncompleteLogoutAsync(response);
+        await using var persisted = new AppDbContext(options);
+        Assert.NotNull((await persisted.EmployeeSessions.SingleAsync()).RevokedAt);
+
+        redis.ExistsFailure = null;
+        redis.CommandFailure = null;
+        using var recoveredRequest = CreateSessionRequest(HttpMethod.Get, "session", cookies);
+        using var recovered = await client.SendAsync(recoveredRequest);
+        Assert.Equal(HttpStatusCode.Unauthorized, recovered.StatusCode);
+    }
+
+    [Fact]
+    public async Task Logout_during_a_database_outage_expires_cookies_and_reports_incomplete_revocation()
+    {
+        await SeedEmployeeAsync();
+        await using var db = new AppDbContext(options);
+        var session = await LoginAsync(CreateService(db));
+        var unavailable = CreateUnavailableDatabaseOptions(new TimeoutException("Database unavailable"));
+        await using var app = await StartAuthPipelineAsync(unavailable);
+        using var client = new HttpClient { BaseAddress = new Uri(app.Urls.Single()) };
+        var cookies = $"cloudbook_access={session.AccessToken}; cloudbook_refresh={session.RefreshToken}";
+
+        using var logout = CreateSessionRequest(HttpMethod.Post, "logout", cookies, session.CsrfToken);
+        using var response = await client.SendAsync(logout);
+
+        await AssertIncompleteLogoutAsync(response);
+    }
+
+    private static async Task AssertIncompleteLogoutAsync(HttpResponseMessage response)
+    {
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.All(ReadAuthCookies(response), entry => Assert.Contains("expires=Thu, 01 Jan 1970", entry, StringComparison.OrdinalIgnoreCase));
+        var body = await response.Content.ReadFromJsonAsync<LogoutIncompleteResponse>();
+        Assert.NotNull(body);
+        Assert.Equal("LOGOUT_REVOCATION_INCOMPLETE", body.Code);
+        Assert.True(body.CookiesCleared);
+        Assert.False(body.RevocationCompleted);
+    }
+
+    private static HttpRequestMessage CreateSessionRequest(HttpMethod method, string path, string cookies,
+        string? csrf = null, string origin = AllowedOrigin)
+    {
+        var request = new HttpRequestMessage(method, $"/api/auth/{path}");
+        request.Headers.Add("Origin", origin);
+        request.Headers.Add("Cookie", cookies);
+        if (csrf is not null) request.Headers.Add(new AuthCookieSettings().CsrfHeaderName, csrf);
+        return request;
+    }
+
+    private async Task<WebApplication> StartAuthPipelineAsync(DbContextOptions<AppDbContext>? databaseOptions = null)
     {
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Services.AddProblemDetails();
         builder.Services.AddExceptionHandler<ApiHandlerException>();
-        builder.Services.AddScoped(_ => new AppDbContext(options));
+        builder.Services.AddScoped(_ => new AppDbContext(databaseOptions ?? options));
         builder.Services.AddScoped(services => CreateService(services.GetRequiredService<AppDbContext>()));
-        builder.Services.AddSingleton(new AuthCookieSettings());
+        var settings = new AuthCookieSettings();
+        builder.Services.AddSingleton(settings);
         builder.Services.AddSingleton<AuthCookieService>();
+        builder.Services.AddSingleton(tokenStore);
+        builder.Services.AddSingleton(csrfService);
+        builder.Services.AddSingleton(TimeProvider.System);
+        builder.Services.AddScoped<AccessTokenValidation>();
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(jwt =>
+        {
+            jwt.MapInboundClaims = false;
+            jwt.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(AccessSecret)),
+                ValidIssuer = configuration["ApiSettings:Issuer"],
+                ValidAudience = configuration["ApiSettings:Audience"],
+                ClockSkew = TimeSpan.Zero,
+            };
+            jwt.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context =>
+                {
+                    var selection = AuthTokenSelector.Select(context.Request, settings.AccessCookieName);
+                    context.Token = selection.Token;
+                    if (selection.AccessCookiePresent)
+                        context.HttpContext.Items[AuthTokenSelector.CookieAuthenticationItem] = true;
+                    return Task.CompletedTask;
+                },
+                OnTokenValidated = context => context.HttpContext.RequestServices
+                    .GetRequiredService<AccessTokenValidation>().ValidateAsync(context),
+            };
+        });
+        builder.Services.AddAuthorization();
         builder.Services.AddControllers().AddApplicationPart(typeof(AuthController).Assembly);
         var app = builder.Build();
         app.UseExceptionHandler();
+        app.UseMiddleware<UnsafeOriginValidationMiddleware>();
+        app.UseAuthentication();
+        app.UseMiddleware<CsrfProtectionMiddleware>();
+        app.UseAuthorization();
         app.MapControllers();
         await app.StartAsync();
         return app;
@@ -895,6 +1082,15 @@ public sealed class AuthServiceTests : IAsyncLifetime
 
         Assert.Equal("Password must be 12 to 128 characters and include an uppercase letter, a digit, and a special character.", error.Message);
         Assert.True(allocatedBytes < 65_536, $"Rejecting an oversized password allocated {allocatedBytes:N0} bytes.");
+    }
+
+    [Fact]
+    public void Password_policy_skips_bcrypt_for_empty_or_oversized_input()
+    {
+        const string invalidHash = "not-a-bcrypt-hash";
+        Assert.False(PasswordPolicy.Verify(string.Empty, invalidHash));
+        Assert.False(PasswordPolicy.Verify(new string('a', PasswordPolicy.MaxUtf16Length + 1), invalidHash));
+        Assert.False(PasswordPolicy.Verify(CurrentPassword, string.Empty));
     }
 
     [Theory]

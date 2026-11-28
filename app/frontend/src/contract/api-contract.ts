@@ -223,6 +223,17 @@ export interface paths {
                         "text/json": components["schemas"]["AuthenticationResponse"];
                     };
                 };
+                /** @description Payload Too Large */
+                413: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
             };
         };
         delete?: never;
@@ -450,6 +461,17 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content?: never;
+                };
+                /** @description Service Unavailable */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["LogoutIncompleteResponse"];
+                        "application/json": components["schemas"]["LogoutIncompleteResponse"];
+                        "text/json": components["schemas"]["LogoutIncompleteResponse"];
+                    };
                 };
             };
         };
@@ -8834,6 +8856,12 @@ export interface components {
         LoginRequest: {
             email: string;
             password: string;
+        };
+        LogoutIncompleteResponse: {
+            code: string;
+            cookiesCleared: boolean;
+            revocationCompleted: boolean;
+            message: string;
         };
         LowStockAlertRowDto: {
             /** Format: uuid */

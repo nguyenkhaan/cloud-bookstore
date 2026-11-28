@@ -18,7 +18,9 @@ public class AuthController(
 {
     // [AllowAnonymous]
     [HttpPost("login")]
+    [RequestSizeLimit(4096)]
     [ProducesResponseType<AuthenticationResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status413PayloadTooLarge)]
     public async Task<ActionResult<AuthenticationResponse>> Login(
         [FromBody] LoginRequest request
     )
@@ -71,37 +73,43 @@ public class AuthController(
 
     [Authorize]
     [HttpPost("logout")]
+    [DegradedLogoutEndpoint]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<LogoutIncompleteResponse>(StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> Logout()
     {
-        try
-        {
-            var refreshToken = Request.Cookies[authCookieSettings.RefreshCookieName] ?? string.Empty;
-            var (employeeId, accessJti) = GetIdentity();
-            var cookieAuthenticated = HttpContext.Items[AuthTokenSelector.CookieAuthenticationItem] is true;
-
-            if (cookieAuthenticated && !string.IsNullOrWhiteSpace(refreshToken))
-            {
-                try
-                {
-                    await authService.LogoutByRefreshTokenAsync(employeeId, refreshToken, accessJti);
-                }
-                catch (UnauthorizedException)
-                {
-                    await authService.LogoutByAccessTokenAsync(employeeId, accessJti);
-                }
-            }
-            else
-            {
-                await authService.LogoutByAccessTokenAsync(employeeId, accessJti);
-            }
-
-            return NoContent();
-        }
-        finally
+        Response.OnStarting(() =>
         {
             authCookieService.ExpireAuthenticationCookies(Response);
+            return Task.CompletedTask;
+        });
+
+        var refreshToken = Request.Cookies[authCookieSettings.RefreshCookieName];
+        var (employeeId, accessJti) = GetIdentity();
+        var cookieAuthenticated = HttpContext.Items[AuthTokenSelector.CookieAuthenticationItem] is true;
+        bool revocationCompleted;
+        if (cookieAuthenticated && !string.IsNullOrWhiteSpace(refreshToken))
+        {
+            try
+            {
+                revocationCompleted = await authService.LogoutByRefreshTokenAsync(employeeId, refreshToken, accessJti);
+            }
+            catch (UnauthorizedException)
+            {
+                revocationCompleted = await authService.LogoutByAccessTokenAsync(employeeId, accessJti);
+            }
         }
+        else
+        {
+            revocationCompleted = await authService.LogoutByAccessTokenAsync(employeeId, accessJti);
+        }
+
+        if (!revocationCompleted || HttpContext.Items[AccessTokenValidation.TokenStateUnavailableItem] is true)
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new LogoutIncompleteResponse(
+                "LOGOUT_REVOCATION_INCOMPLETE", true, false,
+                "Authentication cookies were cleared, but server-side session revocation could not be confirmed."));
+
+        return NoContent();
     }
 
     [HttpPost("refresh")]

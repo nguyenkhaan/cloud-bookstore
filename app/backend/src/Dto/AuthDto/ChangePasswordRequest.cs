@@ -4,7 +4,7 @@ namespace backend.src.Dto.AuthDto;
 
 public sealed class ChangePasswordRequest
 {
-    [Required]
+    [Required, MaxLength(512)]
     public string CurrentPassword { get; init; } = string.Empty;
 
     [Required]

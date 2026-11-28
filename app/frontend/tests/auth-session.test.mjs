@@ -49,5 +49,7 @@ test('sign-out waits for the backend logout before leaving the protected area', 
   assert.match(provider, /const \{ mutateAsync: requestLogout \} = useLogoutMutation\(\)/)
   assert.match(provider, /const signOut = useCallback\(async \(\) => \{/)
   assert.match(provider, /await requestLogout\(getCsrfToken\(\)\)/)
-  assert.match(provider, /finally \{\s*clearSession\(\)\s*navigate\('\/login', \{ replace: true \}\)/)
+  assert.match(provider, /let destination = '\/login\?logout=incomplete'/)
+  assert.match(provider, /outcome\.revocationCompleted \? '\/login' : '\/login\?logout=partial'/)
+  assert.match(provider, /finally \{\s*startTransition\(\(\) => \{\s*clearSession\(\)\s*navigate\(destination, \{ replace: true \}\)/)
 })

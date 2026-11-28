@@ -26,14 +26,30 @@ public sealed class CsrfProtectionMiddleware(RequestDelegate next, AuthCookieSet
 
         var accessJti = context.User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
         var presentedToken = context.Request.Headers[settings.CsrfHeaderName].ToString();
+        if (string.IsNullOrWhiteSpace(accessJti))
+        {
+            await RejectAsync(context, StatusCodes.Status403Forbidden);
+            return;
+        }
+
         try
         {
-            if (string.IsNullOrWhiteSpace(accessJti) ||
-                !await csrfTokenService.IsValidAsync(accessJti, presentedToken, context.RequestAborted))
+            if (!await csrfTokenService.IsValidAsync(accessJti, presentedToken, context.RequestAborted))
             {
                 await RejectAsync(context, StatusCodes.Status403Forbidden);
                 return;
             }
+        }
+        catch (Exception exception) when (DegradedLogoutEndpointAttribute.AppliesTo(context) &&
+            RedisService.IsUnavailable(exception, context.RequestAborted))
+        {
+            if (!csrfTokenService.IsSignatureValid(accessJti, presentedToken))
+            {
+                await RejectAsync(context, StatusCodes.Status403Forbidden);
+                return;
+            }
+
+            context.Items[AccessTokenValidation.TokenStateUnavailableItem] = true;
         }
         catch
         {

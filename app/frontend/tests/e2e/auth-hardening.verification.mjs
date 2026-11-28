@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict'
+import { execFileSync } from 'node:child_process'
 import { createHash, createHmac, randomUUID } from 'node:crypto'
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { after, before, test } from 'node:test'
+import { setTimeout as delay } from 'node:timers/promises'
 import {
   auditRows, auth, chromium, client, createActiveEmployee, employee, employeeRow, expectStatus, login, newPassword,
   originalPassword, requireMailLink, stack,
@@ -60,6 +62,106 @@ function responseFor(page, method, pathname) {
 function profileName(page) {
   return page.getByLabel('Họ và tên', { exact: true })
 }
+
+const logoutPath = `${auth}/logout`
+const sessionUrl = `${stack.beUrl}${auth}/session`
+
+function browserAuthCookies(context) {
+  return context.cookies(sessionUrl).then((cookies) =>
+    cookies.filter(({ name }) => name === 'cloudbook_access' || name === 'cloudbook_refresh'))
+}
+
+async function waitForBackendReadiness() {
+  const url = `${stack.beUrl}/api/health/readiness`
+  const deadline = Date.now() + 15_000
+  while (Date.now() < deadline) {
+    if ((await fetch(url, { signal: AbortSignal.timeout(2_000) }).catch(() => null))?.ok) return
+    await delay(250)
+  }
+  assert.fail('Backend readiness did not recover after restarting Redis REST')
+}
+
+test('logout clears browser cookies and revokes the session during a Redis outage on desktop and mobile', async (testCase) => {
+  const sessions = []
+  for (const [viewport, screenshot] of [
+    [desktop, '01-degraded-logout-partial-desktop'],
+    [mobile, '02-degraded-logout-partial-mobile'],
+  ]) {
+    const page = await openPage(testCase, viewport)
+    page.setDefaultTimeout(25_000)
+    const staff = await signIn(page, testCase)
+    const cookies = await browserAuthCookies(page.context())
+    assert.equal(cookies.length, 2)
+    if (viewport === mobile) await page.getByRole('button', { name: 'Toggle Sidebar' }).click()
+    sessions.push({ page, staff, cookies, screenshot })
+  }
+
+  const container = stack.containers.redisRest
+  assert.match(container, /^cloudbook-verify-/)
+  try {
+    execFileSync('docker', ['stop', '--timeout', '2', container], { stdio: 'pipe', timeout: 60_000 })
+    for (const { page, cookies, screenshot } of sessions) {
+      const responsePromise = responseFor(page, 'POST', logoutPath)
+      await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click()
+      const response = await responsePromise
+      assert.equal(response.status(), 503)
+      const { code, cookiesCleared, revocationCompleted } = await response.json()
+      assert.equal(code, 'LOGOUT_REVOCATION_INCOMPLETE')
+      assert.equal(cookiesCleared, true)
+      assert.equal(revocationCompleted, false)
+      const expired = (await response.headersArray()).filter(({ name }) => name.toLowerCase() === 'set-cookie')
+      for (const { name } of cookies) {
+        assert.ok(expired.some(({ value }) => value.startsWith(`${name}=`) && /expires=Thu, 01 Jan 1970/i.test(value)))
+      }
+
+      await page.waitForURL((url) => url.pathname === '/login' && url.searchParams.get('logout') === 'partial')
+      await page.getByRole('status').filter({ hasText: 'Đã xóa cookie đăng nhập' }).waitFor()
+      assert.deepEqual(await browserAuthCookies(page.context()), [])
+      assert.deepEqual(await page.evaluate(() => [
+        sessionStorage.getItem('cloud-bookstore.csrf-token'),
+        sessionStorage.getItem('cloud-bookstore.user-info'),
+      ]), [null, null])
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth))
+      await capture(page, screenshot)
+    }
+  } finally {
+    execFileSync('docker', ['start', container], { stdio: 'pipe', timeout: 60_000 })
+    await waitForBackendReadiness()
+  }
+
+  for (const { page, staff, cookies } of sessions) {
+    await page.reload()
+    await page.getByRole('status').filter({ hasText: 'Đã xóa cookie đăng nhập' }).waitFor()
+    await page.goto('/dashboard')
+    await page.waitForURL((url) => url.pathname === '/login')
+
+    const replay = await client(testCase)
+    const cookieHeader = cookies.map(({ name, value }) => `${name}=${value}`).join('; ')
+    expectStatus(await replay.get(sessionUrl, { headers: { Cookie: cookieHeader } }), 401)
+    await signIn(page, testCase, staff)
+  }
+})
+
+test('logout distinguishes unconfirmed cookie removal from a complete sign-out', async (testCase) => {
+  const page = await openPage(testCase)
+  const staff = await signIn(page, testCase)
+  const logoutUrl = `${stack.beUrl}${logoutPath}`
+  const signOutButton = page.getByRole('button', { name: 'Đăng xuất', exact: true })
+  await page.route(logoutUrl, (route) => route.abort())
+  await signOutButton.click()
+  await page.waitForURL((url) => url.pathname === '/login' && url.searchParams.get('logout') === 'incomplete')
+  await page.getByRole('status').filter({ hasText: 'Không thể xác nhận đã đăng xuất' }).waitFor()
+  assert.equal((await browserAuthCookies(page.context())).length, 2)
+
+  const cleanPage = await openPage(testCase)
+  await signIn(cleanPage, testCase, staff)
+  const complete = responseFor(cleanPage, 'POST', logoutPath)
+  await cleanPage.getByRole('button', { name: 'Đăng xuất', exact: true }).click()
+  assert.equal((await complete).status(), 204)
+  await cleanPage.waitForURL('**/login')
+  assert.equal(await cleanPage.getByRole('status').count(), 0)
+  assert.deepEqual(await browserAuthCookies(cleanPage.context()), [])
+})
 
 const maximumDtoPassword = `A1!${'x'.repeat(509)}`
 const oversizedDtoPassword = `${maximumDtoPassword}x`

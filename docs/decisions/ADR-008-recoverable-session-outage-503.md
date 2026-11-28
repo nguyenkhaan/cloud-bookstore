@@ -16,12 +16,16 @@ Nếu backend trả `401` hoặc `500` trong sự cố Redis/PostgreSQL thoáng 
 
 ## Decision
 
-Bổ sung (không thay thế) `ADR-003` cho cả đường xác thực access token và đường làm mới phiên `POST /api/auth/refresh`:
+Bổ sung (không thay thế) `ADR-003` cho đường xác thực access token, làm mới phiên và đăng xuất chủ động:
 
-1. **Fail-closed với `503` khi hạ tầng gián đoạn:** Khi Redis hoặc PostgreSQL gặp lỗi khả dụng tạm thời trong lúc kiểm tra access token (`AccessTokenValidation`), hoặc khi Redis gặp lỗi khả dụng tạm thời trong lúc kiểm tra JTI/CSRF và xoay vòng phiên mới ở `POST /api/auth/refresh`, backend phải fail-closed bằng HTTP `503 Service Unavailable` (không trả `401` hay `500`) và không phát header `Set-Cookie` để xóa cookie xác thực.
+1. **Fail-closed với `503` khi hạ tầng gián đoạn:** Khi Redis hoặc PostgreSQL gặp lỗi khả dụng tạm thời trong lúc kiểm tra access token (`AccessTokenValidation`), hoặc khi Redis gặp lỗi khả dụng tạm thời trong lúc kiểm tra JTI/CSRF và xoay vòng phiên mới ở `POST /api/auth/refresh`, backend phải fail-closed bằng HTTP `503 Service Unavailable` (không trả `401` hay `500`) và không phát header `Set-Cookie` để xóa cookie xác thực, trừ luồng đăng xuất chủ động ở mục 4.
 2. **Giữ nguyên `401`/`403` cho lỗi xác thực thật:** Refresh token thiếu, sai chữ ký, hết hạn, bị thu hồi hoặc tài khoản không còn hoạt động vẫn trả `401 Unauthorized` và hết hạn cả hai cookie xác thực; CSRF không hợp lệ vẫn trả `403 Forbidden` và không xóa cookie.
 3. **Bảo toàn phiên trình duyệt trên `503`:** Khi `POST /api/auth/refresh` hoặc bước phục hồi phiên nhận HTTP `503`, frontend giữ nguyên CSRF token và trạng thái phiên trong memory, không xóa state và không chuyển về `/login`, để cookie và CSRF token ban đầu tiếp tục phục hồi sau khi hạ tầng ổn định lại.
    Với các lỗi refresh mang tính kết thúc phiên (`401` hoặc lỗi không phải `503`), frontend xóa state phiên và điều hướng về `/login` theo đúng `ADR-003`.
+4. **Xóa cookie khi đăng xuất chủ động dù chưa xác nhận thu hồi:** Chỉ `POST /api/auth/logout` với cookie access JWT còn hạn, đúng chữ ký, `Origin` được phép và `X-CSRF-Token` hợp lệ mới được tiếp tục khi không thể kiểm tra trạng thái phiên.
+   Nếu Redis không khả dụng, backend kiểm tra HMAC của CSRF token theo access JTI; CSRF thiếu hoặc sai vẫn bị từ chối với `403` và không xóa cookie.
+   Backend thu hồi phiên trong PostgreSQL nếu có thể trước khi dọn các khóa Redis, đồng thời hết hạn cả hai cookie.
+   Nếu không thể xác nhận thu hồi, backend trả `503` kèm `code: LOGOUT_REVOCATION_INCOMPLETE`, `cookiesCleared: true`, `revocationCompleted: false` và `message`; khi thu hồi thành công, backend vẫn trả `204`.
 
 ## Alternatives Considered
 
@@ -35,7 +39,7 @@ Loại vì làm mất tác dụng kiểm tra JTI allowlist, thu hồi thiết b�
 
 ## Consequences
 
-- Bổ sung cho `ADR-003`; giữ nguyên toàn bộ mô hình HttpOnly cookie, JTI allowlist, CSRF synchronizer và vòng đời thu hồi phiên.
+- Bổ sung cho `ADR-003`; bảo toàn mô hình HttpOnly cookie, JTI allowlist và CSRF synchronizer trên API được bảo vệ và đường làm mới phiên.
 - Tài liệu `docs/specs/AUTH-001-browser-cookie-session.md` và bảng chỉ mục `docs/decisions/README.md` được cập nhật đồng bộ với quy tắc phân tách `503` vs `401`.
 - Bộ kiểm thử backend và E2E phải kiểm chứng cả hai hướng: sự cố Redis trả `503` không xóa cookie và phục hồi được, trong khi token không hợp lệ/thu hồi vẫn trả `401` và xóa cookie.
 

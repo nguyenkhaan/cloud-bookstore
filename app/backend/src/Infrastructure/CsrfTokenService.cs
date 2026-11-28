@@ -16,8 +16,7 @@ public sealed class CsrfTokenService(ICsrfTokenStore tokenStore, CsrfTokenSignin
         TimeSpan lifetime,
         CancellationToken cancellationToken = default)
     {
-        var token = WebEncoders.Base64UrlEncode(
-            HMACSHA256.HashData(signingKey.Value, System.Text.Encoding.UTF8.GetBytes(accessJti)));
+        var token = ComputeToken(accessJti);
         await tokenStore.StoreAsync(accessJti, HashToken(token), lifetime, cancellationToken);
         return token;
     }
@@ -52,6 +51,15 @@ public sealed class CsrfTokenService(ICsrfTokenStore tokenStore, CsrfTokenSignin
 
     public Task RevokeAsync(string accessJti, CancellationToken cancellationToken = default)
         => tokenStore.RemoveAsync(accessJti, cancellationToken);
+
+    internal bool IsSignatureValid(string accessJti, string? presentedToken) =>
+        !string.IsNullOrWhiteSpace(accessJti) && presentedToken is not null &&
+        CryptographicOperations.FixedTimeEquals(
+            System.Text.Encoding.UTF8.GetBytes(ComputeToken(accessJti)),
+            System.Text.Encoding.UTF8.GetBytes(presentedToken));
+
+    private string ComputeToken(string accessJti) => WebEncoders.Base64UrlEncode(
+        HMACSHA256.HashData(signingKey.Value, System.Text.Encoding.UTF8.GetBytes(accessJti)));
 
     private static string HashToken(string token)
         => Convert.ToBase64String(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(token)));

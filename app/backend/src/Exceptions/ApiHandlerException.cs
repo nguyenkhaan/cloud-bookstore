@@ -11,6 +11,13 @@ public sealed class ApiHandlerException(ILogger<ApiHandlerException> logger) : I
         HttpContext context, Exception exception, CancellationToken cancellationToken
     )
     {
+        if (exception is BadHttpRequestException { StatusCode: StatusCodes.Status413PayloadTooLarge })
+        {
+            await Results.Problem(statusCode: StatusCodes.Status413PayloadTooLarge, title: "Request body too large.")
+                .ExecuteAsync(context);
+            return true;
+        }
+
         var (statusCode, message) = exception switch
         {
             BadRequestException => (

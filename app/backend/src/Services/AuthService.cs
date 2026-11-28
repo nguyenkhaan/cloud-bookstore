@@ -289,33 +289,53 @@ public class AuthService(
         return session;
     }
 
-    public async Task LogoutByRefreshTokenAsync(Guid employeeId, string refreshToken, string authenticatedAccessJti)
+    public async Task<bool> LogoutByRefreshTokenAsync(Guid employeeId, string refreshToken, string authenticatedAccessJti)
     {
         var refreshPrincipal = ValidateRefreshToken(refreshToken);
         var refreshJti = refreshPrincipal.FindFirstValue(JwtRegisteredClaimNames.Jti)!;
 
-        var accessJti = await tokenJtiStore.GetAccessJtiForRefreshAsync(refreshJti);
+        string? accessJti;
+        try
+        {
+            accessJti = await tokenJtiStore.GetAccessJtiForRefreshAsync(refreshJti);
+        }
+        catch (Exception exception) when (RedisService.IsUnavailable(exception, CancellationToken.None))
+        {
+            await LogoutByAccessTokenAsync(employeeId, authenticatedAccessJti);
+            return false;
+        }
+
         if (!string.Equals(accessJti, authenticatedAccessJti, StringComparison.Ordinal))
             throw new UnauthorizedException("Invalid or expired refresh token");
 
-        await LogoutByAccessTokenAsync(employeeId, authenticatedAccessJti);
+        return await LogoutByAccessTokenAsync(employeeId, authenticatedAccessJti);
     }
 
-    public async Task LogoutByAccessTokenAsync(Guid employeeId, string accessJti)
+    public async Task<bool> LogoutByAccessTokenAsync(Guid employeeId, string accessJti)
     {
-        await using var transaction = await BeginEmployeeMutationAsync(employeeId);
-        var device = await dbContext.EmployeeSessions.SingleOrDefaultAsync(item =>
-            item.EmployeeId == employeeId && item.AccessJti == accessJti);
-        if (device is null)
+        EmployeeSessionModel? device;
+        try
         {
+            await using var transaction = await BeginEmployeeMutationAsync(employeeId);
+            device = await dbContext.EmployeeSessions.SingleOrDefaultAsync(item =>
+                item.EmployeeId == employeeId && item.AccessJti == accessJti);
+            if (device is { RevokedAt: null })
+            {
+                device.RevokedAt = DateTime.UtcNow;
+                await dbContext.SaveChangesAsync();
+            }
+
             await transaction.CommitAsync();
-            await CleanupLegacySessionAsync(accessJti);
-            return;
         }
-        device.RevokedAt = DateTime.UtcNow;
-        await dbContext.SaveChangesAsync();
-        await transaction.CommitAsync();
-        await CleanupRevokedDevicesAsync([device]);
+        catch (Exception exception) when (AccessTokenValidation.IsDatabaseUnavailable(exception, CancellationToken.None))
+        {
+            logger?.LogWarning("Failed to revoke the session in the database ({ErrorType}).", exception.GetType().Name);
+            return false;
+        }
+
+        return device is null
+            ? await CleanupLegacySessionAsync(accessJti)
+            : await CleanupRevokedDevicesAsync([device]);
     }
 
     public async Task<BrowserSessionResponse> GetBrowserSessionAsync(string accessJti, Guid employeeId)
@@ -617,34 +637,40 @@ public class AuthService(
         return devices;
     }
 
-    private async Task CleanupRevokedDevicesAsync(IEnumerable<EmployeeSessionModel> devices)
+    private async Task<bool> CleanupRevokedDevicesAsync(IEnumerable<EmployeeSessionModel> devices)
     {
+        var completed = true;
         foreach (var device in devices)
-            await CleanupSessionKeysAsync(device.AccessJti, device.RefreshJti);
+            completed &= await CleanupSessionKeysAsync(device.AccessJti, device.RefreshJti);
+        return completed;
     }
 
-    private async Task CleanupSessionKeysAsync(string accessJti, string refreshJti)
+    private async Task<bool> CleanupSessionKeysAsync(string accessJti, string refreshJti)
     {
-        await TryDeleteSessionKeyAsync("access", () => tokenJtiStore.RevokeAccessAsync(accessJti));
-        await TryDeleteSessionKeyAsync("refresh", () => tokenJtiStore.RevokeRefreshAsync(refreshJti));
-        await TryDeleteSessionKeyAsync("CSRF", () => csrfTokenService.RevokeAsync(accessJti));
+        var completed = await TryDeleteSessionKeyAsync("access", () => tokenJtiStore.RevokeAccessAsync(accessJti));
+        completed &= await TryDeleteSessionKeyAsync("refresh", () => tokenJtiStore.RevokeRefreshAsync(refreshJti));
+        completed &= await TryDeleteSessionKeyAsync("CSRF", () => csrfTokenService.RevokeAsync(accessJti));
+        return completed;
     }
 
-    private async Task CleanupLegacySessionAsync(string accessJti)
+    private async Task<bool> CleanupLegacySessionAsync(string accessJti)
     {
-        await TryDeleteSessionKeyAsync("legacy access and refresh", () => tokenJtiStore.RevokeLoginByAccessAsync(accessJti));
-        await TryDeleteSessionKeyAsync("CSRF", () => csrfTokenService.RevokeAsync(accessJti));
+        var completed = await TryDeleteSessionKeyAsync("legacy access and refresh", () => tokenJtiStore.RevokeLoginByAccessAsync(accessJti));
+        completed &= await TryDeleteSessionKeyAsync("CSRF", () => csrfTokenService.RevokeAsync(accessJti));
+        return completed;
     }
 
-    private async Task TryDeleteSessionKeyAsync(string keyType, Func<Task> delete)
+    private async Task<bool> TryDeleteSessionKeyAsync(string keyType, Func<Task> delete)
     {
         try
         {
             await delete();
+            return true;
         }
         catch (Exception exception)
         {
             logger?.LogWarning("Failed to delete {KeyType} session key ({ErrorType}).", keyType, exception.GetType().Name);
+            return false;
         }
     }
 

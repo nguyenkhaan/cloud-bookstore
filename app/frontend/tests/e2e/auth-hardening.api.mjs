@@ -3,7 +3,7 @@ import { createHash, randomUUID } from 'node:crypto'
 import { test } from 'node:test'
 import {
   auditRows, auth, client, createActiveEmployee, csrf, employee, employeeRow, expectStatus,
-  login, mailLink, newPassword, originalPassword, passwordFaults, requireMailLink, sql, sqlLiteral, stack,
+  login, newPassword, originalPassword, passwordFaults, requireMailLink, sql, sqlLiteral, stack,
 } from './auth-fixture.mjs'
 
 const chrome = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36'
@@ -12,6 +12,28 @@ const profilePath = `${auth}/profile`
 const sessionsPath = `${auth}/sessions`
 const changePath = `${auth}/change-password`
 const maxPassword = `A1!${'x'.repeat(125)}`
+
+test('login rejects oversized bodies and fields without counting failed attempts', async (testCase) => {
+  const guest = await client(testCase)
+  const staff = await createActiveEmployee(guest)
+  const send = (data) => guest.post(`${auth}/login`, { data })
+  for (const size of [100_000, 5_000_000]) {
+    expectStatus(await send({ email: staff.email, password: 'x'.repeat(size) }), 413)
+  }
+
+  for (const [data, field] of [
+    [{ email: staff.email, password: 'x'.repeat(600) }, 'Password'],
+    [{ email: 'x'.repeat(321), password: staff.password }, 'Email'],
+  ]) {
+    const response = await send(data)
+    expectStatus(response, 400)
+    assert.match(response.headers()['content-type'], /^application\/problem\+json\b/)
+    assert.deepEqual(Object.keys((await response.json()).errors), [field])
+  }
+
+  assert.equal(employeeRow(staff.email).FailedLoginAttempts, 0)
+  await login(guest, staff)
+})
 
 async function expectRevoked(session) {
   expectStatus(await session.context.get(`${auth}/session`), 401, 'Revoked access cookie is rejected')

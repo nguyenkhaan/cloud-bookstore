@@ -13,6 +13,7 @@ namespace backend.src.Configurations;
 
 internal sealed class AccessTokenValidation(TimeProvider clock, ILogger<AccessTokenValidation> logger)
 {
+    internal static readonly object TokenStateUnavailableItem = new();
     private static readonly TimeSpan ActivityThrottle = TimeSpan.FromMinutes(1);
 
     public async Task ValidateAsync(TokenValidatedContext context)
@@ -44,6 +45,9 @@ internal sealed class AccessTokenValidation(TimeProvider clock, ILogger<AccessTo
         }
         catch (Exception exception) when (RedisService.IsUnavailable(exception, cancellationToken))
         {
+            if (AllowDegradedLogout(context.HttpContext, exception))
+                return;
+
             throw new ServiceUnavailableException("Token state is temporarily unavailable.", exception);
         }
 
@@ -88,14 +92,28 @@ internal sealed class AccessTokenValidation(TimeProvider clock, ILogger<AccessTo
         }
         catch (Exception exception) when (IsDatabaseUnavailable(exception, cancellationToken))
         {
+            if (AllowDegradedLogout(context.HttpContext, exception))
+                return;
+
             throw new ServiceUnavailableException("Token state is temporarily unavailable.", exception);
         }
     }
 
-    private static bool IsDatabaseUnavailable(Exception exception, CancellationToken cancellationToken) =>
+    private bool AllowDegradedLogout(HttpContext context, Exception exception)
+    {
+        if (!DegradedLogoutEndpointAttribute.AppliesTo(context))
+            return false;
+
+        context.Items[TokenStateUnavailableItem] = true;
+        logger.LogWarning("Token state is temporarily unavailable during logout ({ErrorType}).", exception.GetType().Name);
+        return true;
+    }
+
+    internal static bool IsDatabaseUnavailable(Exception exception, CancellationToken cancellationToken) =>
         exception is DbException or TimeoutException ||
         exception is OperationCanceledException && !cancellationToken.IsCancellationRequested ||
-        exception is InvalidOperationException { InnerException: DbException or TimeoutException or SocketException };
+        exception is InvalidOperationException { InnerException: DbException or TimeoutException or SocketException } ||
+        exception is DbUpdateException { InnerException: DbException or TimeoutException or SocketException };
 
     private async Task TryRecordActivityAsync(AppDbContext dbContext, Guid sessionId, string jti, DateTime now,
         CancellationToken cancellationToken)

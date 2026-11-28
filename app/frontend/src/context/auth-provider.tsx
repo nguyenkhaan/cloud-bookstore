@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { startTransition, useCallback, useEffect, useMemo, useState } from 'react'
 import type { PropsWithChildren } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
@@ -88,13 +88,17 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [requestLogin])
 
   const signOut = useCallback(async () => {
+    let destination = '/login?logout=incomplete'
     try {
-      await requestLogout(getCsrfToken())
-    } catch {
-      // Local state is cleared regardless; the backend no longer lets a leftover cookie block login.
+      const outcome = await requestLogout(getCsrfToken()).catch(() => null)
+      if (outcome?.cookiesCleared) {
+        destination = outcome.revocationCompleted ? '/login' : '/login?logout=partial'
+      }
     } finally {
-      clearSession()
-      navigate('/login', { replace: true })
+      startTransition(() => {
+        clearSession()
+        navigate(destination, { replace: true })
+      })
     }
   }, [clearSession, navigate, requestLogout])
 

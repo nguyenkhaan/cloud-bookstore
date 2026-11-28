@@ -156,15 +156,30 @@ export async function resetPassword(request: ResetPasswordRequest): Promise<void
   await requestData(() => publicClient.post<void>(AUTH_ENDPOINTS.passwordResets, request))
 }
 
+type LogoutIncompleteResponse = components['schemas']['LogoutIncompleteResponse']
+
+export interface LogoutOutcome {
+  cookiesCleared: boolean
+  revocationCompleted: boolean
+}
+
 function postLogout(csrfToken: string | null) {
   return publicClient.post<void>(AUTH_ENDPOINTS.logout, undefined, {
     headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : undefined,
+  }).catch((error: unknown) => {
+    if (axios.isAxiosError<LogoutIncompleteResponse>(error) &&
+      error.response?.status === 503 &&
+      error.response.data?.code === 'LOGOUT_REVOCATION_INCOMPLETE' &&
+      error.response.data.cookiesCleared === true) {
+      return error.response
+    }
+    throw error
   })
 }
 
-export async function logout(csrfToken = getCsrfToken()): Promise<void> {
+export async function logout(csrfToken = getCsrfToken()): Promise<LogoutOutcome> {
   try {
-    await requestData(async () => {
+    const incomplete = await requestData<void | LogoutIncompleteResponse>(async () => {
       try {
         return await postLogout(csrfToken)
       } catch (error) {
@@ -175,6 +190,7 @@ export async function logout(csrfToken = getCsrfToken()): Promise<void> {
         return await postLogout(session.csrfToken)
       }
     })
+    return { cookiesCleared: true, revocationCompleted: !incomplete }
   } finally {
     clearCsrfToken()
   }

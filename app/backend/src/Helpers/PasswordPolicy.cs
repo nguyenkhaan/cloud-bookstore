@@ -9,11 +9,12 @@ internal static class PasswordPolicy
 {
     private const string PrehashedSuffix = ":sha384";
     private const int MaxRunes = 128;
+    internal const int MaxUtf16Length = MaxRunes * 2;
     private const string ValidationMessage = "Password must be 12 to 128 characters and include an uppercase letter, a digit, and a special character.";
 
     public static void Validate(string password)
     {
-        if (string.IsNullOrEmpty(password) || password.Length > MaxRunes * 2)
+        if (string.IsNullOrEmpty(password) || password.Length > MaxUtf16Length)
             throw new BadRequestException(ValidationMessage);
 
         var count = 0;
@@ -39,7 +40,13 @@ internal static class PasswordPolicy
         ? BCryptHasher.EnhancedHashPassword(password, workFactor: 12) + PrehashedSuffix
         : BCryptHasher.HashPassword(password, workFactor: 12);
 
-    public static bool Verify(string password, string hash) => hash.EndsWith(PrehashedSuffix, StringComparison.Ordinal)
-        ? BCryptHasher.EnhancedVerify(password, hash[..^PrehashedSuffix.Length])
-        : BCryptHasher.Verify(password, hash);
+    public static bool Verify(string password, string hash)
+    {
+        if (string.IsNullOrEmpty(password) || password.Length > MaxUtf16Length || string.IsNullOrEmpty(hash))
+            return false;
+
+        return hash.EndsWith(PrehashedSuffix, StringComparison.Ordinal)
+            ? BCryptHasher.EnhancedVerify(password, hash[..^PrehashedSuffix.Length])
+            : BCryptHasher.Verify(password, hash);
+    }
 }
