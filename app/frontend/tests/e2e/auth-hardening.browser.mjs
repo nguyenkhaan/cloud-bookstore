@@ -205,6 +205,60 @@ for (const [size, viewport] of Object.entries(viewports)) {
   })
 }
 
+test('AUTH-003 registration ignores a delayed domain rejection after editing the email', { timeout: 15_000 }, async (testCase) => {
+  const page = await openPage(testCase)
+  const staff = employee()
+  const rejectedEmail = 'valid@example.org'
+  const backendResponse = Promise.withResolvers()
+  const deliverRejection = Promise.withResolvers()
+  await page.route(`${stack.beUrl}${auth}/register`, async (route) => {
+    if (route.request().method() !== 'POST' || route.request().postDataJSON().email !== rejectedEmail) {
+      await route.continue()
+      return
+    }
+
+    const response = await route.fetch({ timeout: 5_000 }).catch((error) => {
+      backendResponse.reject(error)
+      return null
+    })
+    if (!response) {
+      await route.abort()
+      return
+    }
+    backendResponse.resolve(response)
+    await deliverRejection.promise
+    await route.fulfill({ response })
+  })
+
+  await page.goto('/register')
+  await fillRegistration(page, { ...staff, email: rejectedEmail })
+  const email = page.getByRole('textbox', { name: 'Email nội bộ', exact: true })
+  const submit = page.getByTestId('auth-register-submit')
+  try {
+    await submit.click()
+    const rejected = await backendResponse.promise
+    expectStatus(rejected, 400)
+    assert.equal((await rejected.json()).message, 'Email domain is not allowed')
+    assert.equal(await submit.isDisabled(), true)
+    await email.fill(staff.email)
+  } finally {
+    deliverRejection.resolve()
+  }
+
+  await page.getByRole('button', { name: 'Đăng ký', exact: true }).waitFor()
+  assert.equal(await email.inputValue(), staff.email)
+  assert.equal(await email.getAttribute('aria-invalid'), null)
+  assert.equal(await email.getAttribute('aria-describedby'), null)
+  assert.equal(await page.getByRole('alert').count(), 0)
+
+  const registered = responseFor(page, `${auth}/register`, 'POST')
+  await submit.click()
+  const accepted = await registered
+  expectStatus(accepted, 201)
+  assert.equal(accepted.request().postDataJSON().email, staff.email)
+  await page.getByRole('heading', { name: /kiểm tra email/i }).waitFor()
+})
+
 test('AC1-2 registration and emailed verification scrub the URL and activate the account', async (testCase) => {
   const page = await openPage(testCase)
   const staff = employee()

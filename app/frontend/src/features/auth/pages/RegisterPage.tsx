@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Info, Mail, MailCheck } from 'lucide-react'
@@ -57,6 +57,7 @@ export function RegisterPage() {
 
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
+  const latestEmailRef = useRef(email)
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -113,6 +114,7 @@ export function RegisterPage() {
       setSubmittedEmail(normalizedEmail)
     } catch (error) {
       if (error instanceof ApiError && error.status === 400 && error.message.toLowerCase().includes('email domain')) {
+        if (latestEmailRef.current.trim() !== normalizedEmail) return
         setFieldErrors({ email: localizeAuthError(error, 'Tên miền email này không được phép đăng ký.') })
       } else {
         setNotice(describeRegisterError(error))
@@ -229,7 +231,9 @@ export function RegisterPage() {
               label="Email nội bộ"
               name="email"
               onChange={(event) => {
-                setEmail(event.target.value)
+                const nextEmail = event.target.value
+                latestEmailRef.current = nextEmail
+                setEmail(nextEmail)
                 setFieldErrors((prev) => ({ ...prev, email: undefined }))
               }}
               placeholder="nv.phong@nhasachmay.vn"
