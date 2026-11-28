@@ -223,6 +223,17 @@ export interface paths {
                         "text/json": components["schemas"]["AuthenticationResponse"];
                     };
                 };
+                /** @description Payload Too Large */
+                413: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
             };
         };
         delete?: never;
@@ -451,6 +462,17 @@ export interface paths {
                     };
                     content?: never;
                 };
+                /** @description Service Unavailable */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["LogoutIncompleteResponse"];
+                        "application/json": components["schemas"]["LogoutIncompleteResponse"];
+                        "text/json": components["schemas"]["LogoutIncompleteResponse"];
+                    };
+                };
             };
         };
         delete?: never;
@@ -527,6 +549,470 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EmployeeProfileResponse"];
+                        "application/json": components["schemas"]["EmployeeProfileResponse"];
+                        "text/json": components["schemas"]["EmployeeProfileResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateProfileRequest"];
+                    "text/json": components["schemas"]["UpdateProfileRequest"];
+                    "application/*+json": components["schemas"]["UpdateProfileRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EmployeeProfileResponse"];
+                        "application/json": components["schemas"]["EmployeeProfileResponse"];
+                        "text/json": components["schemas"]["EmployeeProfileResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/profile/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CloudinaryUploadResultRequest"];
+                    "text/json": components["schemas"]["CloudinaryUploadResultRequest"];
+                    "application/*+json": components["schemas"]["CloudinaryUploadResultRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EmployeeProfileResponse"];
+                        "application/json": components["schemas"]["EmployeeProfileResponse"];
+                        "text/json": components["schemas"]["EmployeeProfileResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/change-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ChangePasswordRequest"];
+                    "text/json": components["schemas"]["ChangePasswordRequest"];
+                    "application/*+json": components["schemas"]["ChangePasswordRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EmployeeSessionResponse"][];
+                        "application/json": components["schemas"]["EmployeeSessionResponse"][];
+                        "text/json": components["schemas"]["EmployeeSessionResponse"][];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/sessions/{sessionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    sessionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/sessions/revoke-others": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RevokeOtherSessionsResponse"];
+                        "application/json": components["schemas"]["RevokeOtherSessionsResponse"];
+                        "text/json": components["schemas"]["RevokeOtherSessionsResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -2717,6 +3203,275 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/buybacks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Search?: string;
+                    Status?: components["schemas"]["ApprovalStatus"];
+                    Page?: number;
+                    PageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfCustomerBuybackDetailResponse"];
+                        "application/json": components["schemas"]["PagedResultOfCustomerBuybackDetailResponse"];
+                        "text/json": components["schemas"]["PagedResultOfCustomerBuybackDetailResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateCustomerBuybackRequest"];
+                    "text/json": components["schemas"]["CreateCustomerBuybackRequest"];
+                    "application/*+json": components["schemas"]["CreateCustomerBuybackRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CustomerBuybackDetailResponse"];
+                        "application/json": components["schemas"]["CustomerBuybackDetailResponse"];
+                        "text/json": components["schemas"]["CustomerBuybackDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/buybacks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CustomerBuybackDetailResponse"];
+                        "application/json": components["schemas"]["CustomerBuybackDetailResponse"];
+                        "text/json": components["schemas"]["CustomerBuybackDetailResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/buybacks/lookup-isbn/{query}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    query: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BuybackIsbnLookupResponse"];
+                        "application/json": components["schemas"]["BuybackIsbnLookupResponse"];
+                        "text/json": components["schemas"]["BuybackIsbnLookupResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/buybacks/{id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": null | components["schemas"]["CompleteCustomerBuybackRequest"];
+                    "text/json": null | components["schemas"]["CompleteCustomerBuybackRequest"];
+                    "application/*+json": null | components["schemas"]["CompleteCustomerBuybackRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CustomerBuybackDetailResponse"];
+                        "application/json": components["schemas"]["CustomerBuybackDetailResponse"];
+                        "text/json": components["schemas"]["CustomerBuybackDetailResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/customers/{customerId}/history/summary": {
         parameters: {
             query?: never;
@@ -3727,6 +4482,116 @@ export interface paths {
                 };
                 /** @description Forbidden */
                 403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/editions/stock-alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Search?: string;
+                    Channel?: string;
+                    Severity?: string;
+                    SupplierId?: string;
+                    OnlyAlerts?: boolean;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EditionStockAlertDashboardResponse"];
+                        "application/json": components["schemas"]["EditionStockAlertDashboardResponse"];
+                        "text/json": components["schemas"]["EditionStockAlertDashboardResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/editions/{id}/thresholds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateEditionThresholdsRequest"];
+                    "text/json": components["schemas"]["UpdateEditionThresholdsRequest"];
+                    "application/*+json": components["schemas"]["UpdateEditionThresholdsRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EditionStockAlertItemResponse"];
+                        "application/json": components["schemas"]["EditionStockAlertItemResponse"];
+                        "text/json": components["schemas"]["EditionStockAlertItemResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -5567,6 +6432,979 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stock-out": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Search?: string;
+                    Status?: components["schemas"]["ApprovalStatus"];
+                    Page?: number;
+                    PageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfStockOutDetailResponse"];
+                        "application/json": components["schemas"]["PagedResultOfStockOutDetailResponse"];
+                        "text/json": components["schemas"]["PagedResultOfStockOutDetailResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateStockOutRequest"];
+                    "text/json": components["schemas"]["CreateStockOutRequest"];
+                    "application/*+json": components["schemas"]["CreateStockOutRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockOutDetailResponse"];
+                        "application/json": components["schemas"]["StockOutDetailResponse"];
+                        "text/json": components["schemas"]["StockOutDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock-out/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockOutDetailResponse"];
+                        "application/json": components["schemas"]["StockOutDetailResponse"];
+                        "text/json": components["schemas"]["StockOutDetailResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock-out/{id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockOutDetailResponse"];
+                        "application/json": components["schemas"]["StockOutDetailResponse"];
+                        "text/json": components["schemas"]["StockOutDetailResponse"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock-receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Search?: string;
+                    SupplierId?: string;
+                    Status?: components["schemas"]["ApprovalStatus"];
+                    SourceType?: components["schemas"]["StockReceiptSourceType"];
+                    Page?: number;
+                    PageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfStockReceiptSummaryResponse"];
+                        "application/json": components["schemas"]["PagedResultOfStockReceiptSummaryResponse"];
+                        "text/json": components["schemas"]["PagedResultOfStockReceiptSummaryResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateStockReceiptRequest"];
+                    "text/json": components["schemas"]["CreateStockReceiptRequest"];
+                    "application/*+json": components["schemas"]["CreateStockReceiptRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockReceiptDetailResponse"];
+                        "application/json": components["schemas"]["StockReceiptDetailResponse"];
+                        "text/json": components["schemas"]["StockReceiptDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock-receipts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockReceiptDetailResponse"];
+                        "application/json": components["schemas"]["StockReceiptDetailResponse"];
+                        "text/json": components["schemas"]["StockReceiptDetailResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateStockReceiptRequest"];
+                    "text/json": components["schemas"]["UpdateStockReceiptRequest"];
+                    "application/*+json": components["schemas"]["UpdateStockReceiptRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockReceiptDetailResponse"];
+                        "application/json": components["schemas"]["StockReceiptDetailResponse"];
+                        "text/json": components["schemas"]["StockReceiptDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock-receipts/{id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": null | components["schemas"]["CompleteStockReceiptRequest"];
+                    "text/json": null | components["schemas"]["CompleteStockReceiptRequest"];
+                    "application/*+json": null | components["schemas"]["CompleteStockReceiptRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockReceiptDetailResponse"];
+                        "application/json": components["schemas"]["StockReceiptDetailResponse"];
+                        "text/json": components["schemas"]["StockReceiptDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock-receipts/{id}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": null | components["schemas"]["ActivateStockReceiptCopiesRequest"];
+                    "text/json": null | components["schemas"]["ActivateStockReceiptCopiesRequest"];
+                    "application/*+json": null | components["schemas"]["ActivateStockReceiptCopiesRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockReceiptDetailResponse"];
+                        "application/json": components["schemas"]["StockReceiptDetailResponse"];
+                        "text/json": components["schemas"]["StockReceiptDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock-receipts/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StockReceiptDetailResponse"];
+                        "application/json": components["schemas"]["StockReceiptDetailResponse"];
+                        "text/json": components["schemas"]["StockReceiptDetailResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/suppliers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Search?: string;
+                    IsActive?: boolean;
+                    HasPending?: boolean;
+                    Page?: number;
+                    PageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfSupplierResponse"];
+                        "application/json": components["schemas"]["PagedResultOfSupplierResponse"];
+                        "text/json": components["schemas"]["PagedResultOfSupplierResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateSupplierRequest"];
+                    "text/json": components["schemas"]["CreateSupplierRequest"];
+                    "application/*+json": components["schemas"]["CreateSupplierRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SupplierResponse"];
+                        "application/json": components["schemas"]["SupplierResponse"];
+                        "text/json": components["schemas"]["SupplierResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/suppliers/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SupplierStatsResponse"];
+                        "application/json": components["schemas"]["SupplierStatsResponse"];
+                        "text/json": components["schemas"]["SupplierStatsResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/suppliers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SupplierResponse"];
+                        "application/json": components["schemas"]["SupplierResponse"];
+                        "text/json": components["schemas"]["SupplierResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateSupplierRequest"];
+                    "text/json": components["schemas"]["UpdateSupplierRequest"];
+                    "application/*+json": components["schemas"]["UpdateSupplierRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SupplierResponse"];
+                        "application/json": components["schemas"]["SupplierResponse"];
+                        "text/json": components["schemas"]["SupplierResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/suppliers/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateSupplierStatusRequest"];
+                    "text/json": components["schemas"]["UpdateSupplierStatusRequest"];
+                    "application/*+json": components["schemas"]["UpdateSupplierStatusRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SupplierResponse"];
+                        "application/json": components["schemas"]["SupplierResponse"];
+                        "text/json": components["schemas"]["SupplierResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/uploads/signature": {
         parameters: {
             query?: never;
@@ -5636,6 +7474,9 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ActivateStockReceiptCopiesRequest: {
+            lines?: null | components["schemas"]["CompleteStockReceiptLinePricingRequest"][];
+        };
         ApprovalAuditItem: {
             /** Format: uuid */
             id: string;
@@ -5702,8 +7543,6 @@ export interface components {
             reason: null | string;
         };
         AuthenticationResponse: {
-            accessToken: string;
-            refreshToken: string;
             csrfToken: string;
             user?: null | components["schemas"]["BrowserSessionUser"];
         };
@@ -5993,6 +7832,36 @@ export interface components {
             quantity: number;
             imageUrl: null | string;
         };
+        BuybackIsbnLookupResponse: {
+            /** Format: uuid */
+            editionId: string;
+            /** Format: uuid */
+            titleId: string;
+            titleName: string;
+            author: null | string;
+            publisher: null | string;
+            /** Format: int16 */
+            publishYear: null | number;
+            isbn: null | string;
+            /** Format: int64 */
+            coverPrice: number;
+            /** Format: int64 */
+            gradeAMinPrice: number;
+            /** Format: int64 */
+            gradeAMaxPrice: number;
+            /** Format: int64 */
+            gradeBMinPrice: number;
+            /** Format: int64 */
+            gradeBMaxPrice: number;
+            /** Format: int64 */
+            gradeCMinPrice: number;
+            /** Format: int64 */
+            gradeCMaxPrice: number;
+            /** Format: int64 */
+            gradeDMinPrice: number;
+            /** Format: int64 */
+            gradeDMaxPrice: number;
+        };
         BuybackLineSummary: {
             titleName: string;
             volumeLabel: null | string;
@@ -6028,6 +7897,10 @@ export interface components {
             roleName: components["schemas"]["RoleName"];
             reason: string;
         };
+        ChangePasswordRequest: {
+            currentPassword: string;
+            newPassword: string;
+        };
         CloudinaryUploadResultRequest: {
             /** Format: uuid */
             uploadIntentId: string;
@@ -6039,6 +7912,29 @@ export interface components {
             format: null | string;
             /** Format: int64 */
             bytes: null | number;
+        };
+        CompleteCustomerBuybackRequest: {
+            payoutMethod?: components["schemas"]["PaymentMethod"];
+            managerPin?: null | string;
+            note?: null | string;
+        };
+        CompleteStockReceiptLinePricingRequest: {
+            /** Format: uuid */
+            lineId?: null | string;
+            /** Format: uuid */
+            editionId?: null | string;
+            /** Format: int64 */
+            sellingPrice?: null | number;
+            /** Format: int64 */
+            rentalRate?: null | number;
+            availability?: null | components["schemas"]["BookChannelAvailability"];
+            shelfCode?: null | string;
+        };
+        CompleteStockReceiptRequest: {
+            /** @default true */
+            activateImmediately: boolean;
+            note?: null | string;
+            lines?: null | components["schemas"]["CompleteStockReceiptLinePricingRequest"][];
         };
         /** @enum {unknown} */
         ConditionGrade: "A" | "B" | "C" | "D";
@@ -6096,6 +7992,39 @@ export interface components {
             parentId?: null | string;
             /** @default true */
             isActive: boolean;
+        };
+        CreateCustomerBuybackLineRequest: {
+            /** Format: uuid */
+            editionId?: null | string;
+            isbn?: null | string;
+            titleName?: null | string;
+            conditionGrade?: components["schemas"]["ConditionGrade"];
+            /**
+             * Format: int64
+             * @default 0
+             */
+            agreedBuyPrice: number;
+            /**
+             * Format: int64
+             * @default 0
+             */
+            expectedSellingPrice: number;
+            /**
+             * Format: int32
+             * @default 1
+             */
+            quantity: number;
+            conditionNote?: null | string;
+        };
+        CreateCustomerBuybackRequest: {
+            sellerName: null | string;
+            sellerPhone: null | string;
+            payoutMethod?: components["schemas"]["PaymentMethod"];
+            exceedReason?: null | string;
+            managerPin?: null | string;
+            /** @default false */
+            completeImmediately: boolean;
+            lines?: null | components["schemas"]["CreateCustomerBuybackLineRequest"][];
         };
         CreateCustomerRequest: {
             fullName: string;
@@ -6170,6 +8099,43 @@ export interface components {
             checkCode?: null | string;
             checkNote?: null | string;
         };
+        CreateStockOutRequest: {
+            stockOutType: string;
+            reason: string;
+            evidenceFileName?: null | string;
+            lines?: null | components["schemas"]["StockOutLineRequest"][];
+        };
+        CreateStockReceiptLineRequest: {
+            /** Format: uuid */
+            editionId: string;
+            /**
+             * Format: int32
+             * @default 1
+             */
+            quantity: number;
+            /**
+             * Format: int64
+             * @default 0
+             */
+            unitCost: number;
+            conditionGrade?: components["schemas"]["ConditionGrade"];
+            availability?: components["schemas"]["BookChannelAvailability"];
+            conditionNote?: null | string;
+        };
+        CreateStockReceiptRequest: {
+            /** Format: uuid */
+            supplierId: string;
+            note?: null | string;
+            lines?: null | components["schemas"]["CreateStockReceiptLineRequest"][];
+        };
+        CreateSupplierRequest: {
+            name: string;
+            phone?: null | string;
+            address?: null | string;
+            taxCode?: null | string;
+            /** @default true */
+            isActive: boolean;
+        };
         CreateTitleRequest: {
             name: string;
             /** Format: uuid */
@@ -6185,6 +8151,43 @@ export interface components {
             isActive: boolean;
             imageUpload?: null | components["schemas"]["CloudinaryUploadResultRequest"];
         };
+        CustomerBuybackDetailResponse: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            /** Format: uuid */
+            sellerId: null | string;
+            sellerName: string;
+            sellerPhone: string;
+            status: components["schemas"]["ApprovalStatus"];
+            needsApproval: boolean;
+            /** Format: int64 */
+            totalAmount: number;
+            /** Format: int32 */
+            totalCopies: number;
+            /** Format: int32 */
+            generatedCopyCount: number;
+            payoutMethod: components["schemas"]["PaymentMethod"];
+            paymentNo: null | string;
+            /** Format: int64 */
+            cashDrawerBefore: number;
+            /** Format: int64 */
+            cashDrawerAfter: number;
+            note: null | string;
+            /** Format: uuid */
+            createdBy: string;
+            createdByName: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            approvedBy: null | string;
+            approvedByName: null | string;
+            /** Format: date-time */
+            approvedAt: null | string;
+            /** Format: date-time */
+            completedAt: null | string;
+            lines: components["schemas"]["CustomerBuybackLineResponse"][];
+        };
         CustomerBuybackHistoryItem: {
             /** Format: uuid */
             receiptId: string;
@@ -6197,6 +8200,26 @@ export interface components {
             isPaidOut: boolean;
             needsApproval: boolean;
             lines: components["schemas"]["BuybackLineSummary"][];
+        };
+        CustomerBuybackLineResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            editionId: string;
+            titleName: string;
+            isbn: null | string;
+            conditionGrade: components["schemas"]["ConditionGrade"];
+            /** Format: int64 */
+            coverPrice: number;
+            /** Format: int64 */
+            agreedBuyPrice: number;
+            /** Format: int64 */
+            expectedSellingPrice: number;
+            /** Format: int32 */
+            quantity: number;
+            overSingleLimit: boolean;
+            barcodes: string[];
+            copyStatus: null | components["schemas"]["BookCopyStatus"];
         };
         CustomerDto: {
             /** Format: uuid */
@@ -6611,7 +8634,93 @@ export interface components {
             /** Format: int32 */
             copiesCount: number;
         };
+        EditionStockAlertDashboardResponse: {
+            /** Format: int32 */
+            alertEditionCount: number;
+            /** Format: int32 */
+            rentalLowEditionCount: number;
+            /** Format: int32 */
+            pendingImportCopiesCount: number;
+            /** Format: int32 */
+            pendingImportEditionCount: number;
+            latestPendingReceiptCode: null | string;
+            /** Format: int32 */
+            totalSuggestedRestockCount: number;
+            items: components["schemas"]["EditionStockAlertItemResponse"][];
+        };
+        EditionStockAlertItemResponse: {
+            /** Format: uuid */
+            editionId: string;
+            /** Format: uuid */
+            titleId: string;
+            titleName: string;
+            volumeLabel: null | string;
+            editionStatement: null | string;
+            isbn: null | string;
+            publisher: null | string;
+            /** Format: int16 */
+            publishYear: null | number;
+            /** Format: int64 */
+            coverPrice: number;
+            /** Format: int32 */
+            minStockSale: number;
+            /** Format: int32 */
+            minStockRental: number;
+            /** Format: int32 */
+            availableSale: number;
+            /** Format: int32 */
+            availableRental: number;
+            /** Format: int32 */
+            rentedCount: number;
+            /** Format: int32 */
+            totalPhysical: number;
+            /** Format: int32 */
+            pendingImportCount: number;
+            /** Format: int32 */
+            saleDeficit: number;
+            /** Format: int32 */
+            rentalDeficit: number;
+            /** Format: int32 */
+            suggestedRestockCount: number;
+            isSaleLow: boolean;
+            isRentalLow: boolean;
+            severity: string;
+            severityLabel: string;
+            suggestionText: string;
+            /** Format: uuid */
+            preferredSupplierId: null | string;
+            preferredSupplierCode: null | string;
+            preferredSupplierName: null | string;
+        };
         EmailTestResponse: {
+            status: string;
+        };
+        EmployeeProfileResponse: {
+            /** Format: uuid */
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string;
+            role: string;
+            status: string;
+            avatarUrl: null | string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            passwordChangedAt: null | string;
+        };
+        EmployeeSessionResponse: {
+            /** Format: uuid */
+            id: string;
+            deviceName: string;
+            deviceType: string;
+            isCurrent: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            lastActiveAt: string;
+            /** Format: date-time */
+            expiresAt: string;
             status: string;
         };
         ExpenseBreakdownDto: {
@@ -6747,6 +8856,12 @@ export interface components {
         LoginRequest: {
             email: string;
             password: string;
+        };
+        LogoutIncompleteResponse: {
+            code: string;
+            cookiesCleared: boolean;
+            revocationCompleted: boolean;
+            message: string;
         };
         LowStockAlertRowDto: {
             /** Format: uuid */
@@ -6980,6 +9095,19 @@ export interface components {
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
+        PagedResultOfCustomerBuybackDetailResponse: {
+            items: components["schemas"]["CustomerBuybackDetailResponse"][];
+            /** Format: int32 */
+            totalCount: number;
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
         PagedResultOfCustomerBuybackHistoryItem: {
             items: components["schemas"]["CustomerBuybackHistoryItem"][];
             /** Format: int32 */
@@ -7136,6 +9264,45 @@ export interface components {
             hasPreviousPage?: boolean;
             hasNextPage?: boolean;
         };
+        PagedResultOfStockOutDetailResponse: {
+            items: components["schemas"]["StockOutDetailResponse"][];
+            /** Format: int32 */
+            totalCount: number;
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
+        PagedResultOfStockReceiptSummaryResponse: {
+            items: components["schemas"]["StockReceiptSummaryResponse"][];
+            /** Format: int32 */
+            totalCount: number;
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
+        PagedResultOfSupplierResponse: {
+            items: components["schemas"]["SupplierResponse"][];
+            /** Format: int32 */
+            totalCount: number;
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasPreviousPage?: boolean;
+            hasNextPage?: boolean;
+        };
         PagedResultOfTitleResponse: {
             items: components["schemas"]["TitleResponse"][];
             /** Format: int32 */
@@ -7150,7 +9317,7 @@ export interface components {
             hasNextPage?: boolean;
         };
         /** @enum {unknown} */
-        PaymentMethod: "CASH" | "BANK_TRANSFER" | null;
+        PaymentMethod: "CASH" | "BANK_TRANSFER";
         ProblemDetails: {
             type?: null | string;
             title?: null | string;
@@ -7288,6 +9455,10 @@ export interface components {
             /** Format: int64 */
             expenseAmount: number;
         };
+        RevokeOtherSessionsResponse: {
+            /** Format: int32 */
+            revokedCount: number;
+        };
         /** @enum {unknown} */
         RoleName: "ADMIN" | "CASHIER" | "INVENTORY_MANAGER";
         SaleLineSummary: {
@@ -7331,8 +9502,184 @@ export interface components {
             password: string;
             status: string;
         };
+        StockOutDetailResponse: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            stockOutType: string;
+            stockOutTypeLabel: string;
+            status: components["schemas"]["ApprovalStatus"];
+            reason: string;
+            evidenceFileName: null | string;
+            /** Format: int32 */
+            copyCount: number;
+            /** Format: int64 */
+            totalCost: number;
+            /** Format: uuid */
+            createdBy: string;
+            createdByName: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            approvedBy: null | string;
+            approvedByName: null | string;
+            /** Format: date-time */
+            approvedAt: null | string;
+            lines: components["schemas"]["StockOutLineResponse"][];
+            history: components["schemas"]["StockOutHistoryItemResponse"][];
+        };
+        StockOutHistoryItemResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            actorId: null | string;
+            actorName: string;
+            action: string;
+            note: null | string;
+        };
+        StockOutLineRequest: {
+            copyBarcode: string;
+            lineReason?: null | string;
+        };
+        StockOutLineResponse: {
+            /** Format: uuid */
+            copyId: string;
+            copyBarcode: string;
+            titleName: string;
+            conditionGrade: string;
+            conditionNote: null | string;
+            /** Format: int64 */
+            costPrice: number;
+            currentStatus: string;
+            targetStatus: string;
+            lineReason: null | string;
+        };
+        StockReceiptDetailResponse: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            sourceType: components["schemas"]["StockReceiptSourceType"];
+            /** Format: uuid */
+            supplierId: null | string;
+            supplierCode: null | string;
+            supplierName: null | string;
+            status: components["schemas"]["ApprovalStatus"];
+            /** Format: int64 */
+            totalAmount: number;
+            /** Format: int32 */
+            lineCount: number;
+            /** Format: int32 */
+            totalCopies: number;
+            /** Format: int32 */
+            generatedCopyCount: number;
+            note: null | string;
+            /** Format: uuid */
+            createdBy: string;
+            createdByName: null | string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            completedAt: null | string;
+            lines: components["schemas"]["StockReceiptLineResponse"][];
+        };
+        StockReceiptLineResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            editionId: string;
+            /** Format: uuid */
+            titleId: string;
+            titleName: string;
+            volumeLabel: null | string;
+            isbn: null | string;
+            publisher: null | string;
+            /** Format: int16 */
+            publishYear: null | number;
+            editionStatement: null | string;
+            format: null | string;
+            /** Format: int64 */
+            coverPrice: number;
+            /** Format: int32 */
+            quantity: number;
+            /** Format: int64 */
+            unitCost: number;
+            conditionGrade: components["schemas"]["ConditionGrade"];
+            conditionNote: null | string;
+            availability: components["schemas"]["BookChannelAvailability"];
+            /** Format: int64 */
+            sellingPrice: null | number;
+            /** Format: int64 */
+            rentalRate: null | number;
+            /** Format: int32 */
+            generatedCopyCount: number;
+            firstBarcode: null | string;
+            lastBarcode: null | string;
+            barcodes: string[];
+            copyStatus: null | components["schemas"]["BookCopyStatus"];
+        };
         /** @enum {unknown} */
         StockReceiptSourceType: "SUPPLIER" | "CUSTOMER_BUYBACK";
+        StockReceiptSummaryResponse: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            sourceType: components["schemas"]["StockReceiptSourceType"];
+            /** Format: uuid */
+            supplierId: null | string;
+            supplierCode: null | string;
+            supplierName: null | string;
+            status: components["schemas"]["ApprovalStatus"];
+            /** Format: int64 */
+            totalAmount: number;
+            /** Format: int32 */
+            lineCount: number;
+            /** Format: int32 */
+            totalCopies: number;
+            /** Format: int32 */
+            generatedCopyCount: number;
+            note: null | string;
+            /** Format: uuid */
+            createdBy: string;
+            createdByName: null | string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            completedAt: null | string;
+        };
+        SupplierResponse: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            phone: null | string;
+            address: null | string;
+            taxCode: null | string;
+            isActive: boolean;
+            /** Format: int32 */
+            receiptCount: number;
+            /** Format: int64 */
+            totalImportAmount: number;
+            /** Format: int64 */
+            pendingAmount: number;
+            /** Format: int32 */
+            pendingReceiptCount: number;
+        };
+        SupplierStatsResponse: {
+            /** Format: int32 */
+            activeCount: number;
+            /** Format: int32 */
+            inactiveCount: number;
+            /** Format: int32 */
+            totalCount: number;
+            /** Format: int64 */
+            totalImportAmount: number;
+            /** Format: int64 */
+            totalPendingAmount: number;
+            /** Format: int32 */
+            pendingReceiptCount: number;
+        };
         TaxDeclarationReportResponse: {
             periodType: string;
             /** Format: int32 */
@@ -7538,6 +9885,12 @@ export interface components {
         UpdateEditionStatusRequest: {
             isActive: boolean;
         };
+        UpdateEditionThresholdsRequest: {
+            /** Format: int32 */
+            minStockSale?: null | number;
+            /** Format: int32 */
+            minStockRental?: null | number;
+        };
         UpdateIntegrationsRequest: {
             vietQr?: null | components["schemas"]["VietQrIntegrationDto"];
             zaloOa?: null | components["schemas"]["ZaloOaIntegrationDto"];
@@ -7554,6 +9907,10 @@ export interface components {
             tiers: components["schemas"]["MembershipTierItemDto"][];
             changeReason: string;
         };
+        UpdateProfileRequest: {
+            fullName: string;
+            phone: string;
+        };
         UpdateRbacMatrixRequest: {
             items: components["schemas"]["RbacMatrixItemDto"][];
             changeReason: string;
@@ -7569,6 +9926,22 @@ export interface components {
             latePenaltyRatePct: number;
             damagePenalties: null | components["schemas"]["DamagePenaltyConfigDto"][];
             changeReason: string;
+        };
+        UpdateStockReceiptRequest: {
+            /** Format: uuid */
+            supplierId: string;
+            note?: null | string;
+            lines?: null | components["schemas"]["CreateStockReceiptLineRequest"][];
+        };
+        UpdateSupplierRequest: {
+            name: string;
+            phone?: null | string;
+            address?: null | string;
+            taxCode?: null | string;
+            isActive?: null | boolean;
+        };
+        UpdateSupplierStatusRequest: {
+            isActive: boolean;
         };
         UpdateTitleRequest: {
             name: string;
@@ -7588,7 +9961,7 @@ export interface components {
             isActive: boolean;
         };
         /** @enum {unknown} */
-        UploadOwnerType: "BOOK_SERIES_IMAGE" | "TITLE_IMAGE" | "EDITION_IMAGE" | "BOOK_COPY_IMAGE" | "RENTAL_LINE_IMAGE" | "STOCK_RECEIPT_IMAGE" | null;
+        UploadOwnerType: "BOOK_SERIES_IMAGE" | "TITLE_IMAGE" | "EDITION_IMAGE" | "BOOK_COPY_IMAGE" | "RENTAL_LINE_IMAGE" | "STOCK_RECEIPT_IMAGE" | "EMPLOYEE_AVATAR" | null;
         UploadSignatureRequest: {
             ownerType: null | components["schemas"]["UploadOwnerType"];
         };

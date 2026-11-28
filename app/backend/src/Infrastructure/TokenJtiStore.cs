@@ -86,7 +86,7 @@ public sealed class TokenJtiStore(RedisService redisService)
             ],
             cancellationToken);
 
-    public Task<bool> ConsumeRefreshAsync(string refreshJti, CancellationToken cancellationToken = default)
+    public Task<bool> RevokeRefreshAsync(string refreshJti, CancellationToken cancellationToken = default)
         => redisService.DeleteAsync(RedisKeyManager.ForToken(TokenType.REFRESH, refreshJti), cancellationToken);
 
     public Task<bool> RevokeAccessAsync(string accessJti, CancellationToken cancellationToken = default)

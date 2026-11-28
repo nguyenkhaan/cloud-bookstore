@@ -55,8 +55,11 @@ export function formatUser(
 export type AuthContextValue = {
   session: AuthSession | null
   isInitializing: boolean
+  isSessionUnavailable: boolean
+  retrySession: () => void
   login: (email: string, password: string) => Promise<void>
   signOut: () => void
+  updateSessionUser: (user: AuthUser) => void
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null)

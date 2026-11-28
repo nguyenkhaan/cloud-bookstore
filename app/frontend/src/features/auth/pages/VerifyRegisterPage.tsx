@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AlertCircle, ArrowLeft, Check, LoaderCircle, Mail } from 'lucide-react'
 import { Button, Card, notify, TextField } from '@/components/common'
 import { CenterLayout } from '@/features/auth/components/CenterLayout'
 import { useResendVerificationMutation, useVerifyMutation } from '@/features/auth/auth.hook'
+import { isValidAuthEmail } from '@/features/auth/auth.service'
 import { getVerificationToken } from '@/features/auth/verification'
 
 type VerificationState = 'verifying' | 'success' | 'failed'
@@ -13,12 +14,13 @@ const invalidLinkMessage = 'Liên kết xác minh không hợp lệ hoặc đã 
 
 export function VerifyRegisterPage({ search }: { search: string }) {
   const navigate = useNavigate()
-  const token = getVerificationToken(search)
+  const [token] = useState(() => getVerificationToken(search))
   const requestedToken = useRef<string | null | undefined>(undefined)
   const { mutateAsync: verifyAccount } = useVerifyMutation()
   const { isPending: isResending, mutateAsync: resendVerification } = useResendVerificationMutation()
   const [email, setEmail] = useState('')
   const [resendComplete, setResendComplete] = useState(false)
+  const [resendError, setResendError] = useState<string | null>(null)
   const [failedToken, setFailedToken] = useState<string | null>(null)
   const [verifiedToken, setVerifiedToken] = useState<string | null>(null)
   const state: VerificationState = !token || failedToken === token
@@ -26,6 +28,12 @@ export function VerifyRegisterPage({ search }: { search: string }) {
     : verifiedToken === token
       ? 'success'
       : 'verifying'
+
+  useLayoutEffect(() => {
+    if (new URLSearchParams(window.location.search).has('token')) {
+      window.history.replaceState(null, '', '/verify-register')
+    }
+  }, [])
 
   useEffect(() => {
     if (requestedToken.current === token) return
@@ -36,7 +44,6 @@ export function VerifyRegisterPage({ search }: { search: string }) {
       return
     }
 
-    window.history.replaceState(null, '', '/verify-register')
     void verifyAccount({ token })
       .then(() => {
         setVerifiedToken(token)
@@ -51,14 +58,19 @@ export function VerifyRegisterPage({ search }: { search: string }) {
   const handleResend = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const normalizedEmail = email.trim()
-    if (!normalizedEmail || isResending) return
+    if (isResending) return
+    setResendComplete(false)
+    if (!isValidAuthEmail(normalizedEmail)) {
+      setResendError('Vui lòng nhập địa chỉ email nội bộ hợp lệ.')
+      return
+    }
+    setResendError(null)
 
     try {
       await resendVerification({ email: normalizedEmail })
       setResendComplete(true)
-      notify.success('Nếu email này đang chờ xác minh, một liên kết mới đã được gửi.')
     } catch {
-      notify.error('Không thể gửi lại email xác minh lúc này. Hãy thử lại sau.')
+      setResendError('Không thể gửi lại email xác minh lúc này. Hãy thử lại sau.')
     }
   }
 
@@ -118,14 +130,17 @@ export function VerifyRegisterPage({ search }: { search: string }) {
               Nhập email nội bộ đã đăng ký để nhận liên kết xác minh mới.
             </p>
 
-            <form className="mt-6 flex flex-col gap-4 text-left" onSubmit={(event) => void handleResend(event)}>
+            <form className="mt-6 flex flex-col gap-4 text-left" noValidate onSubmit={(event) => void handleResend(event)}>
               <TextField
                 autoComplete="email"
+                hint={resendError}
+                invalid={Boolean(resendError)}
                 label="Email nội bộ"
                 name="email"
                 onChange={(event) => {
                   setEmail(event.target.value)
                   setResendComplete(false)
+                  setResendError(null)
                 }}
                 placeholder="nv.phong@nhasachmay.vn"
                 required

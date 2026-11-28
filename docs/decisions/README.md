@@ -56,5 +56,6 @@ Feature, business rule, spec hoặc mã nguồn bị ảnh hưởng.
 | [`ADR-005`](./ADR-005-stable-session-csrf-token-and-csrf-scope.md) | Accepted | CSRF token ổn định theo phiên; chỉ kiểm tra CSRF ở endpoint cần đăng nhập |
 | [`ADR-006`](./ADR-006-integration-secret-protection.md) | Accepted | Mã hóa secret tích hợp bằng Data Protection và giữ bền bộ khóa |
 | [`ADR-007`](./ADR-007-dynamic-role-permissions-and-immediate-config.md) | Accepted | Quyền động theo thao tác API; cấu hình hiệu lực ngay và lưu audit |
+| [`ADR-008`](./ADR-008-recoverable-session-outage-503.md) | Accepted | Bổ sung ADR-003: giữ phiên khi lỗi hạ tầng tạm thời trả `503`; kết thúc phiên không hợp lệ với `401` |
 
 Quyết định xác thực vẫn mở tại [`OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md); backend tuân theo `ADR-002`.

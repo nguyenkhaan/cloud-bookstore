@@ -2,11 +2,11 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Mail, MailCheck } from 'lucide-react'
-import { Button, Card, notify, TextField } from '@/components/common'
+import { Button, Card, TextField } from '@/components/common'
 import { Banner } from '@/features/auth/components/Banner'
 import { CenterLayout } from '@/features/auth/components/CenterLayout'
 import { useRequestPasswordResetMutation } from '@/features/auth/auth.hook'
-import { ApiError } from '@/features/auth/auth.service'
+import { ApiError, isValidAuthEmail } from '@/features/auth/auth.service'
 import type { Notice } from '@/features/auth/auth.type'
 
 export function ForgotPasswordPage() {
@@ -15,13 +15,14 @@ export function ForgotPasswordPage() {
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null)
   const [notice, setNotice] = useState<Notice | null>(null)
   const [emailError, setEmailError] = useState<string | null>(null)
+  const [resendNotice, setResendNotice] = useState<string | null>(null)
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (isPending) return
 
     const normalizedEmail = email.trim()
-    if (!normalizedEmail || !normalizedEmail.includes('@')) {
+    if (!isValidAuthEmail(normalizedEmail)) {
       setEmailError('Vui lòng nhập địa chỉ email nội bộ hợp lệ.')
       return
     }
@@ -48,11 +49,13 @@ export function ForgotPasswordPage() {
 
   const handleResend = async () => {
     if (!submittedEmail || isPending) return
+    setResendNotice(null)
+    setNotice(null)
     try {
       await requestReset({ email: submittedEmail })
-      notify.success('Đã gửi lại email khôi phục mật khẩu.')
+      setResendNotice('Nếu tài khoản tồn tại, email khôi phục mới đã được gửi.')
     } catch {
-      notify.error('Không thể gửi lại email khôi phục lúc này. Vui lòng thử lại sau.')
+      setNotice({ tone: 'error', message: 'Không thể gửi lại email khôi phục lúc này. Vui lòng thử lại sau.' })
     }
   }
 
@@ -90,6 +93,8 @@ export function ForgotPasswordPage() {
             >
               {isPending ? 'Đang gửi lại…' : 'Gửi lại email khôi phục'}
             </Button>
+            {resendNotice && <p className="text-sm text-emerald-700" role="status">{resendNotice}</p>}
+            {notice && <Banner tone={notice.tone}>{notice.message}</Banner>}
 
             <Link
               className="mx-auto inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"

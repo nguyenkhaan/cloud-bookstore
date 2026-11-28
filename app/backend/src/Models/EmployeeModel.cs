@@ -29,6 +29,7 @@ public class EmployeeModel
     public EmployeeStatus Status { get; set; }
     public int FailedLoginAttempts { get; set; }
     public DateTime? LockoutEndUtc { get; set; }
+    public DateTime? PasswordChangedAt { get; set; }
     [MaxLength(128)]
     public string? PasswordResetTokenHash { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

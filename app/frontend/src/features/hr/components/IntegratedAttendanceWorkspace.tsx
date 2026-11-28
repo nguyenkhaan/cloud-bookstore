@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Download, LockKeyhole, Search, ShieldAlert } from 'lucide-react'
+import { LockKeyhole, Search, ShieldAlert } from 'lucide-react'
 import { Badge, Button, Card, SelectBox } from '@/components/common'
 import { attendanceDemoPunchFor, attendanceRows } from '../attendance.data'
 import type { AttendanceRowDisplay, AttendanceUiState } from '../hr-shift.type'

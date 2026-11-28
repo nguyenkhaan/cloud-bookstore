@@ -34,7 +34,7 @@ public sealed class UploadIntentService(
         {
             throw new BadRequestException("Owner type is invalid.");
         }
-        if (!IsImplementedBookOwnerType(ownerType))
+        if (!IsImplementedOwnerType(ownerType))
         {
             throw new BadRequestException("This image owner type is not available yet.");
         }
@@ -141,11 +141,12 @@ public sealed class UploadIntentService(
         return intent.PublicImageId;
     }
 
-    private static bool IsImplementedBookOwnerType(UploadOwnerType ownerType)
+    private static bool IsImplementedOwnerType(UploadOwnerType ownerType)
         => ownerType is UploadOwnerType.BOOK_SERIES_IMAGE
             or UploadOwnerType.TITLE_IMAGE
             or UploadOwnerType.EDITION_IMAGE
-            or UploadOwnerType.BOOK_COPY_IMAGE;
+            or UploadOwnerType.BOOK_COPY_IMAGE
+            or UploadOwnerType.EMPLOYEE_AVATAR;
 
     private static string? NormalizeOptional(string? value, int maxLength, string fieldName)
     {

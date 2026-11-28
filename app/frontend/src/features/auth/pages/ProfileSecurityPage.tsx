@@ -1,600 +1,275 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  Bell,
-  CalendarClock,
-  KeyRound,
-  Laptop,
-  Lock,
-  LogOut,
-  Mail,
-  Monitor,
-  Smartphone,
-  Trash2,
-} from 'lucide-react'
+import { ImagePlus, KeyRound, Laptop, Monitor, Smartphone } from 'lucide-react'
 import { MainLayout } from '@/components/layout'
-import { Avatar, Badge, Button, Card, notify, SelectBox, TextField } from '@/components/common'
-import { cn } from '@/lib/cn'
-import { useAuth } from '@/features/auth/auth.hook'
-import {
-  DEFAULT_SHIFT_OPTIONS,
-  getMockProfileForUser,
-  getRoleBadgeLabel,
-  getRolePermissionLabel,
-  INITIAL_MOCK_DEVICES,
-  INITIAL_MOCK_NOTIFICATION_PREFS,
-} from '@/features/auth/auth.mock'
-import type { MockLoginDevice, MockNotificationPrefs } from '@/features/auth/auth.type'
+import { Avatar, Badge, Button, Card, notify, TextField } from '@/components/common'
+import { Banner } from '@/features/auth/components/Banner'
 import { ChangePasswordModal } from '@/features/auth/components/ChangePasswordModal'
 import { LogoutDeviceModal } from '@/features/auth/components/LogoutDeviceModal'
+import {
+  useAuth, useProfileQuery, useRevokeOtherSessionsMutation, useRevokeSessionMutation,
+  useSessionsQuery, useUpdateProfileAvatarMutation, useUpdateProfileMutation,
+} from '@/features/auth/auth.hook'
+import type { EmployeeProfileResponse, EmployeeSessionResponse, UpdateProfileRequest } from '@/features/auth/auth.type'
+import { getRoleBadgeLabel, getRolePermissionLabel } from '@/features/auth/role'
+import { uploadImage, validateImageFile } from '@/features/uploads/upload.service'
 import { workspacePathFor } from '@/features/workspace/workspace.route'
 
-function LockedSuffix() {
-  return (
-    <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-400 select-none">
-      <Lock aria-hidden="true" className="size-3.5" />
-      <span>Cố định</span>
-    </span>
-  )
-}
-
-function DeviceTypeIcon({ icon }: { icon: MockLoginDevice['icon'] }) {
-  switch (icon) {
-    case 'mobile':
-      return <Smartphone aria-hidden="true" className="size-4" />
-    case 'laptop':
-      return <Laptop aria-hidden="true" className="size-4" />
-    default:
-      return <Monitor aria-hidden="true" className="size-4" />
-  }
-}
-
-type ToggleSwitchProps = {
-  checked: boolean
-  disabled?: boolean
-  label: string
-  onToggle?: () => void
-}
-
-function ToggleSwitch({ checked, disabled = false, label, onToggle }: ToggleSwitchProps) {
-  return (
-    <button
-      aria-checked={checked}
-      aria-label={label}
-      className={cn(
-        'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 motion-reduce:transition-none',
-        checked ? 'bg-indigo-600' : 'bg-slate-200',
-        disabled ? 'cursor-not-allowed opacity-70' : 'cursor-pointer',
-      )}
-      disabled={disabled}
-      onClick={onToggle}
-      role="switch"
-      type="button"
-    >
-      <span
-        aria-hidden="true"
-        className={cn(
-          'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-xs transition-transform motion-reduce:transition-none',
-          checked ? 'translate-x-5' : 'translate-x-0',
-        )}
-      />
-    </button>
-  )
+const dateFormatter = new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeZone: 'Asia/Ho_Chi_Minh' })
+const sessionDateFormatter = new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh' })
+const accountStatuses: Record<string, string> = {
+  ACTIVE: 'Đang hoạt động', INVITED: 'Đã mời', PENDING_OTP: 'Chờ xác minh', LOCKED: 'Đã khóa', REVOKED: 'Đã thu hồi',
 }
 
 export function ProfileSecurityPage() {
   const navigate = useNavigate()
-  const { session, signOut } = useAuth()
-  const currentUser = session?.user ?? {
-    name: 'Nguyễn Minh Anh',
-    role: 'Quản trị viên',
-    roleCode: 'ADMIN',
-    email: 'minhanh@nhasachmay.vn',
-  }
-
-  const initialExtras = useMemo(() => getMockProfileForUser(session?.user), [session?.user])
-
-  const savedProfile = {
-    fullName: currentUser.name,
-    phone: initialExtras.phone,
-    defaultShift: initialExtras.defaultShift,
-  }
-  const [fullName, setFullName] = useState(savedProfile.fullName)
-  const [phone, setPhone] = useState(savedProfile.phone)
-  const [defaultShift, setDefaultShift] = useState(savedProfile.defaultShift)
-  const [nameError, setNameError] = useState<string | null>(null)
-  const [phoneError, setPhoneError] = useState<string | null>(null)
-
-  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | undefined>(currentUser.avatarUrl)
-  const objectUrlRef = useRef<string | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const lastPasswordChangedLabel = initialExtras.lastPasswordChangedLabel
-  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
-
-  const [devices] = useState<MockLoginDevice[]>(INITIAL_MOCK_DEVICES)
-  const [deviceToLogout, setDeviceToLogout] = useState<MockLoginDevice | null>(null)
-
-  const [notificationPrefs, setNotificationPrefs] = useState<MockNotificationPrefs>(
-    INITIAL_MOCK_NOTIFICATION_PREFS,
-  )
-
-  useEffect(() => {
-    return () => {
-      if (objectUrlRef.current) {
-        URL.revokeObjectURL(objectUrlRef.current)
-      }
-    }
-  }, [])
-
-  const roleBadgeLabel = getRoleBadgeLabel(currentUser.roleCode, currentUser.role)
-  const rolePermissionLabel = getRolePermissionLabel(currentUser.roleCode, currentUser.role)
-  const hasOtherActiveDevices = devices.some((d) => !d.isCurrent && d.status === 'active')
-
-  const handleAvatarChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-    if (objectUrlRef.current) {
-      URL.revokeObjectURL(objectUrlRef.current)
-    }
-    const nextUrl = URL.createObjectURL(file)
-    objectUrlRef.current = nextUrl
-    setAvatarPreviewUrl(nextUrl)
-    notify.success('Đã cập nhật ảnh đại diện xem trước.')
-  }
-
-  const handleSaveProfile = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    const normalizedName = fullName.trim()
-    const normalizedPhone = phone.replace(/\s+/g, '')
-
-    let hasError = false
-    if (normalizedName.length < 2) {
-      setNameError('Vui lòng nhập họ và tên tối thiểu 2 ký tự.')
-      hasError = true
-    } else {
-      setNameError(null)
-    }
-
-    if (!/^0\d{9}$/.test(normalizedPhone)) {
-      setPhoneError('Số điện thoại phải gồm 10 chữ số và bắt đầu bằng số 0.')
-      hasError = true
-    } else {
-      setPhoneError(null)
-    }
-
-    if (hasError) return
-
-    notify.error('Chưa thể lưu hồ sơ vì máy chủ chưa hỗ trợ thao tác này. Thông tin bạn nhập vẫn được giữ trên biểu mẫu.')
-  }
-
-  const handleResetProfile = () => {
-    setFullName(savedProfile.fullName)
-    setPhone(savedProfile.phone)
-    setDefaultShift(savedProfile.defaultShift)
-    setNameError(null)
-    setPhoneError(null)
-  }
-
-  const handleConfirmLogoutDevice = (deviceId: string) => {
-    void deviceId
-    notify.error('Chưa thể đăng xuất thiết bị vì máy chủ chưa hỗ trợ thao tác này.')
-  }
-
-  const handleLogoutAllOtherDevices = () => {
-    if (!hasOtherActiveDevices) return
-    notify.error('Chưa thể đăng xuất các thiết bị khác vì máy chủ chưa hỗ trợ thao tác này.')
-  }
+  const { signOut } = useAuth()
+  const { data: profile, isPending, isError, isFetching, refetch } = useProfileQuery()
 
   return (
     <MainLayout
-      breadcrumbs={[
-        { label: 'Không gian làm việc', to: '/dashboard' },
-        { label: 'Cá nhân' },
-        { label: 'Hồ sơ cá nhân & Bảo mật' },
-      ]}
+      breadcrumbs={[{ label: 'Không gian làm việc', to: '/dashboard' }, { label: 'Hồ sơ cá nhân & Bảo mật' }]}
       currentPath=""
       onNavigate={(id) => {
         const path = workspacePathFor(id)
         if (path) navigate(path)
       }}
       onSignOut={signOut}
-      user={{
-        name: savedProfile.fullName,
-        role: currentUser.role,
-        avatarUrl: avatarPreviewUrl,
-      }}
+      pageTitle="Hồ sơ cá nhân & Bảo mật"
     >
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-            Hồ sơ cá nhân &amp; Bảo mật
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Quản lý thông tin tài khoản và những thiết bị bạn tin cậy.
-          </p>
-        </div>
-
-        {/* Section 1: Personal Info */}
-        <Card
-          padding="lg"
-          title="Thông tin cá nhân"
-        >
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr]">
-            <div className="flex flex-col items-center rounded-2xl border border-slate-200/80 bg-slate-50/70 p-5 text-center">
-              <Avatar
-                className="h-20 w-20 text-2xl"
-                imageUrl={avatarPreviewUrl}
-                name={fullName || currentUser.name}
-              />
-              <h2 className="mt-3.5 text-base font-bold text-slate-900">
-                {fullName.trim() || currentUser.name}
-              </h2>
-              <Badge className="mt-2" size="md" variant="brand">
-                {roleBadgeLabel}
-              </Badge>
-
-              <ul className="mt-4 w-full space-y-1.5 border-t border-slate-200/70 pt-4 text-left text-xs text-slate-600">
-                <li>• Mã nhân viên: {initialExtras.employeeCode}</li>
-                <li>• Cơ sở: {initialExtras.branch}</li>
-                <li>• Ngày gia nhập: {initialExtras.joinedAt}</li>
-              </ul>
-
-              <input
-                accept="image/*"
-                aria-label="Chọn ảnh đại diện mới"
-                className="hidden"
-                onChange={handleAvatarChange}
-                ref={fileInputRef}
-                type="file"
-              />
-              <Button
-                className="mt-4 min-h-11"
-                fullWidth
-                onClick={() => fileInputRef.current?.click()}
-                size="sm"
-                type="button"
-                variant="secondary"
-              >
-                Thay đổi ảnh đại diện
-              </Button>
+      <div className="mx-auto max-w-5xl space-y-5">
+        {isPending && (
+          <Card aria-busy="true" role="status">
+            <span className="sr-only">Đang tải hồ sơ…</span>
+            <div aria-hidden="true" className="space-y-5 motion-safe:animate-pulse">
+              <div className="h-16 w-16 rounded-full bg-slate-200" />
+              <div className="h-10 max-w-lg rounded-xl bg-slate-100" />
+              <div className="h-10 max-w-lg rounded-xl bg-slate-100" />
             </div>
-
-            <form className="flex flex-col justify-between" noValidate onSubmit={handleSaveProfile}>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <TextField
-                  hint={nameError}
-                  invalid={Boolean(nameError)}
-                  label="Họ và tên *"
-                  name="fullName"
-                  onChange={(event) => {
-                    setFullName(event.target.value)
-                    setNameError(null)
-                  }}
-                  required
-                  type="text"
-                  value={fullName}
-                  variant="outlined"
-                />
-
-                <TextField
-                  label="Tên đăng nhập"
-                  name="username"
-                  readOnly
-                  suffix={<LockedSuffix />}
-                  type="text"
-                  value={initialExtras.username}
-                  variant="outlined"
-                />
-
-                <TextField
-                  hint={phoneError}
-                  invalid={Boolean(phoneError)}
-                  label="Số điện thoại *"
-                  name="phone"
-                  onChange={(event) => {
-                    setPhone(event.target.value)
-                    setPhoneError(null)
-                  }}
-                  required
-                  type="tel"
-                  value={phone}
-                  variant="outlined"
-                />
-
-                <TextField
-                  label="Email định danh"
-                  name="email"
-                  readOnly
-                  suffix={<LockedSuffix />}
-                  type="email"
-                  value={currentUser.email ?? 'minhanh@nhasachmay.vn'}
-                  variant="outlined"
-                />
-
-                <TextField
-                  label="Chức vụ & Quyền hạn"
-                  name="rolePermission"
-                  readOnly
-                  suffix={<LockedSuffix />}
-                  type="text"
-                  value={rolePermissionLabel}
-                  variant="outlined"
-                />
-
-                <div>
-                  <span className="mb-1.5 block text-[13px] font-semibold text-slate-700">
-                    Ca làm việc mặc định
-                  </span>
-                  <SelectBox
-                    hideLabel
-                    label="Ca làm việc mặc định"
-                    onChange={setDefaultShift}
-                    options={DEFAULT_SHIFT_OPTIONS}
-                    searchable={false}
-                    value={defaultShift}
-                  />
-                </div>
-              </div>
-
-              <div className="mt-5 flex flex-wrap items-center gap-3">
-                <Button
-                  className="min-h-11 px-5"
-                  data-testid="profile-save-btn"
-                  size="md"
-                  type="submit"
-                  variant="primary"
-                >
-                  Lưu thông tin
-                </Button>
-                <Button
-                  className="min-h-11 px-5"
-                  onClick={handleResetProfile}
-                  size="md"
-                  type="button"
-                  variant="secondary"
-                >
-                  Hủy thay đổi
-                </Button>
-              </div>
-            </form>
-          </div>
-        </Card>
-
-        {/* Section 2: Security & Password */}
-        <Card
-          padding="lg"
-          title="Bảo mật & Mật khẩu"
-        >
-          <div className="flex flex-col gap-3 rounded-xl border border-slate-200/70 bg-slate-50/50 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-                <KeyRound aria-hidden="true" className="size-5" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-sm font-semibold text-slate-900">Mật khẩu tài khoản</div>
-                <div className="mt-0.5 text-xs text-slate-500">
-                  •••••••••••• · Lần đổi gần nhất: {lastPasswordChangedLabel}
-                </div>
-              </div>
-            </div>
-
-            <Button
-              className="min-h-11 shrink-0"
-              data-testid="profile-change-password-btn"
-              icon={<KeyRound aria-hidden="true" className="size-4" />}
-              onClick={() => setIsChangePasswordOpen(true)}
-              size="md"
-              type="button"
-              variant="outline"
-            >
-              Đổi mật khẩu
-            </Button>
-          </div>
-        </Card>
-
-        {/* Section 3: Devices & Sessions */}
-        <Card
-          padding="lg"
-          title="Thiết bị & Phiên đăng nhập"
-        >
-          <div className="overflow-x-auto rounded-xl border border-slate-200/80">
-            <table className="w-full min-w-[600px] border-collapse text-left text-xs">
-              <thead>
-                <tr className="border-b border-slate-200/80 bg-slate-50/80 text-slate-600">
-                  <th className="px-4 py-3 font-semibold">Thiết bị &amp; Trình duyệt</th>
-                  <th className="px-4 py-3 font-semibold">Hoạt động gần nhất</th>
-                  <th className="px-4 py-3 font-semibold">Trạng thái</th>
-                  <th className="px-4 py-3 text-right font-semibold">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
-                {devices.map((device) => {
-                  const isActive = device.status === 'active'
-                  return (
-                    <tr className="transition-colors hover:bg-slate-50/50" key={device.id}>
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={cn(
-                              'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl',
-                              isActive
-                                ? 'bg-indigo-50 text-indigo-600'
-                                : 'bg-slate-100 text-slate-500',
-                            )}
-                          >
-                            <DeviceTypeIcon icon={device.icon} />
-                          </div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span
-                              className={cn(
-                                'text-xs font-semibold',
-                                isActive ? 'text-slate-900' : 'text-slate-500',
-                              )}
-                            >
-                              {device.name}
-                            </span>
-                            {device.isCurrent && (
-                              <Badge size="xs" variant="brand">
-                                Phiên này
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3.5 text-slate-600">{device.lastActive}</td>
-                      <td className="px-4 py-3.5">
-                        {isActive ? (
-                          <Badge dot size="sm" variant="success">
-                            Đang sử dụng
-                          </Badge>
-                        ) : (
-                          <Badge dot size="sm" variant="neutral">
-                            Đã đăng xuất
-                          </Badge>
-                        )}
-                      </td>
-                      <td className="px-4 py-3.5 text-right">
-                        {device.isCurrent ? (
-                          <span className="text-xs text-slate-400">Thiết bị hiện tại</span>
-                        ) : isActive ? (
-                          <Button
-                            className="min-h-11 border-rose-200 bg-rose-50/70 text-rose-600 hover:bg-rose-100 hover:text-rose-700"
-                            data-testid={`device-logout-btn-${device.id}`}
-                            icon={<Trash2 aria-hidden="true" className="size-3.5" />}
-                            onClick={() => setDeviceToLogout(device)}
-                            size="sm"
-                            type="button"
-                            variant="secondary"
-                          >
-                            Đăng xuất
-                          </Button>
-                        ) : (
-                          <span className="text-xs text-slate-400">Đã kết thúc</span>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="mt-4">
-            <Button
-              className="min-h-11"
-              disabled={!hasOtherActiveDevices}
-              icon={<LogOut aria-hidden="true" className="size-4" />}
-              onClick={handleLogoutAllOtherDevices}
-              size="md"
-              type="button"
-              variant="secondary"
-            >
-              Đăng xuất tất cả thiết bị khác
-            </Button>
-          </div>
-        </Card>
-
-        {/* Section 4: Notification Preferences */}
-        <Card
-          padding="lg"
-          title="Tùy chọn thông báo"
-        >
-          <div className="divide-y divide-slate-100">
-            <div className="flex items-center justify-between gap-4 py-3.5 first:pt-0 last:pb-0">
-              <div className="flex min-w-0 items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-                  <Bell aria-hidden="true" className="size-4" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold text-slate-900">
-                    Thông báo hệ thống &amp; bảo mật
-                  </div>
-                  <p className="mt-0.5 text-xs text-slate-500">
-                    Cảnh báo khi có đăng nhập từ thiết bị lạ, cập nhật mật khẩu hoặc phân quyền quản trị.
-                  </p>
-                </div>
-              </div>
-              <div className="flex shrink-0 items-center gap-2.5">
-                <Badge size="xs" variant="neutral">
-                  Bắt buộc
-                </Badge>
-                <ToggleSwitch
-                  checked={notificationPrefs.systemSecurity}
-                  disabled
-                  label="Thông báo hệ thống & bảo mật"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between gap-4 py-3.5 first:pt-0 last:pb-0">
-              <div className="flex min-w-0 items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
-                  <CalendarClock aria-hidden="true" className="size-4" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold text-slate-900">
-                    Thông báo ca làm việc &amp; quầy giao dịch
-                  </div>
-                  <p className="mt-0.5 text-xs text-slate-500">
-                    Nhắc nhở giờ giao ca, thông báo kiểm kê kho và yêu cầu phê duyệt ngoại lệ từ quản lý.
-                  </p>
-                </div>
-              </div>
-              <ToggleSwitch
-                checked={notificationPrefs.shiftAndPos}
-                label="Thông báo ca làm việc & quầy giao dịch"
-                onToggle={() =>
-                  setNotificationPrefs((prev) => ({
-                    ...prev,
-                    shiftAndPos: !prev.shiftAndPos,
-                  }))
-                }
-              />
-            </div>
-
-            <div className="flex items-center justify-between gap-4 py-3.5 first:pt-0 last:pb-0">
-              <div className="flex min-w-0 items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
-                  <Mail aria-hidden="true" className="size-4" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold text-slate-900">
-                    Bản tin tổng kết qua Email
-                  </div>
-                  <p className="mt-0.5 text-xs text-slate-500">
-                    Gửi báo cáo tổng hợp doanh số quầy và bảng chấm công chi tiết cuối mỗi tuần.
-                  </p>
-                </div>
-              </div>
-              <ToggleSwitch
-                checked={notificationPrefs.weeklyEmailDigest}
-                label="Bản tin tổng kết qua Email"
-                onToggle={() =>
-                  setNotificationPrefs((prev) => ({
-                    ...prev,
-                    weeklyEmailDigest: !prev.weeklyEmailDigest,
-                  }))
-                }
-              />
-            </div>
-          </div>
-        </Card>
+          </Card>
+        )}
+        {isError && !profile && (
+          <Card>
+            <Banner tone="error">Không thể tải hồ sơ cá nhân.</Banner>
+            <Button className="mt-3 min-h-11" loading={isFetching} onClick={() => void refetch()} type="button" variant="outline">Thử lại</Button>
+          </Card>
+        )}
+        {profile && <ProfileDetails key={profile.id} profile={profile} />}
       </div>
-
-      <ChangePasswordModal
-        onClose={() => setIsChangePasswordOpen(false)}
-        open={isChangePasswordOpen}
-      />
-
-      <LogoutDeviceModal
-        device={deviceToLogout}
-        onClose={() => setDeviceToLogout(null)}
-        onConfirm={handleConfirmLogoutDevice}
-      />
     </MainLayout>
   )
 }
 
 export default ProfileSecurityPage
+
+function ProfileDetails({ profile }: { profile: EmployeeProfileResponse }) {
+  const avatarInput = useRef<HTMLInputElement>(null)
+  const [draft, setDraft] = useState<Partial<UpdateProfileRequest>>({})
+  const [errors, setErrors] = useState<{ fullName?: string; phone?: string }>({})
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const updateProfile = useUpdateProfileMutation()
+  const updateAvatar = useUpdateProfileAvatarMutation()
+  const fullName = draft.fullName ?? profile.fullName
+  const phone = draft.phone ?? profile.phone
+  const dirty = fullName !== profile.fullName || phone !== profile.phone
+  const busy = updateProfile.isPending || Boolean(avatarPreview)
+
+  function resetDraft() {
+    setDraft({})
+    setErrors({})
+  }
+
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (busy || !dirty) return
+    const next = { fullName: fullName.trim(), phone: phone.trim() }
+    const nextErrors: typeof errors = {}
+    if (next.fullName.length < 2 || next.fullName.length > 200) nextErrors.fullName = 'Họ và tên phải có 2 đến 200 ký tự.'
+    if (!/^0[0-9]{9}$/.test(next.phone)) nextErrors.phone = 'Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 0.'
+    setErrors(nextErrors)
+    if (Object.keys(nextErrors).length) return
+    try {
+      await updateProfile.mutateAsync(next)
+      resetDraft()
+      notify.success('Đã lưu thông tin hồ sơ.')
+    } catch {
+      notify.error('Không thể lưu thông tin hồ sơ. Vui lòng thử lại.')
+    }
+  }
+
+  async function selectAvatar(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0]
+    event.currentTarget.value = ''
+    if (!file || busy) return
+    const invalid = validateImageFile(file)
+    if (invalid) {
+      notify.error(invalid)
+      return
+    }
+
+    const preview = URL.createObjectURL(file)
+    setAvatarPreview(preview)
+    try {
+      const { imageUpload } = await uploadImage('EMPLOYEE_AVATAR', file)
+      await updateAvatar.mutateAsync(imageUpload)
+      notify.success('Đã cập nhật ảnh đại diện.')
+    } catch {
+      notify.error('Không thể cập nhật ảnh đại diện. Vui lòng thử lại.')
+    } finally {
+      setAvatarPreview(null)
+      URL.revokeObjectURL(preview)
+    }
+  }
+
+  return (
+    <>
+      <Card aria-labelledby="profile-identity-title" className="p-4 sm:p-6">
+        <h2 className="text-lg font-bold text-slate-900" id="profile-identity-title">Thông tin cá nhân</h2>
+        <div className="my-5 flex flex-wrap items-center gap-4 border-b border-slate-100 pb-5">
+          <Avatar className="size-16 text-xl" imageUrl={avatarPreview ?? profile.avatarUrl} name={profile.fullName} />
+          <div className="min-w-0 flex-1 basis-44">
+            <p className="wrap-anywhere font-semibold text-slate-900">{profile.fullName}</p>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <Badge variant="brand">{getRoleBadgeLabel(profile.role)}</Badge>
+              <Badge variant={profile.status === 'ACTIVE' ? 'success' : 'neutral'}>{accountStatuses[profile.status] ?? 'Không xác định'}</Badge>
+            </div>
+            <p className="mt-2 text-xs text-slate-600">Mã tài khoản: {profile.id.slice(0, 8)} · Ngày tham gia: {dateFormatter.format(new Date(profile.createdAt))}</p>
+          </div>
+          <input accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(event) => void selectAvatar(event)} ref={avatarInput} type="file" />
+          <Button className="min-h-11" disabled={busy} icon={<ImagePlus aria-hidden="true" className="size-4" />} loading={Boolean(avatarPreview)} onClick={() => avatarInput.current?.click()} type="button" variant="outline">
+            {avatarPreview ? 'Đang tải ảnh…' : 'Đổi ảnh đại diện'}
+          </Button>
+        </div>
+        <form className="grid gap-4 sm:grid-cols-2" noValidate onSubmit={(event) => void save(event)}>
+          <TextField disabled={busy} hint={errors.fullName} invalid={Boolean(errors.fullName)} label="Họ và tên" name="fullName" onChange={(event) => {
+            setDraft({ ...draft, fullName: event.target.value })
+            setErrors({ ...errors, fullName: undefined })
+          }} required value={fullName} variant="outlined" />
+          <TextField autoComplete="tel" disabled={busy} hint={errors.phone} invalid={Boolean(errors.phone)} label="Số điện thoại" name="phone" onChange={(event) => {
+            setDraft({ ...draft, phone: event.target.value })
+            setErrors({ ...errors, phone: undefined })
+          }} required type="tel" value={phone} variant="outlined" />
+          <div aria-labelledby="profile-email-label" className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+            <span className="block text-sm font-medium text-slate-700" id="profile-email-label">Email nội bộ</span>
+            <p className="break-all select-text text-sm text-slate-900" role="textbox" aria-readonly="true">{profile.email}</p>
+          </div>
+          <div aria-labelledby="profile-role-label" className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+            <span className="block text-sm font-medium text-slate-700" id="profile-role-label">Vai trò</span>
+            <p className="break-words select-text text-sm text-slate-900" role="textbox" aria-readonly="true">{getRolePermissionLabel(profile.role)}</p>
+          </div>
+          <div className="flex flex-wrap justify-end gap-2 sm:col-span-2">
+            <Button className="min-h-11" disabled={busy || !dirty} onClick={resetDraft} type="button" variant="ghost">Hủy thay đổi</Button>
+            <Button className="min-h-11" data-testid="profile-save-btn" disabled={busy || !dirty} loading={updateProfile.isPending} type="submit" variant="primary">
+              {updateProfile.isPending ? 'Đang lưu…' : 'Lưu thông tin'}
+            </Button>
+          </div>
+        </form>
+      </Card>
+
+      <Card aria-labelledby="profile-password-title" className="p-4 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900" id="profile-password-title">Mật khẩu</h2>
+            <p aria-label="Mật khẩu được ẩn" className="mt-1 tracking-widest text-slate-700">••••••••</p>
+            <p className="mt-1 text-xs text-slate-600">Đổi lần cuối: {profile.passwordChangedAt ? dateFormatter.format(new Date(profile.passwordChangedAt)) : 'Chưa ghi nhận'}</p>
+          </div>
+          <Button className="min-h-11" data-testid="profile-change-password-btn" icon={<KeyRound aria-hidden="true" className="size-4" />} onClick={() => setShowPasswordModal(true)} type="button" variant="outline">Đổi mật khẩu</Button>
+        </div>
+      </Card>
+
+      <DeviceSessions />
+      <ChangePasswordModal open={showPasswordModal} onClose={() => setShowPasswordModal(false)} />
+    </>
+  )
+}
+
+function DeviceSessions() {
+  const { data: devices = [], isPending, isError, isFetching, refetch } = useSessionsQuery()
+  const revokeSession = useRevokeSessionMutation()
+  const revokeOthers = useRevokeOtherSessionsMutation()
+  const [device, setDevice] = useState<EmployeeSessionResponse | null>(null)
+  const bulkTrigger = useRef<HTMLButtonElement>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+  const [bulkActionError, setBulkActionError] = useState<string | null>(null)
+  const isRevoking = revokeSession.isPending || revokeOthers.isPending
+
+  async function confirmRevoke() {
+    if (isRevoking || !device) return
+    setActionError(null)
+    try {
+      await revokeSession.mutateAsync(device.id)
+      setDevice(null)
+      notify.success('Đã đăng xuất khỏi thiết bị.')
+      bulkTrigger.current?.focus()
+    } catch {
+      setActionError('Không thể đăng xuất thiết bị. Vui lòng thử lại.')
+    }
+  }
+
+  async function revokeOtherDevices() {
+    if (isRevoking) return
+    setBulkActionError(null)
+    try {
+      const { revokedCount } = await revokeOthers.mutateAsync()
+      notify.success(revokedCount > 0 ? `Đã đăng xuất ${revokedCount} thiết bị khác.` : 'Không có thiết bị khác đang hoạt động.')
+    } catch {
+      setBulkActionError('Không thể đăng xuất các thiết bị khác. Vui lòng thử lại.')
+    }
+  }
+
+  return (
+    <Card aria-labelledby="profile-sessions-title" className="p-4 sm:p-6">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-bold text-slate-900" id="profile-sessions-title">Thiết bị &amp; Phiên đăng nhập</h2>
+        <Button className="min-h-11" disabled={isRevoking || !devices.some((item) => !item.isCurrent && item.status === 'ACTIVE')} onClick={() => void revokeOtherDevices()} ref={bulkTrigger} type="button" variant="outline">Đăng xuất tất cả thiết bị khác</Button>
+      </div>
+      {bulkActionError && <div className="mb-4"><Banner tone="error">{bulkActionError}</Banner></div>}
+      {isPending && <p className="py-3 text-sm text-slate-600" role="status">Đang tải phiên đăng nhập…</p>}
+      {isError && (
+        <div className="space-y-2">
+          <Banner tone="error">Không thể tải danh sách thiết bị.</Banner>
+          <Button className="min-h-11" loading={isFetching} onClick={() => void refetch()} type="button" variant="outline">Thử lại</Button>
+        </div>
+      )}
+      {!isPending && !isError && devices.length === 0 && <p className="py-3 text-sm text-slate-600">Không có phiên đăng nhập gần đây.</p>}
+      {devices.length > 0 && (
+        <div className="relative max-w-full overflow-x-auto">
+          <table aria-label="Danh sách phiên đăng nhập" className="block w-full text-left text-sm sm:table" role="table">
+            <thead className="sr-only border-b border-slate-200 bg-slate-50 text-xs text-slate-600 sm:not-sr-only sm:table-header-group" role="rowgroup">
+              <tr>
+                <th className="px-3 py-2" scope="col">Thiết bị / Trình duyệt</th>
+                <th className="px-3 py-2" scope="col">Hoạt động lần cuối</th>
+                <th className="px-3 py-2" scope="col">Trạng thái</th>
+                <th className="px-3 py-2 text-right" scope="col"><span className="sr-only">Thao tác</span></th>
+              </tr>
+            </thead>
+            <tbody className="block divide-y divide-slate-100 sm:table-row-group" role="rowgroup">
+              {devices.map((item) => {
+                const DeviceIcon = item.deviceType === 'mobile' ? Smartphone : item.deviceType === 'laptop' ? Laptop : Monitor
+                const active = item.status === 'ACTIVE'
+                return (
+                  <tr className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 py-2 sm:table-row" key={item.id} role="row">
+                    <th className="font-medium text-slate-800 sm:px-3 sm:py-2" role="rowheader" scope="row"><span className="flex items-center gap-2 wrap-anywhere"><DeviceIcon aria-hidden="true" className="size-4 shrink-0 text-slate-500" />{item.deviceName}</span></th>
+                    <td className="col-start-1 row-start-2 text-xs text-slate-600 sm:px-3 sm:py-2 sm:text-sm" role="cell"><time dateTime={item.lastActiveAt}>{sessionDateFormatter.format(new Date(item.lastActiveAt))}</time></td>
+                    <td className="col-start-2 row-start-2 text-right sm:px-3 sm:py-2 sm:text-left" role="cell"><Badge variant={active ? 'success' : 'neutral'}>{active ? 'Đang hoạt động' : 'Đã đăng xuất'}</Badge></td>
+                    <td className="col-start-2 row-start-1 text-right sm:px-3 sm:py-2" role="cell">
+                      {item.isCurrent ? <span className="text-xs font-semibold text-indigo-700">Phiên này</span> : active && (
+                        <Button className="min-h-11 whitespace-nowrap" data-testid={`device-logout-btn-${item.id}`} disabled={isRevoking} onClick={() => {
+                          setActionError(null)
+                          setDevice(item)
+                        }} type="button" variant="ghost">Đăng xuất</Button>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {device && <LogoutDeviceModal device={device} error={actionError} isPending={revokeSession.isPending} onClose={() => setDevice(null)} onConfirm={() => void confirmRevoke()} />}
+    </Card>
+  )
+}

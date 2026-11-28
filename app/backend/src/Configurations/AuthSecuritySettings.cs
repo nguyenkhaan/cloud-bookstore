@@ -25,6 +25,15 @@ public sealed class AuthSecuritySettings
     [Range(1, 1_440)]
     public int ResetPasswordTokenLifetimeMinutes { get; init; } = 15;
 
+    [Range(1, 1_440)]
+    public int EmailThrottleWindowMinutes { get; init; } = 15;
+
+    [Range(1, 100)]
+    public int EmailThrottleMaxPerEmail { get; init; } = 3;
+
+    [Range(1, 10_000)]
+    public int EmailThrottleMaxPerIp { get; init; } = 30;
+
     public static AuthSecuritySettings FromConfiguration(IConfiguration configuration)
         => configuration.GetSection(SectionName).Get<AuthSecuritySettings>() ?? new AuthSecuritySettings();
 }

@@ -207,7 +207,12 @@ privateClient.interceptors.response.use(
         await recoverSession()
         request._sessionRetried = true
         return privateClient.request(request)
-      } catch {
+      } catch (recoveryError) {
+        const status = axios.isAxiosError(recoveryError)
+          ? recoveryError.response?.status
+          : recoveryError instanceof Error && 'status' in recoveryError ? recoveryError.status : undefined
+        if (status === 503) return Promise.reject(recoveryError)
+
         clearCsrfToken()
         sessionExpiredHandler?.()
         return Promise.reject(error)

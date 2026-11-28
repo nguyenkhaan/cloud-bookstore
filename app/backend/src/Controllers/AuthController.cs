@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.IdentityModel.Tokens.Jwt;
 using backend.src.Configurations;
 using backend.src.Dto.AuthDto;
+using backend.src.Dto.UploadDto;
 using backend.src.Exceptions;
 using backend.src.Services;
 
@@ -17,26 +18,24 @@ public class AuthController(
 {
     // [AllowAnonymous]
     [HttpPost("login")]
+    [RequestSizeLimit(4096)]
     [ProducesResponseType<AuthenticationResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status413PayloadTooLarge)]
     public async Task<ActionResult<AuthenticationResponse>> Login(
         [FromBody] LoginRequest request
     )
     {
-        var session = await authService.Login(request);
+        var session = await authService.Login(request, Request.Headers.UserAgent.ToString());
         authCookieService.AppendAuthenticationCookies(Response, session.AccessToken, session.RefreshToken);
-        return Ok(new AuthenticationResponse(
-            session.AccessToken,
-            session.RefreshToken,
-            session.CsrfToken,
-            session.User));
+        return Ok(new AuthenticationResponse(session.CsrfToken, session.User));
     }
-    // [AllowAnonymous]
+    [AllowAnonymous]
     [HttpPost("register")]
     public async Task<IActionResult> Register(
         [FromBody] RegisterRequest request 
     )
     {
-        var response = await authService.Register(request);
+        var response = await authService.Register(request, HttpContext.Connection.RemoteIpAddress?.ToString());
         return Created(string.Empty , response);
     }
 
@@ -52,7 +51,7 @@ public class AuthController(
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> ResendVerification([FromBody] ResendVerificationRequest request)
     {
-        await authService.ResendVerificationAsync(request.Email);
+        await authService.ResendVerificationAsync(request.Email, HttpContext.Connection.RemoteIpAddress?.ToString());
         return NoContent();
     }
 
@@ -60,7 +59,7 @@ public class AuthController(
     [HttpPost("password-reset-requests")]
     public async Task<IActionResult> RequestPasswordReset([FromBody] ForgotPasswordRequest request)
     {
-        await authService.RequestPasswordReset(request);
+        await authService.RequestPasswordReset(request, HttpContext.Connection.RemoteIpAddress?.ToString());
         return NoContent();
     }
 
@@ -74,37 +73,43 @@ public class AuthController(
 
     [Authorize]
     [HttpPost("logout")]
+    [DegradedLogoutEndpoint]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<LogoutIncompleteResponse>(StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> Logout()
     {
-        try
-        {
-            var refreshToken = Request.Cookies[authCookieSettings.RefreshCookieName] ?? string.Empty;
-            var accessJti = User.FindFirst(JwtRegisteredClaimNames.Jti)!.Value;
-            var cookieAuthenticated = HttpContext.Items[AuthTokenSelector.CookieAuthenticationItem] is true;
-
-            if (cookieAuthenticated && !string.IsNullOrWhiteSpace(refreshToken))
-            {
-                try
-                {
-                    await authService.LogoutByRefreshTokenAsync(refreshToken, accessJti);
-                }
-                catch (UnauthorizedException)
-                {
-                    await authService.LogoutByAccessTokenAsync(accessJti);
-                }
-            }
-            else
-            {
-                await authService.LogoutByAccessTokenAsync(accessJti);
-            }
-
-            return NoContent();
-        }
-        finally
+        Response.OnStarting(() =>
         {
             authCookieService.ExpireAuthenticationCookies(Response);
+            return Task.CompletedTask;
+        });
+
+        var refreshToken = Request.Cookies[authCookieSettings.RefreshCookieName];
+        var (employeeId, accessJti) = GetIdentity();
+        var cookieAuthenticated = HttpContext.Items[AuthTokenSelector.CookieAuthenticationItem] is true;
+        bool revocationCompleted;
+        if (cookieAuthenticated && !string.IsNullOrWhiteSpace(refreshToken))
+        {
+            try
+            {
+                revocationCompleted = await authService.LogoutByRefreshTokenAsync(employeeId, refreshToken, accessJti);
+            }
+            catch (UnauthorizedException)
+            {
+                revocationCompleted = await authService.LogoutByAccessTokenAsync(employeeId, accessJti);
+            }
         }
+        else
+        {
+            revocationCompleted = await authService.LogoutByAccessTokenAsync(employeeId, accessJti);
+        }
+
+        if (!revocationCompleted || HttpContext.Items[AccessTokenValidation.TokenStateUnavailableItem] is true)
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new LogoutIncompleteResponse(
+                "LOGOUT_REVOCATION_INCOMPLETE", true, false,
+                "Authentication cookies were cleared, but server-side session revocation could not be confirmed."));
+
+        return NoContent();
     }
 
     [HttpPost("refresh")]
@@ -115,17 +120,18 @@ public class AuthController(
         {
             var refreshToken = Request.Cookies[authCookieSettings.RefreshCookieName] ?? string.Empty;
             var csrfToken = Request.Headers[authCookieSettings.CsrfHeaderName].ToString();
-            var session = await authService.Refresh(refreshToken, csrfToken);
+            var session = await authService.Refresh(refreshToken, csrfToken, Request.Headers.UserAgent.ToString());
             authCookieService.AppendAuthenticationCookies(Response, session.AccessToken, session.RefreshToken);
-            return Ok(new AuthenticationResponse(
-                session.AccessToken,
-                session.RefreshToken,
-                session.CsrfToken,
-                session.User));
+            return Ok(new AuthenticationResponse(session.CsrfToken, session.User));
         }
-        catch (backend.src.Exceptions.UnauthorizedException)
+        catch (UnauthorizedException)
         {
-            authCookieService.ExpireAuthenticationCookies(Response);
+            // Exception handling clears headers before writing the error response.
+            Response.OnStarting(() =>
+            {
+                authCookieService.ExpireAuthenticationCookies(Response);
+                return Task.CompletedTask;
+            });
             throw;
         }
     }
@@ -135,15 +141,90 @@ public class AuthController(
     [ProducesResponseType<BrowserSessionResponse>(StatusCodes.Status200OK)]
     public async Task<ActionResult<BrowserSessionResponse>> GetSession()
     {
+        var (employeeId, accessJti) = GetIdentity();
+        return Ok(await authService.GetBrowserSessionAsync(accessJti, employeeId));
+    }
+
+    [Authorize]
+    [HttpGet("profile")]
+    [ProducesResponseType<EmployeeProfileResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<EmployeeProfileResponse>> GetProfile()
+        => Ok(await authService.GetProfileAsync(GetIdentity().EmployeeId));
+
+    [Authorize]
+    [HttpPut("profile")]
+    [ProducesResponseType<EmployeeProfileResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<EmployeeProfileResponse>> UpdateProfile([FromBody] UpdateProfileRequest request)
+        => Ok(await authService.UpdateProfileAsync(GetIdentity().EmployeeId, request));
+
+    [Authorize]
+    [HttpPut("profile/avatar")]
+    [ProducesResponseType<EmployeeProfileResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<EmployeeProfileResponse>> UpdateProfileAvatar([FromBody] CloudinaryUploadResultRequest request)
+        => Ok(await authService.UpdateProfileAvatarAsync(GetIdentity().EmployeeId, request));
+
+    [Authorize]
+    [HttpPost("change-password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        var (employeeId, accessJti) = GetIdentity();
+        await authService.ChangePasswordAsync(employeeId, accessJti, request);
+        return NoContent();
+    }
+
+    [Authorize]
+    [HttpGet("sessions")]
+    [ProducesResponseType<List<EmployeeSessionResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<List<EmployeeSessionResponse>>> GetSessions()
+    {
+        var (employeeId, accessJti) = GetIdentity();
+        return Ok(await authService.GetSessionsAsync(employeeId, accessJti));
+    }
+
+    [Authorize]
+    [HttpDelete("sessions/{sessionId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RevokeSession(Guid sessionId)
+    {
+        var (employeeId, accessJti) = GetIdentity();
+        await authService.RevokeSessionAsync(employeeId, accessJti, sessionId);
+        return NoContent();
+    }
+
+    [Authorize]
+    [HttpPost("sessions/revoke-others")]
+    [ProducesResponseType<RevokeOtherSessionsResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<RevokeOtherSessionsResponse>> RevokeOtherSessions()
+    {
+        var (employeeId, accessJti) = GetIdentity();
+        return Ok(await authService.RevokeOtherSessionsAsync(employeeId, accessJti));
+    }
+
+    private (Guid EmployeeId, string AccessJti) GetIdentity()
+    {
         var accessJti = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
-        if (string.IsNullOrWhiteSpace(accessJti))
-        {
-            return Unauthorized();
-        }
-
-        var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        Guid? userId = Guid.TryParse(userIdClaim, out var parsedId) ? parsedId : null;
-
-        return Ok(await authService.GetBrowserSessionAsync(accessJti, userId));
+        if (string.IsNullOrWhiteSpace(accessJti) || !Guid.TryParse(User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value, out var employeeId))
+            throw new UnauthorizedException("Invalid or expired access token");
+        return (employeeId, accessJti);
     }
 }

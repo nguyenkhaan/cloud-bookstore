@@ -1,27 +1,23 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { startTransition, useCallback, useEffect, useMemo, useState } from 'react'
 import type { PropsWithChildren } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   clearCsrfToken,
   getCsrfToken,
   persistStoredUser,
-  readStoredUser,
   removeStoredUser,
   setSessionExpiredHandler,
 } from '@/api/client'
 import { AuthContext, formatUser } from './AuthProvider'
 import type { AuthContextValue, AuthSession } from './AuthProvider'
 import { useLoginMutation, useLogoutMutation } from '@/features/auth/auth.hook'
-import { getSession } from '@/features/auth/auth.service'
+import { ApiError, getSession } from '@/features/auth/auth.service'
 
-
+type SessionCheck = 'initializing' | 'unavailable' | 'retrying' | 'complete'
 
 export function AuthProvider({ children }: PropsWithChildren) {
-  const [session, setSession] = useState<AuthSession | null>(() => {
-    const stored = readStoredUser()
-    return stored ? { authenticated: true, user: stored } : null
-  })
-  const [isInitializing, setIsInitializing] = useState(true)
+  const [session, setSession] = useState<AuthSession | null>(null)
+  const [sessionCheck, setSessionCheck] = useState<SessionCheck>('initializing')
   const { mutateAsync: requestLogin } = useLoginMutation()
   const { mutateAsync: requestLogout } = useLogoutMutation()
   const navigate = useNavigate()
@@ -47,6 +43,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [redirectToLogin])
 
   useEffect(() => {
+    if (sessionCheck !== 'initializing' && sessionCheck !== 'retrying') return
+
     let active = true
 
     void getSession()
@@ -60,19 +58,27 @@ export function AuthProvider({ children }: PropsWithChildren) {
             removeStoredUser()
             setSession(null)
           }
+          setSessionCheck('complete')
         }
       })
-      .catch(() => {
-        if (active) clearSession()
-      })
-      .finally(() => {
-        if (active) setIsInitializing(false)
+      .catch((error: unknown) => {
+        if (!active) return
+        if (error instanceof ApiError && error.status === 503) {
+          setSessionCheck('unavailable')
+          return
+        }
+        clearSession()
+        setSessionCheck('complete')
       })
 
     return () => {
       active = false
     }
-  }, [clearSession])
+  }, [clearSession, sessionCheck])
+
+  const retrySession = useCallback(() => {
+    setSessionCheck((current) => current === 'unavailable' ? 'retrying' : current)
+  }, [])
 
   const login = useCallback(async (email: string, password: string) => {
     const response = await requestLogin({ email: email.trim(), password })
@@ -82,19 +88,37 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [requestLogin])
 
   const signOut = useCallback(async () => {
+    let destination = '/login?logout=incomplete'
     try {
-      await requestLogout(getCsrfToken())
-    } catch {
-      // Local state is cleared regardless; the backend no longer lets a leftover cookie block login.
+      const outcome = await requestLogout(getCsrfToken()).catch(() => null)
+      if (outcome?.cookiesCleared) {
+        destination = outcome.revocationCompleted ? '/login' : '/login?logout=partial'
+      }
     } finally {
-      clearSession()
-      navigate('/login', { replace: true })
+      startTransition(() => {
+        clearSession()
+        navigate(destination, { replace: true })
+      })
     }
   }, [clearSession, navigate, requestLogout])
 
+  const updateSessionUser = useCallback<AuthContextValue['updateSessionUser']>((user) => {
+    if (!user.id || user.id !== session?.user?.id) return
+    if (user.roleCode) persistStoredUser({ ...user, roleCode: user.roleCode })
+    setSession((current) => current?.user?.id === user.id ? { authenticated: true, user } : current)
+  }, [session?.user?.id])
+
   const value = useMemo<AuthContextValue>(
-    () => ({ session, isInitializing, login, signOut }),
-    [session, isInitializing, login, signOut],
+    () => ({
+      session,
+      isInitializing: sessionCheck === 'initializing' || sessionCheck === 'retrying',
+      isSessionUnavailable: sessionCheck === 'unavailable' || sessionCheck === 'retrying',
+      retrySession,
+      login,
+      signOut,
+      updateSessionUser,
+    }),
+    [session, sessionCheck, retrySession, login, signOut, updateSessionUser],
   )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

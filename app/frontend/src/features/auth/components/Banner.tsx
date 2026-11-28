@@ -11,10 +11,14 @@ const toneClasses: Record<NoticeTone, string> = {
     info: 'bg-indigo-50 text-indigo-800',
 }
 
-export function Banner({ tone, children }: { tone: NoticeTone; children: ReactNode }) {
+export function Banner({ tone, children, role = tone === 'error' || tone === 'warning' ? 'alert' : 'status' }: {
+    tone: NoticeTone
+    children: ReactNode
+    role?: 'alert' | 'status'
+}) {
     const ToneIcon = icons[tone]
     return (
-        <div className={cn('flex items-start gap-2.5 rounded-xl px-3.5 py-3 text-[13px] leading-5', toneClasses[tone])} role={tone === 'error' || tone === 'warning' ? 'alert' : 'status'}>
+        <div className={cn('flex items-start gap-2.5 rounded-xl px-3.5 py-3 text-[13px] leading-5', toneClasses[tone])} role={role}>
             <ToneIcon className="mt-0.5" />
             <div>{children}</div>
         </div>
