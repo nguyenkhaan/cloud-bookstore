@@ -60,7 +60,7 @@ Nhân viên đăng nhập trên frontend ở domain khác backend mà không đ�
 4. On one `401`, FE calls `POST /api/auth/refresh`, sends the current CSRF header and cookies, receives rotated cookies plus a replacement CSRF token, then retries the original request once.
 5. If session validation or refresh returns a retryable `503`, FE keeps its in-memory session and CSRF token and does not redirect to login.
    Once the dependency recovers, the browser can use the original cookies and CSRF token to recover the session.
-6. If refresh fails terminally, including a `401` for an invalid session, FE clears in-memory auth state and redirects to login with a safe `next` path.
+6. A second `401`, a terminal refresh failure (including `401` for an invalid session), or an invalid session clears in-memory auth state and redirects to login with a safe `next` path.
 
 ### Logout
 
